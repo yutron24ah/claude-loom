@@ -25,6 +25,12 @@ cd claude-loom
 
 `~/.claude/agents/` および `~/.claude/commands/` にシンボリックリンクが設置される。
 
+Claude Code の設定ディレクトリが標準位置にない場合は環境変数で上書きできる：
+
+```bash
+CLAUDE_HOME=/path/to/your/claude-config ./install.sh
+```
+
 ## 使い方（M0）
 
 Claude Code を起動して：
