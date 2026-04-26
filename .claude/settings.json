@@ -1,0 +1,49 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(chmod +x /Users/kokiiphone/Documents/work/claude-loom/tests/commands_test.sh)",
+      "Bash(/Users/kokiiphone/Documents/work/claude-loom/tests/run_tests.sh commands *)",
+      "Bash(/Users/kokiiphone/Documents/work/claude-loom/tests/run_tests.sh)",
+      "Bash(git -C /Users/kokiiphone/Documents/work/claude-loom branch)",
+      "Bash(git -C /Users/kokiiphone/Documents/work/claude-loom log --oneline -5)",
+      "Bash(./tests/run_tests.sh commands *)",
+      "Bash(grep -n \"^\\\\s*\\\\`\\\\`\\\\`\" /Users/kokiiphone/Documents/work/claude-loom/commands/loom-go.md)",
+      "Bash(bash tests/commands_test.sh)",
+      "Bash(bash tests/agents_test.sh)",
+      "Bash(bash -n tests/commands_test.sh)",
+      "Bash(grep -n 'PASS \\\\[$fname\\\\]: description=' /Users/kokiiphone/Documents/work/claude-loom/tests/commands_test.sh)",
+      "Bash(grep -n 'PASS \\\\[$fname\\\\]: description=' tests/commands_test.sh)",
+      "Bash(git -C /Users/kokiiphone/Documents/work/claude-loom commit -m ' *)",
+      "Bash(./install.sh)",
+      "Bash(git tag *)",
+      "Bash(CLAUDE_HOME=/private/tmp/loom-final-check/.claude bash /Users/kokiiphone/Documents/work/claude-loom/install.sh)",
+      "Read(//private/tmp/loom-final-check/.claude/agents/**)",
+      "Bash(grep -rn \"^\\\\`/loom\\\\`\\\\|'\\\\`/loom\\\\`'\\\\| /loom \\\\| \\\\`/loom\\\\`\" /Users/kokiiphone/Documents/work/claude-loom --include=\"*.md\")",
+      "Bash(python3 -c ' *)",
+      "Bash(git -C /Users/kokiiphone/Documents/work/claude-loom tag)",
+      "Bash(xargs -0 ls -t)",
+      "Bash(xargs -I '{}' sh -c ' *)",
+      "Bash(./tests/run_tests.sh *)",
+      "Bash(/Users/kokiiphone/Documents/work/claude-loom/tests/run_tests.sh *)",
+      "Bash(bash -n *)",
+      "Bash(git -C /Users/kokiiphone/Documents/work/claude-loom tag -l -n m0-complete)",
+      "Bash(git merge --no-ff feat/m0-harness -m 'Merge branch '\\\\''feat/m0-harness'\\\\'': M0 Dev Harness complete *)",
+      "Bash(git -C /Users/kokiiphone/Documents/work/claude-loom log --oneline 6291500..HEAD)",
+      "Bash(chmod +x /Users/kokiiphone/Documents/work/claude-loom/tests/skills_test.sh)",
+      "Bash(chmod +x /Users/kokiiphone/Documents/work/claude-loom/skills/loom-test/scripts/run.sh)",
+      "Bash(./skills/loom-test/scripts/run.sh)",
+      "Bash(chmod +x /Users/kokiiphone/Documents/work/claude-loom/skills/loom-status/scripts/status.sh)",
+      "Bash(./skills/loom-status/scripts/status.sh)",
+      "Bash(grep -v \"^tests/skills_test.sh$\")",
+      "Bash(grep -v \"^commit\\\\|^Author\\\\|^Date\\\\|^ \\\\|^$\")",
+      "Bash(mktemp -d)",
+      "Bash(bash install.sh)",
+      "Bash(/Users/kokiiphone/Documents/work/claude-loom/skills/loom-test/scripts/run.sh)",
+      "Bash(/Users/kokiiphone/Documents/work/claude-loom/skills/loom-test/scripts/run.sh *)",
+      "Bash(/Users/kokiiphone/Documents/work/claude-loom/skills/loom-status/scripts/status.sh)"
+    ],
+    "additionalDirectories": [
+      "/tmp"
+    ]
+  }
+}

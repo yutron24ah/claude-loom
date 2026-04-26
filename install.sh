@@ -23,7 +23,7 @@ for cmd in bash ln; do
 done
 
 # ディレクトリ準備
-mkdir -p "$CLAUDE_HOME/agents" "$CLAUDE_HOME/commands"
+mkdir -p "$CLAUDE_HOME/agents" "$CLAUDE_HOME/commands" "$CLAUDE_HOME/skills"
 
 install_links() {
   local src_dir="$1"
@@ -61,6 +61,42 @@ install_links() {
   shopt -u nullglob
 }
 
+install_dir_links() {
+  local src_parent="$1"
+  local dest_parent="$2"
+  local pattern="$3"
+
+  shopt -s nullglob
+  for src in "$src_parent"/$pattern/; do
+    src="${src%/}"
+    local fname
+    fname=$(basename "$src")
+    local dest="$dest_parent/$fname"
+
+    if [ -e "$dest" ] && [ ! -L "$dest" ]; then
+      shopt -u nullglob
+      echo "ERROR: $dest exists as a regular directory (not a symlink). Remove or rename it, then re-run install.sh." >&2
+      exit 1
+    fi
+
+    if [ -L "$dest" ]; then
+      echo "  replacing existing symlink: $dest"
+      rm "$dest"
+    fi
+
+    local abs_src
+    if command -v realpath >/dev/null 2>&1; then
+      abs_src=$(realpath "$src")
+    else
+      abs_src="$(cd "$(dirname "$src")" && pwd)/$(basename "$src")"
+    fi
+
+    ln -s "$abs_src" "$dest"
+    echo "  linked: $dest -> $abs_src"
+  done
+  shopt -u nullglob
+}
+
 echo "Installing claude-loom M0 harness..."
 echo "  CLAUDE_HOME = $CLAUDE_HOME"
 echo "  ROOT_DIR    = $ROOT_DIR"
@@ -68,6 +104,7 @@ echo ""
 
 install_links "$ROOT_DIR/agents" "$CLAUDE_HOME/agents" "loom-*.md"
 install_links "$ROOT_DIR/commands" "$CLAUDE_HOME/commands" "loom-*.md"
+install_dir_links "$ROOT_DIR/skills" "$CLAUDE_HOME/skills" "loom-*"
 
 echo ""
 echo "✅ Installation complete."
