@@ -1,0 +1,15 @@
+---
+schema: claude-loom-plan-v1
+project_id: PLACEHOLDER_UUID
+last_synced_at: 0
+---
+
+# PLACEHOLDER_PROJECT_NAME 実装計画
+
+> 本ファイルは長期計画の正本（SPEC §6.8 形式）。
+> daemon が監視し plan_items テーブルに同期する。手編集と GUI 編集の両方が可能。
+
+## マイルストーン M1: 最初のマイルストーン
+
+- [ ] 最初のタスク <!-- id: m1-t1 status: todo -->
+- [ ] 次のタスク <!-- id: m1-t2 status: todo -->

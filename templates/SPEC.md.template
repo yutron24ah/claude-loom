@@ -1,0 +1,49 @@
+# PLACEHOLDER_PROJECT_NAME — 仕様書（SPEC.md）
+
+> 本ドキュメントは Single Source of Truth (SSoT)。実装と仕様が乖離したら SPEC を先に更新してから実装を合わせる。
+>
+> 最終更新: PLACEHOLDER_DATE
+
+## 1. プロダクト定位
+
+### 1.1 ビジョン
+TBD（PM が user と合意してから記述）
+
+### 1.2 解決する課題
+TBD
+
+### 1.3 提供価値
+TBD
+
+## 2. スコープ
+
+### 2.1 Phase 構成
+TBD
+
+### 2.2 含む / 含まない
+TBD
+
+## 3. アーキテクチャ
+TBD
+
+## 4. データモデル
+TBD
+
+## 5. 標準ワークフロー
+TBD
+
+## 6. テスト戦略
+TBD
+
+## 7. 既知の TBD / 未決事項
+TBD
+
+## 関連ドキュメント
+
+- `PLAN.md` — 実装計画
+- `CLAUDE.md` — Claude Code 向け作業ガイド
+- `README.md` — ユーザー向け説明
+
+## 変更履歴
+
+- PLACEHOLDER_DATE: 初版作成
