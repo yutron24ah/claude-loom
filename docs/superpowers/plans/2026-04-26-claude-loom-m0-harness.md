@@ -31,7 +31,10 @@ claude-loom/
 │   ├── loom-spec.md                           [Task 13]
 │   └── loom-go.md                             [Task 14]
 ├── templates/
+│   ├── SPEC.md.template                       [Task 3]
 │   ├── PLAN.md.template                       [Task 3]
+│   ├── CLAUDE.md.template                     [Task 3, loom-managed マーカー含む]
+│   ├── README.md.template                     [Task 3]
 │   └── claude-loom/
 │       └── project.json.template              [Task 2]
 ├── docs/
@@ -249,12 +252,17 @@ git commit -m "feat(templates): add project.json template per SPEC §6.9"
 
 ---
 
-## Task 3: PLAN.md テンプレート
+## Task 3: ドキュメントテンプレート群（4 ファイル）
+
+新規 PJ 立ち上げ時 (init モード) と既存 PJ 取り込み時 (adopt モード) で PM がテンプレから生成する 4 つの markdown テンプレート。SPEC §3.7（プロジェクトライフサイクルと adopt 戦略）参照。
 
 **Files:**
 - Create: `templates/PLAN.md.template`
+- Create: `templates/SPEC.md.template`
+- Create: `templates/CLAUDE.md.template`
+- Create: `templates/README.md.template`
 
-- [ ] **Step 1: テンプレ作成**
+- [ ] **Step 1: PLAN.md テンプレ作成**
 
 `Write` tool で `/Users/kokiiphone/Documents/work/claude-loom/templates/PLAN.md.template`：
 
@@ -276,19 +284,175 @@ last_synced_at: 0
 - [ ] 次のタスク <!-- id: m1-t2 status: todo -->
 ```
 
-- [ ] **Step 2: 確認**
+- [ ] **Step 2: SPEC.md テンプレ作成**
 
-```bash
-head -10 templates/PLAN.md.template
+`Write` tool で `/Users/kokiiphone/Documents/work/claude-loom/templates/SPEC.md.template`：
+
+```markdown
+# PLACEHOLDER_PROJECT_NAME — 仕様書（SPEC.md）
+
+> 本ドキュメントは Single Source of Truth (SSoT)。実装と仕様が乖離したら SPEC を先に更新してから実装を合わせる。
+>
+> 最終更新: PLACEHOLDER_DATE
+
+## 1. プロダクト定位
+
+### 1.1 ビジョン
+TBD（PM が user と合意してから記述）
+
+### 1.2 解決する課題
+TBD
+
+### 1.3 提供価値
+TBD
+
+## 2. スコープ
+
+### 2.1 Phase 構成
+TBD
+
+### 2.2 含む / 含まない
+TBD
+
+## 3. アーキテクチャ
+TBD
+
+## 4. データモデル
+TBD
+
+## 5. 標準ワークフロー
+TBD
+
+## 6. テスト戦略
+TBD
+
+## 7. 既知の TBD / 未決事項
+TBD
+
+## 関連ドキュメント
+
+- `PLAN.md` — 実装計画
+- `CLAUDE.md` — Claude Code 向け作業ガイド
+- `README.md` — ユーザー向け説明
+
+## 変更履歴
+
+- PLACEHOLDER_DATE: 初版作成
 ```
 
-期待：YAML frontmatter が出力される。
+- [ ] **Step 3: CLAUDE.md テンプレ作成（loom-managed マーカー含む）**
 
-- [ ] **Step 3: コミット**
+`Write` tool で `/Users/kokiiphone/Documents/work/claude-loom/templates/CLAUDE.md.template`：
+
+```markdown
+# CLAUDE.md — PLACEHOLDER_PROJECT_NAME
+
+> 本ファイルは Claude Code agent 向けの作業規約。
+> ユーザー向け説明は `README.md`、製品仕様は `SPEC.md` を参照。
+
+## プロジェクト概要
+
+PLACEHOLDER_DESCRIPTION
+
+<!-- claude-loom managed: start -->
+## claude-loom 開発フロー
+
+このプロジェクトは [claude-loom](https://github.com/yutron24ah/claude-loom) で管理されています。
+PM / Developer / Reviewer trio による agile dev workflow を採用。
+
+### 通常の作業フロー
+
+1. `/loom-pm` で PM mode に入る
+2. `/loom-spec` で仕様の確認・追加（PM が user と対話）
+3. `/loom-go` で実装フェーズ起動 → PM が developer subagent を dispatch
+4. developer は TDD で実装 → review trio に並列レビュー dispatch
+5. レビュー全 pass → commit
+6. PM が PLAN.md を更新
+
+### ブランチ規約
+
+- `main` への直 commit 禁止
+- 1 要件 = 1 ブランチ。命名 `feat/<short-description>` `fix/<short-description>` `chore/<short-description>`
+
+### コミット粒度
+
+- 1 機能 = 1 commit
+- メッセージ prefix: `test(xxx)` / `feat(xxx)` / `fix(xxx)` / `chore(xxx)` / `docs:`
+
+### TDD 必須
+
+- 実装コードを書く前に必ず失敗するテストを書く
+- Red → Green → Refactor の順
+- レビュー trio 通過なしに commit 禁止
+
+### doc 整合性
+
+- SPEC を変更したら関連ドキュメント（README / CLAUDE / docs/）への影響を確認
+- PM が doc 整合性 finding を提示、user が判断
+
+詳細仕様は `SPEC.md`、進行中の計画は `PLAN.md` を参照。
+<!-- claude-loom managed: end -->
+
+## プロジェクト固有の規約
+
+（このプロジェクト独自のルールがあればここに記述。loom-managed マーカー外なので PM は触らない）
+```
+
+- [ ] **Step 4: README.md テンプレ作成（最小スケルトン）**
+
+`Write` tool で `/Users/kokiiphone/Documents/work/claude-loom/templates/README.md.template`：
+
+```markdown
+# PLACEHOLDER_PROJECT_NAME
+
+PLACEHOLDER_SHORT_DESCRIPTION
+
+## 概要
+
+TBD
+
+## インストール
+
+TBD
+
+## 使い方
+
+TBD
+
+## ドキュメント
+
+- `SPEC.md` — 仕様（Single Source of Truth）
+- `PLAN.md` — 実装計画
+- `CLAUDE.md` — Claude Code 向け作業ガイド
+
+## 開発
+
+このプロジェクトは [claude-loom](https://github.com/yutron24ah/claude-loom) で管理されています。
+
+## ライセンス
+
+TBD
+```
+
+- [ ] **Step 5: 4 ファイル全部の存在確認**
 
 ```bash
-git add templates/PLAN.md.template
-git commit -m "feat(templates): add PLAN.md template per SPEC §6.8"
+ls -la templates/*.template
+head -3 templates/PLAN.md.template
+head -3 templates/SPEC.md.template
+head -3 templates/CLAUDE.md.template
+head -3 templates/README.md.template
+```
+
+期待：4 ファイルすべて存在、各先頭が想定通り。
+
+- [ ] **Step 6: コミット**
+
+4 ファイルを 1 コミットにまとめる（テンプレート群として一塊）：
+
+```bash
+git add templates/PLAN.md.template templates/SPEC.md.template templates/CLAUDE.md.template templates/README.md.template
+git commit -m "feat(templates): add 4 markdown templates for init/adopt flows (SPEC §3.7)"
 ```
 
 ---
@@ -782,22 +946,45 @@ You are the **Project Manager (PM)** of a claude-loom development room. You orch
 ## Your role
 
 - You talk with the human user. They tell you WHAT to build.
-- You produce / maintain `SPEC.md` (specification) and `PLAN.md` (long-term plan) by consulting with the user.
+- You **manage project lifecycle**: init (new) / adopt (existing) / maintain (continuous), per SPEC §3.7.
+- You produce / maintain **all documentation**: `SPEC.md` / `PLAN.md` / `CLAUDE.md` / `README.md` / `docs/**/*.md`.
 - You estimate the necessary developer headcount (1-N, default 3) and propose it. The user can adjust.
 - You dispatch Developer subagents via the Task tool to implement features.
-- You ensure documentation stays consistent when SPEC changes.
+- You ensure documentation stays consistent when SPEC changes (non-destructive principle: never overwrite user-authored content outside loom-managed markers).
 - You track progress and report back to the user.
 
 ## Workflow
+
+### Project lifecycle: init / adopt / maintain (per SPEC §3.7)
+
+When entering a project for the first time (no `.claude-loom/project.json`), determine the lifecycle stage:
+
+1. **Detect existing artifacts** in cwd (use `Bash` + `Glob`):
+   - `SPEC.md` / `PLAN.md` / `CLAUDE.md` / `README.md`
+   - tests dirs (`tests/`, `__tests__/`, `spec/`)
+   - CI configs (`.github/workflows/`, `.gitlab-ci.yml`)
+   - `CONTRIBUTING.md`, `CHANGELOG.md`
+2. **Decide lifecycle stage**:
+   - All absent → **init mode** (greenfield, generate from templates)
+   - Any present → **adopt mode** (existing project, respect what's there)
+3. **For adopt mode** (non-destructive principle, MUST follow):
+   - Present the detection report to the user.
+   - For each missing file, ask: "generate from template?"
+   - For each existing `CLAUDE.md` / `README.md`: **never overwrite**. For CLAUDE.md only, you may **append** a `<!-- claude-loom managed: start --> ... <!-- claude-loom managed: end -->` block at the end.
+   - For each existing `SPEC.md`: ask user to confirm scope of any updates.
+4. **Always create** `.claude-loom/project.json` (fill in detected info: name, paths, repo conventions inferred from existing files).
+5. After lifecycle setup, proceed to spec phase or implementation phase as the user directs.
+
+When the project is already registered (project.json exists), skip lifecycle detection and go straight to spec/implementation work — but maintain non-destructive rule for any user-authored content (only the loom-managed marker range in CLAUDE.md is yours to edit).
 
 ### Spec phase (entered by `/loom-spec`)
 
 1. Greet the user. Ask what they want to build (or what to update if SPEC already exists).
 2. Ask clarifying questions ONE AT A TIME until you understand goal, constraints, success criteria.
 3. Propose 2-3 architectural approaches with tradeoffs. Recommend one. Wait for user agreement.
-4. Write or update `SPEC.md`. Run the doc-consistency manual checklist (`docs/DOC_CONSISTENCY_CHECKLIST.md`).
+4. Write or update `SPEC.md` (use `templates/SPEC.md.template` for new projects, edit existing for updates). Run the doc-consistency manual checklist (`docs/DOC_CONSISTENCY_CHECKLIST.md`).
 5. Propose developer headcount based on task parallelism. User can adjust.
-6. Write or update `PLAN.md` (YAML frontmatter + Markdown checkboxes per SPEC §6.8).
+6. Write or update `PLAN.md` (YAML frontmatter + Markdown checkboxes per SPEC §6.8, use `templates/PLAN.md.template` if new).
 
 ### Implementation phase (entered by `/loom-go`)
 
@@ -841,6 +1028,8 @@ Whenever `SPEC.md` is edited (by you or anyone else):
 - Write production code yourself (use developer subagents)
 - Run reviews yourself (developers dispatch reviewers)
 - Edit SPEC without first asking the user (SPEC is the SSoT, change carefully)
+- **Overwrite user-authored content** in CLAUDE.md / README.md / SPEC.md / docs/ — only the `<!-- claude-loom managed: start -->...<!-- end -->` range in CLAUDE.md is yours to mutate freely
+- Generate templates over existing files in adopt mode without explicit user approval per file
 
 You are the conductor, not a player.
 ```

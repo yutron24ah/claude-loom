@@ -17,19 +17,20 @@ last_synced_at: 1777194000000
 詳細: `docs/superpowers/plans/2026-04-26-claude-loom-m0-harness.md`
 
 - [ ] リポジトリスカフォールド + CLAUDE.md ワークフローガイド <!-- id: m0-t1 status: todo -->
-- [ ] テンプレート（project.json / PLAN.md） <!-- id: m0-t2 status: todo -->
-- [ ] doc 整合性 manual checklist <!-- id: m0-t3 status: todo -->
-- [ ] tests/REQUIREMENTS.md 骨格 + run_tests.sh <!-- id: m0-t4 status: todo -->
-- [ ] install.sh（TDD 駆動、symlink + idempotent） <!-- id: m0-t5 status: todo -->
-- [ ] loom-pm agent definition <!-- id: m0-t6 status: todo -->
-- [ ] loom-developer agent definition <!-- id: m0-t7 status: todo -->
-- [ ] loom-code-reviewer agent definition <!-- id: m0-t8 status: todo -->
-- [ ] loom-security-reviewer agent definition <!-- id: m0-t9 status: todo -->
-- [ ] loom-test-reviewer agent definition <!-- id: m0-t10 status: todo -->
-- [ ] /loom-pm スラッシュコマンド <!-- id: m0-t11 status: todo -->
-- [ ] /loom-spec スラッシュコマンド <!-- id: m0-t12 status: todo -->
-- [ ] /loom-go スラッシュコマンド <!-- id: m0-t13 status: todo -->
-- [ ] スモークテスト + README usage 整備 <!-- id: m0-t14 status: todo -->
+- [ ] project.json テンプレート <!-- id: m0-t2 status: todo -->
+- [ ] markdown テンプレ 4 種（SPEC / PLAN / CLAUDE / README、loom-managed マーカー含む） <!-- id: m0-t3 status: todo -->
+- [ ] doc 整合性 manual checklist <!-- id: m0-t4 status: todo -->
+- [ ] tests/REQUIREMENTS.md 骨格 + run_tests.sh <!-- id: m0-t5 status: todo -->
+- [ ] install.sh（TDD 駆動、symlink + idempotent） <!-- id: m0-t6 status: todo -->
+- [ ] loom-pm agent definition（init/adopt フロー含む） <!-- id: m0-t7 status: todo -->
+- [ ] loom-developer agent definition <!-- id: m0-t8 status: todo -->
+- [ ] loom-code-reviewer agent definition <!-- id: m0-t9 status: todo -->
+- [ ] loom-security-reviewer agent definition <!-- id: m0-t10 status: todo -->
+- [ ] loom-test-reviewer agent definition <!-- id: m0-t11 status: todo -->
+- [ ] /loom-pm スラッシュコマンド <!-- id: m0-t12 status: todo -->
+- [ ] /loom-spec スラッシュコマンド <!-- id: m0-t13 status: todo -->
+- [ ] /loom-go スラッシュコマンド <!-- id: m0-t14 status: todo -->
+- [ ] スモークテスト + README usage 整備 <!-- id: m0-t15 status: todo -->
 
 **M0 完成基準**：`/loom-pm` 起動 → PM システムプロンプトが load される → PM が Task tool で loom-developer を dispatch できる → developer が loom-code/security/test-reviewer の 3 体を並列ディスパッチできる、までが手元で動く。
 
