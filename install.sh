@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # install.sh — claude-loom M0 minimal installer
 #
-# 役割：agents/ と commands/ のファイルを ~/.claude/<type>/ にシンボリックリンク
+# 役割：agents/ / commands/ のファイル + skills/ のディレクトリを ~/.claude/<type>/ にシンボリックリンク
 # M1 以降で daemon ビルド配置 + settings.json 書き換えを追加予定
 
 set -euo pipefail

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # tests/install_test.sh — install.sh の TDD テスト
 #
-# REQ-001, REQ-002, REQ-003, REQ-004 をカバー
+# REQ-001, REQ-002, REQ-003, REQ-004, REQ-008, REQ-009 をカバー
 
 set -euo pipefail
 
@@ -81,7 +81,7 @@ if [ -n "$some_skill_link" ]; then
 
   rm -rf "$some_skill_link"
 else
-  echo "SKIP: REQ-009: skills/loom-*/ symlink が無いため衝突テストを実行できず（Tasks 5-9 完了後に有効化）"
+  echo "SKIP: REQ-009: skills/loom-*/ symlink が無いため衝突テストを実行できず（Tasks 5-8 完了後に有効化）"
 fi
 
 echo "All install_test checks passed"
