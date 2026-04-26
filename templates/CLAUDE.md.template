@@ -1,0 +1,51 @@
+# CLAUDE.md — PLACEHOLDER_PROJECT_NAME
+
+> 本ファイルは Claude Code agent 向けの作業規約。
+> ユーザー向け説明は `README.md`、製品仕様は `SPEC.md` を参照。
+
+## プロジェクト概要
+
+PLACEHOLDER_DESCRIPTION
+
+<!-- claude-loom managed: start -->
+## claude-loom 開発フロー
+
+このプロジェクトは [claude-loom](https://github.com/yutron24ah/claude-loom) で管理されています。
+PM / Developer / Reviewer trio による agile dev workflow を採用。
+
+### 通常の作業フロー
+
+1. `/loom-pm` で PM mode に入る
+2. `/loom-spec` で仕様の確認・追加（PM が user と対話）
+3. `/loom-go` で実装フェーズ起動 → PM が developer subagent を dispatch
+4. developer は TDD で実装 → review trio に並列レビュー dispatch
+5. レビュー全 pass → commit
+6. PM が PLAN.md を更新
+
+### ブランチ規約
+
+- `main` への直 commit 禁止
+- 1 要件 = 1 ブランチ。命名 `feat/<short-description>` `fix/<short-description>` `chore/<short-description>`
+
+### コミット粒度
+
+- 1 機能 = 1 commit
+- メッセージ prefix: `test(xxx)` / `feat(xxx)` / `fix(xxx)` / `chore(xxx)` / `docs:`
+
+### TDD 必須
+
+- 実装コードを書く前に必ず失敗するテストを書く
+- Red → Green → Refactor の順
+- レビュー trio 通過なしに commit 禁止
+
+### doc 整合性
+
+- SPEC を変更したら関連ドキュメント（README / CLAUDE / docs/）への影響を確認
+- PM が doc 整合性 finding を提示、user が判断
+
+詳細仕様は `SPEC.md`、進行中の計画は `PLAN.md` を参照。
+<!-- claude-loom managed: end -->
+
+## プロジェクト固有の規約
+
+（このプロジェクト独自のルールがあればここに記述。loom-managed マーカー外なので PM は触らない）

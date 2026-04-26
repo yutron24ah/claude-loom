@@ -1,0 +1,29 @@
+# PLACEHOLDER_PROJECT_NAME
+
+PLACEHOLDER_SHORT_DESCRIPTION
+
+## 概要
+
+TBD
+
+## インストール
+
+TBD
+
+## 使い方
+
+TBD
+
+## ドキュメント
+
+- `SPEC.md` — 仕様（Single Source of Truth）
+- `PLAN.md` — 実装計画
+- `CLAUDE.md` — Claude Code 向け作業ガイド
+
+## 開発
+
+このプロジェクトは [claude-loom](https://github.com/yutron24ah/claude-loom) で管理されています。
+
+## ライセンス
+
+TBD

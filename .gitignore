@@ -16,10 +16,19 @@ node_modules/
 *.log
 npm-debug.log*
 
+# Test artifacts
+.coverage
+coverage/
+
 # Build output
 dist/
 build/
 
-# Test artifacts
-.coverage
-coverage/
+# Env
+.env
+.env.local
+
+# SQLite (daemon, M1 以降)
+*.db
+*.db-shm
+*.db-wal
