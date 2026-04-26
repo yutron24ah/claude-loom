@@ -16,7 +16,7 @@ Implementation phase actions (per the PM agent's "Implementation phase" workflow
 4. For each assignment, dispatch a `loom-developer` subagent via `Task` tool, with the prompt prefixed:
 
    ```
-   [loom-meta] project_id=<id> slot=dev-<N> working_dir=<absolute path>
+   [loom-meta] project_id=<from project.json> slot=dev-<N> working_dir=<absolute path>
 
    Task: <task title>
    Context: <link to relevant SPEC sections, existing code paths, etc.>

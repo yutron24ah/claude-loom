@@ -41,7 +41,7 @@ for cmd_file in "$COMMANDS_DIR"/loom-*.md; do
     continue
   fi
 
-  echo "PASS [$fname]: description present"
+  echo "PASS [$fname]: description=$desc_field"
 done
 
 if [ "$failures" -gt 0 ]; then
