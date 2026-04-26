@@ -10,7 +10,8 @@
   "related_docs": [
     "README.md",
     "CLAUDE.md",
-    "docs/**/*.md"
+    "docs/**/*.md",
+    "tests/REQUIREMENTS.md"
   ],
 
   "methodology": "agile",
@@ -24,7 +25,7 @@
 
   "rules": {
     "tdd_required": true,
-    "branch_pattern": "feat/{short-description}",
+    "branch_pattern": "feat/{ticket}",
     "commit_prefixes": ["test", "feat", "fix", "chore", "docs"],
     "main_branch": "main",
     "no_direct_commit_to_main": true

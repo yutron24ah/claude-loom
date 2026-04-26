@@ -40,4 +40,10 @@ done
 echo "=========================================="
 echo "Passed: $passed   Failed: $failed   Skipped: $skipped"
 echo "=========================================="
+
+if [ -n "$filter" ] && [ "$passed" -eq 0 ] && [ "$failed" -eq 0 ]; then
+  echo "WARNING: filter '$filter' matched no tests" >&2
+  exit 1
+fi
+
 [ "$failed" -eq 0 ]
