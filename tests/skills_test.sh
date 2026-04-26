@@ -16,6 +16,7 @@ fi
 failures=0
 
 for skill_dir in "$SKILLS_DIR"/loom-*/; do
+  skill_dir="${skill_dir%/}"
   skill_name=$(basename "$skill_dir")
   skill_md="$skill_dir/SKILL.md"
 

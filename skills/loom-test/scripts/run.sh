@@ -7,7 +7,7 @@
 
 set -uo pipefail
 
-# プロジェクトルート探索：cwd または親方向に SPEC.md + .claude-loom/project.json を持つディレクトリ
+# プロジェクトルート探索：cwd または親方向に SPEC.md + tests/run_tests.sh を持つディレクトリ
 find_project_root() {
   local dir="$PWD"
   while [ "$dir" != "/" ]; do
