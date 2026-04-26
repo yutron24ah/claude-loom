@@ -38,9 +38,9 @@ last_synced_at: 1777194000000
 
 詳細: `docs/superpowers/plans/2026-04-26-claude-loom-m0.5-skills.md`
 
-- [ ] SPEC §3.6.1 + §9.1 更新 <!-- id: m0.5-t1 status: todo -->
-- [ ] PLAN.md に M0.5 マイルストーン挿入 <!-- id: m0.5-t2 status: todo -->
-- [ ] tests/REQUIREMENTS.md に REQ-008..REQ-011 追加 <!-- id: m0.5-t3 status: todo -->
+- [x] SPEC §3.6.1 + §9.1 更新 <!-- id: m0.5-t1 status: done -->
+- [x] PLAN.md に M0.5 マイルストーン挿入 <!-- id: m0.5-t2 status: done -->
+- [x] tests/REQUIREMENTS.md に REQ-008..REQ-011 追加 <!-- id: m0.5-t3 status: done -->
 - [ ] tests/skills_test.sh（skill 構造 + frontmatter 検証） <!-- id: m0.5-t4 status: todo -->
 - [ ] skill: loom-test（SKILL.md + scripts/run.sh） <!-- id: m0.5-t5 status: todo -->
 - [ ] skill: loom-status（SKILL.md + scripts/status.sh） <!-- id: m0.5-t6 status: todo -->
