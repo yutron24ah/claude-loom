@@ -43,6 +43,17 @@ Claude Code を起動して：
 
 詳細は `CLAUDE.md` を参照。
 
+## 利用可能な skill（M0.5）
+
+`./install.sh` 実行で以下の skill が `~/.claude/skills/` に配置される：
+
+- **loom-test** — ハーネステスト一括実行 + 構造化サマリ（bundled bash script）
+- **loom-status** — repo + harness 状態スナップショット（bundled bash script）
+- **loom-tdd-cycle** — TDD 規律ガイド（loom-developer 中核ワークフロー）
+- **loom-review-trio** — 3 reviewer 並列 dispatch のプロンプトテンプレ
+
+bundled script はインストール後 `templates/settings.json.template` を参考に各プロジェクトの `.claude/settings.json` allowlist に追加することで、承認プロンプトなしで利用可能。
+
 ## ドキュメント
 
 - `SPEC.md` — 製品仕様（Single Source of Truth）

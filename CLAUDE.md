@@ -44,7 +44,7 @@ M0 で構築した harness（PM / Developer / Reviewer trio agent）を使って
 - agents/ : Claude Code subagent 定義
 - commands/ : slash command 定義
 - hooks/ : bash hook scripts (M1 以降)
-- skills/ : Claude Code skill (Phase 2 以降)
+- skills/ : Claude Code skill (M0.5 から有効)
 - templates/ : 新規 PJ 配布用テンプレ
 - tests/ : bash test harness
 - daemon/ : Node daemon (M1 以降)
