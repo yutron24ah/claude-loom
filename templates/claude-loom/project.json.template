@@ -1,0 +1,38 @@
+{
+  "$schema": "https://claude-loom.dev/schemas/project-v1.json",
+  "schema_version": 1,
+
+  "project_id": "PLACEHOLDER_UUID",
+  "name": "PLACEHOLDER_PROJECT_NAME",
+
+  "spec_path": "SPEC.md",
+  "plan_path": "PLAN.md",
+  "related_docs": [
+    "README.md",
+    "CLAUDE.md",
+    "docs/**/*.md"
+  ],
+
+  "methodology": "agile",
+
+  "pool": {
+    "max_developers": 3,
+    "max_code_reviewers": 1,
+    "max_security_reviewers": 1,
+    "max_test_reviewers": 1
+  },
+
+  "rules": {
+    "tdd_required": true,
+    "branch_pattern": "feat/{short-description}",
+    "commit_prefixes": ["test", "feat", "fix", "chore", "docs"],
+    "main_branch": "main",
+    "no_direct_commit_to_main": true
+  },
+
+  "consistency_engine": {
+    "trigger_mode": "manual",
+    "regex_screen_enabled": true,
+    "llm_analysis_enabled": true
+  }
+}
