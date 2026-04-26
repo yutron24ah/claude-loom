@@ -52,7 +52,7 @@ Claude Code を起動して：
 - **loom-tdd-cycle** — TDD 規律ガイド（loom-developer 中核ワークフロー）
 - **loom-review-trio** — 3 reviewer 並列 dispatch のプロンプトテンプレ
 
-bundled script はインストール後 `templates/settings.json.template` を参考に各プロジェクトの `.claude/settings.json` allowlist に追加することで、承認プロンプトなしで利用可能。
+bundled script はインストール後 `templates/settings.json.template` を参考に各プロジェクトの `.claude/settings.json` allowlist に追加することで、承認プロンプトなしで利用可能。`PLACEHOLDER_CLAUDE_LOOM_INSTALL_PATH` は claude-loom の clone 先パス（例 `/Users/you/work/claude-loom`）に手動で置換する（M1 以降は自動化予定）。
 
 ## ドキュメント
 

@@ -41,15 +41,15 @@ last_synced_at: 1777194000000
 - [x] SPEC §3.6.1 + §9.1 更新 <!-- id: m0.5-t1 status: done -->
 - [x] PLAN.md に M0.5 マイルストーン挿入 <!-- id: m0.5-t2 status: done -->
 - [x] tests/REQUIREMENTS.md に REQ-008..REQ-011 追加 <!-- id: m0.5-t3 status: done -->
-- [ ] tests/skills_test.sh（skill 構造 + frontmatter 検証） <!-- id: m0.5-t4 status: todo -->
-- [ ] skill: loom-test（SKILL.md + scripts/run.sh） <!-- id: m0.5-t5 status: todo -->
-- [ ] skill: loom-status（SKILL.md + scripts/status.sh） <!-- id: m0.5-t6 status: todo -->
-- [ ] skill: loom-tdd-cycle（prompt augmentation） <!-- id: m0.5-t7 status: todo -->
-- [ ] skill: loom-review-trio（prompt augmentation） <!-- id: m0.5-t8 status: todo -->
-- [ ] install.sh 拡張（skills symlink + settings template） <!-- id: m0.5-t9 status: todo -->
-- [ ] install_test.sh で REQ-008/009 カバー <!-- id: m0.5-t10 status: todo -->
-- [ ] templates/settings.json.template 作成 <!-- id: m0.5-t11 status: todo -->
-- [ ] README.md + CLAUDE.md に skills 言及追加 <!-- id: m0.5-t12 status: todo -->
+- [x] tests/skills_test.sh（skill 構造 + frontmatter 検証） <!-- id: m0.5-t4 status: done -->
+- [x] skill: loom-test（SKILL.md + scripts/run.sh） <!-- id: m0.5-t5 status: done -->
+- [x] skill: loom-status（SKILL.md + scripts/status.sh） <!-- id: m0.5-t6 status: done -->
+- [x] skill: loom-tdd-cycle（prompt augmentation） <!-- id: m0.5-t7 status: done -->
+- [x] skill: loom-review-trio（prompt augmentation） <!-- id: m0.5-t8 status: done -->
+- [x] install.sh 拡張（skills symlink + settings template） <!-- id: m0.5-t9 status: done -->
+- [x] install_test.sh で REQ-008/009 カバー <!-- id: m0.5-t10 status: done -->
+- [x] templates/settings.json.template 作成 <!-- id: m0.5-t11 status: done -->
+- [x] README.md + CLAUDE.md に skills 言及追加 <!-- id: m0.5-t12 status: done -->
 - [ ] スモークテスト + tag m0.5-complete <!-- id: m0.5-t13 status: todo -->
 
 **M0.5 完成基準**：`./install.sh` 実行で `~/.claude/skills/loom-{test,status,tdd-cycle,review-trio}/` が symlink として配置 + 4 つの skill が Claude Code セッション内で名前検出可能 + `templates/settings.json.template` の中身を新規 PJ にコピーすると bundled script が承認なしで実行可能。
