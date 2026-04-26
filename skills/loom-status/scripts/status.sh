@@ -36,15 +36,15 @@ echo "## last 5 commits"
 git log --oneline -5 2>/dev/null || true
 echo ""
 echo "## installed agents (~/.claude/agents/loom-*.md)"
-agents_list=$(find "${CLAUDE_HOME:-$HOME/.claude}/agents" -maxdepth 1 -type f -name "loom-*.md" 2>/dev/null | sed 's|.*/||' || true)
+agents_list=$(find "${CLAUDE_HOME:-$HOME/.claude}/agents" -maxdepth 1 -type l -name "loom-*.md" 2>/dev/null | sed 's|.*/||' || true)
 echo "${agents_list:-(none)}"
 echo ""
 echo "## installed commands (~/.claude/commands/loom-*.md)"
-commands_list=$(find "${CLAUDE_HOME:-$HOME/.claude}/commands" -maxdepth 1 -type f -name "loom-*.md" 2>/dev/null | sed 's|.*/||' || true)
+commands_list=$(find "${CLAUDE_HOME:-$HOME/.claude}/commands" -maxdepth 1 -type l -name "loom-*.md" 2>/dev/null | sed 's|.*/||' || true)
 echo "${commands_list:-(none)}"
 echo ""
 echo "## installed skills (~/.claude/skills/loom-*/)"
-skills_list=$(find "${CLAUDE_HOME:-$HOME/.claude}/skills" -mindepth 1 -maxdepth 1 -type d -name "loom-*" 2>/dev/null | sed 's|.*/||' || true)
+skills_list=$(find "${CLAUDE_HOME:-$HOME/.claude}/skills" -mindepth 1 -maxdepth 1 -type l -name "loom-*" 2>/dev/null | sed 's|.*/||' || true)
 echo "${skills_list:-(none)}"
 echo ""
 echo "## working tree"

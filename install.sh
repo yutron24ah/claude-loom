@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# install.sh — claude-loom M0 minimal installer
+# install.sh — claude-loom harness installer
 #
 # 役割：agents/ / commands/ のファイル + skills/ のディレクトリを ~/.claude/<type>/ にシンボリックリンク
 # M1 以降で daemon ビルド配置 + settings.json 書き換えを追加予定
@@ -97,7 +97,7 @@ install_dir_links() {
   shopt -u nullglob
 }
 
-echo "Installing claude-loom M0 harness..."
+echo "Installing claude-loom harness..."
 echo "  CLAUDE_HOME = $CLAUDE_HOME"
 echo "  ROOT_DIR    = $ROOT_DIR"
 echo ""

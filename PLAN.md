@@ -50,7 +50,7 @@ last_synced_at: 1777194000000
 - [x] install_test.sh で REQ-008/009 カバー <!-- id: m0.5-t10 status: done -->
 - [x] templates/settings.json.template 作成 <!-- id: m0.5-t11 status: done -->
 - [x] README.md + CLAUDE.md に skills 言及追加 <!-- id: m0.5-t12 status: done -->
-- [ ] スモークテスト + tag m0.5-complete <!-- id: m0.5-t13 status: todo -->
+- [x] スモークテスト + tag m0.5-complete <!-- id: m0.5-t13 status: done -->
 
 **M0.5 完成基準**：`./install.sh` 実行で `~/.claude/skills/loom-{test,status,tdd-cycle,review-trio}/` が symlink として配置 + 4 つの skill が Claude Code セッション内で名前検出可能 + `templates/settings.json.template` の中身を新規 PJ にコピーすると bundled script が承認なしで実行可能。
 
