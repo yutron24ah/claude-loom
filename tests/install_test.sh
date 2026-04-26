@@ -25,11 +25,15 @@ bash "$ROOT_DIR/install.sh"
 if ! find "$CLAUDE_HOME/agents" -name "loom-*.md" -type l | grep -q .; then
   echo "FAIL: REQ-001: ~/.claude/agents/loom-*.md symlink が見つからない"
   exit 1
+else
+  echo "PASS: REQ-001: agents symlinks present"
 fi
 
 if ! find "$CLAUDE_HOME/commands" -name "loom-*.md" -type l | grep -q .; then
   echo "FAIL: REQ-002: ~/.claude/commands/loom-*.md symlink が見つからない"
   exit 1
+else
+  echo "PASS: REQ-002: commands symlinks present"
 fi
 
 # ----- REQ-003: idempotent -----
@@ -49,6 +53,8 @@ if [ -n "$some_link" ]; then
     exit 1
   fi
   echo "PASS: REQ-004: 通常ファイル衝突を検出してエラー終了"
+else
+  echo "SKIP: REQ-004: agents/loom-*.md が存在しないため衝突テストを実行できず（Tasks 7-11 完了後に有効化）"
 fi
 
 echo "All install_test checks passed"

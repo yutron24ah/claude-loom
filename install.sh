@@ -7,6 +7,10 @@
 set -euo pipefail
 
 # テスト用に CLAUDE_HOME を上書き可能
+if [ -z "${HOME:-}" ] && [ -z "${CLAUDE_HOME:-}" ]; then
+  echo "ERROR: neither \$CLAUDE_HOME nor \$HOME is set; refusing to install to /.claude" >&2
+  exit 1
+fi
 CLAUDE_HOME="${CLAUDE_HOME:-$HOME/.claude}"
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
@@ -33,11 +37,13 @@ install_links() {
     local dest="$dest_dir/$fname"
 
     if [ -e "$dest" ] && [ ! -L "$dest" ]; then
-      echo "ERROR: $dest exists as a regular file. Resolve manually before re-running install.sh" >&2
+      shopt -u nullglob
+      echo "ERROR: $dest exists as a regular file (not a symlink). Remove or rename it, then re-run install.sh." >&2
       exit 1
     fi
 
     if [ -L "$dest" ]; then
+      echo "  replacing existing symlink: $dest"
       rm "$dest"
     fi
 
