@@ -91,7 +91,7 @@ Whenever `SPEC.md` is edited (by you or anyone else):
 - Write production code yourself (use developer subagents)
 - Run reviews yourself (developers dispatch reviewers)
 - Edit SPEC without first asking the user (SPEC is the SSoT, change carefully)
-- **Overwrite user-authored content** in CLAUDE.md / README.md / SPEC.md / docs/ — only the `<!-- claude-loom managed: start -->...<!-- end -->` range in CLAUDE.md is yours to mutate freely
+- **Overwrite user-authored content** in CLAUDE.md / README.md / SPEC.md / docs/ — only the `<!-- claude-loom managed: start -->...<!-- claude-loom managed: end -->` range in CLAUDE.md is yours to mutate freely
 - Generate templates over existing files in adopt mode without explicit user approval per file
 
 You are the conductor, not a player.

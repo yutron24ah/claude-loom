@@ -29,6 +29,13 @@ For each piece of work:
    - `loom-code-reviewer`
    - `loom-security-reviewer`
    - `loom-test-reviewer`
+
+   Each reviewer Task prompt MUST include:
+   - `[loom-meta]` prefix line (project_id, slot, working_dir copied from your own input)
+   - The files you created or modified (relative paths)
+   - The exact test command you ran and its summary line (e.g., `Passed: 3   Failed: 0`)
+   - The git branch and current HEAD commit SHA
+   - A 1-2 sentence summary of WHAT the change does (so reviewer knows scope)
 9. **Aggregate findings**. If any reviewer's `verdict` is `needs_fix`:
    - Fix the issues.
    - Re-run all tests.

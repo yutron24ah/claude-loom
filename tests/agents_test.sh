@@ -8,11 +8,6 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 AGENTS_DIR="$ROOT_DIR/agents"
 
-if ! command -v jq >/dev/null 2>&1; then
-  echo "SKIP: jq not installed, agents_test requires jq for YAML→JSON parsing"
-  exit 0
-fi
-
 if [ ! -d "$AGENTS_DIR" ] || [ -z "$(find "$AGENTS_DIR" -name "loom-*.md" 2>/dev/null)" ]; then
   echo "FAIL: agents/loom-*.md ファイルが存在しない"
   exit 1
@@ -32,9 +27,16 @@ for agent_file in "$AGENTS_DIR"/loom-*.md; do
     continue
   fi
 
-  # YAML → 簡易 JSON 化（key: value のみサポート、簡易）
-  name_field=$(echo "$frontmatter" | grep -E "^name:" | sed 's/^name:[[:space:]]*//' | tr -d '"' | tr -d "'")
-  desc_field=$(echo "$frontmatter" | grep -E "^description:" | sed 's/^description:[[:space:]]*//' | tr -d '"' | tr -d "'")
+  closer_count=$(grep -c "^---$" "$agent_file" 2>/dev/null || true)
+  if [ -z "$closer_count" ] || [ "$closer_count" -lt 2 ]; then
+    echo "FAIL [$fname]: frontmatter not closed (expected 2 '---' delimiters, found $closer_count)"
+    failures=$((failures + 1))
+    continue
+  fi
+
+  # YAML key/value 抽出（key: value 形式のみ対応、簡易パース）
+  name_field=$(echo "$frontmatter" | grep -E "^name:" | sed 's/^name:[[:space:]]*//' | tr -d '"' | tr -d "'" || true)
+  desc_field=$(echo "$frontmatter" | grep -E "^description:" | sed 's/^description:[[:space:]]*//' | tr -d '"' | tr -d "'" || true)
 
   if [ -z "$name_field" ]; then
     echo "FAIL [$fname]: REQ-005 violation: name field 必須"
