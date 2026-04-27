@@ -55,6 +55,16 @@ Claude Code を起動して：
 
 bundled script はインストール後 `templates/settings.json.template` を参考に各プロジェクトの `.claude/settings.json` allowlist に追加することで、承認プロンプトなしで利用可能。`PLACEHOLDER_CLAUDE_LOOM_INSTALL_PATH` は claude-loom の clone 先パス（例 `/Users/you/work/claude-loom`）に手動で置換する（M1 以降は自動化予定）。
 
+## 開発規約
+
+claude-loom は **Conventional Commits + GitHub Flow** を採用：
+
+- **コミット**: `<type>(<optional scope>): <subject>`、type 11 種（`feat` / `fix` / `docs` / `style` / `refactor` / `perf` / `test` / `build` / `ci` / `chore` / `revert`）、atomic commit 原則
+- **ブランチ**: `<type>/<short-kebab-name>`、main 直 commit 禁止、短命 feature ブランチ + PR 経由
+- **言語**: `.claude-loom/project.json` の `rules.commit_language` で project ごとに英語/日本語/自由を選択（default `"any"`）
+
+詳細ルール + good/bad 例は **`docs/COMMIT_GUIDE.md`** を参照。
+
 ## ドキュメント
 
 - `SPEC.md` — 製品仕様（Single Source of Truth）
