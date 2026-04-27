@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(./tests/run_tests.sh *)",
+      "Bash(bash -n *)",
+      "Bash(PLACEHOLDER_CLAUDE_LOOM_INSTALL_PATH/skills/loom-test/scripts/run.sh)",
+      "Bash(PLACEHOLDER_CLAUDE_LOOM_INSTALL_PATH/skills/loom-test/scripts/run.sh *)",
+      "Bash(PLACEHOLDER_CLAUDE_LOOM_INSTALL_PATH/skills/loom-status/scripts/status.sh)"
+    ]
+  }
+}

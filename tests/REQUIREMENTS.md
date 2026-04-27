@@ -13,4 +13,11 @@
 - **REQ-006**: 各 `commands/*.md` ファイルが valid な YAML frontmatter を持つ（description フィールド必須）
 - **REQ-007**: 全 agent 定義の name フィールドが「loom-」プレフィックスで始まる
 
+## M0.5: Approval-Reduction Skills
+
+- **REQ-008**: `install.sh` 実行で `~/.claude/skills/loom-*/` のディレクトリシンボリックリンクが設置される
+- **REQ-009**: `~/.claude/skills/loom-*/` が通常ディレクトリ（symlink でない実体）として既存の場合、`install.sh` はエラー終了する
+- **REQ-010**: 各 `skills/loom-*/SKILL.md` ファイルが valid な YAML frontmatter を持つ（name / description フィールド必須）
+- **REQ-011**: 全 skill 定義の name フィールドが「loom-」プレフィックスで始まる
+
 ## M1 以降は別 PR で追記
