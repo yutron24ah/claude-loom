@@ -672,8 +672,10 @@ last_synced_at: 1777200000000
 
   "rules": {
     "tdd_required": true,
-    "branch_pattern": "feat/{ticket}",
-    "commit_prefixes": ["test", "feat", "fix", "chore", "docs"],
+    "branch_pattern": "<type>/{short-kebab-name}",
+    "branch_types": ["feat", "fix", "docs", "style", "refactor", "perf", "test", "build", "ci", "chore"],
+    "commit_prefixes": ["feat", "fix", "docs", "style", "refactor", "perf", "test", "build", "ci", "chore", "revert"],
+    "commit_language": "any",
     "main_branch": "main",
     "no_direct_commit_to_main": true,
     "review_mode": "single"
@@ -698,7 +700,10 @@ last_synced_at: 1777200000000
 | `methodology` | — | `agile` | Phase 1 は agile 固定 |
 | `pool.*` | — | 3/1/1/1 | プール上限 |
 | `rules.*` | — | (上記) | チームルール |
+| `rules.commit_prefixes` | — | 11 種（CC type 全部） | コミット prefix の有効値（`feat`/`fix`/`docs`/`style`/`refactor`/`perf`/`test`/`build`/`ci`/`chore`/`revert`） |
 | `rules.review_mode` | — | `"single"` | `"single"` (default、loom-reviewer 1 体) or `"trio"` (loom-{code,security,test}-reviewer 並列 3 体) |
+| `rules.branch_types` | — | 10 種（CC type 準拠、`revert` 除く） | branch 名 prefix の有効値リスト |
+| `rules.commit_language` | — | `"any"` | コミット件名/本文の言語ポリシー：`"any"` / `"english"` / `"japanese"` |
 | `consistency_engine.*` | — | (上記) | エンジン挙動 |
 
 ### 6.10 `~/.claude-loom/config.json` スキーマ（方針サマリ）
@@ -1067,3 +1072,4 @@ uninstall.sh の流れ:
 - 2026-04-27: §6.9 project.json schema に rules.review_mode フィールド追加（M0.6）
 - 2026-04-27: §2.2 ロール数 4→6 / §4.2.4 trio mode 条件付き発火 + 独立 JSON 明記 / §9.1 skills tree に loom-review/ 追加 / §4.3・§6.2・§6.9 に max_reviewers (single mode pool) 追加（M0.6 review 後 fix）
 - 2026-04-27: §3.8 追加（CC + GitHub Flow 採用宣言、commit/branch 規約サマリ、commit_language ポリシー、M0.7）
+- 2026-04-27: §6.9 commit_prefixes 11 種拡張 + branch_types / commit_language フィールド追加（M0.7）
