@@ -5,22 +5,22 @@
 ## 開発フロー
 
 このリポジトリは **dogfood 方式** で開発する：
-M0 で構築した harness（PM / Developer / Reviewer trio agent）を使って、M1 以降の自分自身の実装を進める。
+M0 + M0.5 + M0.6 で構築した harness（PM / Developer / Reviewer agent — single mode default、trio mode opt-in）を使って、M1 以降の自分自身の実装を進める。
 
 ### 通常の作業フロー
 
 1. `/loom-pm` で PM mode に入る（この session が PM になる）
 2. `/loom-spec` で SPEC を読み込み、当該タスクの詳細を user と確認
 3. `/loom-go` で実装フェーズ起動 → PM が Task tool で developer subagent を dispatch
-4. developer は TDD で実装 → review trio に並列レビュー dispatch
-5. レビュー全 pass → commit
+4. developer は TDD で実装 → reviewer dispatch（review_mode 判定：default `single` で 1 体、opt-in `trio` で 3 体並列）
+5. 全 reviewer verdict pass → commit
 6. PM が PLAN.md を更新
 
 ## ブランチ規約
 
 - `main` への直 commit 禁止
 - 1 要件 = 1 ブランチ。命名 `feat/<short-description>` `fix/<short-description>` `chore/<short-description>`
-- ブランチ単位で PR を上げる前に：全テスト pass + 3 レビュー pass
+- ブランチ単位で PR を上げる前に：全テスト pass + 全 reviewer verdict pass（single mode = 1 verdict、trio mode = 3 verdicts）
 
 ## コミット粒度
 
@@ -41,7 +41,7 @@ M0 で構築した harness（PM / Developer / Reviewer trio agent）を使って
 
 ## ファイル配置規約
 
-- agents/ : Claude Code subagent 定義
+- agents/ : Claude Code subagent 定義（loom-pm / loom-developer / loom-reviewer (single mode default) / loom-{code,security,test}-reviewer (trio mode opt-in)）
 - commands/ : slash command 定義
 - hooks/ : bash hook scripts (M1 以降)
 - skills/ : Claude Code skill (M0.5 から有効)

@@ -18,6 +18,7 @@
 
   "pool": {
     "max_developers": 3,
+    "max_reviewers": 1,
     "max_code_reviewers": 1,
     "max_security_reviewers": 1,
     "max_test_reviewers": 1
@@ -28,7 +29,8 @@
     "branch_pattern": "feat/{ticket}",
     "commit_prefixes": ["test", "feat", "fix", "chore", "docs"],
     "main_branch": "main",
-    "no_direct_commit_to_main": true
+    "no_direct_commit_to_main": true,
+    "review_mode": "single"
   },
 
   "consistency_engine": {

@@ -1,11 +1,19 @@
 ---
 name: loom-review-trio
-description: Dispatch three review subagents (code / security / test) in parallel for any claude-loom feature or fix before commit. Use when ready to submit work for review — provides the canonical Task prompt template that aligns with loom-{code,security,test}-reviewer agents.
+description: Dispatch three review subagents (code / security / test) in parallel for any claude-loom feature or fix before commit (opt-in deep review mode). Use when ready to submit work and review_mode is "trio" — for critical path, large refactors, or high-stakes changes where independent perspectives reduce echo chamber risk. Default mode is single (loom-review skill).
 ---
 
 # loom-review-trio
 
-`loom-developer` が実装完了後、3 reviewer に並列 dispatch するためのプロンプトテンプレと運用ルール。`loom-tdd-cycle` skill の Step 6 と対になる。
+`loom-developer` が実装完了後、**trio mode（opt-in）** の review として 3 reviewer に並列 dispatch するためのプロンプトテンプレと運用ルール。`loom-tdd-cycle` skill の Step 6 と対になる、`loom-review` skill（default single mode）の対概念。
+
+## いつ使うか
+
+- `[loom-meta]` prefix に `review_mode=trio` 指定
+- project.json の `rules.review_mode` が `"trio"`（critical path 中心の設定）
+- 大規模 refactor / セキュリティ critical path / SPEC 大改訂 など、独立 3 視点の echo chamber 抑制効果が必要なケース
+
+通常 task は `loom-review`（single mode、default）を使う。
 
 ## Dispatch — 3 Task calls in 1 message
 
@@ -14,7 +22,7 @@ description: Dispatch three review subagents (code / security / test) in paralle
 ### Reviewer prompt template (each of 3 reviewers gets this structure)
 
 ```
-[loom-meta] project_id=<from project.json> slot=<reviewer-slot> working_dir=<absolute path>
+[loom-meta] project_id=<from project.json> slot=<reviewer-slot> working_dir=<absolute path> review_mode=trio
 
 ## What was implemented
 <1-2 sentences describing the change>
@@ -54,6 +62,6 @@ diff: git diff <BASE>..HEAD
 
 ## いつ activate されるか
 
-- `loom-tdd-cycle` の Step 6 で必ず
-- 大きめの変更で reviewer のサブセットだけ呼びたい時（例：doc only 変更で security/test を skip）も、デフォルトは 3 並列
-- M1 以降で developer 以外の orchestrator（例：PM 直 review）が呼ぶ場合も同テンプレ
+- `loom-tdd-cycle` の Step 6 で `review_mode == "trio"` の時（default の single mode は `loom-review` skill 側）
+- 大きめの変更で trio mode を opt-in したケース：critical path / 大規模 refactor / SPEC 大改訂など
+- M1 以降で developer 以外の orchestrator（例：PM 直 review）が trio を要求する場合も同テンプレ
