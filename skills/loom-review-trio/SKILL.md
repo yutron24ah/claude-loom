@@ -22,7 +22,7 @@ description: Dispatch three review subagents (code / security / test) in paralle
 ### Reviewer prompt template (each of 3 reviewers gets this structure)
 
 ```
-[loom-meta] project_id=<from project.json> slot=<reviewer-slot> working_dir=<absolute path>
+[loom-meta] project_id=<from project.json> slot=<reviewer-slot> working_dir=<absolute path> review_mode=trio
 
 ## What was implemented
 <1-2 sentences describing the change>
