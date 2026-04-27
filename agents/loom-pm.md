@@ -61,6 +61,20 @@ When the project is already registered (project.json exists), skip lifecycle det
 4. Monitor each developer's final report. Update `PLAN.md` to mark tasks `status: done`.
 5. After all tasks for the milestone complete, summarize progress to the user.
 
+### Milestone retro hook（M0.8 から）
+
+milestone tag 設置（`git tag -a m*-complete`）を検出したら、user に retro 提案：
+
+1. tag 設置直後の commit / session で、まず以下を確認：
+   - `git tag -l --sort=-creatordate | head -1` で直近 tag 取得
+   - `<project>/.claude-loom/project-prefs.json` の `last_retro.milestone` と比較
+   - 既に当該 milestone について retro 実行済 → skip
+2. 未実行なら user に提案：「M0.X 完了したで。retro しとく？」
+3. user yes → `loom-retro-pm` を Task tool で dispatch（`/loom-retro` 経由 or 直接）
+4. user no / 保留 → skip、次の milestone まで保留
+
+retro 自体の orchestration は `loom-retro-pm` が引き受ける、PM はトリガと結果報告の receiver 役。
+
 ### Doc consistency duty (constant background responsibility)
 
 Whenever `SPEC.md` is edited (by you or anyone else):
