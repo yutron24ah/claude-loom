@@ -75,16 +75,16 @@ last_synced_at: 1777194000000
 
 詳細: `docs/plans/2026-04-27-claude-loom-m0.7-conventions.md`
 
-- [ ] SPEC §3.8 追加（CC + GitHub Flow 採用宣言） <!-- id: m0.7-t1 status: todo -->
-- [ ] SPEC §6.9 schema 拡張（commit_prefixes 11 / branch_types / commit_language） <!-- id: m0.7-t2 status: todo -->
-- [ ] PLAN.md M0.7 マイルストーン挿入 <!-- id: m0.7-t3 status: todo -->
-- [ ] docs/COMMIT_GUIDE.md 新設 <!-- id: m0.7-t4 status: todo -->
-- [ ] tests/REQUIREMENTS.md REQ-012/013/014 追加 <!-- id: m0.7-t5 status: todo -->
-- [ ] tests/conventions_test.sh 新設 <!-- id: m0.7-t6 status: todo -->
-- [ ] templates/claude-loom/project.json.template 拡張 <!-- id: m0.7-t7 status: todo -->
-- [ ] CLAUDE.md + templates/CLAUDE.md.template 詳細化 <!-- id: m0.7-t8 status: todo -->
-- [ ] README.md にコミット/ブランチ規約セクション追加 <!-- id: m0.7-t9 status: todo -->
-- [ ] スモークテスト + tag m0.7-complete <!-- id: m0.7-t10 status: todo -->
+- [x] SPEC §3.8 追加（CC + GitHub Flow 採用宣言） <!-- id: m0.7-t1 status: done -->
+- [x] SPEC §6.9 schema 拡張（commit_prefixes 11 / branch_types / commit_language） <!-- id: m0.7-t2 status: done -->
+- [x] PLAN.md M0.7 マイルストーン挿入 <!-- id: m0.7-t3 status: done -->
+- [x] docs/COMMIT_GUIDE.md 新設 <!-- id: m0.7-t4 status: done -->
+- [x] tests/REQUIREMENTS.md REQ-012/013/014 追加 <!-- id: m0.7-t5 status: done -->
+- [x] tests/conventions_test.sh 新設 <!-- id: m0.7-t6 status: done -->
+- [x] templates/claude-loom/project.json.template 拡張 <!-- id: m0.7-t7 status: done -->
+- [x] CLAUDE.md + templates/CLAUDE.md.template 詳細化 <!-- id: m0.7-t8 status: done -->
+- [x] README.md にコミット/ブランチ規約セクション追加 <!-- id: m0.7-t9 status: done -->
+- [x] スモークテスト + tag m0.7-complete <!-- id: m0.7-t10 status: done -->
 
 **M0.7 完成基準**：`./tests/run_tests.sh` で 5 PASS / 0 FAIL（既存 4 + conventions）、`docs/COMMIT_GUIDE.md` が CC 11 types + GitHub Flow 詳細を網羅、`templates/claude-loom/project.json.template` が `commit_prefixes`（11 種）/ `branch_types`（10 種）/ `commit_language`（`"any"`）を含み jq empty で valid、`tag m0.7-complete` 設置。
 
