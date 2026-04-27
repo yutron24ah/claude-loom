@@ -88,6 +88,34 @@ last_synced_at: 1777194000000
 
 **M0.7 完成基準**：`./tests/run_tests.sh` で 5 PASS / 0 FAIL（既存 4 + conventions）、`docs/COMMIT_GUIDE.md` が CC 11 types + GitHub Flow 詳細を網羅、`templates/claude-loom/project.json.template` が `commit_prefixes`（11 種）/ `branch_types`（10 種）/ `commit_language`（`"any"`）を含み jq empty で valid、`tag m0.7-complete` 設置。
 
+## マイルストーン M0.8: Retro Architecture（賢くなる開発室の中核）
+
+詳細: `docs/plans/2026-04-27-claude-loom-m0.8-retro.md`
+設計 SSoT: `docs/plans/specs/2026-04-27-retro-design.md`
+
+- [ ] SPEC §3.9 retro adoption section 追加 <!-- id: m0.8-t1 status: todo -->
+- [ ] SPEC §6.9.1/.2/.3 prefs schemas + merge rule 追加 <!-- id: m0.8-t2 status: todo -->
+- [ ] PLAN.md M0.8 マイルストーン挿入 <!-- id: m0.8-t3 status: todo -->
+- [ ] tests/REQUIREMENTS.md REQ-015..018 追加 <!-- id: m0.8-t4 status: todo -->
+- [ ] docs/RETRO_GUIDE.md 新設 + docs/retro/.gitkeep <!-- id: m0.8-t5 status: todo -->
+- [ ] tests/retro_test.sh 新設（TDD red） <!-- id: m0.8-t6 status: todo -->
+- [ ] templates/user-prefs.json.template 新設 <!-- id: m0.8-t7 status: todo -->
+- [ ] templates/project-prefs.json.template 新設 <!-- id: m0.8-t8 status: todo -->
+- [ ] agents/loom-retro-pm.md 新設 <!-- id: m0.8-t9 status: todo -->
+- [ ] agents/loom-retro-pj-judge.md 新設 <!-- id: m0.8-t10 status: todo -->
+- [ ] agents/loom-retro-process-judge.md 新設 <!-- id: m0.8-t11 status: todo -->
+- [ ] agents/loom-retro-meta-judge.md 新設 <!-- id: m0.8-t12 status: todo -->
+- [ ] agents/loom-retro-counter-arguer.md 新設 <!-- id: m0.8-t13 status: todo -->
+- [ ] agents/loom-retro-aggregator.md 新設 <!-- id: m0.8-t14 status: todo -->
+- [ ] agents/loom-retro-researcher.md 新設 <!-- id: m0.8-t15 status: todo -->
+- [ ] skills/loom-retro/SKILL.md 新設 <!-- id: m0.8-t16 status: todo -->
+- [ ] commands/loom-retro.md 新設 <!-- id: m0.8-t17 status: todo -->
+- [ ] agents/loom-pm.md milestone hook 追記 <!-- id: m0.8-t18 status: todo -->
+- [ ] README.md + CLAUDE.md + templates/CLAUDE.md.template 更新 <!-- id: m0.8-t19 status: todo -->
+- [ ] スモークテスト + tag m0.8-complete <!-- id: m0.8-t20 status: todo -->
+
+**M0.8 完成基準**：`./tests/run_tests.sh` で 6 PASS（既存 5 + retro 1）、`/loom-retro` 起動 → 4 lens 並列 → counter-argument → aggregator が会話 mode で findings 提示までが手元で動く。`/loom-retro --report` で archive markdown のみ生成も動く。`tag m0.8-complete` 設置、`m0`〜`m0.7-complete` 全保持。
+
 ## マイルストーン M1: Daemon + Hooks Foundation
 
 詳細: 未作成（M0 完了後 writing-plans で詳細化）
