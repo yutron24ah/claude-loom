@@ -32,17 +32,17 @@ claude-loom の開発者が **どんな小さな変更でも** 守る TDD ルー
 - コードが汚いと感じたら整える
 - リファクタ毎にテストを再実行
 
-### 6. Review (dispatch the trio)
-完了報告の前に **必ず** 3 reviewer に並列 dispatch：
-- `loom-code-reviewer`
-- `loom-security-reviewer`
-- `loom-test-reviewer`
+### 6. Review (dispatch reviewer per review_mode)
+完了報告の前に **必ず** review_mode を判定して reviewer を dispatch：
 
-3 reviewer の prompt 内容は `loom-review-trio` skill を参照（または `agents/loom-developer.md` の Step 8）。
+- review_mode = `"single"`（default）→ `loom-reviewer` を **1 体** dispatch（順次 3 観点を回し、進捗テキスト出力）。詳細は `loom-review` skill 参照
+- review_mode = `"trio"`（opt-in、critical path）→ `loom-{code,security,test}-reviewer` を **3 体並列** dispatch。詳細は `loom-review-trio` skill 参照
+
+review_mode 判定順序: `[loom-meta]` prefix → `.claude-loom/project.json` の `rules.review_mode` → default `"single"`（詳細は `agents/loom-developer.md` Step 8）。
 
 ### 7. Aggregate findings
-- いずれかの reviewer が `verdict: needs_fix` → fix → step 6 に戻って再 dispatch
-- 全 reviewer が `verdict: pass` → step 8 へ
+- いずれかの reviewer が `verdict: needs_fix` → fix → step 6 に戻って再 dispatch（同じ mode で）
+- 全 reviewer verdict が `pass` → step 8 へ
 
 ### 8. Commit
 - プロジェクトの commit prefix 規約（`CLAUDE.md`）に従う
@@ -55,13 +55,13 @@ claude-loom の開発者が **どんな小さな変更でも** 守る TDD ルー
 
 - **失敗する test なしの実装は禁止**（"後でテスト追加" は永久に来ない）
 - **test 失敗のままコミット禁止**
-- **3 review 通過なしのコミット禁止**
+- **review pass なしのコミット禁止**（single mode = 1 verdict、trio mode = 3 verdicts、いずれも全て pass が条件）
 - **新しい test ファイルを増やすときも TDD**：test ファイルが増える時はその test ファイル自体の構造をまず壊して、その上で実装に取りかかる
 - **詰まったら止まる**：5 分以上同じエラーを直せないなら PM/orchestrator に質問する
 
 ## なぜこれが必要か
 
-レビュー trio が安全網。一人の判断ミスを 3 視点（code quality / security / test quality）で網羅し、人間の review コストを後段に回せる。TDD でテストが先にあると、refactor が安全になる + 仕様の理解が固まる。
+Reviewer（single mode default = 1 体多観点、trio mode opt-in = 3 体独立並列）が安全網。code quality / security / test quality の 3 視点を順次 or 並列で網羅し、人間の review コストを後段に回せる。TDD でテストが先にあると、refactor が安全になる + 仕様の理解が固まる。
 
 ## いつ activate されるか
 

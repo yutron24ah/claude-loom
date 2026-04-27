@@ -62,6 +62,6 @@ diff: git diff <BASE>..HEAD
 
 ## いつ activate されるか
 
-- `loom-tdd-cycle` の Step 6 で必ず
-- 大きめの変更で reviewer のサブセットだけ呼びたい時（例：doc only 変更で security/test を skip）も、デフォルトは 3 並列
-- M1 以降で developer 以外の orchestrator（例：PM 直 review）が呼ぶ場合も同テンプレ
+- `loom-tdd-cycle` の Step 6 で `review_mode == "trio"` の時（default の single mode は `loom-review` skill 側）
+- 大きめの変更で trio mode を opt-in したケース：critical path / 大規模 refactor / SPEC 大改訂など
+- M1 以降で developer 以外の orchestrator（例：PM 直 review）が trio を要求する場合も同テンプレ
