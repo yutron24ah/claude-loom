@@ -292,6 +292,56 @@ claude-loom は **Conventional Commits**（[conventionalcommits.org](https://www
 
 claude-loom 自身は `"any"`（既存 commit が日英混在のため）。
 
+### 3.9 Retro 機能（M0.8 から有効）
+
+claude-loom は **retro 機能** をハーネスの中核に組み込む。詳細設計は `docs/plans/specs/2026-04-27-retro-design.md`、運用 SSoT は `docs/RETRO_GUIDE.md`。
+
+#### 3.9.1 retro の役割
+
+PJ 軸（製品）+ Process 軸（仕事の進め方）+ 外部研究 + 自己最適化（meta）の 4 観点で振り返り → archive markdown + 会話で user に提示 → 承認された改善を user-prefs / project-prefs / SPEC / 各種ファイルに反映。「user × claude × project の組み合わせごとに動的最適化される開発室」を実現する。
+
+#### 3.9.2 4 lens 構成
+
+| lens | 観点 | データ source |
+|---|---|---|
+| `pj-axis` | SPEC drift / feature gap / UX 摩擦 | SPEC / PLAN / README / git log / agent definitions |
+| `process-axis` | TDD / review / commit 粒度 / blocker | session transcripts / git log / reviewer JSON |
+| `researcher` | plugin / Claude latest / UX best practice | WebSearch / context7 / WebFetch（reactive + light proactive） |
+| `meta-axis` | auto-apply 拡張提案 / lens 削除提案 / risk threshold 提案 | 過去 retro outputs / user-prefs.json / approval 履歴 |
+
+#### 3.9.3 3-stage protocol
+
+1. **Parallel critique**: 4 lens 並列 dispatch
+2. **Counter-argument pass**: `loom-retro-counter-arguer` が全 findings を反証検査
+3. **Aggregator**: confirmed findings 統合 → archive markdown 生成 → user 提示
+
+#### 3.9.4 Trigger
+
+- 手動: `/loom-retro [--report]` で任意の起動
+- Milestone hook: tag 設置後、PM agent が「retro しとく？」と user に提案
+
+#### 3.9.5 Mode
+
+- 会話駆動 mode（default）: PM agent が finding 1 件ずつ提示、user が口頭返答
+- report mode（`--report` flag）: archive markdown のみ生成して exit
+
+#### 3.9.6 State 管理
+
+3 ファイル分離（責務独立）：
+- `<project>/.claude-loom/project.json` — human spec、retro は読むだけ
+- `<project>/.claude-loom/project-prefs.json` — retro auto-update（PJ 学習状態）
+- `~/.claude-loom/user-prefs.json` — retro auto-update（user 横断学習）
+
+merge 規則: project が user を field 単位 override（PJ 固有 policy が user グローバル設定を上書き）。schema 詳細は §6.9.1 / §6.9.2。
+
+#### 3.9.7 Auto-apply mechanism
+
+各 finding は `category` + `risk` + `auto_applicable_eligible` を持つ。`safety guardrail`（`auto_applicable_eligible: false` は always ASK_USER）+ `category opt-in`（user 明示承認）+ `risk threshold`（`max_risk` 以下を自動）の 3 段判定。
+
+#### 3.9.8 Recursive 自己最適化（meta-axis）
+
+retro 自身が承認パターンを観察 → 「category X 連続承認、auto-apply 拡張？」「lens Y 採用率低い、disable？」「max_risk 上げる？」を proposal finding として user に提示。承認されれば user-prefs / project-prefs に反映、次 retro 以降適用。
+
 ## 4. アクター（エージェント）定義
 
 ### 4.1 ロール一覧
@@ -1074,3 +1124,4 @@ uninstall.sh の流れ:
 - 2026-04-27: §2.2 ロール数 4→6 / §4.2.4 trio mode 条件付き発火 + 独立 JSON 明記 / §9.1 skills tree に loom-review/ 追加 / §4.3・§6.2・§6.9 に max_reviewers (single mode pool) 追加（M0.6 review 後 fix）
 - 2026-04-27: §3.8 追加（CC + GitHub Flow 採用宣言、commit/branch 規約サマリ、commit_language ポリシー、M0.7）
 - 2026-04-27: §6.9 commit_prefixes 11 種拡張 + branch_types / commit_language フィールド追加（M0.7）
+- 2026-04-27: §3.9 追加（M0.8 retro 機能、4 lens / 3-stage protocol / 3-file state / hybrid auto-apply / recursive 自己最適化）
