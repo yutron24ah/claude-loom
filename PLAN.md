@@ -7,14 +7,14 @@ last_synced_at: 1777194000000
 # claude-loom 実装計画（マスターロードマップ）
 
 > 本ファイルは長期マイルストーン管理（SPEC §6.8 フォーマット準拠）。
-> 各マイルストーンの **詳細実装プラン** は `docs/superpowers/plans/YYYY-MM-DD-claude-loom-mN-*.md` に分離。
+> 各マイルストーンの **詳細実装プラン** は `docs/plans/YYYY-MM-DD-claude-loom-mN-*.md` に分離。
 > M0 完了後、M1 以降は各マイルストーンで writing-plans skill を再起動して詳細化する。
 >
 > **dogfood 戦略**：M0 = harness 完成後、M1 以降の実装は M0 の agent / command 群を使って進める（PM 主導、開発者が TDD、レビュー trio が並列レビュー）。
 
 ## マイルストーン M0: Dev Harness（ブートストラップ）
 
-詳細: `docs/superpowers/plans/2026-04-26-claude-loom-m0-harness.md`
+詳細: `docs/plans/2026-04-26-claude-loom-m0-harness.md`
 
 - [x] リポジトリスカフォールド + CLAUDE.md ワークフローガイド <!-- id: m0-t1 status: done -->
 - [x] project.json テンプレート <!-- id: m0-t2 status: done -->
@@ -36,7 +36,7 @@ last_synced_at: 1777194000000
 
 ## マイルストーン M0.5: Approval-Reduction Skills + install 拡張
 
-詳細: `docs/superpowers/plans/2026-04-26-claude-loom-m0.5-skills.md`
+詳細: `docs/plans/2026-04-26-claude-loom-m0.5-skills.md`
 
 - [x] SPEC §3.6.1 + §9.1 更新 <!-- id: m0.5-t1 status: done -->
 - [x] PLAN.md に M0.5 マイルストーン挿入 <!-- id: m0.5-t2 status: done -->

@@ -20,7 +20,7 @@ git diff HEAD~1 SPEC.md
 - [ ] `CLAUDE.md` — 作業規約に変更が必要か
 - [ ] `PLAN.md` — マイルストーン / タスクに追加・削除が必要か
 - [ ] `docs/SCREEN_REQUIREMENTS.md` — 画面要件に波及するか
-- [ ] `docs/superpowers/plans/*.md` — 進行中の詳細プランに波及するか
+- [ ] `docs/plans/*.md` — 進行中の詳細プランに波及するか
 - [ ] `tests/REQUIREMENTS.md` — 受入要件 ID の追加・削除が必要か
 - [ ] `agents/*.md` — agent system prompt の振る舞いに変更が必要か
 - [ ] `commands/*.md` — slash command の挙動に変更が必要か

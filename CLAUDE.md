@@ -62,6 +62,6 @@ M0 で構築した harness（PM / Developer / Reviewer trio agent）を使って
 
 - `SPEC.md` — 製品仕様（SSoT）
 - `PLAN.md` — マスターロードマップ
-- `docs/superpowers/plans/` — 各マイルストーン詳細プラン
+- `docs/plans/` — 各マイルストーン詳細プラン（`writing-plans` skill を使う場合は default の `docs/superpowers/plans/` を上書きしてここに保存する）
 - `docs/SCREEN_REQUIREMENTS.md` — UI 要件
 - `tests/REQUIREMENTS.md` — 受入要件 ID
