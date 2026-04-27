@@ -270,6 +270,7 @@ PM は以下の **すべて** を保守対象として扱う：
 |---|---|---|---|
 | PM | 1（singleton） | ユーザーが `/loom-pm` で起動 | `.claude/agents/loom-pm.md` (system prompt) |
 | Developer | 1〜N（PJ ごと max 設定） | PM が Task tool でディスパッチ | `.claude/agents/loom-developer.md` |
+| Reviewer (single mode) | 1〜N（PJ ごと max 設定、default mode） | Developer が Task tool でディスパッチ | `.claude/agents/loom-reviewer.md` |
 | Code Reviewer | 1〜N（PJ ごと max 設定） | Developer が Task tool でディスパッチ | `.claude/agents/loom-code-reviewer.md` |
 | Security Reviewer | 1〜N（PJ ごと max 設定） | Developer が Task tool でディスパッチ | `.claude/agents/loom-security-reviewer.md` |
 | Test Reviewer | 1〜N（PJ ごと max 設定） | Developer が Task tool でディスパッチ | `.claude/agents/loom-test-reviewer.md` |
@@ -300,7 +301,15 @@ PM は以下の **すべて** を保守対象として扱う：
 - 完了したら PM に報告
 - 作業ログをチームに共有
 
-#### 4.2.3 Review Trio (3 ロール独立)
+#### 4.2.3 Reviewer (loom-reviewer, single mode default)
+- review_mode の **default**。1 体の subagent が **コード / セキュリティ / テスト 3 観点** を順次回し、各段階で進捗テキスト（`## 観点 N/3: 〜レビュー中...`）を逐次出力
+- 観点ごとに findings を集めた後、`aspect` フィールド（`"code" | "security" | "test"`）付きで集約 JSON を 1 つ返す
+- token コスト ≒ trio mode の 1/3。Modern Claude（Opus/Sonnet 4.x）の多観点単一パス能力を活用
+- 大規模リファクタや critical path で trio mode が必要な場合は `[loom-meta] review_mode=trio` で per-task 切替可
+
+> ピクセル RPG GUI（Phase 1 後半 / M3）でのキャラ表現は trio mode 時のみレビュー室に 3 人並ぶ絵が成立。single mode は 1 人キャラが 3 観点バッジを順次表示する設計（M3 で詳細化）。
+
+#### 4.2.4 Review Trio (3 ロール独立、trio mode opt-in)
 - **Code Reviewer**：可読性 / 設計 / コーディング規約
 - **Security Reviewer**：脆弱性 / シークレット混入 / 認証認可
 - **Test Reviewer**：テストカバレッジ / テストの妥当性 / エッジケース
@@ -313,6 +322,7 @@ PM は以下の **すべて** を保守対象として扱う：
 - PM は spec フェーズで人数を提案、ユーザーが対話で手直し可
 - pool_slot は永続的な「席」、subagent はその席が演じる「個別タスクの実行体」
 - pool_slot 状態：`idle` / `busy`、busy 中は `current_subagent_id` を保持
+- **review_mode** は `.claude-loom/project.json` の `rules.review_mode` で project default を指定（`"single"` | `"trio"`、未設定時は `"single"`）。`[loom-meta] review_mode=...` で per-task 上書き可（PM が critical path タスクで明示的に `trio` を指示する用途）
 
 ### 4.4 配布形態
 
@@ -340,11 +350,19 @@ PM は以下の **すべて** を保守対象として扱う：
 [4] Developer (各自)
     TDD ループ実行：
       失敗テスト → 実装 → 緑 → リファクタ
-    完了したら Task tool で Reviewer 3 体を並列ディスパッチ
+    review_mode 判定：
+      [loom-meta] に review_mode 指定があればそれ採用
+      なければ .claude-loom/project.json の rules.review_mode (default "single")
+    review_mode == "single" → loom-reviewer 1 体ディスパッチ
+    review_mode == "trio"   → loom-{code,security,test}-reviewer 3 体並列ディスパッチ
 
-[5] Review Trio (並列 3 体)
-    Code / Security / Test の 3 観点で並列レビュー
-    指摘集約して Developer に返却
+[5a] Reviewer (single mode、default)
+     loom-reviewer が順次 3 観点回し、各段階で進捗テキスト出力
+     findings を aspect 付き集約 JSON で返却
+
+[5b] Review Trio (trio mode、opt-in)
+     Code / Security / Test の 3 観点で並列レビュー
+     各 reviewer が独立 JSON を返却、Developer が集約
 
 [6] Developer ⇄ Review
     指摘 → 修正 → 再レビュー、を全クリアまで反復
@@ -1010,3 +1028,4 @@ uninstall.sh の流れ:
 - 2026-04-26: §3.3（PM session の PJ 非依存モデル明記）、§6.2（sessions.project_id を NULL 許容に変更）、§6.7（PM session の project 判定例外を追記）。SCREEN_REQUIREMENTS と整合：プロジェクト切替で Room/Gantt 連動、PM キャラは全 Room に常時表示
 - 2026-04-26: §3.7 新節（プロジェクトライフサイクルと adopt 戦略：init/adopt/maintain の 3 段階、loom-managed マーカー仕様、PM の全ドキュメント保守スコープ）、§4.2.1 PM 責務に「ライフサイクル管理」「全ドキュメント保守」追加、§6.7 に init/adopt 分岐追記、§9.1 templates/ に CLAUDE.md.template / README.md.template / SPEC.md.template 追加
 - 2026-04-26: §3.6.1 追加 + §9.1 skills/ 注記更新（M0.5 で skill 前倒し shipping 決定）
+- 2026-04-27: §4.1 ロール一覧 + §4.2.3/4.2.4 reviewer mode 分岐 + §4.3 review_mode pool 説明 + §5 workflow Step [4]/[5] mode 分岐対応（M0.6 = single reviewer default）
