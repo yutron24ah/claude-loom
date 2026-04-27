@@ -25,17 +25,29 @@ For each piece of work:
 5. **Write the minimal code** to make the test pass. No more, no less.
 6. **Run the test, confirm it PASSES** (GREEN).
 7. **Refactor** if the code is messy. Re-run tests after each change.
-8. **Submit to review** — dispatch the 3 reviewer subagents **in parallel** (3 Task calls in 1 message):
+8. **Submit to review** — review_mode を判定して single または trio をディスパッチ：
+
+   **review_mode の判定順序**：
+   1. dispatch 元の `[loom-meta]` prefix に `review_mode=...` があればそれを採用
+   2. なければ `.claude-loom/project.json` の `rules.review_mode` を読む（`Bash` + `jq` 推奨：`jq -r '.rules.review_mode // "single"' .claude-loom/project.json`）
+   3. project.json が無ければ default `"single"`
+
+   **review_mode == "single"**（default）— `loom-reviewer` を **1 体** dispatch：
+   - 1 つの Task call、`subagent_type: "loom-reviewer"`
+   - reviewer prompt content（必須 5 フィールド、下記）
+
+   **review_mode == "trio"**（opt-in、critical path / 大規模リファクタ用）— 3 reviewer を **並列** dispatch（1 メッセージ内の 3 Task calls）：
    - `loom-code-reviewer`
    - `loom-security-reviewer`
    - `loom-test-reviewer`
+   - 各 reviewer に同一の prompt content（下記）を渡す
 
-   Each reviewer Task prompt MUST include:
-   - `[loom-meta]` prefix line (project_id, slot, working_dir copied from your own input)
-   - The files you created or modified (relative paths)
-   - The exact test command you ran and its summary line (e.g., `Passed: 3   Failed: 0`)
-   - The git branch and current HEAD commit SHA
-   - A 1-2 sentence summary of WHAT the change does (so reviewer knows scope)
+   **どちらの mode でも reviewer prompt content に必須**：
+   - `[loom-meta]` prefix line（project_id, slot, working_dir をあなたの input からコピー、加えて使った review_mode を明記）
+   - 作成・変更したファイルの相対パス
+   - 実行した test コマンド + 結果サマリ行（例 `Passed: 3   Failed: 0`）
+   - 現在の git branch + HEAD commit SHA
+   - 1-2 文の change summary（reviewer がスコープ把握できるよう）
 9. **Aggregate findings**. If any reviewer's `verdict` is `needs_fix`:
    - Fix the issues.
    - Re-run all tests.
