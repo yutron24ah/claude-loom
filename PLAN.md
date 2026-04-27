@@ -54,6 +54,23 @@ last_synced_at: 1777194000000
 
 **M0.5 完成基準**：`./install.sh` 実行で `~/.claude/skills/loom-{test,status,tdd-cycle,review-trio}/` が symlink として配置 + 4 つの skill が Claude Code セッション内で名前検出可能 + `templates/settings.json.template` の中身を新規 PJ にコピーすると bundled script が承認なしで実行可能。
 
+## マイルストーン M0.6: Single-Reviewer Default + Trio Opt-in
+
+詳細: `docs/plans/2026-04-27-claude-loom-m0.6-reviewer.md`
+
+- [ ] SPEC §4 reviewer mode 分岐 + §5 workflow 更新 <!-- id: m0.6-t1 status: todo -->
+- [ ] SPEC §6.9 project.json schema review_mode 追加 <!-- id: m0.6-t2 status: todo -->
+- [ ] PLAN.md M0.6 マイルストーン挿入 <!-- id: m0.6-t3 status: todo -->
+- [ ] agents/loom-reviewer.md 作成（順次 3 観点 + 進捗テキスト + 集約 JSON） <!-- id: m0.6-t4 status: todo -->
+- [ ] agents/loom-developer.md Step 8 を review_mode 分岐に改訂 <!-- id: m0.6-t5 status: todo -->
+- [ ] skills/loom-review/SKILL.md 作成（single mode dispatch テンプレ） <!-- id: m0.6-t6 status: todo -->
+- [ ] skills/loom-review-trio/SKILL.md 説明文を opt-in deep mode に更新 <!-- id: m0.6-t7 status: todo -->
+- [ ] templates/claude-loom/project.json.template に review_mode 追加 <!-- id: m0.6-t8 status: todo -->
+- [ ] README.md + CLAUDE.md 更新 <!-- id: m0.6-t9 status: todo -->
+- [ ] スモークテスト + tag m0.6-complete <!-- id: m0.6-t10 status: todo -->
+
+**M0.6 完成基準**：`agents/loom-reviewer.md` が valid frontmatter + 順次 3 観点 prompt を持ち agents_test.sh で PASS、`skills/loom-review/SKILL.md` が valid frontmatter で skills_test.sh で PASS、`agents/loom-developer.md` が review_mode 分岐ロジックを記述、`templates/claude-loom/project.json.template` に `rules.review_mode: "single"` が含まれ jq empty で valid、`./tests/run_tests.sh` で 4 PASS / 0 FAIL 維持、`tag m0.6-complete` 設置。
+
 ## マイルストーン M1: Daemon + Hooks Foundation
 
 詳細: 未作成（M0 完了後 writing-plans で詳細化）
