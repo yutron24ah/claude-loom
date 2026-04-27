@@ -41,7 +41,7 @@ PM / Developer / Reviewer trio による agile dev workflow を採用。
 
 - 実装コードを書く前に必ず失敗するテストを書く
 - Red → Green → Refactor の順
-- レビュー trio 通過なしに commit 禁止
+- 全 reviewer verdict pass なしに commit 禁止（single mode = 1 verdict、trio mode = 3 verdicts）
 
 ### doc 整合性
 

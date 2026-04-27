@@ -984,7 +984,7 @@ uninstall.sh の流れ:
 ### 10.1 TDD 基本ルール
 
 - main 直コミット禁止、ブランチ単位で /review + /security-review 指摘ゼロ必須
-- コミット粒度：`test(xxx)` / `feat(xxx)` / `fix(xxx)` / `chore(xxx)` / `docs:` の 5 prefix
+- コミット粒度：Conventional Commits 準拠（11 type — 詳細は §3.8.1 参照、`docs/COMMIT_GUIDE.md` に good/bad 例）
 - 1 要件 = 1 ブランチ、1 機能 = 1 コミット
 
 ### 10.2 テスト配置
@@ -1058,6 +1058,7 @@ uninstall.sh の流れ:
 - `docs/CONFIG_SCHEMA.md` — `~/.claude-loom/config.json` 詳細スキーマ（実装初期に作成）
 - `tests/REQUIREMENTS.md` — 受入要件 ID 一覧（実装初期に作成）
 - `CLAUDE.md` — Claude Code 向け作業ガイド（実装初期に作成）
+- `docs/COMMIT_GUIDE.md` — Conventional Commits + GitHub Flow 詳細ルール + good/bad 例（§3.8 の policy 宣言から参照、M0.7 で追加）
 
 ---
 
