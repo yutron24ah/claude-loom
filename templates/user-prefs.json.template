@@ -1,0 +1,27 @@
+{
+  "$schema": "https://claude-loom.dev/schemas/user-prefs-v1.json",
+  "schema_version": 1,
+
+  "default_retro_mode": "conversation",
+
+  "lenses": {
+    "pj-axis":      { "weight": 1.0, "enabled": true },
+    "process-axis": { "weight": 1.0, "enabled": true },
+    "researcher":   { "weight": 1.0, "enabled": true },
+    "meta-axis":    { "weight": 1.0, "enabled": true }
+  },
+
+  "auto_apply": {
+    "categories": [],
+    "max_risk": "never"
+  },
+
+  "approval_history": {},
+
+  "communication_style": {
+    "verbosity": "balanced",
+    "language_preference": "ja"
+  },
+
+  "retro_session_history": []
+}

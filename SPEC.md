@@ -292,6 +292,56 @@ claude-loom は **Conventional Commits**（[conventionalcommits.org](https://www
 
 claude-loom 自身は `"any"`（既存 commit が日英混在のため）。
 
+### 3.9 Retro 機能（M0.8 から有効）
+
+claude-loom は **retro 機能** をハーネスの中核に組み込む。詳細設計は `docs/plans/specs/2026-04-27-retro-design.md`、運用 SSoT は `docs/RETRO_GUIDE.md`。
+
+#### 3.9.1 retro の役割
+
+PJ 軸（製品）+ Process 軸（仕事の進め方）+ 外部研究 + 自己最適化（meta）の 4 観点で振り返り → archive markdown + 会話で user に提示 → 承認された改善を user-prefs / project-prefs / SPEC / 各種ファイルに反映。「user × claude × project の組み合わせごとに動的最適化される開発室」を実現する。
+
+#### 3.9.2 4 lens 構成
+
+| lens | 観点 | データ source |
+|---|---|---|
+| `pj-axis` | SPEC drift / feature gap / UX 摩擦 | SPEC / PLAN / README / git log / agent definitions |
+| `process-axis` | TDD / review / commit 粒度 / blocker | session transcripts / git log / reviewer JSON |
+| `researcher` | plugin / Claude latest / UX best practice | WebSearch / context7 / WebFetch（reactive + light proactive） |
+| `meta-axis` | auto-apply 拡張提案 / lens 削除提案 / risk threshold 提案 | 過去 retro outputs / user-prefs.json / approval 履歴 |
+
+#### 3.9.3 3-stage protocol
+
+1. **Parallel critique**: 4 lens 並列 dispatch
+2. **Counter-argument pass**: `loom-retro-counter-arguer` が全 findings を反証検査
+3. **Aggregator**: confirmed findings 統合 → archive markdown 生成 → user 提示
+
+#### 3.9.4 Trigger
+
+- 手動: `/loom-retro [--report]` で任意の起動
+- Milestone hook: tag 設置後、PM agent が「retro しとく？」と user に提案
+
+#### 3.9.5 Mode
+
+- 会話駆動 mode（default）: PM agent が finding 1 件ずつ提示、user が口頭返答
+- report mode（`--report` flag）: archive markdown のみ生成して exit
+
+#### 3.9.6 State 管理
+
+3 ファイル分離（責務独立）：
+- `<project>/.claude-loom/project.json` — human spec、retro は読むだけ
+- `<project>/.claude-loom/project-prefs.json` — retro auto-update（PJ 学習状態）
+- `~/.claude-loom/user-prefs.json` — retro auto-update（user 横断学習）
+
+merge 規則: project が user を field 単位 override（PJ 固有 policy が user グローバル設定を上書き）。schema 詳細は §6.9.1 / §6.9.2。
+
+#### 3.9.7 Auto-apply mechanism
+
+各 finding は `category` + `risk` + `auto_applicable_eligible` を持つ。`safety guardrail`（`auto_applicable_eligible: false` は always ASK_USER）+ `category opt-in`（user 明示承認）+ `risk threshold`（`max_risk` 以下を自動）の 3 段判定。
+
+#### 3.9.8 Recursive 自己最適化（meta-axis）
+
+retro 自身が承認パターンを観察 → 「category X 連続承認、auto-apply 拡張？」「lens Y 採用率低い、disable？」「max_risk 上げる？」を proposal finding として user に提示。承認されれば user-prefs / project-prefs に反映、次 retro 以降適用。
+
 ## 4. アクター（エージェント）定義
 
 ### 4.1 ロール一覧
@@ -706,6 +756,112 @@ last_synced_at: 1777200000000
 | `rules.commit_language` | — | `"any"` | コミット件名/本文の言語ポリシー：`"any"` / `"english"` / `"japanese"` |
 | `consistency_engine.*` | — | (上記) | エンジン挙動 |
 
+### 6.9.1 `~/.claude-loom/user-prefs.json` 完全スキーマ（M0.8 から）
+
+retro が auto-update する user 横断学習状態。
+
+```json
+{
+  "$schema": "https://claude-loom.dev/schemas/user-prefs-v1.json",
+  "schema_version": 1,
+
+  "default_retro_mode": "conversation",
+
+  "lenses": {
+    "pj-axis":      { "weight": 1.0, "enabled": true },
+    "process-axis": { "weight": 1.0, "enabled": true },
+    "researcher":   { "weight": 1.0, "enabled": true },
+    "meta-axis":    { "weight": 1.0, "enabled": true }
+  },
+
+  "auto_apply": {
+    "categories": [],
+    "max_risk": "never"
+  },
+
+  "approval_history": {
+    "spec-drift-doc-update": {
+      "presented_count": 0,
+      "approved_count": 0,
+      "rejected_count": 0,
+      "last_updated": 0
+    }
+  },
+
+  "communication_style": {
+    "verbosity": "balanced",
+    "language_preference": "ja"
+  },
+
+  "retro_session_history": []
+}
+```
+
+| フィールド | 必須 | デフォルト | 説明 |
+|---|---|---|---|
+| `schema_version` | ✓ | 1 | スキーマバージョン |
+| `default_retro_mode` | — | `"conversation"` | retro mode default：`"conversation"` / `"report"` |
+| `lenses.<id>.weight` | — | 1.0 | lens 重み |
+| `lenses.<id>.enabled` | — | true | lens 有効化フラグ |
+| `auto_apply.categories` | — | `[]` | 自動適用 opt-in category 一覧 |
+| `auto_apply.max_risk` | — | `"never"` | 自動適用 risk threshold：`"never"` / `"low"` / `"medium"` / `"high"` |
+| `approval_history.<category>.*` | — | 0 | meta-axis 観察用、retro auto-update |
+| `communication_style.verbosity` | — | `"balanced"` | `"terse"` / `"balanced"` / `"verbose"` |
+| `communication_style.language_preference` | — | `"ja"` | `"ja"` / `"en"` / `"auto"` |
+| `retro_session_history` | — | `[]` | 過去 retro session の id / project / completed_at 一覧（archive と相互参照） |
+
+### 6.9.2 `<project>/.claude-loom/project-prefs.json` 完全スキーマ（M0.8 から）
+
+retro が auto-update する PJ 固有学習状態。`project.json`（human spec、static）と分離。
+
+```json
+{
+  "$schema": "https://claude-loom.dev/schemas/project-prefs-v1.json",
+  "schema_version": 1,
+
+  "lenses": {
+    "pj-axis": { "weight": 1.5, "enabled": true }
+  },
+
+  "auto_apply": {
+    "categories": [],
+    "max_risk": "never"
+  },
+
+  "last_retro": {
+    "id": "2026-04-27-001",
+    "milestone": "m0.7",
+    "completed_at": 0
+  },
+
+  "learned_patterns": {
+    "common_blockers": [],
+    "frequent_finding_categories": []
+  }
+}
+```
+
+| フィールド | 必須 | デフォルト | 説明 |
+|---|---|---|---|
+| `schema_version` | ✓ | 1 | スキーマバージョン |
+| `lenses.<id>.*` | — | （未定義時 user-prefs fallback）| PJ 固有 override |
+| `auto_apply.*` | — | （同上） | PJ 固有 auto-apply policy |
+| `last_retro.id` | — | — | 直近 retro session id |
+| `last_retro.milestone` | — | — | 直近 retro 対象 milestone（manual の場合 `"manual"`）|
+| `last_retro.completed_at` | — | 0 | UNIX timestamp |
+| `learned_patterns.common_blockers` | — | `[]` | この PJ で繰り返し検出された blocker パターン |
+| `learned_patterns.frequent_finding_categories` | — | `[]` | この PJ で頻出する finding category |
+
+### 6.9.3 Effective config 計算規則
+
+retro 開始時、project が user を field 単位 override：
+
+- `effective.lenses[L]` = `project_prefs.lenses[L]` if defined else `user_prefs.lenses[L]`
+- `effective.auto_apply.categories` = `project_prefs.auto_apply.categories` if defined else `user_prefs.auto_apply.categories`
+- `effective.auto_apply.max_risk` = `project_prefs.auto_apply.max_risk` if defined else `user_prefs.auto_apply.max_risk`
+
+設計理念: user-prefs = user の claude-loom 全体での好み（default）、project-prefs = 当 PJ の policy（override）。同 user が異なる PJ で異なる policy を運用可能。
+
 ### 6.10 `~/.claude-loom/config.json` スキーマ（方針サマリ）
 
 詳細は実装フェーズで `docs/CONFIG_SCHEMA.md` に分離。Phase 1 の必須フィールド：
@@ -839,7 +995,7 @@ CREATE TABLE consistency_findings (
 | `/loom-go` | spec 完成後、実装フェーズ開始（Developer ディスパッチ） | 1 |
 | `/loom-status` | daemon の生死確認、起動中なら URL 表示 | 1 |
 | `/loom-stop` | daemon 明示停止 | 1 |
-| `/loom-retro` | プロジェクト終了時の振り返り（claude-blog-skill の /retro 参考） | 2 |
+| `/loom-retro` | 3-stage retro protocol（4-lens parallel critique → counter-argument → aggregator）。`--report` flag で archive markdown のみ生成。詳細 §3.9 + `docs/RETRO_GUIDE.md` | 0.8 |
 
 ---
 
@@ -1074,3 +1230,5 @@ uninstall.sh の流れ:
 - 2026-04-27: §2.2 ロール数 4→6 / §4.2.4 trio mode 条件付き発火 + 独立 JSON 明記 / §9.1 skills tree に loom-review/ 追加 / §4.3・§6.2・§6.9 に max_reviewers (single mode pool) 追加（M0.6 review 後 fix）
 - 2026-04-27: §3.8 追加（CC + GitHub Flow 採用宣言、commit/branch 規約サマリ、commit_language ポリシー、M0.7）
 - 2026-04-27: §6.9 commit_prefixes 11 種拡張 + branch_types / commit_language フィールド追加（M0.7）
+- 2026-04-27: §3.9 追加（M0.8 retro 機能、4 lens / 3-stage protocol / 3-file state / hybrid auto-apply / recursive 自己最適化）
+- 2026-04-27: §6.9.1 / §6.9.2 / §6.9.3 追加（M0.8 retro の user-prefs / project-prefs schema + merge 規則）

@@ -50,7 +50,7 @@ M0 + M0.5 + M0.6 で構築した harness（PM / Developer / Reviewer agent — s
 
 ## ファイル配置規約
 
-- agents/ : Claude Code subagent 定義（loom-pm / loom-developer / loom-reviewer (single mode default) / loom-{code,security,test}-reviewer (trio mode opt-in)）
+- agents/ : Claude Code subagent 定義（loom-pm / loom-developer / loom-reviewer (single mode default) / loom-{code,security,test}-reviewer (trio mode opt-in) / loom-retro-* (M0.8 retro 7 体)）
 - commands/ : slash command 定義
 - hooks/ : bash hook scripts (M1 以降)
 - skills/ : Claude Code skill (M0.5 から有効)
@@ -59,6 +59,7 @@ M0 + M0.5 + M0.6 で構築した harness（PM / Developer / Reviewer agent — s
 - daemon/ : Node daemon (M1 以降)
 - ui/ : React + Phaser UI (M2 以降)
 - docs/ : ドキュメント
+- ~/.claude-loom/user-prefs.json + <project>/.claude-loom/project-prefs.json : retro 学習状態（M0.8 から）
 
 ## テスト実行
 
