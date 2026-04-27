@@ -643,7 +643,8 @@ last_synced_at: 1777200000000
     "branch_pattern": "feat/{ticket}",
     "commit_prefixes": ["test", "feat", "fix", "chore", "docs"],
     "main_branch": "main",
-    "no_direct_commit_to_main": true
+    "no_direct_commit_to_main": true,
+    "review_mode": "single"
   },
 
   "consistency_engine": {
@@ -665,6 +666,7 @@ last_synced_at: 1777200000000
 | `methodology` | — | `agile` | Phase 1 は agile 固定 |
 | `pool.*` | — | 3/1/1/1 | プール上限 |
 | `rules.*` | — | (上記) | チームルール |
+| `rules.review_mode` | — | `"single"` | `"single"` (default、loom-reviewer 1 体) or `"trio"` (loom-{code,security,test}-reviewer 並列 3 体) |
 | `consistency_engine.*` | — | (上記) | エンジン挙動 |
 
 ### 6.10 `~/.claude-loom/config.json` スキーマ（方針サマリ）
@@ -1029,3 +1031,4 @@ uninstall.sh の流れ:
 - 2026-04-26: §3.7 新節（プロジェクトライフサイクルと adopt 戦略：init/adopt/maintain の 3 段階、loom-managed マーカー仕様、PM の全ドキュメント保守スコープ）、§4.2.1 PM 責務に「ライフサイクル管理」「全ドキュメント保守」追加、§6.7 に init/adopt 分岐追記、§9.1 templates/ に CLAUDE.md.template / README.md.template / SPEC.md.template 追加
 - 2026-04-26: §3.6.1 追加 + §9.1 skills/ 注記更新（M0.5 で skill 前倒し shipping 決定）
 - 2026-04-27: §4.1 ロール一覧 + §4.2.3/4.2.4 reviewer mode 分岐 + §4.3 review_mode pool 説明 + §5 workflow Step [4]/[5] mode 分岐対応（M0.6 = single reviewer default）
+- 2026-04-27: §6.9 project.json schema に rules.review_mode フィールド追加（M0.6）
