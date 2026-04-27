@@ -16,17 +16,26 @@ M0 + M0.5 + M0.6 で構築した harness（PM / Developer / Reviewer agent — s
 5. 全 reviewer verdict pass → commit
 6. PM が PLAN.md を更新
 
-## ブランチ規約
+## ブランチ規約（GitHub Flow）
 
-- `main` への直 commit 禁止
-- 1 要件 = 1 ブランチ。命名 `feat/<short-description>` `fix/<short-description>` `chore/<short-description>`
+- `main` への直 commit 禁止、PR 経由のみ
+- 1 要件 = 1 ブランチ、短命（数日〜数週間）
+- 命名 `<type>/<short-kebab-name>`、type は `feat` / `fix` / `docs` / `style` / `refactor` / `perf` / `test` / `build` / `ci` / `chore` の 10 種
+- 例: `feat/loom-reviewer-agent`, `fix/install-home-guard`, `docs/commit-guide`
 - ブランチ単位で PR を上げる前に：全テスト pass + 全 reviewer verdict pass（single mode = 1 verdict、trio mode = 3 verdicts）
+- merge は `--no-ff`（マイルストーン境界を残す）または squash（WIP 多い場合）
 
-## コミット粒度
+## コミット粒度（Conventional Commits）
 
-- 1 機能 = 1 commit
-- メッセージ prefix: `test(xxx)` / `feat(xxx)` / `fix(xxx)` / `chore(xxx)` / `docs:`
-- 例: `feat(install): add idempotent symlink installer`
+- 1 commit = 1 論理変更（atomic、revert 単位）、build & test pass 状態を維持
+- 行数目安：200 行以下推奨、500 行超は分割（Google CL 流儀）
+- 形式: `<type>(<optional scope>): <subject>` の 1 行件名 + 必要に応じて空行 + 本文
+- type 11 種: `feat` / `fix` / `docs` / `style` / `refactor` / `perf` / `test` / `build` / `ci` / `chore` / `revert`
+- 件名: 命令形 or 日本語体言止め可（≤50 英 / ≤40 日目安、末尾ピリオドなし）
+- 本文（必要時）: WHY 中心、72 文字折返
+- BREAKING CHANGE: `feat!:` または footer `BREAKING CHANGE: <description>`
+- 言語ポリシー: `.claude-loom/project.json` の `rules.commit_language`（`"any"` default）
+- 詳細ルール + 良い/悪い例: **`docs/COMMIT_GUIDE.md` を参照**
 
 ## TDD 必須
 

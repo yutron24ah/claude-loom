@@ -22,21 +22,26 @@ PM / Developer / Reviewer trio による agile dev workflow を採用。
 5. レビュー全 pass → commit
 6. PM が PLAN.md を更新
 
-### ブランチ規約
+### ブランチ規約（GitHub Flow）
 
-- `main` への直 commit 禁止
-- 1 要件 = 1 ブランチ。命名 `feat/<short-description>` `fix/<short-description>` `chore/<short-description>`
+- `main` への直 commit 禁止、PR 経由のみ
+- 1 要件 = 1 ブランチ、短命（数日〜数週間）
+- 命名 `<type>/<short-kebab-name>`、type は `feat` / `fix` / `docs` / `style` / `refactor` / `perf` / `test` / `build` / `ci` / `chore` の 10 種
 
-### コミット粒度
+### コミット粒度（Conventional Commits）
 
-- 1 機能 = 1 commit
-- メッセージ prefix: `test(xxx)` / `feat(xxx)` / `fix(xxx)` / `chore(xxx)` / `docs:`
+- 1 commit = 1 論理変更（atomic）、build & test pass 状態を維持
+- 形式: `<type>(<optional scope>): <subject>`
+- type 11 種: `feat` / `fix` / `docs` / `style` / `refactor` / `perf` / `test` / `build` / `ci` / `chore` / `revert`
+- 件名: 命令形 or 日本語体言止め可（≤50 英 / ≤40 日目安）
+- 言語ポリシー: `.claude-loom/project.json` の `rules.commit_language`（`"any"` default）
+- 詳細ルール + 良い/悪い例: **`docs/COMMIT_GUIDE.md` を参照**
 
 ### TDD 必須
 
 - 実装コードを書く前に必ず失敗するテストを書く
 - Red → Green → Refactor の順
-- レビュー trio 通過なしに commit 禁止
+- 全 reviewer verdict pass なしに commit 禁止（single mode = 1 verdict、trio mode = 3 verdicts）
 
 ### doc 整合性
 
