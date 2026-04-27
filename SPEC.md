@@ -756,6 +756,112 @@ last_synced_at: 1777200000000
 | `rules.commit_language` | — | `"any"` | コミット件名/本文の言語ポリシー：`"any"` / `"english"` / `"japanese"` |
 | `consistency_engine.*` | — | (上記) | エンジン挙動 |
 
+### 6.9.1 `~/.claude-loom/user-prefs.json` 完全スキーマ（M0.8 から）
+
+retro が auto-update する user 横断学習状態。
+
+```json
+{
+  "$schema": "https://claude-loom.dev/schemas/user-prefs-v1.json",
+  "schema_version": 1,
+
+  "default_retro_mode": "conversation",
+
+  "lenses": {
+    "pj-axis":      { "weight": 1.0, "enabled": true },
+    "process-axis": { "weight": 1.0, "enabled": true },
+    "researcher":   { "weight": 1.0, "enabled": true },
+    "meta-axis":    { "weight": 1.0, "enabled": true }
+  },
+
+  "auto_apply": {
+    "categories": [],
+    "max_risk": "never"
+  },
+
+  "approval_history": {
+    "spec-drift-doc-update": {
+      "presented_count": 0,
+      "approved_count": 0,
+      "rejected_count": 0,
+      "last_updated": 0
+    }
+  },
+
+  "communication_style": {
+    "verbosity": "balanced",
+    "language_preference": "ja"
+  },
+
+  "retro_session_history": []
+}
+```
+
+| フィールド | 必須 | デフォルト | 説明 |
+|---|---|---|---|
+| `schema_version` | ✓ | 1 | スキーマバージョン |
+| `default_retro_mode` | — | `"conversation"` | retro mode default：`"conversation"` / `"report"` |
+| `lenses.<id>.weight` | — | 1.0 | lens 重み |
+| `lenses.<id>.enabled` | — | true | lens 有効化フラグ |
+| `auto_apply.categories` | — | `[]` | 自動適用 opt-in category 一覧 |
+| `auto_apply.max_risk` | — | `"never"` | 自動適用 risk threshold：`"never"` / `"low"` / `"medium"` / `"high"` |
+| `approval_history.<category>.*` | — | 0 | meta-axis 観察用、retro auto-update |
+| `communication_style.verbosity` | — | `"balanced"` | `"terse"` / `"balanced"` / `"verbose"` |
+| `communication_style.language_preference` | — | `"ja"` | `"ja"` / `"en"` / `"auto"` |
+| `retro_session_history` | — | `[]` | 過去 retro session の id / project / completed_at 一覧（archive と相互参照） |
+
+### 6.9.2 `<project>/.claude-loom/project-prefs.json` 完全スキーマ（M0.8 から）
+
+retro が auto-update する PJ 固有学習状態。`project.json`（human spec、static）と分離。
+
+```json
+{
+  "$schema": "https://claude-loom.dev/schemas/project-prefs-v1.json",
+  "schema_version": 1,
+
+  "lenses": {
+    "pj-axis": { "weight": 1.5, "enabled": true }
+  },
+
+  "auto_apply": {
+    "categories": [],
+    "max_risk": "never"
+  },
+
+  "last_retro": {
+    "id": "2026-04-27-001",
+    "milestone": "m0.7",
+    "completed_at": 0
+  },
+
+  "learned_patterns": {
+    "common_blockers": [],
+    "frequent_finding_categories": []
+  }
+}
+```
+
+| フィールド | 必須 | デフォルト | 説明 |
+|---|---|---|---|
+| `schema_version` | ✓ | 1 | スキーマバージョン |
+| `lenses.<id>.*` | — | （未定義時 user-prefs fallback）| PJ 固有 override |
+| `auto_apply.*` | — | （同上） | PJ 固有 auto-apply policy |
+| `last_retro.id` | — | — | 直近 retro session id |
+| `last_retro.milestone` | — | — | 直近 retro 対象 milestone（manual の場合 `"manual"`）|
+| `last_retro.completed_at` | — | 0 | UNIX timestamp |
+| `learned_patterns.common_blockers` | — | `[]` | この PJ で繰り返し検出された blocker パターン |
+| `learned_patterns.frequent_finding_categories` | — | `[]` | この PJ で頻出する finding category |
+
+### 6.9.3 Effective config 計算規則
+
+retro 開始時、project が user を field 単位 override：
+
+- `effective.lenses[L]` = `project_prefs.lenses[L]` if defined else `user_prefs.lenses[L]`
+- `effective.auto_apply.categories` = `project_prefs.auto_apply.categories` if defined else `user_prefs.auto_apply.categories`
+- `effective.auto_apply.max_risk` = `project_prefs.auto_apply.max_risk` if defined else `user_prefs.auto_apply.max_risk`
+
+設計理念: user-prefs = user の claude-loom 全体での好み（default）、project-prefs = 当 PJ の policy（override）。同 user が異なる PJ で異なる policy を運用可能。
+
 ### 6.10 `~/.claude-loom/config.json` スキーマ（方針サマリ）
 
 詳細は実装フェーズで `docs/CONFIG_SCHEMA.md` に分離。Phase 1 の必須フィールド：
@@ -1125,3 +1231,4 @@ uninstall.sh の流れ:
 - 2026-04-27: §3.8 追加（CC + GitHub Flow 採用宣言、commit/branch 規約サマリ、commit_language ポリシー、M0.7）
 - 2026-04-27: §6.9 commit_prefixes 11 種拡張 + branch_types / commit_language フィールド追加（M0.7）
 - 2026-04-27: §3.9 追加（M0.8 retro 機能、4 lens / 3-stage protocol / 3-file state / hybrid auto-apply / recursive 自己最適化）
+- 2026-04-27: §6.9.1 / §6.9.2 / §6.9.3 追加（M0.8 retro の user-prefs / project-prefs schema + merge 規則）
