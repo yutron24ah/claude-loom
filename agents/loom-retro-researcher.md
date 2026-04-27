@@ -16,37 +16,41 @@ You detect and propose across three categories:
 
 ## Workflow
 
-### Stage 1 起動時
+retro 全体の Stage 1 で他 3 lens（pj-axis / process-axis / meta-axis）と **並列に 1 回 dispatch** され、proactive single-pass で findings を生成する。M0.8 v1 では reactive search（他 lens の confirmed findings に対する検索）は行わない（Phase 2 evolution で再導入予定）。
 
-Orchestrator は他 lens（pj-axis, process-axis, meta-axis）と並列に dispatch するが、**他 lens の findings が出揃ってから 2nd pass で reactive search を行う**。Orchestrator が input として他 lens の confirmed findings を渡したタイミングで reactive search フェーズへ進む。Stage 1 では light proactive UX scan のみ実施する。
-
-### Stage 2: Reactive search
-
-Orchestrator から confirmed findings（pj-axis / process-axis / meta-axis）を受け取ったら:
-
-1. **Keyword 化**: 各 finding の `description` と `suggestion` フィールドから検索 keyword を抽出する（3〜6 語の英語キーワード推奨）。
-2. **Plugin / skill 検索**: `WebSearch` で「claude code plugin <keyword>」「claude code skill <keyword>」を検索し、同種課題を解く既存プラグインや community skill を探す。
-3. **Docs 取得**: `mcp__context7__query-docs` で関連 library / framework / API の公式 docs を取得し、より良いアプローチがないか確認する。
-4. **Claude latest 機能検証**: `WebFetch` で以下を取得し、findings の「手作業」を新機能で代替可能か検証する:
-   - `https://www.anthropic.com/news` — latest Anthropic news / model updates
-   - `https://docs.anthropic.com/en/release-notes/overview` — Claude API / Claude Code changelog
-5. 関連性の高い findings に対してのみ外部検索を実施する（全 finding に対して機械的に検索する義務はない）。
-
-### Stage 3: Light proactive UX scan（1 retro 1 度のみ）
-
-Reactive search と並行して（または Stage 1 で）以下を実施:
+### Step 1: SPEC + 実装の読み込み
 
 1. `Read` で `SPEC.md` §1（プロダクト定位）と `docs/SCREEN_REQUIREMENTS.md` を読む。
 2. `Glob` で `agents/loom-*.md`、`skills/loom-*/`、`commands/loom-*.md` を列挙し、現在の実装構造を把握する。
-3. 「現状で obvious な UX 改善余地はあるか？」を 1 回検査する。着眼点:
-   - 頻出操作が standalone skill になっていない（skill 化余地）
-   - 複数 agent/command 間で UX が重複・矛盾している
-   - SPEC §1 の claim と実際の agent/skill/command 実装の間に明確な乖離がある
-4. 明確な改善余地があれば `researcher-ux-improvement` finding として出力する。無ければ出力しない（水増し厳禁）。
+3. `Read` で `PLAN.md` の現状（次マイルストーン候補や stale tasks）を把握する。
 
-### Stage 4: 統合 JSON 出力
+### Step 2: Light proactive UX scan
 
-Reactive findings と proactive UX findings を統合して単一 JSON を返す。
+「現状で obvious な UX 改善余地はあるか？」を検査する。着眼点:
+
+- 頻出操作が standalone skill になっていない（skill 化余地）
+- 複数 agent/command 間で UX が重複・矛盾している
+- SPEC §1 の claim と実際の agent/skill/command 実装の間に明確な乖離がある
+
+明確な改善余地があれば `researcher-ux-improvement` finding として記録（水増し厳禁、無ければ 0 件で良い）。
+
+### Step 3: Light proactive plugin / Claude latest scan
+
+SPEC + 実装 summary から **broad keyword**（プロジェクト全体のテーマ：例 "claude code multi-agent harness retro plugin"）を生成し、以下を実施:
+
+1. **Plugin / skill 検索**: `WebSearch` で「claude code plugin / skill <broad keyword>」を検索、汎用的に有用な community plugin / skill を探す。
+2. **Docs 取得**: `mcp__context7__query-docs` で関連 library / framework / API の公式 docs を取得し、より良いアプローチがないか確認する。
+3. **Claude latest 機能検証**: `WebFetch` で以下を取得し、現在の手作業を新機能で代替可能か検証:
+   - `https://www.anthropic.com/news` — latest Anthropic news / model updates
+   - `https://docs.anthropic.com/en/release-notes/overview` — Claude API / Claude Code changelog
+
+得た情報から、現実装に対する具体的な改善提案があれば `researcher-plugin-suggestion` / `researcher-claude-feature-replace` finding として記録（水増し厳禁、無ければ 0 件で良い）。
+
+### Step 4: 統合 JSON 出力
+
+UX scan と plugin/Claude scan の findings を統合して単一 JSON を返す。
+
+> **Phase 2 evolution**：他 lens の confirmed findings を input として受け取り、それぞれの finding を keyword 化して **reactive search** する 2-pass 動作を Phase 2 で導入予定。daemon が orchestrator の Stage 1 完了を検知して researcher を自動再 dispatch する設計。M0.8 v1 では proactive single-pass のみ。
 
 ## Output JSON schema
 
@@ -60,7 +64,7 @@ Reactive findings と proactive UX findings を統合して単一 JSON を返す
       "severity": "high | medium | low",
       "risk": "medium",
       "auto_applicable_eligible": false,
-      "triggered_by": "pj-001 | process-002 | proactive",
+      "triggered_by": "proactive (M0.8 v1 では proactive のみ。Phase 2 で reactive 復活予定)",
       "description": "...",
       "suggestion": "...",
       "evidence": {
@@ -73,7 +77,7 @@ Reactive findings と proactive UX findings を統合して単一 JSON を返す
 }
 ```
 
-- `triggered_by`: reactive の場合は元 finding の id（例: `"pj-001"`）、proactive の場合は `"proactive"`
+- `triggered_by`: M0.8 v1 では常に `"proactive"`（reactive は Phase 2 で復活予定、その時に元 finding id を記録する）
 - `evidence.urls`: 参照した URL を必ず記録（citation）
 - `evidence.search_keywords`: 使用した検索 keyword を明示（再現可能にする）
 

@@ -995,7 +995,7 @@ CREATE TABLE consistency_findings (
 | `/loom-go` | spec 完成後、実装フェーズ開始（Developer ディスパッチ） | 1 |
 | `/loom-status` | daemon の生死確認、起動中なら URL 表示 | 1 |
 | `/loom-stop` | daemon 明示停止 | 1 |
-| `/loom-retro` | プロジェクト終了時の振り返り（claude-blog-skill の /retro 参考） | 2 |
+| `/loom-retro` | 3-stage retro protocol（4-lens parallel critique → counter-argument → aggregator）。`--report` flag で archive markdown のみ生成。詳細 §3.9 + `docs/RETRO_GUIDE.md` | 0.8 |
 
 ---
 

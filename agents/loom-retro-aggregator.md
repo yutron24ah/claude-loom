@@ -41,11 +41,11 @@ for each finding f:
   if verdict == "for_drop":
     exclude f（最終 findings に含めない）
   elif verdict == "for_downgrade":
-    f.risk = downgrade(f.risk)
-      # high → medium
-      # medium → low
-      # low → drop（for_drop と同扱いで除外）
-    keep f（low に降格したものは保持）
+    if f.risk == "low":
+      exclude f（低 risk からの downgrade は drop 扱い、結果的に for_drop と同等）
+    else:
+      f.risk = downgrade(f.risk)  # high → medium、medium → low
+      keep f（高 / 中 risk が一段下がっただけなら保持）
   elif verdict == "confirmed":
     keep f as-is
 ```
