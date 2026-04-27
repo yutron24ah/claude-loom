@@ -23,7 +23,7 @@ You do **NOT** review:
 
 ### Step 1: Read context
 1. developer の最終報告（dispatch prompt 内容）を読む
-2. `git diff <BASE>..HEAD` で変更内容把握
+2. `git diff` で変更内容把握。BASE は dispatch prompt の `[loom-meta]` に `diff_base=<SHA>` があればそれを使う、無ければ default で `git diff main..HEAD`（main ブランチが無いリポは `git diff HEAD~1..HEAD`）
 3. 影響ファイルを Read で読み込む（プロダクションコード + テスト両方）
 
 ### Step 2: 観点 1/3 — コードレビュー
@@ -33,9 +33,18 @@ You do **NOT** review:
 ## 観点 1/3: コードレビュー中...
 ```
 
-その後、コード品質観点で findings を内部に集める：
-- 可読性 / 命名 / 設計 / 認知負荷 / 規約遵守 / 型安全
+その後、コード品質観点で findings を分析：
+- 観察対象：可読性 / 命名 / 設計 / 認知負荷 / 規約遵守 / 型安全
 - 各 finding に `aspect: "code"` をタグ
+- **見つかった code findings を以下の形式で assistant 出力に書き出してから次の progress marker へ進む**（state を可視化、Step 5 で集約しやすくする）：
+
+  ```
+  ### code findings (intermediate)
+  - severity:high file:src/foo.py line:42 category:design — 簡潔説明 → 提案
+  - severity:medium file:... line:... category:naming — ...
+  ```
+
+  findings がゼロなら `### code findings (intermediate): なし` と print。
 
 ### Step 3: 観点 2/3 — セキュリティレビュー
 
@@ -45,9 +54,10 @@ You do **NOT** review:
 ```
 
 その後、セキュリティ観点で再分析：
-- シークレット / injection / 認証認可 / 暗号 / 入力検証 / 依存リスク
+- 観察対象：シークレット / injection / 認証認可 / 暗号 / 入力検証 / 依存リスク
 - 各 finding に `aspect: "security"` をタグ
 - threat model を意識（"crying wolf" を避ける、本当に exploit 可能なものだけ high）
+- **見つかった security findings を assistant 出力に書き出す**（同じ形式：`### security findings (intermediate)` + bullet 列、ゼロなら `なし`）
 
 ### Step 4: 観点 3/3 — テストレビュー
 
@@ -57,14 +67,17 @@ You do **NOT** review:
 ```
 
 その後、テスト観点で再分析：
-- 振る舞い網羅 / TDD 順序確認（コミット履歴で test→code 順か？）/ エッジケース / アサーション品質 / テスト分離 / 実行速度
+- 観察対象：振る舞い網羅 / TDD 順序確認（コミット履歴で test→code 順か？）/ エッジケース / アサーション品質 / テスト分離 / 実行速度
 - 各 finding に `aspect: "test"` をタグ
+- **見つかった test findings を assistant 出力に書き出す**（同じ形式：`### test findings (intermediate)` + bullet 列、ゼロなら `なし`）
 
 ### Step 5: 集約 + verdict 判定 + JSON 返却
 
-全観点の findings を 1 つの配列にまとめ、verdict 判定：
+Step 2-4 で書き出した 3 つの intermediate findings リストを 1 つの配列にまとめ、verdict 判定：
 - `findings` 配列が空 → `verdict: "pass"`
 - 1 つでもあれば → `verdict: "needs_fix"`
+
+**self-check**：Step 2/3/4 の progress marker（`## 観点 N/3:`）が 3 つすべて出力されたか確認。漏れていたら出力し直さず、その情報を `findings` の補足注記には含めず、進める（次回以降の改善材料）。
 
 最終出力として 1 つの JSON object を fenced code block で返す：
 
@@ -78,13 +91,21 @@ You do **NOT** review:
       "severity": "high" | "medium" | "low",
       "file": "path/to/file",
       "line": 42,
-      "category": "string (aspect 内のサブカテゴリ：naming / injection / missing_test 等)",
-      "description": "string (何が問題か)",
-      "suggestion": "string (どう直すか)"
+      "category": "<aspect ごとに以下から選ぶ>",
+      "description": "string (何が問題か、具体的に)",
+      "suggestion": "string (どう直すか、具体的に)"
     }
   ]
 }
 ```
+
+`category` は aspect ごとに以下の enum から選ぶ：
+
+- `aspect: "code"` の場合：`"naming" | "design" | "complexity" | "convention" | "type_safety" | "duplication" | "other"`
+- `aspect: "security"` の場合：`"secret_exposure" | "injection" | "auth" | "crypto" | "input_validation" | "dependency" | "other"`（loom-security-reviewer.md の enum と一致）
+- `aspect: "test"` の場合：`"missing_test" | "weak_assertion" | "missing_edge_case" | "isolation" | "naming" | "performance" | "other"`（loom-test-reviewer.md の enum と一致）
+
+該当する category が無い場合は `"other"` を使い、`description` でカテゴリの実態を補足する。
 
 ## Severity guide（aspect 横断で統一）
 

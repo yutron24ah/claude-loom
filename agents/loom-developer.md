@@ -30,16 +30,17 @@ For each piece of work:
    **review_mode の判定順序**：
    1. dispatch 元の `[loom-meta]` prefix に `review_mode=...` があればそれを採用
    2. なければ `.claude-loom/project.json` の `rules.review_mode` を読む（`Bash` + `jq` 推奨：`jq -r '.rules.review_mode // "single"' .claude-loom/project.json`）
-   3. project.json が無ければ default `"single"`
+   3. project.json が無い、または jq エラー（malformed JSON 等）が出た場合は default `"single"` を採用し、PM への完了報告に "review_mode fallback: <理由>" の警告行を含める
+   4. 上記いずれのケースでも `[loom-meta] review_mode=...` で dispatch する reviewer に最終決定値を伝達
 
    **review_mode == "single"**（default）— `loom-reviewer` を **1 体** dispatch：
    - 1 つの Task call、`subagent_type: "loom-reviewer"`
    - reviewer prompt content（必須 5 フィールド、下記）
 
-   **review_mode == "trio"**（opt-in、critical path / 大規模リファクタ用）— 3 reviewer を **並列** dispatch（1 メッセージ内の 3 Task calls）：
-   - `loom-code-reviewer`
-   - `loom-security-reviewer`
-   - `loom-test-reviewer`
+   **review_mode == "trio"**（opt-in、critical path / 大規模リファクタ用）— 3 reviewer を **並列** dispatch（1 メッセージ内の 3 Task calls、各 `subagent_type` を以下に指定）：
+   - `subagent_type: "loom-code-reviewer"`
+   - `subagent_type: "loom-security-reviewer"`
+   - `subagent_type: "loom-test-reviewer"`
    - 各 reviewer に同一の prompt content（下記）を渡す
 
    **どちらの mode でも reviewer prompt content に必須**：
@@ -49,6 +50,7 @@ For each piece of work:
    - 現在の git branch + HEAD commit SHA
    - 1-2 文の change summary（reviewer がスコープ把握できるよう）
 9. **Aggregate findings**. If any reviewer's `verdict` is `needs_fix`:
+   - **集約ルール**: single mode JSON は finding に `aspect` フィールドを持つ。trio mode は 3 つの JSON が返り `aspect` フィールドは無いが、`reviewer` フィールドから aspect を導出できる（`loom-code-reviewer` → `code`、`loom-security-reviewer` → `security`、`loom-test-reviewer` → `test`）。集約後の表現はどちらも `aspect`-tagged な findings 配列として扱える。
    - Fix the issues.
    - Re-run all tests.
    - Re-submit to all dispatched reviewer(s)（single mode = 1 体、trio mode = 3 体並列、back to step 8）.
