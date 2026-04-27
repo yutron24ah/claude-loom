@@ -41,7 +41,7 @@ M0 で構築した harness（PM / Developer / Reviewer trio agent）を使って
 
 ## ファイル配置規約
 
-- agents/ : Claude Code subagent 定義
+- agents/ : Claude Code subagent 定義（loom-pm / loom-developer / loom-reviewer (single mode default) / loom-{code,security,test}-reviewer (trio mode opt-in)）
 - commands/ : slash command 定義
 - hooks/ : bash hook scripts (M1 以降)
 - skills/ : Claude Code skill (M0.5 から有効)
