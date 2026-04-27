@@ -1,0 +1,22 @@
+{
+  "$schema": "https://claude-loom.dev/schemas/project-prefs-v1.json",
+  "schema_version": 1,
+
+  "lenses": {},
+
+  "auto_apply": {
+    "categories": [],
+    "max_risk": "never"
+  },
+
+  "last_retro": {
+    "id": "",
+    "milestone": "",
+    "completed_at": 0
+  },
+
+  "learned_patterns": {
+    "common_blockers": [],
+    "frequent_finding_categories": []
+  }
+}
