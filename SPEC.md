@@ -262,6 +262,36 @@ PM は以下の **すべて** を保守対象として扱う：
 
 ---
 
+### 3.8 コミット + ブランチ規約（Conventional Commits + GitHub Flow）
+
+claude-loom は **Conventional Commits**（[conventionalcommits.org](https://www.conventionalcommits.org)）と **GitHub Flow** を明示採用する。詳細ルール + good/bad 例は `docs/COMMIT_GUIDE.md` を参照。
+
+#### 3.8.1 コミット規約サマリ
+
+- **形式**: `<type>(<optional scope>): <subject>` の 1 行件名 + 必要に応じて空行 + 本文
+- **type 11 種**: `feat` / `fix` / `docs` / `style` / `refactor` / `perf` / `test` / `build` / `ci` / `chore` / `revert`
+- **scope**: 任意（`feat(skills): ...` のように該当モジュールを括弧で）
+- **件名**: 命令形（"Add feature" / "Update workflow"）または日本語の体言止め可。≤50 文字英 / ≤40 文字日目安。末尾ピリオドなし
+- **本文**: WHY 中心、72 文字折返（日本語は自然な改行）
+- **BREAKING CHANGE**: `feat!:` または footer `BREAKING CHANGE: <description>`
+- **atomic commits**: 1 commit = 1 論理変更 / revert 単位 / build & test pass / ≤200 行目安（Google CL 流儀）
+
+#### 3.8.2 ブランチ規約サマリ（GitHub Flow）
+
+- **戦略**: `main` + 短命 feature ブランチのみ（GitHub Flow）。Git Flow の `develop` / `release` ブランチは使わない
+- **命名**: `<type>/<short-kebab-name>`、type は commit type と同一（`feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore` の 10 種、`revert` はインラインで使うのでブランチ名には含めない）
+- **寿命**: 数日〜数週間程度。長期化したら分割を検討
+- **merge**: `main` への direct commit 禁止。PR 経由、reviewer verdict pass 必須。merge 戦略は `--no-ff`（マイルストーン boundary を history に残す）または squash（WIP commit が多い場合）
+
+#### 3.8.3 言語ポリシー（commit_language）
+
+`.claude-loom/project.json` の `rules.commit_language` で件名/本文の言語を設定：
+- `"any"`（default）：日本語 / 英語どちらも可。個人・国内チーム向け
+- `"english"`：英語強制。国際 OSS / 機械処理優先
+- `"japanese"`：日本語強制（実用上は珍しい設定）
+
+claude-loom 自身は `"any"`（既存 commit が日英混在のため）。
+
 ## 4. アクター（エージェント）定義
 
 ### 4.1 ロール一覧
@@ -1036,3 +1066,4 @@ uninstall.sh の流れ:
 - 2026-04-27: §4.1 ロール一覧 + §4.2.3/4.2.4 reviewer mode 分岐 + §4.3 review_mode pool 説明 + §5 workflow Step [4]/[5] mode 分岐対応（M0.6 = single reviewer default）
 - 2026-04-27: §6.9 project.json schema に rules.review_mode フィールド追加（M0.6）
 - 2026-04-27: §2.2 ロール数 4→6 / §4.2.4 trio mode 条件付き発火 + 独立 JSON 明記 / §9.1 skills tree に loom-review/ 追加 / §4.3・§6.2・§6.9 に max_reviewers (single mode pool) 追加（M0.6 review 後 fix）
+- 2026-04-27: §3.8 追加（CC + GitHub Flow 採用宣言、commit/branch 規約サマリ、commit_language ポリシー、M0.7）
