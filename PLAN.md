@@ -10,7 +10,7 @@ last_synced_at: 1777194000000
 > 各マイルストーンの **詳細実装プラン** は `docs/plans/YYYY-MM-DD-claude-loom-mN-*.md` に分離。
 > M0 完了後、M1 以降は各マイルストーンで writing-plans skill を再起動して詳細化する。
 >
-> **dogfood 戦略**：M0 = harness 完成後、M1 以降の実装は M0 の agent / command 群を使って進める（PM 主導、開発者が TDD、レビュー trio が並列レビュー）。
+> **dogfood 戦略**：M0 = harness 完成後、M1 以降の実装は M0 の agent / command 群を使って進める（PM 主導、開発者が TDD、Reviewer が観点別レビュー — default は single mode 1 体、critical path は trio mode 3 体並列に切替可）。
 
 ## マイルストーン M0: Dev Harness（ブートストラップ）
 
