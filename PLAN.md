@@ -152,6 +152,20 @@ last_synced_at: 1777194000000
 
 **M0.9 完成基準**：`./tests/run_tests.sh` で **8 PASS**（既存 6 + prefs_test + personality_test）、`agents.loom-pm.personality = "detective"` を user-prefs に設定 → `/loom-pm` 起動で関西弁挨拶（実機検証）、`docs/CODING_PRINCIPLES.md` 13 原則 SSoT 配置 + dev/reviewer 参照、`skills/loom-write-plan` + `skills/loom-debug` valid frontmatter、`tag m0.9-complete` 設置、`m0`〜`m0.8-complete` 全保持。
 
+## マイルストーン M0.9.1: loom-write-plan 軽量化（plan format refactor）
+
+詳細: `docs/plans/2026-04-29-claude-loom-m0.9.1-write-plan-lightweight.md`
+
+M0.9 で得た教訓「2523 行 plan は重すぎ」の即時反映。loom-write-plan skill が生成する plan の書式を **必須 5 フィールド軽量版** に refactor し、Task ごとの exact code 転記を撤去、design spec への pointer 化。既存 M0.8/M0.9 plan は凍結（migrate せず）。
+
+- [x] skills/loom-write-plan/SKILL.md を軽量版にリライト <!-- id: m0.9.1-t1 status: done -->
+- [x] PLAN.md M0.9.1 マイルストーン挿入（本タスク） <!-- id: m0.9.1-t2 status: done -->
+- [x] 軽量 plan サンプル文書化（SKILL.md 内に concrete example） <!-- id: m0.9.1-t3 status: done -->
+- [x] skills_test.sh の section assertion を新書式に整合確認（おそらく変更不要） <!-- id: m0.9.1-t4 status: done -->
+- [x] 全 test PASS + tag m0.9.1-complete <!-- id: m0.9.1-t5 status: done -->
+
+**M0.9.1 完成基準**：`./tests/run_tests.sh` で **8 PASS** 維持、`skills/loom-write-plan/SKILL.md` が軽量版書式（必須 5 フィールド：Goal / Files / Spec ref / Integrity check / Commit prefix）+ concrete example を含む、既存 M0.8/M0.9 plan は touch せず凍結、`tag m0.9.1-complete` 設置、`m0`〜`m0.9-complete` 全保持。
+
 ## マイルストーン M1: Daemon + Hooks Foundation
 
 詳細: 未作成（M0 完了後 writing-plans で詳細化）
