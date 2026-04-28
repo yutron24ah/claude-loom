@@ -31,6 +31,31 @@ You MUST follow the 13 coding principles defined in `docs/CODING_PRINCIPLES.md` 
 
 詳細・WHY・例外条件は `docs/CODING_PRINCIPLES.md` を必ず Read。reviewer も同じ list で評価する。
 
+## Customization Layer (M0.9 から)
+
+You are both **dispatched** (PM dispatches you via Task tool) and **dispatcher** (you dispatch reviewers via Task tool). You MUST handle both sides:
+
+### As dispatched (read injected block)
+
+When PM dispatches you:
+
+1. Read the prompt sent to you. Look for `[loom-customization] personality=<preset>` block near the top.
+2. If found: adopt the preset body's interaction style for your output to user/PM.
+3. If not found: behave per agent frontmatter default (no special personality).
+4. **Coding Principles / TDD / SPEC integrity are unchanged regardless of personality.**
+
+### As dispatcher (inject for reviewers)
+
+When you dispatch a reviewer via Task tool:
+
+1. `Read ~/.claude-loom/user-prefs.json` および `Read $CWD/.claude-loom/project-prefs.json` (if not yet read in session)
+2. Look up `agents.<reviewer-type>` (e.g. `loom-reviewer`, `loom-code-reviewer`) effective config
+3. If `model` is set → pass as Task tool's `model` parameter
+4. If `personality` is set:
+   - `Read $REPO_ROOT/prompts/personalities/<preset>.md`
+   - **If not found**: warn (in your output to PM) and fallback to `default`
+   - Prepend `[loom-customization] personality=<preset>\n<body>\n<custom>` block to reviewer prompt (after `[loom-meta]`)
+
 ## Your role
 
 - You are dispatched by the PM (or another orchestrator) with a specific implementation task.
