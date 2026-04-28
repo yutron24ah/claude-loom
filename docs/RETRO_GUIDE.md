@@ -238,9 +238,25 @@ PM: user-prefs.json 更新しました。次回以降の retro では spec-drift
 | **M0.8 v1** | 4 lens ハードコード（agent definition + RETRO_GUIDE category 列挙） | retro 機構成立 |
 | **Phase 2** | 4 lens を独立 skill 化（`skills/loom-retro-lens-*/`）、第三者 lens add 可、daemon 駆動 event 集計、自動 schedule trigger | pluggable エコシステム + 動的最適化の極限 |
 
+## Lens tagging convention（M0.11 から）
+
+各 lens は finding 出力 JSON に以下 field を含む：
+
+- `target_artifact`: 文字列 enum
+  - `agent-prompt`: agent 振る舞い (loom-developer / loom-reviewer 等)
+  - `spec-section`: SPEC.md の特定セクション
+  - `doc-file`: その他 markdown doc (README / CLAUDE / RETRO_GUIDE 等)
+  - `retro-config`: retro architecture 自体 (lens disable / threshold / etc.)
+- `target_agent[]`: agent 名の配列、`target_artifact == "agent-prompt"` 時のみ必須（例: `["loom-developer"]`）
+- `guidance_proposal`: agent-prompt 時に prefs.learned_guidance[].guidance に書き込まれる text 候補
+
+aggregator は user 承認後、target_artifact == "agent-prompt" の finding を該当 agent の learned_guidance[] に書き込み、それ以外は従来通り archive markdown / approval_history のみ更新。
+
 ## 関連参照
 
 - SPEC §3.9（policy 宣言）
+- SPEC §3.9.9（lens tagging + learned_guidance auto-write）
+- SPEC §3.6.5.4（learned_guidance 注入機構）
 - SPEC §6.9.1 / §6.9.2 / §6.9.3（schemas + merge 規則）
 - `docs/plans/specs/2026-04-27-retro-design.md`（設計 SSoT）
 - `~/.claude-loom/user-prefs.json` + `<project>/.claude-loom/project-prefs.json`（実状態）
