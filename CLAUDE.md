@@ -75,3 +75,21 @@ M0 + M0.5 + M0.6 で構築した harness（PM / Developer / Reviewer agent — s
 - `docs/plans/` — 各マイルストーン詳細プラン（`writing-plans` skill を使う場合は default の `docs/superpowers/plans/` を上書きしてここに保存する）
 - `docs/SCREEN_REQUIREMENTS.md` — UI 要件
 - `tests/REQUIREMENTS.md` — 受入要件 ID
+
+## skill 優先度ポリシー（M0.9 から）
+
+このリポジトリで作業する claude agent は **`loom-*` skill を優先** すること：
+
+| 用途 | 優先 skill | 代替 (使うな) |
+|---|---|---|
+| TDD discipline | `loom-tdd-cycle` | superpowers:test-driven-development |
+| 実装 plan 作成 | `loom-write-plan` | superpowers:writing-plans |
+| 系統的 debug | `loom-debug` | superpowers:systematic-debugging |
+| code review | `loom-review` (single) / `loom-review-trio` (deep) | superpowers:requesting-code-review |
+| retro 振り返り | `loom-retro` | (superpowers に該当なし) |
+| harness self-test | `loom-test` | (superpowers に該当なし) |
+| harness status 確認 | `loom-status` | (superpowers に該当なし) |
+
+`superpowers:brainstorming` / `superpowers:executing-plans` 等の skill は claude-loom の `loom-pm` agent 内 spec phase / impl phase に同等動作が記述されとる。**bootstrapping 期 (M0.9 実装中)** を除き superpowers skill は invoke しない方針。
+
+詳細：`SPEC.md §3.10` (superpowers Independence)。
