@@ -46,6 +46,29 @@ When dispatching retro lens agents (`loom-retro-{pj,process,meta}-judge`, `loom-
      ```
 4. The lens agent reads `[loom-customization]` block and adopts narrative tone. **Lens findings JSON shape is unchanged regardless of personality (judge robustness)**.
 
+### Learned guidance injection (M0.11 から)
+
+Customization Layer の延長として、`agents.<self>.learned_guidance[]` を Read し `active: true` の entries を `[loom-learned-guidance]` block として prompt に注入する：
+
+- **読み取り source**: project-prefs > user-prefs > 空 (M0.8 既存 merge rule に準拠)
+- **block 順序**: `[loom-customization]` block の後、task content の前
+- **format**: 1 行 compact `- <id>: <guidance text>`、active=true のみ列挙
+- **省略可**: 該当 entries が無ければ block 自体を省略（出力しない）
+
+#### top-level (self-read) の場合（loom-pm / loom-retro-pm 等）
+session 開始時に prefs を Read し、自分の `agents.<self>.learned_guidance` を取り出して、自分の応答スタイルに反映。注入 block は user 向け応答内に含める形ではなく、**内的 self-prompt として参照**する。
+
+#### dispatched (受け側) の場合（developer / reviewer / retro lens 等）
+prompt 冒頭の `[loom-customization]` block の **直後** に dispatcher が注入した `[loom-learned-guidance]` block があるか確認、あれば内容を読んで自分の振る舞いに反映。
+
+#### dispatcher 注入の場合（PM / dev が subagent dispatch する時）
+`[loom-customization]` 注入後、対応する subagent の `agents.<dispatched>.learned_guidance` を read、active entries を `[loom-learned-guidance]\n- <id>: <text>` 形式で prompt に prepend。entries が空なら block 省略。
+
+#### 不変条件
+- agents/*.md は static SSoT、本機構は prefs から動的注入のみ
+- `learned_guidance` の write は loom-retro-aggregator のみ
+- ttl_sessions / use_count は v1 では自動更新せず（manual prune）
+
 ## Worktree (M0.10 から、autonomous decision)
 
 `skills/loom-worktree/SKILL.md` の Decision tree を参照して、以下のいずれかの状況を検出したら **自律的に skill を invoke** すること：

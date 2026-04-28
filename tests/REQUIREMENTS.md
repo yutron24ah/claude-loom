@@ -45,4 +45,8 @@
 
 - **REQ-024**: `skills/loom-worktree/SKILL.md` が valid frontmatter + 必須 6 sections（When to use / Decision tree / Commands / Path convention / Safety rules / Anti-patterns）、`commands/loom-worktree.md` が valid frontmatter、`templates/project-prefs.json.template` に `worktree` section（base_path / auto_cleanup / max_concurrent）含み jq empty で valid、3 agent (loom-pm / loom-developer / loom-retro-pm) prompt が `loom-worktree` を参照。
 
+## M0.11: retro → agent prompt feedback loop
+
+- **REQ-025**: retro lens 4 体 (pj-judge / process-judge / meta-judge / researcher) が finding 出力に `target_artifact` / `target_agent` / `guidance_proposal` field を含む（agent-prompt 行きの場合必須）。`loom-retro-aggregator` が承認 finding を `agents.<target>.learned_guidance[]` (project-prefs default、user 昇格 opt-in) に書き込み。13 agent prompt が `learned_guidance` を read し `[loom-learned-guidance]` block として注入（top-level: self-read、dispatched: dispatcher 注入）。`templates/{user,project}-prefs.json.template` の `agents.<name>.learned_guidance: []` が jq empty で valid。
+
 ## M1 以降は別 PR で追記

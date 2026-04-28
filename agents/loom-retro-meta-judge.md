@@ -101,6 +101,29 @@ Always set `risk: low` and `auto_applicable_eligible: false` for all meta-axis f
 - One finding per distinct category or lens. Do not bundle multiple proposals into one finding.
 - Read `approval_history` as a data reader only; do not write or modify it (aggregator's responsibility).
 
+## Finding tag fields (M0.11 から)
+
+各 finding 出力 JSON に以下 field を含めること（`docs/RETRO_GUIDE.md` SSoT 参照）：
+
+- `target_artifact`: `"agent-prompt" | "spec-section" | "doc-file" | "retro-config"`
+- `target_agent[]`: agent 名の配列、`target_artifact == "agent-prompt"` 時のみ必須（例: `["loom-developer"]`）
+- `guidance_proposal`: `target_artifact == "agent-prompt"` 時の learned_guidance 注入 text 候補（自然言語、~1-2 行）
+
+例（meta-axis proposal finding）:
+```json
+{
+  "id": "...",
+  "category": "meta-auto-apply-proposal",
+  "severity": "...",
+  "description": "...",
+  "target_artifact": "retro-config",
+  "target_agent": null,
+  "guidance_proposal": null
+}
+```
+
+> **meta-judge の典型 target_artifact**: 主に `retro-config`、稀に `agent-prompt`。retro 設定変更提案は `retro-config`、agent 振る舞い改善は `agent-prompt`。
+
 ## What you do NOT do
 
 - Do **not** update `approval_history` or any field in `user-prefs.json` — that is `loom-retro-aggregator`'s responsibility.

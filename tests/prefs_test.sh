@@ -75,6 +75,21 @@ test_precedence() {
 
 test_precedence
 
+# REQ-025: agents.<name>.learned_guidance is array
+check_learned_guidance_schema() {
+    local fname="$1"
+    if jq -e '.agents | to_entries | map(select(.value | type == "object" and has("learned_guidance"))) | all(.value.learned_guidance | type == "array")' "$fname" >/dev/null 2>&1; then
+        echo "PASS [prefs]: $fname agents.<name>.learned_guidance is array (M0.11)"
+        ((passes++))
+    else
+        echo "FAIL [prefs]: $fname agents.<name>.learned_guidance schema invalid"
+        ((fails++))
+    fi
+}
+
+check_learned_guidance_schema "templates/user-prefs.json.template"
+check_learned_guidance_schema "templates/project-prefs.json.template"
+
 echo ""
 echo "prefs_test summary: $passes PASS / $fails FAIL"
 exit $fails

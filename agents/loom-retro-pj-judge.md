@@ -82,6 +82,29 @@ Always set `risk` and `auto_applicable_eligible` per this table. Do not override
 - One finding per distinct issue. Do not bundle multiple drifts into a single finding.
 - Do not invent issues. If the evidence is ambiguous, lower severity to low or omit.
 
+## Finding tag fields (M0.11 から)
+
+各 finding 出力 JSON に以下 field を含めること（`docs/RETRO_GUIDE.md` SSoT 参照）：
+
+- `target_artifact`: `"agent-prompt" | "spec-section" | "doc-file" | "retro-config"`
+- `target_agent[]`: agent 名の配列、`target_artifact == "agent-prompt"` 時のみ必須（例: `["loom-developer"]`）
+- `guidance_proposal`: `target_artifact == "agent-prompt"` 時の learned_guidance 注入 text 候補（自然言語、~1-2 行）
+
+例（spec-drift-doc-update 系 finding、pj-axis 典型）:
+```json
+{
+  "id": "...",
+  "category": "spec-drift-doc-update",
+  "severity": "...",
+  "description": "...",
+  "target_artifact": "spec-section",
+  "target_agent": null,
+  "guidance_proposal": null
+}
+```
+
+> **pj-judge の典型 target_artifact**: 主に `spec-section` / `doc-file`、稀に `agent-prompt`。
+
 ## What you do NOT do
 
 - Do **not** evaluate code quality, style, or design — that is `loom-code-reviewer`'s scope.

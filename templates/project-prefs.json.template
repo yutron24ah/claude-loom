@@ -24,7 +24,21 @@
     "_comment": "PJ 単位の override。user-prefs より優先される。詳細: SPEC §6.9.4",
     "loom-developer": {
       "model": "sonnet",
-      "personality": "default"
+      "personality": "default",
+      "learned_guidance": [
+        {
+          "_comment": "M0.11 から有効。retro が自動 write、user は read-only + manual prune 推奨。完全な field set は SPEC §6.9.4 参照",
+          "id": "guidance-example-001",
+          "added_at": "2026-04-29",
+          "from_retro": "m0.x-complete",
+          "from_finding_id": "process-tdd-violation-example",
+          "category": "process-tdd-violation",
+          "guidance": "TDD red commit 時は failing test の output を必ず capture して context に残せ",
+          "active": false,
+          "ttl_sessions": null,
+          "use_count": 0
+        }
+      ]
     }
   },
 
