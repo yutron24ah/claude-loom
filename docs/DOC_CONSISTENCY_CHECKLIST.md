@@ -92,3 +92,14 @@ SPEC `§3.6.5` / `§6.9.4` を編集した時：
 - [ ] Path convention で参照する `project-prefs.worktree.base_path` の placeholder 仕様と template が一致
 - [ ] 3 agent (loom-pm / loom-developer / loom-retro-pm) prompt の Worktree section が skill 仕様と整合
 - [ ] README の worktree 入門が skill / SPEC と整合
+
+## M0.11 learned_guidance + lens tagging 関連 check
+
+SPEC §3.6.5.4 / §3.9.x / §6.9.4 を編集した時：
+
+- [ ] `templates/{user,project}-prefs.json.template` の `agents.<name>.learned_guidance` example が schema と一致
+- [ ] `docs/RETRO_GUIDE.md` の lens tagging convention が SPEC §3.9.x と一致
+- [ ] 4 retro lens (`agents/loom-retro-{pj,process,meta}-judge.md` + `loom-retro-researcher.md`) prompt が `target_artifact / target_agent / guidance_proposal` field 出力を記述
+- [ ] 13 agent prompt の Customization Layer section が `learned_guidance` 注入経路を記述
+- [ ] `agents/loom-retro-aggregator.md` の write logic が schema 仕様と整合
+- [ ] `agents/loom-retro-counter-arguer.md` が tag fields を verdict pass 通過時に preserve
