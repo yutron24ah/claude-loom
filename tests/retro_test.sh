@@ -11,6 +11,7 @@ PROJECT_PREFS_TPL="$ROOT_DIR/templates/project-prefs.json.template"
 GUIDE="$ROOT_DIR/docs/RETRO_GUIDE.md"
 
 failures=0
+passes=0
 
 # ----- REQ-017 (a): user-prefs.json.template valid + schema_version -----
 if [ ! -f "$USER_PREFS_TPL" ]; then
@@ -83,6 +84,22 @@ else
     echo "PASS: REQ-018: RETRO_GUIDE.md present with 4 lens names + category enum"
   fi
 fi
+
+# REQ-025: 4 retro lens に target_artifact 記述
+check_lens_tag_fields() {
+    local fname="$1"
+    if grep -q "target_artifact" "$fname"; then
+        echo "PASS [$fname]: documents target_artifact field (M0.11)"
+        passes=$((passes + 1))
+    else
+        echo "FAIL [$fname]: missing target_artifact documentation"
+        failures=$((failures + 1))
+    fi
+}
+
+for fname in agents/loom-retro-pj-judge.md agents/loom-retro-process-judge.md agents/loom-retro-meta-judge.md agents/loom-retro-researcher.md; do
+    [ -f "$fname" ] && check_lens_tag_fields "$fname"
+done
 
 if [ "$failures" -gt 0 ]; then
   echo "retro_test FAILED with $failures violations"

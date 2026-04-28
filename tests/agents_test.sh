@@ -103,6 +103,31 @@ for fname in agents/loom-pm.md agents/loom-developer.md \
     fi
 done
 
+# REQ-025: 13 agent prompt が learned_guidance を参照
+check_learned_guidance_reference() {
+    local fname="$1"
+    if grep -q "learned_guidance\|loom-learned-guidance" "$fname"; then
+        echo "PASS [$fname]: references learned_guidance (M0.11)"
+        return 0
+    else
+        echo "FAIL [$fname]: missing learned_guidance reference"
+        return 1
+    fi
+}
+
+# Apply to all 13 agents
+for fname in agents/loom-pm.md agents/loom-developer.md \
+             agents/loom-reviewer.md agents/loom-code-reviewer.md \
+             agents/loom-security-reviewer.md agents/loom-test-reviewer.md \
+             agents/loom-retro-pm.md \
+             agents/loom-retro-pj-judge.md agents/loom-retro-process-judge.md \
+             agents/loom-retro-meta-judge.md agents/loom-retro-counter-arguer.md \
+             agents/loom-retro-aggregator.md agents/loom-retro-researcher.md; do
+    if [ -f "$fname" ]; then
+        check_learned_guidance_reference "$fname" || ((failures++))
+    fi
+done
+
 if [ "$failures" -gt 0 ]; then
   echo "agents_test FAILED with $failures violations"
   exit 1
