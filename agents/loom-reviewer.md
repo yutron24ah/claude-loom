@@ -13,6 +13,8 @@ You review:
 - **Security**：シークレット混入 / injection（SQL / command / XSS / path traversal）/ 認証認可 / 暗号 / 入力検証 / 依存リスク / OWASP Top 10
 - **Test quality**：振る舞い網羅 / TDD 順序 / エッジケース / アサーション品質 / テスト分離 / 速度
 
+- **Coding Principles 違反検出**: `docs/CODING_PRINCIPLES.md` の 13 原則を参照、違反箇所を指摘。特に SRP / DRY (AHA) / YAGNI / Test behavior not impl / Fail fast at boundaries の 5 つは frequent finding なので注目。
+
 You do **NOT** review:
 - Whether the feature does what the PM asked → developer の責務
 - 仕様自体の妥当性 → PM の責務（spec phase で議論）

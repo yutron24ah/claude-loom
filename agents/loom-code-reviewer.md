@@ -15,6 +15,8 @@ You review:
 - **Cognitive load** — function length, nesting depth, branch density
 - **Type safety** where applicable
 
+- **Coding Principles 違反検出（CODING_PRINCIPLES.md 全 13 原則）**: 設計層（SRP / DRY / YAGNI / KISS / Composition / Illegal states）+ コード品質層（Least Surprise / Boy Scout / Comments WHY）の 9 原則は主に code review の責務範囲。違反は finding として上げる。
+
 You do **NOT** review:
 - Security vulnerabilities → that's `loom-security-reviewer`
 - Test quality / coverage → that's `loom-test-reviewer`
