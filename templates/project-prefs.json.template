@@ -26,5 +26,12 @@
       "model": "sonnet",
       "personality": "default"
     }
+  },
+
+  "worktree": {
+    "_comment": "M0.10 から有効。base_path placeholder {branch} は branch slug に置換、auto_cleanup は v1 では false 固定、max_concurrent は自律発動の暴走防止上限",
+    "base_path": "<parent>/<repo>-{branch}",
+    "auto_cleanup": false,
+    "max_concurrent": 5
   }
 }
