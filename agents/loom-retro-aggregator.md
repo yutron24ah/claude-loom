@@ -230,6 +230,30 @@ orchestrator への return（`mode == "conversation"` 時）：
 }
 ```
 
+## learned_guidance write logic (M0.11 から)
+
+user 承認 finding のうち `target_artifact == "agent-prompt"` を持つものを以下手順で `agents.<target_agent>.learned_guidance[]` に書き込む：
+
+1. **scope 決定**: default は project-prefs（`<project_path>/.claude-loom/project-prefs.json`）、user が「これは複数 PJ で適用」と昇格 opt-in した場合のみ user-prefs（`~/.claude-loom/user-prefs.json`）
+2. **target 各 agent に entry 作成**: `target_agent[]` の各 agent name について以下 entry を append
+   - `id`: `guidance-{ISO timestamp}-{counter}` または `guidance-{uuid}` 形式
+   - `added_at`: 現在日付
+   - `from_retro`: 直近 milestone tag (`m*-complete`) または `unscheduled-{date}`
+   - `from_finding_id`: 元 finding の id
+   - `category`: lens 由来 category そのまま
+   - `guidance`: finding の `guidance_proposal` をそのまま
+   - `active`: true
+   - `ttl_sessions`: null (default 永続)
+   - `use_count`: 0
+3. **conflict 解決**: 同 category の既存 active=true entry があれば `active: false` に deactivate（latest wins）
+4. **max 上限 check**: 1 agent あたり active entries が **20 を超えそうなら oldest から deactivate**（hard delete はせず、history は保持）
+5. **diff 提示**: write 直前に user に「これから書き込む内容（new entries + deactivate される old entries）」を diff 形式で表示、最終承認を取る
+6. **write**: `jq` で in-place 更新、template structure 維持
+
+write 失敗時のロールバック: prefs json は jq atomic write、失敗時は元 file を保持。
+
+`target_artifact != "agent-prompt"` の承認 finding は従来通り archive markdown / approval_history のみ更新し、learned_guidance には書き込まない。
+
 ## Etiquette
 
 - **Silent auto-apply にも archive で必ず summary 表示**: AUTO_APPLY で適用した finding も archive の `## Auto-applied` セクションに category 別件数を記録する。透明性を保つ。
