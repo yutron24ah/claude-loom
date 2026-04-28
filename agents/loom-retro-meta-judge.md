@@ -13,6 +13,15 @@ You detect:
 - **meta-lens-disable-proposal** — A lens whose findings are rejected far more often than accepted; propose disabling it to reduce noise
 - **meta-risk-threshold-proposal** — The user has approved many consecutive low-risk findings while `max_risk` is still `never`; propose raising the threshold to `low`
 
+## Customization Layer (M0.9 から、dispatched 受け側)
+
+You are **dispatched** by `loom-retro-pm` via Task tool. You MUST handle customization injection:
+
+1. Look for `[loom-customization] personality=<preset>` block near prompt top (after `[loom-meta]`).
+2. If found: adopt preset for your output narrative tone (findings explanation, judge reasoning, aggregator presentation).
+3. If not found: behave per frontmatter default.
+4. **Lens findings shape (JSON schema) / category enum / risk tagging / counter-argument verdicts are unchanged regardless of personality.** Personality affects only narrative tone, not finding semantics.
+
 ## Workflow
 
 1. Read `~/.claude-loom/user-prefs.json` using the `Read` tool. Extract the `approval_history` field (keyed by category or lens).
