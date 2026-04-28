@@ -41,4 +41,8 @@
 - **REQ-022**: 全 13 agent prompt に Customization Layer 参照記述あり（top-level: self-read 指示、dispatched: `[loom-customization]` block 読取指示、dispatcher: 注入指示）。新規 skill `loom-write-plan` / `loom-debug` が valid frontmatter + 必須 section
 - **REQ-023**: `install.sh` は `prompts/personalities/` を `~/.claude/prompts/personalities/` に symlink、agent prompt は `~/.claude/prompts/personalities/<preset>.md` 絶対パスで参照（user 他 PJ で claude-loom インストール時に preset md にアクセス可）
 
+## M0.10: git worktree 統合
+
+- **REQ-024**: `skills/loom-worktree/SKILL.md` が valid frontmatter + 必須 6 sections（When to use / Decision tree / Commands / Path convention / Safety rules / Anti-patterns）、`commands/loom-worktree.md` が valid frontmatter、`templates/project-prefs.json.template` に `worktree` section（base_path / auto_cleanup / max_concurrent）含み jq empty で valid、3 agent (loom-pm / loom-developer / loom-retro-pm) prompt が `loom-worktree` を参照。
+
 ## M1 以降は別 PR で追記
