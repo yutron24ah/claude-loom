@@ -197,19 +197,19 @@ M0.8 retro architecture の最終形：承認された finding を `agents.<name
 - block 順序: `[loom-customization]` の後、task の前
 - TTL / use_count v1 manual（自動 prune は M0.11.1+）
 
-- [ ] PLAN.md M0.11 マイルストーン挿入（本タスク） <!-- id: m0.11-t1 status: todo -->
-- [ ] tests/REQUIREMENTS.md REQ-025 追加 <!-- id: m0.11-t2 status: todo -->
-- [ ] SPEC.md §3.6.5 / §3.9 / §6.9.4 拡張（learned_guidance schema + lens tagging + 注入機構） <!-- id: m0.11-t3 status: todo -->
-- [ ] docs/RETRO_GUIDE.md に lens tagging convention 追記 <!-- id: m0.11-t4 status: todo -->
-- [ ] docs/DOC_CONSISTENCY_CHECKLIST.md に M0.11 check items 追加 <!-- id: m0.11-t5 status: todo -->
-- [ ] templates/{user,project}-prefs.json.template に learned_guidance example 追加 <!-- id: m0.11-t6 status: todo -->
-- [ ] 4 retro lens (pj/process/meta/researcher) に target_artifact / target_agent / guidance_proposal field 追加 <!-- id: m0.11-t7 status: todo -->
-- [ ] agents/loom-retro-aggregator.md に learned_guidance write logic 追加 <!-- id: m0.11-t8 status: todo -->
-- [ ] agents/loom-retro-counter-arguer.md に tag preservation 記述 <!-- id: m0.11-t9 status: todo -->
-- [ ] 13 agent prompt の Customization Layer に learned_guidance read + 注入指示 追記 <!-- id: m0.11-t10 status: todo -->
-- [ ] tests 拡張（prefs/agents/retro 各 _test.sh で learned_guidance + lens tag assertion） <!-- id: m0.11-t11 status: todo -->
-- [ ] README.md に user-facing 説明追加 <!-- id: m0.11-t12 status: todo -->
-- [ ] 全 test PASS + tag m0.11-complete + main merge <!-- id: m0.11-t13 status: todo -->
+- [x] PLAN.md M0.11 マイルストーン挿入（本タスク） <!-- id: m0.11-t1 status: done -->
+- [x] tests/REQUIREMENTS.md REQ-025 追加 <!-- id: m0.11-t2 status: done -->
+- [x] SPEC.md §3.6.5 / §3.9 / §6.9.4 拡張（learned_guidance schema + lens tagging + 注入機構） <!-- id: m0.11-t3 status: done -->
+- [x] docs/RETRO_GUIDE.md に lens tagging convention 追記 <!-- id: m0.11-t4 status: done -->
+- [x] docs/DOC_CONSISTENCY_CHECKLIST.md に M0.11 check items 追加 <!-- id: m0.11-t5 status: done -->
+- [x] templates/{user,project}-prefs.json.template に learned_guidance example 追加 <!-- id: m0.11-t6 status: done -->
+- [x] 4 retro lens (pj/process/meta/researcher) に target_artifact / target_agent / guidance_proposal field 追加 <!-- id: m0.11-t7 status: done -->
+- [x] agents/loom-retro-aggregator.md に learned_guidance write logic 追加 <!-- id: m0.11-t8 status: done -->
+- [x] agents/loom-retro-counter-arguer.md に tag preservation 記述 <!-- id: m0.11-t9 status: done -->
+- [x] 13 agent prompt の Customization Layer に learned_guidance read + 注入指示 追記 <!-- id: m0.11-t10 status: done -->
+- [x] tests 拡張（prefs/agents/retro 各 _test.sh で learned_guidance + lens tag assertion） <!-- id: m0.11-t11 status: done -->
+- [x] README.md に user-facing 説明追加 <!-- id: m0.11-t12 status: done -->
+- [x] 全 test PASS + tag m0.11-complete + main merge <!-- id: m0.11-t13 status: done -->
 
 **M0.11 完成基準**：`./tests/run_tests.sh` で **8 PASS** 維持、retro lens 4 体が finding 出力に target_artifact / target_agent / guidance_proposal を含む、loom-retro-aggregator が承認 finding を `agents.<target>.learned_guidance[]` に書き込む logic を持つ、13 agent prompt の Customization Layer が learned_guidance を read + `[loom-learned-guidance]` block として注入、`templates/{user,project}-prefs.json.template` の `agents.<name>.learned_guidance: []` が jq empty で valid、`tag m0.11-complete` 設置、`m0`〜`m0.10-complete` 全保持。
 
