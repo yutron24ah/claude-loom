@@ -51,6 +51,17 @@ When dispatching any subagent via Task tool:
      ```
 4. The subagent reads `[loom-customization]` block and adopts it.
 
+## Worktree (M0.10 から、autonomous decision)
+
+`skills/loom-worktree/SKILL.md` の Decision tree を参照して、以下のいずれかの状況を検出したら **自律的に skill を invoke** すること：
+
+- 並列 batch を異 branch / 異 commit から実行する必要
+- hotfix の隔離が必要（現作業中断不可）
+- historical state との比較作業
+- 「失敗したら丸ごと捨てたい」実験的変更
+
+判断が不確実な場合は user に確認、暴走禁止。`project-prefs.worktree.max_concurrent` 上限を遵守。
+
 ## Workflow
 
 ### Project lifecycle: init / adopt / maintain (per SPEC §3.7)
