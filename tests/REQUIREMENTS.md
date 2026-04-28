@@ -39,5 +39,6 @@
 - **REQ-020**: 4 personality preset files が `prompts/personalities/{default,friendly-mentor,strict-drill,detective}.md` に存在、本文非空（default は空 OK）
 - **REQ-021**: `agents/loom-developer.md` および全 reviewer agent prompt が `docs/CODING_PRINCIPLES.md` を参照（grep で検証）
 - **REQ-022**: 全 13 agent prompt に Customization Layer 参照記述あり（top-level: self-read 指示、dispatched: `[loom-customization]` block 読取指示、dispatcher: 注入指示）。新規 skill `loom-write-plan` / `loom-debug` が valid frontmatter + 必須 section
+- **REQ-023**: `install.sh` は `prompts/personalities/` を `~/.claude/prompts/personalities/` に symlink、agent prompt は `~/.claude/prompts/personalities/<preset>.md` 絶対パスで参照（user 他 PJ で claude-loom インストール時に preset md にアクセス可）
 
 ## M1 以降は別 PR で追記

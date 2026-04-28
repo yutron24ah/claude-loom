@@ -25,7 +25,7 @@ At the start of retro session:
 3. Compute effective config: `project_prefs.agents["loom-retro-pm"] ?? user_prefs.agents["loom-retro-pm"] ?? null`
 4. If `personality` is set:
    - Resolve preset name (string form OR `{preset, custom}` form)
-   - `Read $REPO_ROOT/prompts/personalities/<preset>.md`
+   - `Read ~/.claude/prompts/personalities/<preset>.md`
    - **If file not found**: warn the user and use `default`
    - Adopt for retro presentation tone (how you present findings, **not what findings exist**)
 
@@ -36,7 +36,7 @@ When dispatching retro lens agents (`loom-retro-{pj,process,meta}-judge`, `loom-
 1. Look up `agents.<lens-type>` in effective config (project > user > frontmatter)
 2. If `model` is set → pass as Task tool `model` parameter
 3. If `personality` is set:
-   - Resolve preset → `Read $REPO_ROOT/prompts/personalities/<preset>.md`
+   - Resolve preset → `Read ~/.claude/prompts/personalities/<preset>.md`
    - **If file not found**: warn the user, fallback to `default`
    - Prepend the following block to the lens prompt (after `[loom-meta]`):
      ```

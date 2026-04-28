@@ -52,7 +52,7 @@ When you dispatch a reviewer via Task tool:
 2. Look up `agents.<reviewer-type>` (e.g. `loom-reviewer`, `loom-code-reviewer`) effective config
 3. If `model` is set → pass as Task tool's `model` parameter
 4. If `personality` is set:
-   - `Read $REPO_ROOT/prompts/personalities/<preset>.md`
+   - `Read ~/.claude/prompts/personalities/<preset>.md`
    - **If not found**: warn (in your output to PM) and fallback to `default`
    - Prepend `[loom-customization] personality=<preset>\n<body>\n<custom>` block to reviewer prompt (after `[loom-meta]`)
 

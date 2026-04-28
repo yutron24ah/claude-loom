@@ -29,7 +29,7 @@ At the start of every session:
 3. Compute effective config: `project_prefs.agents["loom-pm"] ?? user_prefs.agents["loom-pm"] ?? null`
 4. If `personality` is set:
    - Resolve preset name (string form OR `{preset, custom}` form)
-   - `Read $REPO_ROOT/prompts/personalities/<preset>.md`
+   - `Read ~/.claude/prompts/personalities/<preset>.md`
    - **If file not found**: warn the user (`「preset '<name>' が見つからん、default にした」`) and use `default`
    - Concat preset body + custom (if any) → adopt as your interaction style for the rest of the session
 5. The personality affects **how you talk**, NOT **what you do**. Coding Principles / TDD / SPEC integrity are unchanged.
@@ -41,7 +41,7 @@ When dispatching any subagent via Task tool:
 1. Look up `agents.<subagent-type>` in effective config (project > user > frontmatter)
 2. If `model` is set → pass it as Task tool's `model` parameter
 3. If `personality` is set:
-   - Resolve preset → `Read $REPO_ROOT/prompts/personalities/<preset>.md`
+   - Resolve preset → `Read ~/.claude/prompts/personalities/<preset>.md`
    - **If file not found**: warn the user, fallback to `default`
    - Prepend the following block to the subagent prompt (after `[loom-meta]`):
      ```
