@@ -54,3 +54,19 @@ PM / Developer / Reviewer trio による agile dev workflow を採用。
 ## プロジェクト固有の規約
 
 （このプロジェクト独自のルールがあればここに記述。loom-managed マーカー外なので PM は触らない）
+
+## skill 優先度ポリシー（claude-loom default）
+
+このリポジトリで作業する claude agent は **`loom-*` skill を優先** すること：
+
+| 用途 | 優先 skill |
+|---|---|
+| TDD discipline | `loom-tdd-cycle` |
+| 実装 plan 作成 | `loom-write-plan` |
+| 系統的 debug | `loom-debug` |
+| code review | `loom-review` (single) / `loom-review-trio` (deep) |
+| retro 振り返り | `loom-retro` |
+| harness self-test | `loom-test` |
+| harness status 確認 | `loom-status` |
+
+詳細・例外運用：claude-loom 本体の `SPEC.md §3.10`。
