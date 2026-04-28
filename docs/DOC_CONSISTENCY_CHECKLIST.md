@@ -83,3 +83,12 @@ SPEC `§3.6.5` / `§6.9.4` を編集した時：
 - [ ] `agents/loom-developer.md` の Coding Principles セクションが現行 13 原則を参照（追加/削除があれば反映）
 - [ ] 全 reviewer agent prompt（`loom-reviewer.md` / `loom-code-reviewer.md` / `loom-test-reviewer.md`）の review 観点が CODING_PRINCIPLES.md と整合
 - [ ] `README.md` で言及されとる原則数（13）が一致
+
+## M0.10 Worktree 関連 check
+
+`skills/loom-worktree/SKILL.md` を編集した時：
+
+- [ ] Decision tree の 5 用途と SPEC §3.6.6.1 が一致
+- [ ] Path convention で参照する `project-prefs.worktree.base_path` の placeholder 仕様と template が一致
+- [ ] 3 agent (loom-pm / loom-developer / loom-retro-pm) prompt の Worktree section が skill 仕様と整合
+- [ ] README の worktree 入門が skill / SPEC と整合
