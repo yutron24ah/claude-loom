@@ -116,6 +116,42 @@ last_synced_at: 1777194000000
 
 **M0.8 完成基準**：`./tests/run_tests.sh` で 6 PASS（既存 5 + retro 1）、`/loom-retro` 起動 → 4 lens 並列 → counter-argument → aggregator が会話 mode で findings 提示までが手元で動く。`/loom-retro --report` で archive markdown のみ生成も動く。`tag m0.8-complete` 設置、`m0`〜`m0.7-complete` 全保持。
 
+## マイルストーン M0.9: Harness Polish（superpowers 独立 + Customization Layer）
+
+詳細: `docs/plans/2026-04-29-claude-loom-m0.9-harness-polish.md`
+設計 SSoT: `docs/plans/specs/2026-04-29-m0.9-design.md`
+
+- [ ] SPEC §3.6.5 / §3.10 / §6.9.4 追加 <!-- id: m0.9-t1 status: todo -->
+- [ ] PLAN.md M0.9 マイルストーン挿入 <!-- id: m0.9-t2 status: todo -->
+- [ ] tests/REQUIREMENTS.md REQ-019..022 追加 <!-- id: m0.9-t3 status: todo -->
+- [ ] docs/DOC_CONSISTENCY_CHECKLIST.md 更新 <!-- id: m0.9-t4 status: todo -->
+- [ ] tests/agents_test.sh 拡張（principles assertion red） <!-- id: m0.9-t5 status: todo -->
+- [ ] docs/CODING_PRINCIPLES.md 新設 <!-- id: m0.9-t6 status: todo -->
+- [ ] agents/loom-developer.md に Coding Principles セクション追加 <!-- id: m0.9-t7 status: todo -->
+- [ ] reviewer agent prompt に principle review 観点追加 <!-- id: m0.9-t8 status: todo -->
+- [ ] tests/personality_test.sh 新設（red） <!-- id: m0.9-t9 status: todo -->
+- [ ] prompts/personalities/default.md 新設 <!-- id: m0.9-t10 status: todo -->
+- [ ] prompts/personalities/friendly-mentor.md 新設 <!-- id: m0.9-t11 status: todo -->
+- [ ] prompts/personalities/strict-drill.md + detective.md 新設 <!-- id: m0.9-t12 status: todo -->
+- [ ] tests/prefs_test.sh 新設（red） + templates 更新 <!-- id: m0.9-t13 status: todo -->
+- [ ] templates/project-prefs.json.template 更新 <!-- id: m0.9-t14 status: todo -->
+- [ ] agents/loom-pm.md customization 参照追加 <!-- id: m0.9-t15 status: todo -->
+- [ ] agents/loom-developer.md customization 参照追加 <!-- id: m0.9-t16 status: todo -->
+- [ ] reviewer agent 4 体 customization 参照追加 <!-- id: m0.9-t17 status: todo -->
+- [ ] agents/loom-retro-pm.md customization 参照追加 <!-- id: m0.9-t18 status: todo -->
+- [ ] retro lens 6 体 customization 参照追加（並列） <!-- id: m0.9-t19 status: todo -->
+- [ ] tests/agents_test.sh customization assertion green <!-- id: m0.9-t20 status: todo -->
+- [ ] skills/loom-write-plan + loom-debug 新設 + skills_test 拡張 <!-- id: m0.9-t21 status: todo -->
+- [ ] CLAUDE.md superpowers 独立明記 <!-- id: m0.9-t22 status: todo -->
+- [ ] templates/CLAUDE.md.template 同期 <!-- id: m0.9-t23 status: todo -->
+- [ ] README.md customization 入門追加 <!-- id: m0.9-t24 status: todo -->
+- [ ] docs/RETRO_GUIDE.md customization 観測経路追記 <!-- id: m0.9-t25 status: todo -->
+- [ ] 全 test 8 PASS 確認 + 実機検証 <!-- id: m0.9-t26 status: todo -->
+- [ ] PLAN.md M0.9 tasks done マーク <!-- id: m0.9-t27 status: todo -->
+- [ ] tag m0.9-complete + retro 提案 <!-- id: m0.9-t28 status: todo -->
+
+**M0.9 完成基準**：`./tests/run_tests.sh` で **8 PASS**（既存 6 + prefs_test + personality_test）、`agents.loom-pm.personality = "detective"` を user-prefs に設定 → `/loom-pm` 起動で関西弁挨拶（実機検証）、`docs/CODING_PRINCIPLES.md` 13 原則 SSoT 配置 + dev/reviewer 参照、`skills/loom-write-plan` + `skills/loom-debug` valid frontmatter、`tag m0.9-complete` 設置、`m0`〜`m0.8-complete` 全保持。
+
 ## マイルストーン M1: Daemon + Hooks Foundation
 
 詳細: 未作成（M0 完了後 writing-plans で詳細化）
