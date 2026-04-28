@@ -23,7 +23,7 @@ for cmd in bash ln; do
 done
 
 # ディレクトリ準備
-mkdir -p "$CLAUDE_HOME/agents" "$CLAUDE_HOME/commands" "$CLAUDE_HOME/skills"
+mkdir -p "$CLAUDE_HOME/agents" "$CLAUDE_HOME/commands" "$CLAUDE_HOME/skills" "$CLAUDE_HOME/prompts"
 
 install_links() {
   local src_dir="$1"
@@ -105,6 +105,7 @@ echo ""
 install_links "$ROOT_DIR/agents" "$CLAUDE_HOME/agents" "loom-*.md"
 install_links "$ROOT_DIR/commands" "$CLAUDE_HOME/commands" "loom-*.md"
 install_dir_links "$ROOT_DIR/skills" "$CLAUDE_HOME/skills" "loom-*"
+install_dir_links "$ROOT_DIR/prompts" "$CLAUDE_HOME/prompts" "*"
 
 echo ""
 echo "✅ Installation complete."

@@ -66,6 +66,31 @@ for skill_dir in "$SKILLS_DIR"/loom-*/; do
   echo "PASS [$skill_name]: name=$name_field"
 done
 
+# REQ-022: new M0.9 skills must have specific sections
+check_skill_sections() {
+    local skill="$1"
+    shift
+    local fname="skills/$skill/SKILL.md"
+    if [ ! -f "$fname" ]; then
+        echo "FAIL [skills]: $fname missing"
+        ((failures++))
+        return
+    fi
+    for section in "$@"; do
+        if grep -q "$section" "$fname"; then
+            echo "PASS [skills]: $skill has section '$section'"
+        else
+            echo "FAIL [skills]: $skill missing section '$section'"
+            ((failures++))
+        fi
+    done
+}
+
+# loom-write-plan: must have these sections
+check_skill_sections "loom-write-plan" "When to use" "Output structure" "Process"
+# loom-debug: must have these sections
+check_skill_sections "loom-debug" "When to use" "Process" "Hypothesis enumeration"
+
 if [ "$failures" -gt 0 ]; then
   echo "skills_test FAILED with $failures violations"
   exit 1

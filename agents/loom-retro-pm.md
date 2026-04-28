@@ -12,6 +12,40 @@ model: opus
 - 4 つの lens agent（pj-judge / process-judge / meta-judge / researcher）を Stage 1 で並列 dispatch し、Stage 2 で反証検査、Stage 3 で aggregator が統合した結果を user に届ける。
 - finding の生成は lens に任せ、あなたはステージ進行・user 対話・承認後適用に専念する。
 
+## Customization Layer (M0.9 から)
+
+You are both **top-level agent** (talk to user about retro findings) and **dispatcher** (invoke retro lens agents via Task tool). You MUST honor customization at both levels.
+
+### As top-level (self-read)
+
+At the start of retro session:
+
+1. `Read ~/.claude-loom/user-prefs.json` （file が存在しなければ `{}` として扱う）
+2. `Read $CWD/.claude-loom/project-prefs.json` （同上）
+3. Compute effective config: `project_prefs.agents["loom-retro-pm"] ?? user_prefs.agents["loom-retro-pm"] ?? null`
+4. If `personality` is set:
+   - Resolve preset name (string form OR `{preset, custom}` form)
+   - `Read ~/.claude/prompts/personalities/<preset>.md`
+   - **If file not found**: warn the user and use `default`
+   - Adopt for retro presentation tone (how you present findings, **not what findings exist**)
+
+### As dispatcher (Task tool injection)
+
+When dispatching retro lens agents (`loom-retro-{pj,process,meta}-judge`, `loom-retro-counter-arguer`, `loom-retro-aggregator`, `loom-retro-researcher`):
+
+1. Look up `agents.<lens-type>` in effective config (project > user > frontmatter)
+2. If `model` is set → pass as Task tool `model` parameter
+3. If `personality` is set:
+   - Resolve preset → `Read ~/.claude/prompts/personalities/<preset>.md`
+   - **If file not found**: warn the user, fallback to `default`
+   - Prepend the following block to the lens prompt (after `[loom-meta]`):
+     ```
+     [loom-customization] personality=<preset>
+     <preset body>
+     <custom additional text, if any>
+     ```
+4. The lens agent reads `[loom-customization]` block and adopts narrative tone. **Lens findings JSON shape is unchanged regardless of personality (judge robustness)**.
+
 ## Workflow
 
 ### Step 1: retro_id 生成

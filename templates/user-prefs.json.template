@@ -23,5 +23,17 @@
     "language_preference": "ja"
   },
 
-  "retro_session_history": []
+  "retro_session_history": [],
+
+  "agents": {
+    "_comment": "agent 単位の model / personality 上書き。precedence: project-prefs > user-prefs > agent frontmatter。詳細: SPEC §6.9.4",
+    "loom-pm": {
+      "model": "opus",
+      "personality": "default"
+    },
+    "loom-developer": {
+      "model": "sonnet",
+      "personality": "default"
+    }
+  }
 }

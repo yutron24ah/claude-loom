@@ -56,6 +56,48 @@ Claude Code を起動して：
 
 bundled script はインストール後 `templates/settings.json.template` を参考に各プロジェクトの `.claude/settings.json` allowlist に追加することで、承認プロンプトなしで利用可能。`PLACEHOLDER_CLAUDE_LOOM_INSTALL_PATH` は claude-loom の clone 先パス（例 `/Users/you/work/claude-loom`）に手動で置換する（M1 以降は自動化予定）。
 
+## Customization Layer (M0.9 から)
+
+各 agent の **モデル**と**人格 (personality)** をユーザー側でチューニングできる。
+
+### prefs files
+
+```
+~/.claude-loom/user-prefs.json          # user 横断、複数 PJ で共通
+<project>/.claude-loom/project-prefs.json  # PJ 固有、user-prefs を override
+```
+
+### Schema 例
+
+```json
+{
+  "agents": {
+    "loom-pm":           { "model": "opus",   "personality": "detective" },
+    "loom-developer":    { "model": "sonnet", "personality": "friendly-mentor" },
+    "loom-retro-pj-judge": { "model": "haiku" }
+  }
+}
+```
+
+### 同梱 personality preset (4 本)
+
+| preset | キャラ | 用途 |
+|---|---|---|
+| `default` | 中立・専門的 | 既存挙動 |
+| `friendly-mentor` | 優しい講師 | コーディング初心者向けチューニング |
+| `strict-drill` | クールなコーディングプロ | 上級者の高速反復 |
+| `detective` | 迷宮なしの名探偵（関西弁） | 遊び心、長時間セッション疲労軽減 |
+
+ユーザー独自 preset：`prompts/personalities/<name>.md` に Markdown を置いて prefs に preset 名を指定。
+
+### 不変条件
+
+- personality は **「伝え方」のみ可変**
+- `docs/CODING_PRINCIPLES.md` 13 原則 / TDD 規律 / SPEC 整合性は **不変**
+- 違反検出と review verdict 基準は personality によらず同一
+
+詳細は `SPEC.md §3.6.5 / §6.9.4` を参照。
+
 ## 開発規約
 
 claude-loom は **Conventional Commits + GitHub Flow** を採用：

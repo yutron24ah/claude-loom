@@ -67,3 +67,19 @@ git commit -m "docs: align with SPEC update (X 機能)"
 ## このチェックリスト自体の改善
 
 M4（doc 整合性エンジン v1）実装時に検出ルールを抽出する元データとして本チェックリストを使う。手で運用しながら気付いた検出パターンを追記すること。
+
+## M0.9 Customization Layer 関連 check
+
+SPEC `§3.6.5` / `§6.9.4` を編集した時：
+
+- [ ] `templates/user-prefs.json.template` の `agents.*` 例が schema と一致
+- [ ] `templates/project-prefs.json.template` の `agents.*` 例が schema と一致
+- [ ] `docs/RETRO_GUIDE.md` の retro lens 観測対象に customization state が記述されとる
+- [ ] `agents/loom-{pm,developer,reviewer 群,retro-* 群}.md` の Customization Layer 参照記述が schema 変更に追従
+- [ ] `prompts/personalities/*.md` の preset 名と SPEC §6.9.4.4 の同梱表が一致
+
+`docs/CODING_PRINCIPLES.md` を編集した時：
+
+- [ ] `agents/loom-developer.md` の Coding Principles セクションが現行 13 原則を参照（追加/削除があれば反映）
+- [ ] 全 reviewer agent prompt（`loom-reviewer.md` / `loom-code-reviewer.md` / `loom-test-reviewer.md`）の review 観点が CODING_PRINCIPLES.md と整合
+- [ ] `README.md` で言及されとる原則数（13）が一致

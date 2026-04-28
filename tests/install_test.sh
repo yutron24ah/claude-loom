@@ -84,4 +84,18 @@ else
   echo "SKIP: REQ-009: skills/loom-*/ symlink が無いため衝突テストを実行できず（Tasks 5-8 完了後に有効化）"
 fi
 
+# ----- REQ-023: prompts/personalities/ symlink (M0.9) -----
+# install.sh は prompts/personalities/ を ~/.claude/prompts/personalities/ に symlink すべき
+# 直前の衝突テストで sandbox 状態が乱れとるので、fresh sandbox で確認
+fresh_sandbox=$(mktemp -d)
+trap 'rm -rf "$SANDBOX" "$fresh_sandbox"' EXIT
+CLAUDE_HOME="$fresh_sandbox/.claude" bash "$ROOT_DIR/install.sh" >/dev/null
+
+if [ -L "$fresh_sandbox/.claude/prompts/personalities" ]; then
+  echo "PASS: REQ-023: ~/.claude/prompts/personalities is a symlink (M0.9)"
+else
+  echo "FAIL: REQ-023: ~/.claude/prompts/personalities が symlink ちゃう"
+  exit 1
+fi
+
 echo "All install_test checks passed"

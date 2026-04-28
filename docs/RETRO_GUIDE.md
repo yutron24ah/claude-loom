@@ -88,6 +88,16 @@ retro 自身の最適化。再帰的 auto-apply 拡張機構。
 
 > v1 では `spec-drift-doc-update` と `readme-staleness` のみが `auto_applicable_eligible: true`。残りは user 承認必須。Phase 2 evolution で拡張可。
 
+#### meta-axis lens の M0.9 拡張：Customization Layer 観測
+
+M0.9 で agent customization が導入されてから、meta-axis lens は以下も観測対象とする：
+
+- **personality drift**: user-prefs / project-prefs の `agents.<name>.personality` がどの preset で長期使用されとるか、preset の効果実感（user 承認率と連動）を分析
+- **model cost optimization**: `agents.<name>.model` 設定が token 消費 / 完了時間に与える影響を評価、過剰な opus 使用 / haiku で精度劣化等を proposal として上げる
+- **custom personality drift**: ユーザー追加の `prompts/personalities/<custom>.md` が **TDD / Coding Principles を override しとらんか** をチェック、guardrail 違反は high-risk finding として上げる
+
+これらは v1 では meta-axis lens prompt 内で「if customization state を読み取れたら」の optional として実装、v2 で daemon 経由の確実な観測に移行する。
+
 ## 3. 3-stage protocol
 
 ```
