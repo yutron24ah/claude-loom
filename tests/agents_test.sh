@@ -59,6 +59,25 @@ for agent_file in "$AGENTS_DIR"/loom-*.md; do
   echo "PASS [$fname]: name=$name_field"
 done
 
+# REQ-021: dev / reviewer agents reference CODING_PRINCIPLES.md
+check_principles_reference() {
+    local fname="$1"
+    if grep -q "CODING_PRINCIPLES\\.md" "$fname"; then
+        echo "PASS [$fname]: references CODING_PRINCIPLES.md"
+        return 0
+    else
+        echo "FAIL [$fname]: missing CODING_PRINCIPLES.md reference"
+        return 1
+    fi
+}
+
+# Apply to developer + 3 reviewers (security-reviewer は原則責務範囲外で除外)
+for fname in agents/loom-developer.md agents/loom-reviewer.md agents/loom-code-reviewer.md agents/loom-test-reviewer.md; do
+    if [ -f "$fname" ]; then
+        check_principles_reference "$fname" || ((failures++))
+    fi
+done
+
 if [ "$failures" -gt 0 ]; then
   echo "agents_test FAILED with $failures violations"
   exit 1
