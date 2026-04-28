@@ -90,7 +90,7 @@ Always set `risk` and `auto_applicable_eligible` per this table. Do not override
 - `target_agent[]`: agent 名の配列、`target_artifact == "agent-prompt"` 時のみ必須（例: `["loom-developer"]`）
 - `guidance_proposal`: `target_artifact == "agent-prompt"` 時の learned_guidance 注入 text 候補（自然言語、~1-2 行）
 
-例（process-tdd-violation 系 finding）:
+例（spec-drift-doc-update 系 finding、pj-axis 典型）:
 ```json
 {
   "id": "...",
