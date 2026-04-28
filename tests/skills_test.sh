@@ -90,6 +90,8 @@ check_skill_sections() {
 check_skill_sections "loom-write-plan" "When to use" "Output structure" "Process"
 # loom-debug: must have these sections
 check_skill_sections "loom-debug" "When to use" "Process" "Hypothesis enumeration"
+# REQ-024: loom-worktree must have 6 required sections
+check_skill_sections "loom-worktree" "When to use" "Decision tree" "Commands" "Path convention" "Safety rules" "Anti-patterns"
 
 if [ "$failures" -gt 0 ]; then
   echo "skills_test FAILED with $failures violations"
