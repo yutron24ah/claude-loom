@@ -172,14 +172,14 @@ M0.9 で得た教訓「2523 行 plan は重すぎ」の即時反映。loom-write
 
 worktree 機能を claude-loom に取り込み。並列 dev / 安全実験 / branch 比較 / hotfix 隔離 / 一時 review の 5 用途を skill に集約、PM / dev / retro-pm が **自律的に判断**して必要時に発動。default 動作（同 tree）は不変、opt-in 起動。
 
-- [ ] PLAN.md M0.10 マイルストーン挿入（本タスク） <!-- id: m0.10-t1 status: todo -->
-- [ ] skills/loom-worktree/SKILL.md 新設（5 用途 + Decision tree + 安全コマンド集） <!-- id: m0.10-t2 status: todo -->
-- [ ] commands/loom-worktree.md 新設（明示 invoke 用 slash command） <!-- id: m0.10-t3 status: todo -->
-- [ ] templates/project-prefs.json.template に worktree section 追加（base_path / auto_cleanup / max_concurrent） <!-- id: m0.10-t4 status: todo -->
-- [ ] agents/loom-pm.md / loom-developer.md / loom-retro-pm.md に loom-worktree 自律参照追記 <!-- id: m0.10-t5 status: todo -->
-- [ ] tests/skills_test.sh に loom-worktree section 検証追加 <!-- id: m0.10-t6 status: todo -->
-- [ ] SPEC.md §3.x worktree 章追加 + README.md 入門 + DOC_CONSISTENCY 更新 <!-- id: m0.10-t7 status: todo -->
-- [ ] 全 test PASS + tag m0.10-complete + main merge <!-- id: m0.10-t8 status: todo -->
+- [x] PLAN.md M0.10 マイルストーン挿入（本タスク） <!-- id: m0.10-t1 status: done -->
+- [x] skills/loom-worktree/SKILL.md 新設（5 用途 + Decision tree + 安全コマンド集） <!-- id: m0.10-t2 status: done -->
+- [x] commands/loom-worktree.md 新設（明示 invoke 用 slash command） <!-- id: m0.10-t3 status: done -->
+- [x] templates/project-prefs.json.template に worktree section 追加（base_path / auto_cleanup / max_concurrent） <!-- id: m0.10-t4 status: done -->
+- [x] agents/loom-pm.md / loom-developer.md / loom-retro-pm.md に loom-worktree 自律参照追記 <!-- id: m0.10-t5 status: done -->
+- [x] tests/skills_test.sh に loom-worktree section 検証追加 <!-- id: m0.10-t6 status: done -->
+- [x] SPEC.md §3.x worktree 章追加 + README.md 入門 + DOC_CONSISTENCY 更新 <!-- id: m0.10-t7 status: done -->
+- [x] 全 test PASS + tag m0.10-complete + main merge <!-- id: m0.10-t8 status: done -->
 
 **M0.10 完成基準**：`./tests/run_tests.sh` で **8 PASS** 維持、`skills/loom-worktree/SKILL.md` が必須 sections（When to use / Decision tree / Commands / Path convention / Safety rules / Anti-patterns）valid frontmatter、`commands/loom-worktree.md` valid、agent prompt 3 体に `loom-worktree` 参照記述、`templates/project-prefs.json.template` に `worktree` section 含み jq empty で valid、`tag m0.10-complete` 設置、`m0`〜`m0.9.1-complete` 全保持。
 
