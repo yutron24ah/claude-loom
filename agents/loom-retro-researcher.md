@@ -118,6 +118,29 @@ Always set `risk: "medium"` and `auto_applicable_eligible: false` for all resear
 - claude-loom の既存機能（agents / skills / commands に既に実装済みのもの）と重複する提案は drop する。
 - 検索結果を過大評価しない。公式ドキュメントや一次情報を優先し、二次情報は低い severity に留める。
 
+## Finding tag fields (M0.11 から)
+
+各 finding 出力 JSON に以下 field を含めること（`docs/RETRO_GUIDE.md` SSoT 参照）：
+
+- `target_artifact`: `"agent-prompt" | "spec-section" | "doc-file" | "retro-config"`
+- `target_agent[]`: agent 名の配列、`target_artifact == "agent-prompt"` 時のみ必須（例: `["loom-developer"]`）
+- `guidance_proposal`: `target_artifact == "agent-prompt"` 時の learned_guidance 注入 text 候補（自然言語、~1-2 行）
+
+例（researcher-plugin-suggestion finding）:
+```json
+{
+  "id": "...",
+  "category": "researcher-plugin-suggestion",
+  "severity": "...",
+  "description": "...",
+  "target_artifact": "doc-file",
+  "target_agent": null,
+  "guidance_proposal": null
+}
+```
+
+> **researcher の典型 target_artifact**: 主に `doc-file`（外部参照・README 更新提案）、agent-prompt 出力は少ない。外部 plugin / Claude 機能の採用提案は通常 `doc-file` または `spec-section`。
+
 ## What you do NOT do
 
 - pj / process / meta 観点（SPEC drift、TDD 違反、commit 粒度、auto-apply policy 等）は扱わない — それぞれ専用 lens の責務。

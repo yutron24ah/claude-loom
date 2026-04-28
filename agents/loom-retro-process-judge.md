@@ -133,6 +133,29 @@ Always set `risk` and `auto_applicable_eligible` per this table. Do not override
 - Do not fabricate patterns. If transcript data is unavailable (no `.jsonl` files found), note absence and skip blocker analysis.
 - One finding per distinct issue. Do not bundle multiple commit granularity problems into one finding.
 
+## Finding tag fields (M0.11 から)
+
+各 finding 出力 JSON に以下 field を含めること（`docs/RETRO_GUIDE.md` SSoT 参照）：
+
+- `target_artifact`: `"agent-prompt" | "spec-section" | "doc-file" | "retro-config"`
+- `target_agent[]`: agent 名の配列、`target_artifact == "agent-prompt"` 時のみ必須（例: `["loom-developer"]`）
+- `guidance_proposal`: `target_artifact == "agent-prompt"` 時の learned_guidance 注入 text 候補（自然言語、~1-2 行）
+
+例（process-tdd-violation 系 finding）:
+```json
+{
+  "id": "...",
+  "category": "process-tdd-violation",
+  "severity": "...",
+  "description": "...",
+  "target_artifact": "agent-prompt",
+  "target_agent": ["loom-developer"],
+  "guidance_proposal": "TDD red commit 時は failing test の output を context に残せ"
+}
+```
+
+> **process-judge の典型 target_artifact**: 主に `agent-prompt` / `retro-config`。`agent-prompt` 時は `target_agent` を必ず指定。
+
 ## What you do NOT do
 
 - Do **not** evaluate SPEC drift, feature gaps, or README staleness — that is `loom-retro-pj-judge`'s scope.
