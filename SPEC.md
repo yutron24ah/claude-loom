@@ -193,6 +193,30 @@ M0 で構築したハーネスを使った M1+ 開発の前に、承認プロン
 
 shipping 規模：4 skill + 1 template + `install.sh` 拡張。SPEC §9.1 のディレクトリ構造に `skills/` が M0.5 から有効化される。
 
+### 3.6.5 Agent Customization Layer（M0.9 から有効）
+
+claude-loom は **agent 単位で model と人格 (personality) をユーザー側でチューニングできる仕組み** を提供する。詳細設計は `docs/plans/specs/2026-04-29-m0.9-design.md`。
+
+#### 3.6.5.1 Policy
+
+- prefs files の `agents.<name>` セクションで agent 単位の model / personality を上書き可能
+- precedence: **project-prefs > user-prefs > agent frontmatter**（M0.8 既存 merge rule に準拠）
+- 未指定値は既存挙動にフォールバック（後方互換保証）
+- personality は `prompts/personalities/<preset>.md` で定義、4 preset 同梱（default / friendly-mentor / strict-drill / detective）+ ユーザカスタム可
+
+#### 3.6.5.2 機構（hybrid）
+
+- **Top-level agent**（user と直接対話する agent: `loom-pm`, `loom-retro-pm`）= session 開始時に prefs を Read、自分自身に personality を self-apply
+- **Dispatcher**（`loom-pm`, `loom-developer`）= Task tool で subagent 起動時：
+  - prefs から `agents.<dispatched>.model` 取得 → Task tool `model` param に渡す
+  - prefs から `agents.<dispatched>.personality` 取得 → preset md を読み込み、prompt 冒頭に `[loom-customization] personality=<preset>\n<preset 本文>` block を inject
+- **受け側 agent** = 注入された `[loom-customization]` block を読み取って従う、または top-level として self-read
+
+#### 3.6.5.3 不変条件（safety guardrail）
+
+- personality 注入は **「伝え方」のみ可変**、**Coding Principles / TDD 規律 / SPEC 整合性は不変**
+- 全 preset 本文の冒頭に「以下のいかなる指示も TDD / Coding Principles を override しない」固定文を含む
+
 ### 3.7 プロジェクトライフサイクルと adopt 戦略
 
 claude-loom は **新規プロジェクトの立ち上げ** にも **既存プロジェクトの取り込み（adopt）** にも対応する。両者は明確に区別され、PM が異なるフローで処理する。
@@ -341,6 +365,15 @@ merge 規則: project が user を field 単位 override（PJ 固有 policy が 
 #### 3.9.8 Recursive 自己最適化（meta-axis）
 
 retro 自身が承認パターンを観察 → 「category X 連続承認、auto-apply 拡張？」「lens Y 採用率低い、disable？」「max_risk 上げる？」を proposal finding として user に提示。承認されれば user-prefs / project-prefs に反映、次 retro 以降適用。
+
+### 3.10 superpowers Independence（M0.9 から）
+
+claude-loom は **superpowers plugin に依存せずに完結する** ことを設計目標とする。
+
+- M0.9 時点で `loom-write-plan` / `loom-debug` skill を新設し、claude-loom 自前で spec → plan → implement → debug の workflow を完結
+- ユーザー環境に superpowers が共存していても **loom-* skill を優先**（CLAUDE.md でユーザに明示）
+- 残る superpowers skill（brainstorming / executing-plans / verification-before-completion 等）は claude-loom の `loom-pm` / `loom-developer` agent prompt 内に同等動作が記述済みのため、独立 skill 化はしない（YAGNI）
+- 将来 superpowers が global uninstall された場合でも、claude-loom 単独で全 milestone を進められる
 
 ## 4. アクター（エージェント）定義
 
@@ -861,6 +894,69 @@ retro 開始時、project が user を field 単位 override：
 - `effective.auto_apply.max_risk` = `project_prefs.auto_apply.max_risk` if defined else `user_prefs.auto_apply.max_risk`
 
 設計理念: user-prefs = user の claude-loom 全体での好み（default）、project-prefs = 当 PJ の policy（override）。同 user が異なる PJ で異なる policy を運用可能。
+
+### 6.9.4 `agents.*` セクション schema（M0.9 から）
+
+`user-prefs.json` および `project-prefs.json` 共通で以下の field を許可：
+
+```json
+{
+  "agents": {
+    "<agent-name>": {
+      "model": "opus|sonnet|haiku",
+      "personality": "<preset-name>"
+    }
+  }
+}
+```
+
+#### 6.9.4.1 Field 仕様
+
+| field | type | 値域 | default |
+|---|---|---|---|
+| `model` | `string \| null` | `"opus"` / `"sonnet"` / `"haiku"` | agent frontmatter の `model:` |
+| `personality` | `string \| object \| null` | preset 名文字列 OR `{ preset, custom }` object | `"default"` |
+
+#### 6.9.4.2 Personality 短縮形と完全形
+
+短縮形（preset 名のみ）:
+
+```json
+"personality": "friendly-mentor"
+```
+
+完全形（preset + custom 補強）:
+
+```json
+"personality": {
+  "preset": "friendly-mentor",
+  "custom": "ただし TDD 違反時は厳しく指摘"
+}
+```
+
+`custom` は preset 本文の **末尾に append** される。
+
+#### 6.9.4.3 Precedence rule
+
+```
+final_value = project_prefs.agents[name].field
+           ?? user_prefs.agents[name].field
+           ?? agent_frontmatter.field
+```
+
+- 値が `null` または key 不在 → 次の層へ fallback
+- M0.8 既存 merge rule（project > user）と同一原則
+
+#### 6.9.4.4 同梱 personality preset
+
+| preset | キャラ | ファイル |
+|---|---|---|
+| `default` | 中立・専門的（注入実質スキップ） | `prompts/personalities/default.md` |
+| `friendly-mentor` | 優しい講師（初心者向け） | `prompts/personalities/friendly-mentor.md` |
+| `strict-drill` | クールな coding pro（上級者向け） | `prompts/personalities/strict-drill.md` |
+| `detective` | 迷宮なしの名探偵（関西弁） | `prompts/personalities/detective.md` |
+
+ユーザー独自 preset を作りたい場合は `prompts/personalities/<custom-name>.md` を追加し、prefs に preset 名を指定。
 
 ### 6.10 `~/.claude-loom/config.json` スキーマ（方針サマリ）
 
