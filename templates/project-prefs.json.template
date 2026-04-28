@@ -18,5 +18,13 @@
   "learned_patterns": {
     "common_blockers": [],
     "frequent_finding_categories": []
+  },
+
+  "agents": {
+    "_comment": "PJ 単位の override。user-prefs より優先される。詳細: SPEC §6.9.4",
+    "loom-developer": {
+      "model": "sonnet",
+      "personality": "default"
+    }
   }
 }
