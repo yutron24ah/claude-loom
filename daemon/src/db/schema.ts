@@ -4,7 +4,7 @@
  * ID strategy: SPEC §12 — nanoid for user-facing tables, autoincrement for high-frequency append-only
  * Timestamp: integer ms (epoch) with mode: "timestamp_ms" → TS Date type
  */
-import { sqliteTable, text, integer, uniqueIndex } from "drizzle-orm/sqlite-core";
+import { sqliteTable, text, integer, uniqueIndex, primaryKey } from "drizzle-orm/sqlite-core";
 import { nanoid } from "nanoid";
 
 // ---------------------------------------------------------------------------
@@ -116,7 +116,7 @@ export type Task = typeof tasks.$inferSelect;
 export type NewTask = typeof tasks.$inferInsert;
 
 // ---------------------------------------------------------------------------
-// 7. token_usage — composite PK (session_id, bucket_at), autoincrement-like
+// 7. token_usage — composite PK (session_id, bucket_at) per SPEC §6.2
 // ---------------------------------------------------------------------------
 export const tokenUsage = sqliteTable("token_usage", {
   sessionId: text("session_id").notNull(),
@@ -124,7 +124,9 @@ export const tokenUsage = sqliteTable("token_usage", {
   inputTokens: integer("input_tokens").notNull().default(0),
   outputTokens: integer("output_tokens").notNull().default(0),
   cacheTokens: integer("cache_tokens").notNull().default(0),
-});
+}, (table) => ({
+  pk: primaryKey({ columns: [table.sessionId, table.bucketAt] }),
+}));
 
 export type TokenUsage = typeof tokenUsage.$inferSelect;
 export type NewTokenUsage = typeof tokenUsage.$inferInsert;

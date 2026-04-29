@@ -120,5 +120,6 @@ CREATE TABLE `token_usage` (
 	`bucket_at` integer NOT NULL,
 	`input_tokens` integer DEFAULT 0 NOT NULL,
 	`output_tokens` integer DEFAULT 0 NOT NULL,
-	`cache_tokens` integer DEFAULT 0 NOT NULL
+	`cache_tokens` integer DEFAULT 0 NOT NULL,
+	PRIMARY KEY(`session_id`, `bucket_at`)
 );
