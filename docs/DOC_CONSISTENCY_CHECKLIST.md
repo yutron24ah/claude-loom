@@ -103,3 +103,13 @@ SPEC §3.6.5.4 / §3.9.x / §6.9.4 を編集した時：
 - [ ] 13 agent prompt の Customization Layer section が `learned_guidance` 注入経路を記述
 - [ ] `agents/loom-retro-aggregator.md` の write logic が schema 仕様と整合
 - [ ] `agents/loom-retro-counter-arguer.md` が tag fields を verdict pass 通過時に preserve
+
+## M0.12 Coexistence Mode 関連 check
+
+SPEC §3.6.7 / §3.7 / §6.9 を編集した時：
+
+- [ ] `templates/claude-loom/project.json.template` の `rules.coexistence_mode` enum 値と SPEC §3.6.7.1 が一致
+- [ ] `rules.enabled_features` array の feature group 名と SPEC §3.6.7.2 が一致
+- [ ] 3 dispatcher agent (`loom-pm` / `loom-developer` / `loom-retro-pm`) prompt の runtime gate 記述が SPEC §3.6.7.3 と整合
+- [ ] `commands/loom-mode.md` が SPEC §3.6.7 と整合
+- [ ] README.md の Coexistence Mode intro が SPEC と整合
