@@ -1,5 +1,6 @@
 import { initTRPC, TRPCError } from "@trpc/server";
 import type { CreateFastifyContextOptions } from "@trpc/server/adapters/fastify";
+import { getOrCreateToken, verifyToken } from "./security/token.js";
 
 export type Context = {
   token?: string;
@@ -16,10 +17,14 @@ const t = initTRPC.context<Context>().create();
 export const router = t.router;
 export const publicProcedure = t.procedure;
 
-// auth middleware — Task 14 で本実装、M1 では skeleton
+// Eagerly load/create the daemon auth token at module init
+const expectedToken = getOrCreateToken();
+
+// auth middleware — Task 14 本実装: header token verify
 export const authedProcedure = t.procedure.use(async ({ ctx, next }) => {
-  // token verification is implemented in Task 14
-  // for now, pass through
+  if (!verifyToken(ctx.token, expectedToken)) {
+    throw new TRPCError({ code: "UNAUTHORIZED", message: "Invalid or missing token" });
+  }
   return next();
 });
 
