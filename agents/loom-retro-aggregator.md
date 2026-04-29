@@ -255,6 +255,34 @@ write 失敗時のロールバック: prefs json は jq atomic write、失敗時
 
 `target_artifact != "agent-prompt"` の承認 finding は従来通り archive markdown / approval_history のみ更新し、learned_guidance には書き込まない。
 
+## Action plan section（M0.13 から、必須）
+
+aggregator output (archive markdown) は以下 3 分類で **action plan section** を含む：
+
+- **即時適用 (immediate)**: 軽量 fix、本 session で着手可能な finding。例：doc 1 行追加、prefs schema field 1 個。
+- **milestone 化 (milestone)**: 新 milestone 立てる finding。例：新 agent / 新 skill / multi-file refactor。
+- **保留 / archive only (deferred)**: 後送り、archive のみで反映なし。
+
+各 finding に user の意思表示 (`accept / reject / defer / discuss`) を記録、合意 plan を `<project>/.claude-loom/retro/<retro-id>/pending.json` の `action_plan` field に保存。
+
+action plan 例（pending.json schema 拡張）:
+
+```json
+{
+  "action_plan": {
+    "immediate": [
+      {"finding_id": "pj-002", "user_decision": "accept", "applied_at": "..."}
+    ],
+    "milestone": [
+      {"finding_id": "meta-D", "user_decision": "accept", "milestone_id": "M0.13"}
+    ],
+    "deferred": [
+      {"finding_id": "pj-001", "user_decision": "defer", "reason": "low priority"}
+    ]
+  }
+}
+```
+
 ## Etiquette
 
 - **Silent auto-apply にも archive で必ず summary 表示**: AUTO_APPLY で適用した finding も archive の `## Auto-applied` セクションに category 別件数を記録する。透明性を保つ。
