@@ -12,5 +12,8 @@
     "test:daemon": "pnpm --filter @claude-loom/daemon test",
     "dev": "pnpm --filter @claude-loom/daemon dev",
     "build": "pnpm -r build"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": ["better-sqlite3", "esbuild"]
   }
 }
