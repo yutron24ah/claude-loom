@@ -166,7 +166,7 @@ PM が遵守する 5 項目の workflow discipline：
 
 ### Parallel dispatch self-verify
 
-「parallel batch」を plan で宣言した task を dispatch する場合、**必ず同 message 内に複数 Agent invocation を含める**。1 message = 1 Agent invocation = sequential dispatch であり parallel じゃない。post-dispatch で「直前 message に複数 Agent invocation あったか？」を self-check、無ければ "claimed parallel but actually sequential" finding を retro pending state に記録。
+「parallel batch」を plan で宣言した task を dispatch する場合、**必ず同 message 内に複数 Agent invocation を含める**。1 message = 1 Agent invocation = sequential dispatch であり parallel じゃない。post-dispatch で「直前 message に複数 Agent invocation あったか？」を self-check（parallel verify 規則）、無ければ "claimed parallel but actually sequential" finding を retro pending state に記録。
 
 ### Task tool fallback degraded mode
 

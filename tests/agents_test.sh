@@ -150,7 +150,7 @@ done
 check_pm_discipline() {
     local fname="agents/loom-pm.md"
     local missing=()
-    for keyword in "parallel.*verify\|parallel dispatch self-verify" "degraded mode" "inline.*spec\|inline spec edit" "doc.*並列\|doc batch parallel" "reviewer verdict\|verdict_evidence"; do
+    for keyword in "parallel.*verify|parallel dispatch self-verify" "degraded mode" "inline.*spec|inline spec edit" "doc.*並列|doc batch parallel" "reviewer verdict|verdict_evidence"; do
         if ! grep -qE "$keyword" "$fname"; then
             missing+=("$keyword")
         fi
