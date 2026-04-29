@@ -93,3 +93,52 @@ M0 + M0.5 + M0.6 で構築した harness（PM / Developer / Reviewer agent — s
 `superpowers:brainstorming` / `superpowers:executing-plans` 等の skill は claude-loom の `loom-pm` agent 内 spec phase / impl phase に同等動作が記述されとる。**bootstrapping 期 (M0.9 実装中)** を除き superpowers skill は invoke しない方針。
 
 詳細：`SPEC.md §3.10` (superpowers Independence)。
+
+## Daemon 開発 note（M1 から）
+
+claude-loom 内で daemon (TypeScript / Fastify / tRPC) を開発する際の追加規約：
+
+### Node.js 環境
+
+- **Node LTS（20 or 22）推奨**。Node 25 (current) では `better-sqlite3` の native build に CXXFLAGS workaround が必要な場合あり、LTS 環境を強く推奨
+- 依存 install: `pnpm install`（root から）
+
+### daemon ディレクトリ構造
+
+```
+daemon/src/
+├── server.ts              # Fastify entry
+├── router.ts              # AppRouter (frontend export 起点)
+├── trpc.ts                # tRPC + auth middleware
+├── db/                    # Drizzle schema + migrations + client
+├── routes/                # 9 sub-router (project/session/agent/plan/consistency/approval/note/config/events)
+├── events/                # broadcaster + types
+├── hooks/                 # ingest (POST /event) + correlation (FIFO)
+├── project/detect.ts      # git root + project.json marker
+├── security/token.ts      # nanoid token + verify
+├── lifecycle/             # idle-shutdown + event-cleanup
+└── config.ts              # ~/.claude-loom/config.json wrapper
+```
+
+### test
+
+- daemon: `pnpm --filter @claude-loom/daemon test`（Vitest、138+ test）
+- harness: `bash tests/run_tests.sh`（既存 + daemon_init_test + daemon_commands_test）
+- 全 test: `pnpm test`（root から、両方走る）
+
+### 編集 SSoT
+
+- API surface (tRPC procedures): `daemon/src/router.ts` + `routes/*.ts`
+- DB schema: `daemon/src/db/schema.ts`（Drizzle）
+- WS event types: `daemon/src/events/types.ts`（zod）
+- frontend 渡し型: `import type { AppRouter, Session, ... } from "@claude-loom/daemon"`
+
+### M1 で確定済み技術判断
+
+詳細は SPEC §12。M1 で追加された主な確定値：
+- API: tRPC + zod
+- ORM: Drizzle + better-sqlite3
+- ID: nanoid、Timestamp: integer ms
+- Test: Vitest（daemon）+ bash test（harness）並列共存
+- Type 共有: daemon が AppRouter + Drizzle schema type を export
+- Auth: nanoid token in `~/.claude-loom/daemon-token` (chmod 600)
