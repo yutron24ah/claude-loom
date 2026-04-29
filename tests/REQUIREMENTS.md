@@ -49,4 +49,8 @@
 
 - **REQ-025**: retro lens 4 体 (pj-judge / process-judge / meta-judge / researcher) が finding 出力に `target_artifact` / `target_agent` / `guidance_proposal` field を含む（agent-prompt 行きの場合必須）。`loom-retro-aggregator` が承認 finding を `agents.<target>.learned_guidance[]` (project-prefs default、user 昇格 opt-in) に書き込み。13 agent prompt が `learned_guidance` を read し `[loom-learned-guidance]` block として注入（top-level: self-read、dispatched: dispatcher 注入）。`templates/{user,project}-prefs.json.template` の `agents.<name>.learned_guidance: []` が jq empty で valid。
 
+## M0.12: Coexistence Mode
+
+- **REQ-026**: `templates/claude-loom/project.json.template` に `rules.coexistence_mode` (enum `"full|coexist|custom"`、default `"full"`) + `rules.enabled_features` (array<string>、default `["all"]`) 追加、jq empty で valid。3 dispatcher agent (`agents/loom-pm.md` / `loom-developer.md` / `loom-retro-pm.md`) prompt が `coexistence_mode` を read し runtime gate（feature group 不在なら該当機能 skip）を実装。`commands/loom-mode.md` 新設で mode 切替可能。
+
 ## M1 以降は別 PR で追記
