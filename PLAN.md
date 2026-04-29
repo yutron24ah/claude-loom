@@ -213,6 +213,35 @@ M0.8 retro architecture の最終形：承認された finding を `agents.<name
 
 **M0.11 完成基準**：`./tests/run_tests.sh` で **8 PASS** 維持、retro lens 4 体が finding 出力に target_artifact / target_agent / guidance_proposal を含む、loom-retro-aggregator が承認 finding を `agents.<target>.learned_guidance[]` に書き込む logic を持つ、13 agent prompt の Customization Layer が learned_guidance を read + `[loom-learned-guidance]` block として注入、`templates/{user,project}-prefs.json.template` の `agents.<name>.learned_guidance: []` が jq empty で valid、`tag m0.11-complete` 設置、`m0`〜`m0.10-complete` 全保持。
 
+## マイルストーン M0.12: Coexistence Mode（既存 PJ 検出 + 機能 opt-in/opt-out）
+
+詳細: `docs/plans/2026-04-29-claude-loom-m0.12-coexistence.md`
+
+既存 PJ に他 plugin / user 自身のルールが入っとる時の coexistence mode を導入。`full / coexist / custom` 3 mode、5 feature group（core / retro / customization / worktree / native-skills）。dispatcher 3 体（PM / dev / retro-pm）に runtime gate を入れて mode 別動作を実現。receiver agent は mode 不要。
+
+設計合意（対話履歴）:
+- 3 mode: full / coexist / custom（C: observe-only は M2 daemon 完成後で）
+- 検出 ii: CLAUDE.md / project.json / agents/skills/commands / 他 plugin
+- trigger β+γ: PM 初回検出 + /loom-mode で再選択
+- storage: project.json `rules.coexistence_mode` + `rules.enabled_features`
+- 粒度 iii: 5 group の中庸粒度
+
+- [ ] PLAN.md M0.12 マイルストーン挿入（本タスク） <!-- id: m0.12-t1 status: todo -->
+- [ ] tests/REQUIREMENTS.md REQ-026 追加 <!-- id: m0.12-t2 status: todo -->
+- [ ] SPEC.md §3.6.7 Coexistence Mode 章新設 + §3.7 lifecycle 拡張 + §6.9 schema 拡張 <!-- id: m0.12-t3 status: todo -->
+- [ ] docs/DOC_CONSISTENCY_CHECKLIST.md M0.12 check items <!-- id: m0.12-t4 status: todo -->
+- [ ] templates/claude-loom/project.json.template に coexistence_mode + enabled_features 追加 <!-- id: m0.12-t5 status: todo -->
+- [ ] commands/loom-mode.md 新設（mode 切替 slash command） <!-- id: m0.12-t6 status: todo -->
+- [ ] agents/loom-pm.md lifecycle 拡張 + mode 選択 prompt + runtime gate <!-- id: m0.12-t7 status: todo -->
+- [ ] agents/loom-developer.md runtime gate（native-skills / worktree / customization） <!-- id: m0.12-t8 status: todo -->
+- [ ] agents/loom-retro-pm.md runtime gate（retro hook 全体 + learned_guidance） <!-- id: m0.12-t9 status: todo -->
+- [ ] tests/prefs_test.sh project.json schema 拡張 <!-- id: m0.12-t10 status: todo -->
+- [ ] tests/agents_test.sh + commands_test.sh 拡張（dispatcher mode 参照 + loom-mode 検証） <!-- id: m0.12-t11 status: todo -->
+- [ ] README.md user-facing 入門追加 <!-- id: m0.12-t12 status: todo -->
+- [ ] 全 test PASS + tag m0.12-complete + main merge <!-- id: m0.12-t13 status: todo -->
+
+**M0.12 完成基準**：`./tests/run_tests.sh` で **8 PASS** 維持、`templates/claude-loom/project.json.template` に `coexistence_mode` + `enabled_features` 追加 + jq empty で valid、3 dispatcher agent prompt に runtime gate 記述、`commands/loom-mode.md` valid frontmatter、`tag m0.12-complete` 設置、`m0`〜`m0.11-complete` 全保持、これで原 6 案件（A/B/C+G/D/E/F）全完走。
+
 ## マイルストーン M1: Daemon + Hooks Foundation
 
 詳細: 未作成（M0 完了後 writing-plans で詳細化）
