@@ -103,9 +103,39 @@ echo "  ROOT_DIR    = $ROOT_DIR"
 echo ""
 
 install_links "$ROOT_DIR/agents" "$CLAUDE_HOME/agents" "loom-*.md"
-install_links "$ROOT_DIR/commands" "$CLAUDE_HOME/commands" "loom-*.md"
+install_links "$ROOT_DIR/commands" "$CLAUDE_HOME/commands" "loom*.md"
 install_dir_links "$ROOT_DIR/skills" "$CLAUDE_HOME/skills" "loom-*"
 install_dir_links "$ROOT_DIR/prompts" "$CLAUDE_HOME/prompts" "*"
+
+# hooks/ symlink (M1: bash hooks for Claude Code event ingestion)
+mkdir -p "$CLAUDE_HOME/hooks"
+install_links "$ROOT_DIR/hooks" "$CLAUDE_HOME/hooks" "*.sh"
+
+# settings.json への hooks 配線（jq + atomic mv）(M1)
+SETTINGS_FILE="$CLAUDE_HOME/settings.json"
+HOOKS_PATCH='{
+  "hooks": {
+    "session_start": "'"$CLAUDE_HOME"'/hooks/session_start.sh",
+    "pre_tool": "'"$CLAUDE_HOME"'/hooks/pre_tool.sh",
+    "post_tool": "'"$CLAUDE_HOME"'/hooks/post_tool.sh",
+    "stop": "'"$CLAUDE_HOME"'/hooks/stop.sh",
+    "SubagentStop": "'"$CLAUDE_HOME"'/hooks/SubagentStop.sh"
+  }
+}'
+
+if command -v jq >/dev/null 2>&1; then
+  if [ -f "$SETTINGS_FILE" ]; then
+    # 既存 settings に hooks merge（既存設定を保持）
+    TMP="$(mktemp)"
+    jq -s '.[0] * .[1]' "$SETTINGS_FILE" <(echo "$HOOKS_PATCH") > "$TMP" && mv "$TMP" "$SETTINGS_FILE"
+  else
+    # 新規作成
+    echo "$HOOKS_PATCH" | jq . > "$SETTINGS_FILE"
+  fi
+  echo "  hooks 配線 settings.json に追加"
+else
+  echo "  WARNING: jq 不在、settings.json への hooks 配線 skip。手動で hooks 設定してください"
+fi
 
 echo ""
 echo "✅ Installation complete."

@@ -176,6 +176,60 @@ retro architecture を **「自己改善 + PJ 改善 + user 参加 + action plan
 
 詳細: `SPEC.md §3.9.x / §3.6.8`、`docs/RETRO_GUIDE.md`。
 
+## Daemon Foundation (M1 から)
+
+claude-loom は M1 で **Node.js + TypeScript + tRPC + Drizzle + SQLite** ベースの daemon を実装。bash hooks からの event ingestion → DB 永続化 → tRPC subscriptions で frontend (M2) に live push する一気通貫 backend。
+
+### 起動
+
+```bash
+pnpm install                                      # 初回のみ
+pnpm --filter @claude-loom/daemon dev             # 127.0.0.1:5757 で起動
+curl http://127.0.0.1:5757/health                 # health check
+```
+
+### Frontend 渡し（M2 で UI 作成時）
+
+```typescript
+// ui/src/api.ts
+import type { AppRouter } from "@claude-loom/daemon";
+import type { Project, Session, PlanItem } from "@claude-loom/daemon/db";
+import { createTRPCClient, httpBatchLink, wsLink, createWSClient } from "@trpc/client";
+
+const wsClient = createWSClient({ url: "ws://127.0.0.1:5757/trpc" });
+
+export const trpc = createTRPCClient<AppRouter>({
+  links: [
+    wsLink({ client: wsClient }),
+    httpBatchLink({
+      url: "http://127.0.0.1:5757/trpc",
+      headers: () => ({ "x-loom-token": loadToken() }),
+    }),
+  ],
+});
+
+// 型完全共有：daemon の AppRouter type を直接 import、frontend 側で同じ
+// procedure / Drizzle schema type を使える。型ズレ不可能。
+```
+
+### Architecture
+
+- **runtime**: Node.js LTS（>= 20）+ TypeScript（strict）
+- **monorepo**: pnpm workspaces (root + `daemon/`、M2 で `ui/` 追加予定)
+- **HTTP/WS**: Fastify + `@fastify/websocket`
+- **API**: tRPC + zod (HTTP RPC + WS subscriptions)
+- **ORM**: Drizzle + better-sqlite3 (11 tables、SPEC §6.1)
+- **ID**: nanoid (21 chars)、Timestamp: integer ms (epoch)
+- **Auth**: token in `~/.claude-loom/daemon-token` (chmod 600)
+- **Bind**: `127.0.0.1` only（localhost、外部公開禁止）
+- **Lifecycle**: 30 分 idle で auto-shutdown、events table 30 日 OR 200MB rolling delete
+
+### bash hooks → daemon ingestion
+
+Claude Code の hook 5 種 (`session_start` / `pre_tool` / `post_tool` / `stop` / `SubagentStop`) が `curl POST /event` で daemon に event 送信。daemon 不在時 fail-silent（Claude Code 動作妨げない）。
+
+詳細：`SPEC §6.2 / §6.3 / §6.4 / §12`、`docs/plans/2026-04-29-claude-loom-m1-daemon-foundation.md`。
+
 ## 開発規約
 
 claude-loom は **Conventional Commits + GitHub Flow** を採用：

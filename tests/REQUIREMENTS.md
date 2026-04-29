@@ -57,4 +57,6 @@
 
 - **REQ-027**: `docs/RETRO_GUIDE.md` に retro 基本方針 P1/P2/P3 (自己 + PJ 改善 / user 参加 / action plan 化) 明記、4 retro lens prompt が `freeform-improvement` category instruction を含む（generic 禁止、concrete file/commit 参照必須）、`agents/loom-retro-aggregator.md` の output に action plan セクション必須記述、`agents/loom-pm.md` に parallel dispatch self-verify + Task tool fallback degraded mode + inline spec edit + doc batch 並列化 + reviewer verdict 保存記述、`agents/loom-developer.md` に TDD red commit 時系列 enforcement。`./tests/run_tests.sh` で 8 PASS 維持。
 
-## M1 以降は別 PR で追記
+## M1: Daemon + Hooks Foundation
+
+- **REQ-028**: `install.sh` が `hooks/*.sh` を `~/.claude/hooks/` に symlink + `~/.claude/settings.json` に hooks 5 種配線（jq + atomic mv）。`bash install.sh` 後に Claude Code が hook event を daemon に POST 可能。

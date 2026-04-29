@@ -98,4 +98,25 @@ else
   exit 1
 fi
 
+# ----- REQ-028: hooks symlink + settings.json 配線 (M1) -----
+fresh_sandbox2=$(mktemp -d)
+trap 'rm -rf "$SANDBOX" "$fresh_sandbox" "$fresh_sandbox2"' EXIT
+CLAUDE_HOME="$fresh_sandbox2/.claude" bash "$ROOT_DIR/install.sh" >/dev/null
+
+if [ -L "$fresh_sandbox2/.claude/hooks/session_start.sh" ]; then
+  echo "PASS: REQ-028: hooks symlink (M1)"
+else
+  echo "FAIL: REQ-028: hooks symlink missing"
+  exit 1
+fi
+
+if command -v jq >/dev/null 2>&1; then
+  if [ -f "$fresh_sandbox2/.claude/settings.json" ] && jq -e '.hooks.session_start' "$fresh_sandbox2/.claude/settings.json" >/dev/null 2>&1; then
+    echo "PASS: REQ-028: settings.json hooks 配線 (M1)"
+  else
+    echo "FAIL: REQ-028: settings.json missing hooks"
+    exit 1
+  fi
+fi
+
 echo "All install_test checks passed"

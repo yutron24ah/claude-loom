@@ -1385,14 +1385,28 @@ uninstall.sh の流れ:
 | Stack | Node.js / TypeScript（hooks のみ bash） | Web UI 連携、frontend-design との相性 |
 | Web フレームワーク | React + Tailwind + Vite | エコシステム、開発速度 |
 | ゲームエンジン | Phaser 3 | ピクセル RPG ルームに最適 |
-| Daemon フレームワーク | Fastify + ws | 軽量、TypeScript fit |
+| Daemon フレームワーク | Fastify + WebSocket（`@fastify/websocket`） | 軽量、TypeScript fit |
+| **API レイヤ（M1 から）** | **tRPC + zod**（HTTP RPC + WS subscriptions） | frontend に AppRouter type を直接 import させ型ズレ完全排除、zod schema は frontend form validation でも reuse 可 |
+| **ORM（M1 から）** | **Drizzle ORM**（`drizzle-orm` + `better-sqlite3`） | TypeScript-first、schema = TS コード、type 自動 export、frontend が DB type を直接 import 可、`drizzle-kit generate` で migration SQL 自動生成 |
 | 永続化 | SQLite | 単一ファイル、OS バンドル、クエリ容易 |
-| 通信 | hooks→daemon: HTTP POST、daemon→UI: WebSocket | fire-and-forget vs リアルタイム push |
+| **ID strategy（M1 から）** | **nanoid（21 文字、`text` 列）** | 推測不可（security）、autoinc 漏洩なし、URL safe |
+| **Timestamp（M1 から）** | **integer ms (epoch)** + Drizzle `mode: 'timestamp_ms'` | JS native (`Date` 自動展開)、frontend 互換 max |
+| **Validation（M1 から）** | **zod** | tRPC defacto、frontend と schema 共有可 |
+| **Test framework（daemon、M1 から）** | **Vitest** | ESM-first、TS native、超高速、harness の bash test と並列共存 |
+| **Monorepo tool（M1 から）** | **pnpm workspaces** | TS ecosystem 標準、disk 効率 |
+| **Repo 構造（M1 から）** | 既存 harness 資産 (root) + `daemon/` sibling、M2 で `ui/` sibling 追加 | 最小 monorepo、既存 M0 系列に手入れなし |
+| **型共有 pattern（M1 から）** | daemon が `AppRouter` type と Drizzle schema type を export、frontend が `import type { AppRouter, Session, ... } from "@claude-loom/daemon"` | tRPC 標準 pattern、shared package 不要 |
+| 通信 | hooks→daemon: HTTP POST `/event`（plain）、daemon→UI: tRPC over HTTP/WS | hook ingestion は bash + curl 維持（tRPC 通さん）、UI は tRPC で完結 |
+| **WS subscription 粒度（M1 から）** | event 種別ごと subscription（`onAgentChange` / `onPlanChange` / `onFindingNew` 等） | frontend が必要 channel だけ open、type safety max |
 | 認証 | `claude -p` subprocess で Claude Code 認証流用 | 追加キー不要 |
+| **Daemon auth token（M1 から）** | nanoid 生成、`~/.claude-loom/daemon-token` (chmod 600) に保存、tRPC headers で送信 | daemon `127.0.0.1` bind 前提でも UI 経由攻撃を防ぐ |
+| **Bind address（M1 から）** | `127.0.0.1` のみ | localhost 専用、外部公開禁止 |
+| **CORS（M1 から）** | development: `localhost:5173` (Vite default) 許可、production: 同 origin (UI も daemon serve) | M2 frontend dev 時 |
 | Visual 方向性 | ピクセル RPG（Stardew 系） | キャラクター愛着優先（Q9） |
 | Daemon ライフサイクル | Lazy 起動、30 分アイドルで停止 | リソース節約 + シームレス UX |
 | Daemon ポート | 5757（config 変更可） | — |
 | プロジェクト判定 | git root + `.claude-loom/project.json` marker | 自動 + 明示の hybrid |
+| **Events rolling delete（M1 から）** | 30 日 OR 200MB 上限到達で oldest から削除、daily 実行 | event log の無限肥大防止 |
 
 ---
 
