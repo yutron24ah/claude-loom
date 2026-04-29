@@ -12,6 +12,22 @@ last_synced_at: 1777194000000
 >
 > **dogfood 戦略**：M0 = harness 完成後、M1 以降の実装は M0 の agent / command 群を使って進める（PM 主導、開発者が TDD、Reviewer が観点別レビュー — default は single mode 1 体、critical path は trio mode 3 体並列に切替可）。
 
+## 原 6 案件 → milestone 対応表（M0 系列で完走）
+
+session 起源の 6 案件 (A/B/C+G/D/E/F) と実装 milestone の対応：
+
+| # | 案件 | milestone | tag |
+|---|---|---|---|
+| **A** | superpowers 完全削除（自前 skill 化、bootstrap 期で superpowers 共存停止） | M0.9 | `m0.9-complete` |
+| **B** | 実装者 agent に SOLID/DRY/YAGNI など 13 原則をベースライン注入 | M0.9 | `m0.9-complete` |
+| **C+G** | per-agent model 設定 + 人格注入 (Customization Layer、4 personality preset 同梱) | M0.9 | `m0.9-complete` |
+| **D** | git worktree 統合（5 用途 + Decision tree、autonomous decision via skill） | M0.10 | `m0.10-complete` |
+| **E** | retro → agent prompt feedback ループ (learned_guidance 機構) | M0.11 | `m0.11-complete` |
+| **F** | 既存 PJ 検出 + 機能 opt-in/opt-out (Coexistence Mode、3 mode + 5 feature group) | M0.12 | `m0.12-complete` |
+
+**ボーナス milestone**：
+- M0.9.1：loom-write-plan 軽量化（plan 17x 圧縮 dogfood、M0.9 完了直後の即時改善）
+
 ## マイルストーン M0: Dev Harness（ブートストラップ）
 
 詳細: `docs/plans/2026-04-26-claude-loom-m0-harness.md`
