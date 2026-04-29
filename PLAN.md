@@ -226,19 +226,19 @@ M0.8 retro architecture の最終形：承認された finding を `agents.<name
 - storage: project.json `rules.coexistence_mode` + `rules.enabled_features`
 - 粒度 iii: 5 group の中庸粒度
 
-- [ ] PLAN.md M0.12 マイルストーン挿入（本タスク） <!-- id: m0.12-t1 status: todo -->
-- [ ] tests/REQUIREMENTS.md REQ-026 追加 <!-- id: m0.12-t2 status: todo -->
-- [ ] SPEC.md §3.6.7 Coexistence Mode 章新設 + §3.7 lifecycle 拡張 + §6.9 schema 拡張 <!-- id: m0.12-t3 status: todo -->
-- [ ] docs/DOC_CONSISTENCY_CHECKLIST.md M0.12 check items <!-- id: m0.12-t4 status: todo -->
-- [ ] templates/claude-loom/project.json.template に coexistence_mode + enabled_features 追加 <!-- id: m0.12-t5 status: todo -->
-- [ ] commands/loom-mode.md 新設（mode 切替 slash command） <!-- id: m0.12-t6 status: todo -->
-- [ ] agents/loom-pm.md lifecycle 拡張 + mode 選択 prompt + runtime gate <!-- id: m0.12-t7 status: todo -->
-- [ ] agents/loom-developer.md runtime gate（native-skills / worktree / customization） <!-- id: m0.12-t8 status: todo -->
-- [ ] agents/loom-retro-pm.md runtime gate（retro hook 全体 + learned_guidance） <!-- id: m0.12-t9 status: todo -->
-- [ ] tests/prefs_test.sh project.json schema 拡張 <!-- id: m0.12-t10 status: todo -->
-- [ ] tests/agents_test.sh + commands_test.sh 拡張（dispatcher mode 参照 + loom-mode 検証） <!-- id: m0.12-t11 status: todo -->
-- [ ] README.md user-facing 入門追加 <!-- id: m0.12-t12 status: todo -->
-- [ ] 全 test PASS + tag m0.12-complete + main merge <!-- id: m0.12-t13 status: todo -->
+- [x] PLAN.md M0.12 マイルストーン挿入（本タスク） <!-- id: m0.12-t1 status: done -->
+- [x] tests/REQUIREMENTS.md REQ-026 追加 <!-- id: m0.12-t2 status: done -->
+- [x] SPEC.md §3.6.7 Coexistence Mode 章新設 + §3.7 lifecycle 拡張 + §6.9 schema 拡張 <!-- id: m0.12-t3 status: done -->
+- [x] docs/DOC_CONSISTENCY_CHECKLIST.md M0.12 check items <!-- id: m0.12-t4 status: done -->
+- [x] templates/claude-loom/project.json.template に coexistence_mode + enabled_features 追加 <!-- id: m0.12-t5 status: done -->
+- [x] commands/loom-mode.md 新設（mode 切替 slash command） <!-- id: m0.12-t6 status: done -->
+- [x] agents/loom-pm.md lifecycle 拡張 + mode 選択 prompt + runtime gate <!-- id: m0.12-t7 status: done -->
+- [x] agents/loom-developer.md runtime gate（native-skills / worktree / customization） <!-- id: m0.12-t8 status: done -->
+- [x] agents/loom-retro-pm.md runtime gate（retro hook 全体 + learned_guidance） <!-- id: m0.12-t9 status: done -->
+- [x] tests/prefs_test.sh project.json schema 拡張 <!-- id: m0.12-t10 status: done -->
+- [x] tests/agents_test.sh + commands_test.sh 拡張（dispatcher mode 参照 + loom-mode 検証） <!-- id: m0.12-t11 status: done -->
+- [x] README.md user-facing 入門追加 <!-- id: m0.12-t12 status: done -->
+- [x] 全 test PASS + tag m0.12-complete + main merge <!-- id: m0.12-t13 status: done -->
 
 **M0.12 完成基準**：`./tests/run_tests.sh` で **8 PASS** 維持、`templates/claude-loom/project.json.template` に `coexistence_mode` + `enabled_features` 追加 + jq empty で valid、3 dispatcher agent prompt に runtime gate 記述、`commands/loom-mode.md` valid frontmatter、`tag m0.12-complete` 設置、`m0`〜`m0.11-complete` 全保持、これで原 6 案件（A/B/C+G/D/E/F）全完走。
 
