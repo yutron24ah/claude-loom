@@ -63,7 +63,8 @@ for i in "${!HOOK_NAMES[@]}"; do
   name="${HOOK_NAMES[$i]}"
   expected_event="${EXPECTED_EVENTS[$i]}"
   HOOK="$ROOT_DIR/hooks/${name}.sh"
-  if ! grep -q "\"eventType\": \"$expected_event\"" "$HOOK"; then
+  # eventType は heredoc 形式 ("eventType": "X") OR 圧縮形式 ("eventType":"X") の両方許容
+  if ! grep -qE "\"eventType\":\\s*\"$expected_event\"" "$HOOK"; then
     echo "FAIL: hooks/${name}.sh に eventType \"$expected_event\" が見つからない"
     exit 1
   fi

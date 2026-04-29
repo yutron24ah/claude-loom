@@ -32,13 +32,7 @@ post_event() {
 }
 
 SESSION_ID="${CLAUDE_SESSION_ID:-unknown}"
-PAYLOAD=$(cat <<EOF
-{
-  "sessionId": "$SESSION_ID",
-  "eventType": "session_start",
-  "toolName": null,
-  "payload": {"timestamp": $(date +%s%3N)}
-}
-EOF
-)
+S_ESC=$(json_escape "$SESSION_ID")
+TS=$(date +%s%3N)
+PAYLOAD='{"sessionId":'"$S_ESC"',"eventType":"session_start","toolName":null,"payload":{"timestamp":'"$TS"'}}'
 post_event "$PAYLOAD"

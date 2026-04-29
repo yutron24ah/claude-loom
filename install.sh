@@ -103,7 +103,7 @@ echo "  ROOT_DIR    = $ROOT_DIR"
 echo ""
 
 install_links "$ROOT_DIR/agents" "$CLAUDE_HOME/agents" "loom-*.md"
-install_links "$ROOT_DIR/commands" "$CLAUDE_HOME/commands" "loom-*.md"
+install_links "$ROOT_DIR/commands" "$CLAUDE_HOME/commands" "loom*.md"
 install_dir_links "$ROOT_DIR/skills" "$CLAUDE_HOME/skills" "loom-*"
 install_dir_links "$ROOT_DIR/prompts" "$CLAUDE_HOME/prompts" "*"
 
