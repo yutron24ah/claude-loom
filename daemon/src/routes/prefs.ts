@@ -26,6 +26,7 @@ import { join, dirname } from "node:path";
 import { homedir } from "node:os";
 import { nanoid } from "nanoid";
 import { router, publicProcedure, TRPCErrorClass } from "../trpc.js";
+import { broadcaster } from "../events/broadcaster.js";
 
 // ---------------------------------------------------------------------------
 // File paths
@@ -386,7 +387,14 @@ const learnedGuidanceRouter = router({
         writeProjectPrefs(input.projectId, prefs);
       }
 
-      // TODO(Task 9): broadcaster.emitLearnedGuidanceChange({ scope: input.scope, agentName: input.agentName, guidanceId: input.guidanceId, active: input.active })
+      broadcaster.emitLearnedGuidanceChange({
+        scope: input.scope,
+        projectId: input.projectId,
+        agentName: input.agentName,
+        guidanceId: input.guidanceId,
+        action: "toggled",
+        active: input.active,
+      });
 
       return { success: true };
     }),
@@ -452,7 +460,13 @@ const learnedGuidanceRouter = router({
         writeProjectPrefs(input.projectId, prefs);
       }
 
-      // TODO(Task 9): broadcaster.emitLearnedGuidanceChange({ scope: input.scope, agentName: input.agentName, guidanceId: input.guidanceId, deleted: true })
+      broadcaster.emitLearnedGuidanceChange({
+        scope: input.scope,
+        projectId: input.projectId,
+        agentName: input.agentName,
+        guidanceId: input.guidanceId,
+        action: "deleted",
+      });
 
       return { success: true };
     }),

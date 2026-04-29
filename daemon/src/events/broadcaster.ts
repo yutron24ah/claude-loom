@@ -6,6 +6,9 @@ import type {
   FindingNewEvent,
   ApprovalRequestEvent,
   RawEvent,
+  LearnedGuidanceChangeEvent,
+  WorktreeChangeEvent,
+  DisciplineMetricUpdateEvent,
 } from "./types.js";
 
 class Broadcaster extends EventEmitter {
@@ -56,6 +59,36 @@ class Broadcaster extends EventEmitter {
       payload,
     };
     this.emit("event.raw", event);
+    this.emit("*", event);
+  }
+
+  emitLearnedGuidanceChange(payload: LearnedGuidanceChangeEvent["payload"]) {
+    const event: LearnedGuidanceChangeEvent = {
+      type: "learned_guidance.change",
+      timestamp: Date.now(),
+      payload,
+    };
+    this.emit("learned_guidance.change", event);
+    this.emit("*", event);
+  }
+
+  emitWorktreeChange(payload: WorktreeChangeEvent["payload"]) {
+    const event: WorktreeChangeEvent = {
+      type: "worktree.change",
+      timestamp: Date.now(),
+      payload,
+    };
+    this.emit("worktree.change", event);
+    this.emit("*", event);
+  }
+
+  emitDisciplineMetricUpdate(payload: DisciplineMetricUpdateEvent["payload"]) {
+    const event: DisciplineMetricUpdateEvent = {
+      type: "discipline_metric.update",
+      timestamp: Date.now(),
+      payload,
+    };
+    this.emit("discipline_metric.update", event);
     this.emit("*", event);
   }
 }

@@ -14,6 +14,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { TRPCError } from "@trpc/server";
 import { eq } from "drizzle-orm";
 import { router, publicProcedure } from "../trpc.js";
+import { broadcaster } from "../events/broadcaster.js";
 import { createDBClient } from "../db/client.js";
 import { projects } from "../db/schema.js";
 import { findGitRoot } from "../project/detect.js";
@@ -257,7 +258,12 @@ export const worktreeRouter = router({
       );
 
       // Return the new worktree info
-      // TODO: broadcaster.emitWorktreeChange({ projectId: input.projectId, action: "create", path: targetPath });
+      broadcaster.emitWorktreeChange({
+        projectId: input.projectId,
+        action: "created",
+        path: targetPath,
+        branch: input.branch,
+      });
       return {
         path: targetPath,
         branch: input.branch,
@@ -305,7 +311,11 @@ export const worktreeRouter = router({
           `Failed to remove worktree '${input.path}'`
         );
 
-        // TODO: broadcaster.emitWorktreeChange({ projectId: input.projectId, action: "remove", path: input.path });
+        broadcaster.emitWorktreeChange({
+          projectId: input.projectId,
+          action: "removed",
+          path: input.path,
+        });
         return { success: true, removed: [input.path], warning };
       }
     ),
@@ -339,7 +349,11 @@ export const worktreeRouter = router({
         `Failed to lock worktree '${input.path}'`
       );
 
-      // TODO: broadcaster.emitWorktreeChange({ projectId: input.projectId, action: "lock", path: input.path });
+      broadcaster.emitWorktreeChange({
+        projectId: input.projectId,
+        action: "locked",
+        path: input.path,
+      });
       return { success: true };
     }),
 
@@ -365,7 +379,11 @@ export const worktreeRouter = router({
         `Failed to unlock worktree '${input.path}'`
       );
 
-      // TODO: broadcaster.emitWorktreeChange({ projectId: input.projectId, action: "unlock", path: input.path });
+      broadcaster.emitWorktreeChange({
+        projectId: input.projectId,
+        action: "unlocked",
+        path: input.path,
+      });
       return { success: true };
     }),
 });
