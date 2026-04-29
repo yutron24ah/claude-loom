@@ -44,6 +44,17 @@ for cmd_file in "$COMMANDS_DIR"/loom-*.md; do
   echo "PASS [$fname]: description=$desc_field"
 done
 
+# REQ-026: loom-mode.md が valid frontmatter
+if [ -f "commands/loom-mode.md" ]; then
+    if head -1 "commands/loom-mode.md" | grep -q "^---$"; then
+        echo "PASS [commands]: loom-mode.md has valid frontmatter (M0.12)"
+        ((failures)) || true
+    else
+        echo "FAIL [commands]: loom-mode.md missing frontmatter"
+        failures=$((failures + 1))
+    fi
+fi
+
 if [ "$failures" -gt 0 ]; then
   echo "commands_test FAILED with $failures violations"
   exit 1
