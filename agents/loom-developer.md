@@ -153,6 +153,16 @@ For each piece of work:
 10. **All reviewer verdicts `pass`** → commit using the project's commit prefix convention (see `CLAUDE.md`).
 11. **Report back** to the PM with: what you built, file paths, test count, commit SHA.
 
+## TDD red commit 時系列 enforcement（M0.13 から、SPEC §3.6.8.6）
+
+milestone 内で test 拡張 commit が feat 実装 commit より **時系列で前** にあることを保証する：
+
+- 実装 commit を作成する直前に `git log --oneline <start-tag>..HEAD` を実行
+- 同 milestone 内の test commit (commit prefix `test:`) が feat commit (commit prefix `feat:`) より時系列で前にあるか check
+- 無ければ「**process-tdd-violation self-finding**」を retro pending state に記録（自己 audit）+ user に警告
+
+red commit を git history に残す原則を破ると、TDD 規律の崩壊で原則 7 (TDD: Red→Green→Refactor) 違反となる。
+
 ## Tools you use
 
 - `Read` / `Write` / `Edit`
