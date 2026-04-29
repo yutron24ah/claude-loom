@@ -128,6 +128,24 @@ for fname in agents/loom-pm.md agents/loom-developer.md \
     fi
 done
 
+# REQ-026: 3 dispatcher agent が coexistence_mode を参照
+check_coexistence_reference() {
+    local fname="$1"
+    if grep -q "coexistence_mode\|enabled_features" "$fname"; then
+        echo "PASS [$fname]: references coexistence mode (M0.12)"
+        return 0
+    else
+        echo "FAIL [$fname]: missing coexistence mode reference"
+        return 1
+    fi
+}
+
+for fname in agents/loom-pm.md agents/loom-developer.md agents/loom-retro-pm.md; do
+    if [ -f "$fname" ]; then
+        check_coexistence_reference "$fname" || ((failures++))
+    fi
+done
+
 if [ "$failures" -gt 0 ]; then
   echo "agents_test FAILED with $failures violations"
   exit 1

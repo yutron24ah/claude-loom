@@ -125,6 +125,32 @@ retro が承認した finding は `agents.<name>.learned_guidance[]` (project-pr
 
 詳細: `SPEC.md §3.6.5.4 / §3.9.x / §6.9.4`、`docs/RETRO_GUIDE.md` lens tagging convention。
 
+## Coexistence Mode (M0.12 から)
+
+claude-loom は **既存 PJ への段階的 adoption** をサポート。3 mode で機能 ON/OFF を制御：
+
+| mode | enabled_features | 用途 |
+|---|---|---|
+| `full` (default) | `["all"]` 全機能 | greenfield / claude-loom メイン |
+| `coexist` | `["core"]` のみ | 既存 setup 尊重、最小限 install |
+| `custom` | user 明示指定 | 細かく制御（feature group 単位） |
+
+### 5 feature groups
+
+- `core`: base agents/skills/commands（常時 ON）
+- `retro`: /loom-retro + lens + learned_guidance
+- `customization`: personality preset + 注入機構
+- `worktree`: /loom-worktree + autonomous decision
+- `native-skills`: loom-write-plan + loom-debug
+
+### 切替方法
+
+- 初回 /loom-pm: PM が他 plugin / 既存 setup を検出して提示、user が mode 選択
+- 後から: `/loom-mode <mode> [features...]` で切替
+- 手動: `<project>/.claude-loom/project.json` の `rules.coexistence_mode` + `rules.enabled_features` を直編集
+
+詳細: `SPEC §3.6.7`, `agents/loom-pm.md` Runtime Gate section。
+
 ## 開発規約
 
 claude-loom は **Conventional Commits + GitHub Flow** を採用：

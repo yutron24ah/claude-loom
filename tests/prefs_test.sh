@@ -90,6 +90,38 @@ check_learned_guidance_schema() {
 check_learned_guidance_schema "templates/user-prefs.json.template"
 check_learned_guidance_schema "templates/project-prefs.json.template"
 
+# REQ-026: project.json template に coexistence_mode + enabled_features schema
+check_coexistence_schema() {
+    local fname="templates/claude-loom/project.json.template"
+    if [ ! -f "$fname" ]; then
+        echo "FAIL [prefs]: $fname missing"
+        ((fails++))
+        return
+    fi
+    if jq -e '.rules.coexistence_mode' "$fname" >/dev/null 2>&1; then
+        local mode=$(jq -r '.rules.coexistence_mode' "$fname")
+        if [[ "$mode" == "full" || "$mode" == "coexist" || "$mode" == "custom" ]]; then
+            echo "PASS [prefs]: project.json coexistence_mode='$mode' valid (M0.12)"
+            ((passes++))
+        else
+            echo "FAIL [prefs]: invalid coexistence_mode='$mode'"
+            ((fails++))
+        fi
+    else
+        echo "FAIL [prefs]: missing rules.coexistence_mode (M0.12)"
+        ((fails++))
+    fi
+    if jq -e '.rules.enabled_features | type == "array"' "$fname" >/dev/null 2>&1; then
+        echo "PASS [prefs]: project.json enabled_features is array (M0.12)"
+        ((passes++))
+    else
+        echo "FAIL [prefs]: enabled_features schema invalid"
+        ((fails++))
+    fi
+}
+
+check_coexistence_schema
+
 echo ""
 echo "prefs_test summary: $passes PASS / $fails FAIL"
 exit $fails

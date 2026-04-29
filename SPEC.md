@@ -244,6 +244,32 @@ claude-loom は git worktree 機能を harness に統合し、5 用途（並列 
 
 `loom-pm` / `loom-developer` / `loom-retro-pm` agent は skill の Decision tree を読んで判断、5 用途のいずれかに該当 + user 確認後に invoke する運用。
 
+### 3.6.7 Coexistence Mode（M0.12 から）
+
+claude-loom は既存 PJ への **段階的 adoption** を支援するため、機能 ON/OFF を mode で制御する。
+
+#### 3.6.7.1 3 modes
+
+| mode | enabled_features default | use case |
+|---|---|---|
+| `full` (default) | `["all"]` 全機能 ON | greenfield、claude-loom メインで使う |
+| `coexist` | `["core"]` のみ | 既存 setup あるが loom-* 一部試したい |
+| `custom` | user 明示指定 | 細かく制御したい power user |
+
+#### 3.6.7.2 5 feature groups
+
+- **core**: base agents/skills/commands（常時 ON、disable 不可）
+- **retro**: retro architecture (lens / counter-arguer / aggregator / learned_guidance)
+- **customization**: personality preset + Customization Layer 注入
+- **worktree**: /loom-worktree + autonomous worktree decision
+- **native-skills**: loom-write-plan + loom-debug
+
+`enabled_features` の `"all"` shorthand は全 group ON 扱い。
+
+#### 3.6.7.3 Runtime gate
+
+install.sh は不変、loom-* は常時 install。Mode 制御は **runtime gate** で実現：dispatcher 3 体 (PM / dev / retro-pm) が project.json を read、`enabled_features` に該当 group が含まれない場合は該当機能を skip。Receiver agent (reviewer / retro lens) は mode 不要 — dispatcher が gate する。
+
 ### 3.7 プロジェクトライフサイクルと adopt 戦略
 
 claude-loom は **新規プロジェクトの立ち上げ** にも **既存プロジェクトの取り込み（adopt）** にも対応する。両者は明確に区別され、PM が異なるフローで処理する。
@@ -310,6 +336,16 @@ PM は以下の **すべて** を保守対象として扱う：
 | 受入要件 | `tests/REQUIREMENTS.md` | spec 変更で新規 REQ 追加時に PM が更新 |
 
 **MVP では PM は doc 整合性 finding を提示するのみ**（自動修正は v2 = Phase 2）。ユーザーが各 finding に対して acknowledge / fix / dismiss を判断する。
+
+#### 3.7.5 mode detection と選択（M0.12 から）
+
+adopt mode の中で以下の追加検出を行う：
+- 既存他 plugin の存在 (`~/.claude/plugins/` 配下)
+- 既存 agents / skills / commands (loom-* 以外)
+- 既存 user-authored CLAUDE.md / project.json
+
+検出結果を提示し、`coexistence_mode` 未設定時は user に 3 mode のうち選択を促す。
+default は `full`（greenfield 想定）、user が「既存 setup 尊重」と意思表示したら `coexist`、細かく指定したいなら `custom`。
 
 ---
 
@@ -824,6 +860,8 @@ last_synced_at: 1777200000000
 | `rules.review_mode` | — | `"single"` | `"single"` (default、loom-reviewer 1 体) or `"trio"` (loom-{code,security,test}-reviewer 並列 3 体) |
 | `rules.branch_types` | — | 10 種（CC type 準拠、`revert` 除く） | branch 名 prefix の有効値リスト |
 | `rules.commit_language` | — | `"any"` | コミット件名/本文の言語ポリシー：`"any"` / `"english"` / `"japanese"` |
+| `rules.coexistence_mode` | — | `"full"` | `"full" | "coexist" | "custom"` — 機能 ON/OFF の mode（M0.12 から） |
+| `rules.enabled_features` | — | `["all"]` | feature group 名（`"core" | "retro" | "customization" | "worktree" | "native-skills"`）または `["all"]` shorthand（M0.12 から） |
 | `consistency_engine.*` | — | (上記) | エンジン挙動 |
 
 ### 6.9.1 `~/.claude-loom/user-prefs.json` 完全スキーマ（M0.8 から）

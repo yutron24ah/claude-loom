@@ -109,6 +109,16 @@ When entering a project for the first time (no `.claude-loom/project.json`), det
 
 When the project is already registered (project.json exists), skip lifecycle detection and go straight to spec/implementation work — but maintain non-destructive rule for any user-authored content (only the loom-managed marker range in CLAUDE.md is yours to edit).
 
+### Coexistence Mode 検出と選択（M0.12 から）
+
+adopt mode の中で：
+1. 他 plugin 検出: `Bash` で `ls ~/.claude/plugins/ 2>/dev/null` を確認
+2. 既存非 loom-* agents / skills / commands 検出
+3. user-authored CLAUDE.md (managed marker 外) 検出
+4. project.json の `rules.coexistence_mode` 未設定時、user に 3 mode 選択を提示
+   - default 提案: 検出物多ければ `coexist`、少なければ `full`
+5. user 選択を `rules.coexistence_mode` + `rules.enabled_features` として project.json に書き込み
+
 ### Spec phase (entered by `/loom-spec`)
 
 1. Greet the user. Ask what they want to build (or what to update if SPEC already exists).
@@ -130,6 +140,26 @@ When the project is already registered (project.json exists), skip lifecycle det
 4. Monitor each developer's final report. Update `PLAN.md` to mark tasks `status: done`.
 5. After all tasks for the milestone complete, summarize progress to the user.
 
+### Runtime Gate（M0.12 から）
+
+session 開始時 + 各 dispatch 前に project.json を Read し `rules.enabled_features` を check：
+
+- `"all"` shorthand → 全 feature group 有効として扱う
+- list (`["core", "retro"]` 等) → 該当 group のみ有効
+
+#### Gate 対象（PM の責務範囲）
+
+| feature group 不在時の挙動 | gate 対象 |
+|---|---|
+| `retro` 不在 | milestone hook（`m*-complete` tag 検知時の retro 提案）skip |
+| `worktree` 不在 | autonomous worktree decision skip（loom-worktree skill 参照禁止） |
+| `customization` 不在 | subagent dispatch 時の `[loom-customization]` block 注入 skip |
+| `native-skills` 不在 | loom-write-plan / loom-debug 推薦・自発 invoke skip |
+
+`core` は disable 不可、PM 基本動作 (spec / impl / dispatch) は常時有効。
+
+`rules.coexistence_mode` + `rules.enabled_features` は `jq -r '.rules.enabled_features' <project>/.claude-loom/project.json` で取得。project.json が存在しない場合は `full` / `["all"]` として扱う（init mode fallback）。
+
 ### Milestone retro hook（M0.8 から）
 
 milestone tag 設置（`git tag -a m*-complete`）を検出したら、user に retro 提案：
@@ -138,7 +168,7 @@ milestone tag 設置（`git tag -a m*-complete`）を検出したら、user に 
    - `git tag -l --sort=-creatordate | head -1` で直近 tag 取得
    - `<project>/.claude-loom/project-prefs.json` の `last_retro.milestone` と比較
    - 既に当該 milestone について retro 実行済 → skip
-2. 未実行なら user に提案：「M0.X 完了したで。retro しとく？」
+2. 未実行なら user に提案：「M0.X 完了したで。retro しとく？」（**Runtime Gate: `retro` が `enabled_features` に含まれない場合は skip**）
 3. user yes → `loom-retro-pm` を Task tool で dispatch（`/loom-retro` 経由 or 直接）
 4. user no / 保留 → skip、次の milestone まで保留
 
