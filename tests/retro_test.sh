@@ -101,6 +101,40 @@ for fname in agents/loom-retro-pj-judge.md agents/loom-retro-process-judge.md ag
     [ -f "$fname" ] && check_lens_tag_fields "$fname"
 done
 
+# REQ-027: retro 基本方針 + freeform + action plan assertion
+check_retro_principles() {
+    if grep -qE "P1|P2|P3|基本方針" docs/RETRO_GUIDE.md; then
+        echo "PASS [retro]: RETRO_GUIDE has 基本方針 P1/P2/P3 (M0.13)"
+        passes=$((passes + 1))
+    else
+        echo "FAIL [retro]: RETRO_GUIDE missing 基本方針"
+        failures=$((failures + 1))
+    fi
+}
+check_retro_principles
+
+# REQ-027: 4 lens に freeform improvement instruction
+for fname in agents/loom-retro-pj-judge.md agents/loom-retro-process-judge.md agents/loom-retro-meta-judge.md agents/loom-retro-researcher.md; do
+    if [ -f "$fname" ]; then
+        if grep -q "freeform-improvement\|freeform improvement" "$fname"; then
+            echo "PASS [retro]: $fname has freeform instruction (M0.13)"
+            passes=$((passes + 1))
+        else
+            echo "FAIL [retro]: $fname missing freeform instruction"
+            failures=$((failures + 1))
+        fi
+    fi
+done
+
+# REQ-027: aggregator action plan
+if grep -qE "action plan|action_plan|着手項目" agents/loom-retro-aggregator.md; then
+    echo "PASS [retro]: aggregator references action plan (M0.13, P3)"
+    passes=$((passes + 1))
+else
+    echo "FAIL [retro]: aggregator missing action plan reference"
+    failures=$((failures + 1))
+fi
+
 if [ "$failures" -gt 0 ]; then
   echo "retro_test FAILED with $failures violations"
   exit 1

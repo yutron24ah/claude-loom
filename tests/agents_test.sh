@@ -146,6 +146,32 @@ for fname in agents/loom-pm.md agents/loom-developer.md agents/loom-retro-pm.md;
     fi
 done
 
+# REQ-027: PM workflow discipline 5 項目
+check_pm_discipline() {
+    local fname="agents/loom-pm.md"
+    local missing=()
+    for keyword in "parallel.*verify\|parallel dispatch self-verify" "degraded mode" "inline.*spec\|inline spec edit" "doc.*並列\|doc batch parallel" "reviewer verdict\|verdict_evidence"; do
+        if ! grep -qE "$keyword" "$fname"; then
+            missing+=("$keyword")
+        fi
+    done
+    if [ ${#missing[@]} -eq 0 ]; then
+        echo "PASS [agents]: loom-pm.md has all 5 workflow discipline items (M0.13)"
+    else
+        echo "FAIL [agents]: loom-pm.md missing: ${missing[*]}"
+        failures=$((failures + 1))
+    fi
+}
+check_pm_discipline
+
+# REQ-027: dev TDD red 順序
+if grep -qE "TDD red.*順序|red commit.*先|時系列|process-tdd-violation" agents/loom-developer.md; then
+    echo "PASS [agents]: loom-developer references TDD red commit ordering (M0.13)"
+else
+    echo "FAIL [agents]: loom-developer missing TDD red ordering enforcement"
+    failures=$((failures + 1))
+fi
+
 if [ "$failures" -gt 0 ]; then
   echo "agents_test FAILED with $failures violations"
   exit 1
