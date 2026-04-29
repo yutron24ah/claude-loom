@@ -258,6 +258,37 @@ M0.8 retro architecture の最終形：承認された finding を `agents.<name
 
 **M0.12 完成基準**：`./tests/run_tests.sh` で **8 PASS** 維持、`templates/claude-loom/project.json.template` に `coexistence_mode` + `enabled_features` 追加 + jq empty で valid、3 dispatcher agent prompt に runtime gate 記述、`commands/loom-mode.md` valid frontmatter、`tag m0.12-complete` 設置、`m0`〜`m0.11-complete` 全保持、これで原 6 案件（A/B/C+G/D/E/F）全完走。
 
+## マイルストーン M0.13: Retro Discipline & Process Hardening
+
+詳細: `docs/plans/2026-04-29-claude-loom-m0.13-retro-discipline.md`
+retro 起源: `docs/retro/2026-04-29-001-report.md`
+
+retro 2026-04-29-001 の findings 全件 + user 由来の retro 基本方針 3 項目を統合した improvement milestone。retro architecture を「自己改善 + PJ 改善 + user 参加 + action plan 化」の SSoT に upgrade、PM/dev workflow に並列 dispatch verification / TDD red 順序 / Task tool fallback / spec flow 圧縮 / doc 並列化 / reviewer verdict 保存を組み込み。
+
+設計合意（retro outcome）:
+- retro 基本方針 P1/P2/P3: 自己 + PJ 改善 / user 参加 / action plan 化
+- meta-D 改善: 4 lens に freeform improvement instruction 追加（generic 禁止、concrete file/commit 参照必須）
+- meta-B 構造的修正: PM agent prompt に parallel dispatch self-verify を組込
+- proc-001/002/004/A/C 改善: dev/PM workflow に discipline 注入
+
+- [ ] PLAN.md M0.13 マイルストーン挿入（本タスク） <!-- id: m0.13-t1 status: todo -->
+- [ ] tests/REQUIREMENTS.md REQ-027 追加 <!-- id: m0.13-t2 status: todo -->
+- [ ] SPEC.md §3.9 retro 章拡張（基本方針 P1/P2/P3）+ §3.6.x process discipline 章 <!-- id: m0.13-t3 status: todo -->
+- [ ] docs/RETRO_GUIDE.md 改訂（基本方針 + freeform lens + verdict 保存 + action plan 化） <!-- id: m0.13-t4 status: todo -->
+- [ ] docs/DOC_CONSISTENCY_CHECKLIST.md M0.13 check items <!-- id: m0.13-t5 status: todo -->
+- [ ] agents/loom-retro-pm.md 改訂（基本方針 + user lens 公式組込 + verdict 保存 hook） <!-- id: m0.13-t6 status: todo -->
+- [ ] 4 retro lens (pj/process/meta/researcher) に freeform improvement instruction 追記 <!-- id: m0.13-t7 status: todo -->
+- [ ] agents/loom-retro-counter-arguer.md 改訂（freeform finding 検証強化） <!-- id: m0.13-t8 status: todo -->
+- [ ] agents/loom-retro-aggregator.md 改訂（output に action plan セクション必須化） <!-- id: m0.13-t9 status: todo -->
+- [ ] agents/loom-pm.md workflow discipline 追記（parallel verify / Task tool fallback / spec compression / doc 並列 / reviewer verdict 保存） <!-- id: m0.13-t10 status: todo -->
+- [ ] agents/loom-developer.md workflow discipline 追記（TDD red 順序 enforcement） <!-- id: m0.13-t11 status: todo -->
+- [ ] tests 拡張（retro_test / agents_test 各 _test.sh で freeform / parallel verify / TDD 順序 assertion） <!-- id: m0.13-t12 status: todo -->
+- [ ] README.md user-facing intro <!-- id: m0.13-t13 status: todo -->
+- [ ] 全 test PASS + tag m0.13-complete + main merge + retro archive commit <!-- id: m0.13-t14 status: todo -->
+- [ ] D2: learned_guidance write to prefs（retro 9 finding 反映、Stage 2 完了後の手動 step） <!-- id: m0.13-t15 status: todo -->
+
+**M0.13 完成基準**：`./tests/run_tests.sh` で **8 PASS** 維持、`docs/RETRO_GUIDE.md` に基本方針 P1/P2/P3 明記、4 lens prompt に freeform improvement instruction 含む、`agents/loom-retro-aggregator.md` の output に action plan セクション必須記述、`agents/loom-pm.md` に parallel verify + Task tool fallback + spec compression + doc 並列 + reviewer verdict 保存記述、`agents/loom-developer.md` に TDD red 順序 enforcement、retro archive (`docs/retro/2026-04-29-001-report.md`) commit 済、`tag m0.13-complete` 設置、`m0`〜`m0.12-complete` 全保持。
+
 ## マイルストーン M1: Daemon + Hooks Foundation
 
 詳細: 未作成（M0 完了後 writing-plans で詳細化）
