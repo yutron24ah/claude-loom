@@ -60,3 +60,7 @@
 ## M1: Daemon + Hooks Foundation
 
 - **REQ-028**: `install.sh` が `hooks/*.sh` を `~/.claude/hooks/` に symlink + `~/.claude/settings.json` に hooks 5 種配線（jq + atomic mv）。`bash install.sh` 後に Claude Code が hook event を daemon に POST 可能。
+
+## M1.5: UI Prep Backend
+
+- **REQ-029**: M0.8-M0.13 feature の UI 要件 (SCREEN_REQUIREMENTS Q1-Q6) に対応する 6 tRPC router (`retro` / `prefs` / `personality` / `worktree` / `coexistence` / `discipline`) を `daemon/src/routes/` に追加、`AppRouter` type に wire-up。`events` router に 3 subscription (`onLearnedGuidanceChange` / `onWorktreeChange` / `onDisciplineMetricUpdate`) 追加。各 router は最低 2 procedure (list + 主要 mutation) + zod schema、`pnpm --filter @claude-loom/daemon test` で全 PASS。frontend (M2) から `import type { AppRouter } from "@claude-loom/daemon"` で 6 router の型推論可能。

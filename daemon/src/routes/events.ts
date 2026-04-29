@@ -8,6 +8,9 @@ import type {
   FindingNewEvent,
   ApprovalRequestEvent,
   LoomEvent,
+  LearnedGuidanceChangeEvent,
+  WorktreeChangeEvent,
+  DisciplineMetricUpdateEvent,
 } from "../events/types.js";
 
 export const eventsRouter = router({
@@ -74,6 +77,43 @@ export const eventsRouter = router({
         return () => {
           broadcaster.off("*", handler);
         };
+      });
+    }),
+
+  // M1.5 Task 9C: 3 new subscription procedures
+
+  onLearnedGuidanceChange: publicProcedure
+    .subscription(() => {
+      return observable<LearnedGuidanceChangeEvent>((emit) => {
+        const handler = (event: LearnedGuidanceChangeEvent) => emit.next(event);
+        broadcaster.on("learned_guidance.change", handler);
+        return () => broadcaster.off("learned_guidance.change", handler);
+      });
+    }),
+
+  onWorktreeChange: publicProcedure
+    .input(z.object({ projectId: z.string().optional() }).optional())
+    .subscription(({ input }) => {
+      return observable<WorktreeChangeEvent>((emit) => {
+        const handler = (event: WorktreeChangeEvent) => {
+          if (input?.projectId && event.payload.projectId !== input.projectId) return;
+          emit.next(event);
+        };
+        broadcaster.on("worktree.change", handler);
+        return () => broadcaster.off("worktree.change", handler);
+      });
+    }),
+
+  onDisciplineMetricUpdate: publicProcedure
+    .input(z.object({ projectId: z.string().optional() }).optional())
+    .subscription(({ input }) => {
+      return observable<DisciplineMetricUpdateEvent>((emit) => {
+        const handler = (event: DisciplineMetricUpdateEvent) => {
+          if (input?.projectId && event.payload.projectId !== input.projectId) return;
+          emit.next(event);
+        };
+        broadcaster.on("discipline_metric.update", handler);
+        return () => broadcaster.off("discipline_metric.update", handler);
       });
     }),
 });

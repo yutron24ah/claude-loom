@@ -65,6 +65,47 @@ export const rawEventSchema = z.object({
 });
 export type RawEvent = z.infer<typeof rawEventSchema>;
 
+// Learned guidance change event (M1.5 Task 9)
+export const learnedGuidanceChangeEventSchema = z.object({
+  type: z.literal("learned_guidance.change"),
+  timestamp: z.number(),
+  payload: z.object({
+    scope: z.enum(["user", "project"]),
+    projectId: z.string().optional(),
+    agentName: z.string(),
+    guidanceId: z.string(),
+    action: z.enum(["toggled", "deleted"]),
+    active: z.boolean().optional(),
+  }),
+});
+export type LearnedGuidanceChangeEvent = z.infer<typeof learnedGuidanceChangeEventSchema>;
+
+// Worktree change event (M1.5 Task 9)
+export const worktreeChangeEventSchema = z.object({
+  type: z.literal("worktree.change"),
+  timestamp: z.number(),
+  payload: z.object({
+    projectId: z.string(),
+    action: z.enum(["created", "removed", "locked", "unlocked"]),
+    path: z.string(),
+    branch: z.string().optional(),
+  }),
+});
+export type WorktreeChangeEvent = z.infer<typeof worktreeChangeEventSchema>;
+
+// Discipline metric update event (M1.5 Task 9)
+export const disciplineMetricUpdateEventSchema = z.object({
+  type: z.literal("discipline_metric.update"),
+  timestamp: z.number(),
+  payload: z.object({
+    projectId: z.string(),
+    metric: z.string(),
+    value: z.number(),
+    timestamp: z.number(),
+  }),
+});
+export type DisciplineMetricUpdateEvent = z.infer<typeof disciplineMetricUpdateEventSchema>;
+
 // Discriminated union for all event types
 export const loomEventSchema = z.discriminatedUnion("type", [
   agentChangeEventSchema,
@@ -72,5 +113,8 @@ export const loomEventSchema = z.discriminatedUnion("type", [
   findingNewEventSchema,
   approvalRequestEventSchema,
   rawEventSchema,
+  learnedGuidanceChangeEventSchema,
+  worktreeChangeEventSchema,
+  disciplineMetricUpdateEventSchema,
 ]);
 export type LoomEvent = z.infer<typeof loomEventSchema>;
