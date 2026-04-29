@@ -79,7 +79,37 @@ Flag commits where `insertions + deletions > 500` as over-granular and commits w
 
 Read transcript files and identify assistant messages containing error indicators ("error:", "failed", "blocked", "cannot", "permission denied"). Group by session file (each `.jsonl` is one session). If the same error pattern appears in 3 or more sessions, flag as `process-blocker-pattern`.
 
-### Step 6: Return findings JSON
+### Step 6: Detect env config improvement opportunities（M0.14 から、SPEC §3.10.1 suggest skill 活用）
+
+session で繰り返し発生した friction を検出し、claude-loom 外の suggest skill 適用機会を finding 化する。**このステップで検出した finding は user 承認必須（auto_applicable_eligible: false）**。
+
+#### 6a. Permission friction → `process-permission-friction`
+
+transcript 内の permission prompt 関連メッセージ（"requested permissions", "approve to use", "denied" 等）を Grep。同一 tool / command 名が **3 回以上** 出現したら finding：
+
+- `description`: 「`<command>` の permission prompt が <N> 回出現、approve/deny 工数が高い」
+- `suggestion`: 「`fewer-permission-prompts` skill で transcript scan + .claude/settings.json allowlist 追加」
+- `evidence`: transcript file name + line numbers (3 件以上)
+
+#### 6b. Routine automation opportunity → `process-routine-automation-opportunity`
+
+git log + transcript bash invocation を分析。同一コマンド（normalize: 引数除く）が **5 回以上 / session** 出現したら finding：
+
+- `description`: 「`<command>` が <N> 回手動実行された、自動化候補」
+- `suggestion`: 「`update-config` skill で PostToolUse / Stop hook 化を検討（例: edit 後に `pnpm test` 自動実行）」
+- `evidence`: commit SHA / transcript line N
+- 適用範囲注意: 副作用が大きい command（git push / npm publish 等）は対象外、read-only / test / lint / format に限る
+
+#### 6c. Keybind opportunity → `process-keybind-opportunity`（弱め signal）
+
+transcript で keybind / shortcut への言及（"keybind", "shortcut", "rebind", "毎回 X 押す" 等）を Grep。明示的に user が苦労を述べた場合のみ finding：
+
+- `description`: 「user が `<context>` で keybind 改善要望を発言」
+- `suggestion`: 「`keybindings-help` skill で `~/.claude/keybindings.json` カスタマイズ案内」
+- `evidence`: transcript line N
+- 弱め signal のため 1 session 1 finding 上限、推測ベース禁止
+
+### Step 7: Return findings JSON
 
 Collect all findings and return a single JSON object as specified below.
 
@@ -91,7 +121,7 @@ Collect all findings and return a single JSON object as specified below.
   "findings": [
     {
       "id": "proc-001",
-      "category": "process-tdd-violation | process-commit-prefix-correction | process-commit-granularity | process-blocker-pattern",
+      "category": "process-tdd-violation | process-commit-prefix-correction | process-commit-granularity | process-blocker-pattern | process-permission-friction | process-routine-automation-opportunity | process-keybind-opportunity",
       "severity": "high | medium | low",
       "risk": "never | low | medium | high",
       "auto_applicable_eligible": false,
@@ -116,6 +146,9 @@ v1 hardcoded values — sourced from `docs/RETRO_GUIDE.md` §2.2:
 | `process-commit-prefix-correction` | low | false |
 | `process-commit-granularity` | low | false |
 | `process-blocker-pattern` | medium | false |
+| `process-permission-friction` | low | false |
+| `process-routine-automation-opportunity` | low | false |
+| `process-keybind-opportunity` | low | false |
 
 Always set `risk` and `auto_applicable_eligible` per this table. Do not override per finding.
 
