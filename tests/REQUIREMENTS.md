@@ -53,4 +53,8 @@
 
 - **REQ-026**: `templates/claude-loom/project.json.template` に `rules.coexistence_mode` (enum `"full|coexist|custom"`、default `"full"`) + `rules.enabled_features` (array<string>、default `["all"]`) 追加、jq empty で valid。3 dispatcher agent (`agents/loom-pm.md` / `loom-developer.md` / `loom-retro-pm.md`) prompt が `coexistence_mode` を read し runtime gate（feature group 不在なら該当機能 skip）を実装。`commands/loom-mode.md` 新設で mode 切替可能。
 
+## M0.13: Retro Discipline & Process Hardening
+
+- **REQ-027**: `docs/RETRO_GUIDE.md` に retro 基本方針 P1/P2/P3 (自己 + PJ 改善 / user 参加 / action plan 化) 明記、4 retro lens prompt が `freeform-improvement` category instruction を含む（generic 禁止、concrete file/commit 参照必須）、`agents/loom-retro-aggregator.md` の output に action plan セクション必須記述、`agents/loom-pm.md` に parallel dispatch self-verify + Task tool fallback degraded mode + inline spec edit + doc batch 並列化 + reviewer verdict 保存記述、`agents/loom-developer.md` に TDD red commit 時系列 enforcement。`./tests/run_tests.sh` で 8 PASS 維持。
+
 ## M1 以降は別 PR で追記

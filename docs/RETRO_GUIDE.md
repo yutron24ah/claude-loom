@@ -2,6 +2,16 @@
 
 claude-loom が採用する **retro 機能** の運用 SSoT。SPEC §3.9 の policy 宣言から参照される。設計詳細は `docs/plans/specs/2026-04-27-retro-design.md`。
 
+## 基本方針（M0.13 から、SSoT）
+
+retro 機能の不変条件 3 項目：
+
+- **P1**: retro = **自己改善 + PJ 改善** の両輪。claude-loom 自身の最適化 + user PJ への提案両方を扱う
+- **P2**: **user は retro 参加者** — external lens じゃなく Stage 1 公式メンバー、user findings は retro-pm finding と同等扱い
+- **P3**: findings は **archive じゃなく action plan 化** — 改善点洗い出し → user と着手項目決定 → 改善計画を pending state に保存。「即時適用 / milestone 化 / 保留」の 3 分類で整理。
+
+詳細は SPEC §3.9.x（基本方針）+ §3.6.8（process discipline）。
+
 ## なぜ retro か
 
 claude-loom は「user × claude × project の組み合わせごとに動的最適化される開発室」を目指す。retro はそのための再帰的学習機構。問題や改善点を user と一緒に振り返り、承認された改善を user-prefs / project-prefs / SPEC / 各種ファイルに反映 → 次回以降の retro / agent 動作に組み込まれる → さらに最適化、というループ。
@@ -251,6 +261,30 @@ PM: user-prefs.json 更新しました。次回以降の retro では spec-drift
 - `guidance_proposal`: agent-prompt 時に prefs.learned_guidance[].guidance に書き込まれる text 候補
 
 aggregator は user 承認後、target_artifact == "agent-prompt" の finding を該当 agent の learned_guidance[] に書き込み、それ以外は従来通り archive markdown / approval_history のみ更新。
+
+## Freeform improvement instruction（M0.13 から、4 lens 共通）
+
+通常 category 検出に加え、各 lens は **抽象 PJ 改善視点** として 1-3 候補を生成可：
+
+- **三点セット必須**: 「現状 X、改善後 Y、根拠 Z」
+- **`<file>:<line>` または concrete commit SHA 参照を含むこと**
+- 既存 4 category 補集合的領域を優先（categorical で拾えん観点）
+- **generic 禁止**: 「doc 充実」「test 増」「可読性向上」等の汎用論は禁止、必ず具体的 mechanism + concrete reference を伴う
+- counter-arguer は通常通り検証、generic / vague は drop
+
+出力 finding 例：
+
+```json
+{
+  "id": "freeform-001",
+  "category": "freeform-improvement",
+  "severity": "medium",
+  "description": "現状: PM agent prompt に user-facing greeting 統一なし / 改善後: 標準 greeting を定義 / 根拠: agents/loom-pm.md:23 のセッション開始メッセージが session ごとに異なる",
+  "target_artifact": "agent-prompt",
+  "target_agent": ["loom-pm"],
+  "guidance_proposal": "..."
+}
+```
 
 ## 関連参照
 

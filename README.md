@@ -151,6 +151,31 @@ claude-loom は **既存 PJ への段階的 adoption** をサポート。3 mode 
 
 詳細: `SPEC §3.6.7`, `agents/loom-pm.md` Runtime Gate section。
 
+## Retro Discipline & Process Hardening (M0.13 から)
+
+retro architecture を **「自己改善 + PJ 改善 + user 参加 + action plan 化」** の SSoT に upgrade。PM/dev workflow に discipline を注入し、parallel dispatch / TDD red 順序 / Task tool fallback / spec flow / doc 並列 / reviewer verdict の 5 項目を強制。
+
+### 基本方針 (RETRO_GUIDE SSoT)
+
+- **P1**: retro = 自己改善 + PJ 改善 両輪
+- **P2**: user は retro 参加者（external lens じゃない）
+- **P3**: findings は action plan 化、user と着手項目決定
+
+### Freeform improvement (4 lens 共通)
+
+通常 category 検出に加え、`freeform-improvement` category で抽象 PJ 改善視点を 1-3 候補生成可。generic 禁止、`<file>:<line>` 必須。
+
+### Process Discipline (PM/dev)
+
+- **Parallel dispatch self-verify**: 同 message 内 複数 Agent invocation 必須
+- **Task tool fallback**: 利用不能時 degraded mode 明示宣言
+- **Inline spec edit**: brainstorm 中に spec inline 編集
+- **Doc batch parallelism**: 5+ doc は並列 dispatch
+- **Reviewer verdict 保存**: milestone tag 時 verdict 証拠保存
+- **TDD red commit 順序**: test commit が feat commit より時系列で前必須
+
+詳細: `SPEC.md §3.9.x / §3.6.8`、`docs/RETRO_GUIDE.md`。
+
 ## 開発規約
 
 claude-loom は **Conventional Commits + GitHub Flow** を採用：

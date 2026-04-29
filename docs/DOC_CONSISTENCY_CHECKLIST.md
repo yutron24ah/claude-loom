@@ -113,3 +113,16 @@ SPEC §3.6.7 / §3.7 / §6.9 を編集した時：
 - [ ] 3 dispatcher agent (`loom-pm` / `loom-developer` / `loom-retro-pm`) prompt の runtime gate 記述が SPEC §3.6.7.3 と整合
 - [ ] `commands/loom-mode.md` が SPEC §3.6.7 と整合
 - [ ] README.md の Coexistence Mode intro が SPEC と整合
+
+## M0.13 Retro Discipline & Process Hardening 関連 check
+
+SPEC §3.9.x / §3.6.8 / RETRO_GUIDE.md を編集した時：
+
+- [ ] retro 基本方針 P1/P2/P3 が SPEC §3.9.x と RETRO_GUIDE.md で一致
+- [ ] 4 retro lens prompt の freeform improvement instruction が RETRO_GUIDE.md と整合
+- [ ] `agents/loom-retro-aggregator.md` の action plan section が P3 と整合
+- [ ] `agents/loom-retro-counter-arguer.md` の freeform 検証強化が RETRO_GUIDE.md と整合
+- [ ] `agents/loom-retro-pm.md` の user lens 公式組込 + verdict 保存 hook が SPEC §3.9.x と整合
+- [ ] `agents/loom-pm.md` の workflow discipline 5 項目が SPEC §3.6.8 と整合
+- [ ] `agents/loom-developer.md` の TDD red 順序 enforcement が SPEC §3.6.8.6 と整合
+- [ ] `tests/retro_test.sh` / `tests/agents_test.sh` の M0.13 assertion が SPEC と整合
