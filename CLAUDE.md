@@ -76,23 +76,34 @@ M0 + M0.5 + M0.6 で構築した harness（PM / Developer / Reviewer agent — s
 - `docs/SCREEN_REQUIREMENTS.md` — UI 要件
 - `tests/REQUIREMENTS.md` — 受入要件 ID
 
-## skill 優先度ポリシー（M0.9 から）
+## skill 使い分けポリシー（M0.14 から、SPEC §3.10.1 SSoT）
 
-このリポジトリで作業する claude agent は **`loom-*` skill を優先** すること：
+このリポジトリの agent は **mandate skill** と **suggest skill** を区別する。blanket な「loom-* > superpowers」優先は撤廃済み（agent の自律的 skill discovery を阻害せんため）。
 
-| 用途 | 優先 skill | 代替 (使うな) |
+### Mandate skill — 必ず loom-* 版を使う（claude-loom 固有 workflow gate）
+
+| 用途 | mandate skill | 理由 |
 |---|---|---|
-| TDD discipline | `loom-tdd-cycle` | superpowers:test-driven-development |
-| 実装 plan 作成 | `loom-write-plan` | superpowers:writing-plans |
-| 系統的 debug | `loom-debug` | superpowers:systematic-debugging |
-| code review | `loom-review` (single) / `loom-review-trio` (deep) | superpowers:requesting-code-review |
-| retro 振り返り | `loom-retro` | (superpowers に該当なし) |
-| harness self-test | `loom-test` | (superpowers に該当なし) |
-| harness status 確認 | `loom-status` | (superpowers に該当なし) |
+| TDD discipline | `loom-tdd-cycle` | claude-loom の Red→Green→Refactor→Review cycle 規律 |
+| code review | `loom-review` (single) / `loom-review-trio` (deep) | Reviewer verdict を quality gate とする SPEC §3.6.6 規約 |
+| retro 振り返り | `loom-retro` | 4 lens × counter-argument の 3 段階プロトコル必須 |
+| harness self-test | `loom-test` | claude-loom 固有の install/agent/command/skill test |
+| harness status 確認 | `loom-status` | claude-loom 固有のスナップショット |
 
-`superpowers:brainstorming` / `superpowers:executing-plans` 等の skill は claude-loom の `loom-pm` agent 内 spec phase / impl phase に同等動作が記述されとる。**bootstrapping 期 (M0.9 実装中)** を除き superpowers skill は invoke しない方針。
+### Suggest skill — agent の自律判断、他選択肢も可
 
-詳細：`SPEC.md §3.10` (superpowers Independence)。
+| 用途 | 候補 skill | 補足 |
+|---|---|---|
+| 実装 plan 作成 | `loom-write-plan` | inline spec edit / brainstorm-with-spec でも可 |
+| 系統的 debug | `loom-debug` | ad-hoc debugging でも可 |
+| Refactor phase の品質改善 | `simplify` | 直接 refactor でも可 |
+| permission 拒否多発 → env 改善 | `fewer-permission-prompts` | retro process-axis lens が finding 化 |
+| 定型作業反復 → hook/permission 設定 | `update-config` | retro process-axis lens が finding 化 |
+| keybind 改善 | `keybindings-help` | retro process-axis lens が finding 化 |
+
+`superpowers:brainstorming` / `superpowers:executing-plans` 等の skill は claude-loom の `loom-pm` agent 内 spec phase / impl phase に同等動作が記述されとるため自前 skill 化はせず（YAGNI）。superpowers が global uninstall されても claude-loom 単独で完結する設計（SPEC §3.10）。
+
+詳細：`SPEC.md §3.10` + `§3.10.1` (Skill Mandate vs Suggest 使い分け)。
 
 ## Daemon 開発 note（M1 から）
 

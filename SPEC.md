@@ -480,9 +480,43 @@ aggregator は user 承認後、`target_artifact == "agent-prompt"` の finding 
 claude-loom は **superpowers plugin に依存せずに完結する** ことを設計目標とする。
 
 - M0.9 時点で `loom-write-plan` / `loom-debug` skill を新設し、claude-loom 自前で spec → plan → implement → debug の workflow を完結
-- ユーザー環境に superpowers が共存していても **loom-* skill を優先**（CLAUDE.md でユーザに明示）
+- claude-loom 固有の **workflow 品質ゲート** となる skill（`loom-tdd-cycle` / `loom-review` / `loom-review-trio` / `loom-retro` / `loom-test` / `loom-status`）は loom-* 版を使う（agent prompt で mandate）。それ以外（`loom-write-plan` / `loom-debug` 等の suggest 系）は agent の自律的 skill discovery に委ね、blanket な「loom-* > superpowers」優先は強制しない
 - 残る superpowers skill（brainstorming / executing-plans / verification-before-completion 等）は claude-loom の `loom-pm` / `loom-developer` agent prompt 内に同等動作が記述済みのため、独立 skill 化はしない（YAGNI）
 - 将来 superpowers が global uninstall された場合でも、claude-loom 単独で全 milestone を進められる
+
+#### 3.10.1 Skill Mandate vs Suggest 使い分け（M0.14 から）
+
+agent prompt 内の skill 参照は **mandate**（強制）と **suggest**（推奨）を区別する。これは agent の自律的 skill discovery（"1% chance でも invoke" ルール）と claude-loom の品質ゲートを両立するための原則。
+
+**mandate skill** — workflow 品質ゲートとなる skill。逸脱すると review reject される類。
+
+| 場面 | mandate skill | 理由 |
+|---|---|---|
+| TDD discipline（実装/修正時） | `loom-tdd-cycle` | claude-loom の Red→Green→Refactor→Review cycle 規律 |
+| commit 前 review gate | `loom-review` (single mode) / `loom-review-trio` (deep mode) | Reviewer verdict を quality gate とする SPEC §3.6.6 規約 |
+| milestone 完了後 retro | `loom-retro` | 4 lens × counter-argument の 3 段階プロトコル必須 |
+| harness self-test | `loom-test` | claude-loom 固有の install/agent/command/skill test |
+| harness status 確認 | `loom-status` | claude-loom 固有のスナップショット |
+
+agent prompt 記述形式: `「X 時は Y skill を使う」`（命令形）
+
+**suggest skill** — 最適化候補。他の skill / approach でも目的達成可能で、agent の自律的判断を阻害せん書き方をする。
+
+| 場面 | suggest skill | 代替手段 |
+|---|---|---|
+| Refactor phase での再利用/品質改善 | `simplify` | 直接 refactor、`loom-debug` 経由の root-cause refactor |
+| permission 拒否多発時の env 改善 | `fewer-permission-prompts` | 手動 settings.json 編集 |
+| 定型作業反復時の hook/permission 設定 | `update-config` | 手動 settings.json 編集 |
+| keybind 改善機会 | `keybindings-help` | 手動 keybindings.json 編集 |
+| 実装 plan 作成 | `loom-write-plan` | inline spec edit（M0.13 から brainstorm-with-spec 化済） |
+| 系統的 debug | `loom-debug` | ad-hoc debugging |
+
+agent prompt 記述形式: `「X 時の候補として Y skill。他の skill / approach も可」`（推奨形）
+
+**運用原則**:
+- mandate skill の追加は SPEC 改訂を伴う（品質ゲート増設）
+- suggest skill の追加は agent prompt 単体更新で可
+- retro lens は suggest skill の活用機会を検出し finding 化する（`process-axis` lens の責務、§3.9 参照）
 
 ## 4. アクター（エージェント）定義
 

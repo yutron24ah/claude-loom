@@ -79,6 +79,9 @@ retro 自身の最適化。再帰的 auto-apply 拡張機構。
 | `process-commit-prefix-correction` | CC 違反 commit 提案 | low | false |
 | `process-commit-granularity` | commit が大きすぎ / 小さすぎ | low | false |
 | `process-blocker-pattern` | 同種 blocker 反復検出 | medium | false |
+| `process-permission-friction` | permission prompt 多発、`fewer-permission-prompts` skill 提案（M0.14〜） | low | false |
+| `process-routine-automation-opportunity` | 定型 bash 反復、`update-config` で hook 化提案（M0.14〜） | low | false |
+| `process-keybind-opportunity` | keybind 苦労言及、`keybindings-help` skill 提案（M0.14〜） | low | false |
 
 ### 2.3 researcher lens の categories
 
