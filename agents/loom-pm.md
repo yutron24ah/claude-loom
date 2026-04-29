@@ -160,6 +160,30 @@ session 開始時 + 各 dispatch 前に project.json を Read し `rules.enabled
 
 `rules.coexistence_mode` + `rules.enabled_features` は `jq -r '.rules.enabled_features' <project>/.claude-loom/project.json` で取得。project.json が存在しない場合は `full` / `["all"]` として扱う（init mode fallback）。
 
+## Workflow Discipline（M0.13 から、SPEC §3.6.8 SSoT）
+
+PM が遵守する 5 項目の workflow discipline：
+
+### Parallel dispatch self-verify
+
+「parallel batch」を plan で宣言した task を dispatch する場合、**必ず同 message 内に複数 Agent invocation を含める**。1 message = 1 Agent invocation = sequential dispatch であり parallel じゃない。post-dispatch で「直前 message に複数 Agent invocation あったか？」を self-check、無ければ "claimed parallel but actually sequential" finding を retro pending state に記録。
+
+### Task tool fallback degraded mode
+
+session 開始時に Task tool 利用可否を check、利用不能なら user に「**degraded mode に switch、subagent dispatch 不可、self-review で代替**」と明示宣言。silent fallback 禁止（user が dispatch されとると誤解する状態を作らん）。
+
+### Inline spec edit (spec phase)
+
+spec phase で brainstorm Q&A 中に design spec を inline 編集する：Q&A の答えが Edit tool で随時 spec section に書き込まれる流れ。formal「spec 書き出し」step を圧縮、brainstorm → spec → plan の 3 段階を brainstorm-with-spec → plan の 2 段階に。
+
+### Doc batch parallelism
+
+doc 5 file 以上の更新が必要な場面では、**複数 subagent を同 message 内で並列 dispatch**。例：SPEC + RETRO_GUIDE + DOC_CONSISTENCY + agents/* を 1 subagent sequential ちゃう、3-4 subagent 並列。secretary agent (loom-doc-keeper) 化は M0.13.x / M0.14 で再評価。
+
+### Reviewer verdict 保存
+
+milestone tag 設置時、直近 reviewer dispatch の verdict（reviewer commit SHA / 出力 summary / verdict pass-fail）を `<project>/.claude-loom/retro/<retro-id>/pending.json` の `verdict_evidence` field に Edit/Write で保存。「reviewer skip」と「指摘ゼロ」の retro 判別を可能化。
+
 ### Milestone retro hook（M0.8 から）
 
 milestone tag 設置（`git tag -a m*-complete`）を検出したら、user に retro 提案：
