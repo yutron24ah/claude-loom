@@ -142,3 +142,13 @@ SPEC §6.2 / §6.3 / §6.4 / §6.10 / §7.3 / §12 を編集した時：
 `agents/*.md` を編集した時（M1 後の継続的維持）：
 
 - [ ] daemon が読む event payload schema と各 agent の hook 起動経路が整合
+
+## SCREEN_REQUIREMENTS.md 更新時の整合性 check
+
+`docs/SCREEN_REQUIREMENTS.md` を編集した時：
+
+- [ ] §3 観測ニーズと SPEC §6 (DB schema) / §6.9 (prefs schema) が整合
+- [ ] §4 介入ニーズと daemon tRPC procedure (M1 で実装、後続で追加) が対応
+- [ ] §5 通知 toast と daemon WS event types (`daemon/src/events/types.ts`) が対応
+- [ ] §6 visual hint と SPEC §12 visual 方向性 (ピクセル RPG) が整合
+- [ ] §7 Phase 振り分けと PLAN.md M2-M5 milestone tasks が整合
