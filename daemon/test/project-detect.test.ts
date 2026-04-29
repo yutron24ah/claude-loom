@@ -4,9 +4,14 @@
  */
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { mkdirSync, writeFileSync, rmSync, mkdtempSync, realpathSync } from "node:fs";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 import { tmpdir } from "node:os";
 import { execSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
+
+// Derive repo root from this test file's location: daemon/test/ -> daemon/ -> repo root
+const __dirname = fileURLToPath(new URL(".", import.meta.url));
+const REPO_ROOT = resolve(__dirname, "../..");
 
 import { findGitRoot, detectProject } from "../src/project/detect.js";
 
@@ -36,9 +41,8 @@ describe("project/detect.ts (Task 13)", () => {
     });
 
     it("returns the git root (string) for a path inside a git repo", () => {
-      // Use the actual claude-loom repo root
-      const cwdRoot = "/Users/kokiiphone/Documents/work/claude-loom";
-      const result = findGitRoot(cwdRoot);
+      // Use the repo root derived from this test file's location
+      const result = findGitRoot(REPO_ROOT);
       expect(result).not.toBeNull();
       expect(typeof result).toBe("string");
       expect(result!.length).toBeGreaterThan(0);
@@ -127,7 +131,7 @@ describe("project/detect.ts (Task 13)", () => {
     it("detects claude-loom repo git root (no project.json marker, rootPath non-null)", () => {
       // The claude-loom repo itself is a git repo but doesn't have .claude-loom/project.json
       // (it has project-prefs.json instead). So rootPath should be non-null, hasMarker false.
-      const result = detectProject("/Users/kokiiphone/Documents/work/claude-loom");
+      const result = detectProject(REPO_ROOT);
       expect(result.rootPath).not.toBeNull();
       // rootPath should be the claude-loom repo root
       expect(result.rootPath!.endsWith("claude-loom")).toBe(true);
