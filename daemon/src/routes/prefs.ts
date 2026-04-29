@@ -33,14 +33,28 @@ import { router, publicProcedure, TRPCErrorClass } from "../trpc.js";
 
 const USER_PREFS_PATH = join(homedir(), ".claude-loom", "user-prefs.json");
 
+// SECURITY: projectId は basename only、path traversal 防止
+// 形式: nanoid (英数字 + ハイフン + アンダースコア) のみ許容
+const projectIdSchema = z
+  .string()
+  .regex(/^[A-Za-z0-9_-]+$/, "projectId must be alphanumeric with - or _ only")
+  .min(1)
+  .max(64);
+
 /** Resolve project root from projectId.
  *  M1.5 inline: scan ~/.claude-loom registered projects OR fall back to cwd.
  *  Full DB-backed resolution deferred to Task 10 wire-up.
  *  For single-project usage, cwd = repo root is the common case.
+ *  SECURITY: projectIdSchema (basename only) 経由で zod validation 済 input 前提。
  */
 function resolveProjectRoot(projectId: string): string {
+  // Defense in depth: even if input bypassed zod, basename strip
+  const safe = projectId.replace(/[^A-Za-z0-9_-]/g, "");
+  if (safe !== projectId || safe.length === 0) {
+    throw new Error(`Invalid projectId: ${projectId}`);
+  }
   // Try registered projects in ~/.claude-loom/projects/<projectId>/root
-  const registeredRoot = join(homedir(), ".claude-loom", "projects", projectId, "root");
+  const registeredRoot = join(homedir(), ".claude-loom", "projects", safe, "root");
   if (existsSync(registeredRoot)) {
     return readFileSync(registeredRoot, "utf-8").trim();
   }
@@ -270,9 +284,17 @@ const userRouter = router({
     .input(z.object({ patch: partialUserPrefsSchema }))
     .mutation(async ({ input }): Promise<UserPrefs> => {
       const current = readUserPrefs();
-      const next = deepMerge(current as Record<string, unknown>, input.patch as Record<string, unknown>) as UserPrefs;
-      writeUserPrefs(next);
-      return next;
+      const merged = deepMerge(current as Record<string, unknown>, input.patch as Record<string, unknown>);
+      // SECURITY: defense in depth — validate merged result before write
+      const validation = userPrefsSchema.safeParse(merged);
+      if (!validation.success) {
+        throw new TRPCErrorClass({
+          code: "BAD_REQUEST",
+          message: `Merged user-prefs invalid: ${validation.error.message}`,
+        });
+      }
+      writeUserPrefs(validation.data);
+      return validation.data;
     }),
 });
 
@@ -281,7 +303,7 @@ const projectRouter = router({
    * project.get: Read <project>/.claude-loom/project-prefs.json (default if absent).
    */
   get: publicProcedure
-    .input(z.object({ projectId: z.string() }))
+    .input(z.object({ projectId: projectIdSchema }))
     .query(async ({ input }): Promise<ProjectPrefs> => {
       return readProjectPrefs(input.projectId);
     }),
@@ -292,15 +314,23 @@ const projectRouter = router({
   set: publicProcedure
     .input(
       z.object({
-        projectId: z.string(),
+        projectId: projectIdSchema,
         patch: partialProjectPrefsSchema,
       })
     )
     .mutation(async ({ input }): Promise<ProjectPrefs> => {
       const current = readProjectPrefs(input.projectId);
-      const next = deepMerge(current as Record<string, unknown>, input.patch as Record<string, unknown>) as ProjectPrefs;
-      writeProjectPrefs(input.projectId, next);
-      return next;
+      const merged = deepMerge(current as Record<string, unknown>, input.patch as Record<string, unknown>);
+      // SECURITY: defense in depth — validate merged result before write
+      const validation = projectPrefsSchema.safeParse(merged);
+      if (!validation.success) {
+        throw new TRPCErrorClass({
+          code: "BAD_REQUEST",
+          message: `Merged project-prefs invalid: ${validation.error.message}`,
+        });
+      }
+      writeProjectPrefs(input.projectId, validation.data);
+      return validation.data;
     }),
 });
 
@@ -313,7 +343,7 @@ const learnedGuidanceRouter = router({
     .input(
       z.object({
         scope: scopeSchema,
-        projectId: z.string().optional(),
+        projectId: projectIdSchema.optional(),
         agentName: z.string(),
         guidanceId: z.string(),
         active: z.boolean(),
@@ -368,7 +398,7 @@ const learnedGuidanceRouter = router({
     .input(
       z.object({
         scope: scopeSchema,
-        projectId: z.string().optional(),
+        projectId: projectIdSchema.optional(),
         agentName: z.string(),
         guidanceId: z.string(),
       })

@@ -148,6 +148,12 @@ function generateRetroId(): string {
 // Zod schemas
 // ---------------------------------------------------------------------------
 
+// SECURITY: retroId は basename only、path traversal 防止
+// 形式: YYYY-MM-DD-NNN（generateRetroId と整合）
+const retroIdSchema = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}-\d{3}$/, "retroId must match YYYY-MM-DD-NNN format");
+
 const retroSessionSchema = z.object({
   retroId: z.string(),
   projectId: z.string().optional(),
@@ -267,7 +273,7 @@ export const retroRouter = router({
    * detail: Return archive markdown + pending state for a retro.
    */
   detail: publicProcedure
-    .input(z.object({ retroId: z.string() }))
+    .input(z.object({ retroId: retroIdSchema }))
     .query(
       async ({
         input,
@@ -296,7 +302,7 @@ export const retroRouter = router({
   userDecision: publicProcedure
     .input(
       z.object({
-        retroId: z.string(),
+        retroId: retroIdSchema,
         findingId: z.string(),
         decision: z.enum(["accept", "reject", "defer", "discuss"]),
       })
