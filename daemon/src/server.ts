@@ -6,6 +6,7 @@ import {
 } from "@trpc/server/adapters/fastify";
 import { appRouter, type AppRouter } from "./router.js";
 import { createContext } from "./trpc.js";
+import { registerIngestRoute } from "./hooks/ingest.js";
 
 export async function buildServer() {
   const app = Fastify({
@@ -30,6 +31,8 @@ export async function buildServer() {
     timestamp: Date.now(),
     version: "0.1.0",
   }));
+
+  registerIngestRoute(app);
 
   return app;
 }
