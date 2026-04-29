@@ -1,0 +1,3 @@
+packages:
+  - "daemon"
+  # M2 で "ui" 追加予定

@@ -32,3 +32,8 @@ build/
 *.db
 *.db-shm
 *.db-wal
+
+# M1 daemon
+*/node_modules/
+*/dist/
+*.tsbuildinfo
