@@ -126,3 +126,19 @@ SPEC §3.9.x / §3.6.8 / RETRO_GUIDE.md を編集した時：
 - [ ] `agents/loom-pm.md` の workflow discipline 5 項目が SPEC §3.6.8 と整合
 - [ ] `agents/loom-developer.md` の TDD red 順序 enforcement が SPEC §3.6.8.6 と整合
 - [ ] `tests/retro_test.sh` / `tests/agents_test.sh` の M0.13 assertion が SPEC と整合
+
+## M1 Daemon + Hooks Foundation 関連 check
+
+SPEC §6.2 / §6.3 / §6.4 / §6.10 / §7.3 / §12 を編集した時：
+
+- [ ] `daemon/src/db/schema.ts` の Drizzle 定義が SPEC §6.1 / §6.2 / §7.3 の SQL DDL と semantic 一致（11 table、composite PK 含む）
+- [ ] SPEC §12 の確定値（tRPC / Drizzle / nanoid / integer ms / etc.）と `daemon/package.json` の依存が整合
+- [ ] `daemon/src/router.ts` の AppRouter export が frontend (M2) 渡し用 export pattern 維持
+- [ ] `daemon/src/events/types.ts` の WS event schema が SPEC §6.3 Event payload 仕様と一致
+- [ ] `daemon/src/hooks/ingest.ts` の POST /event handler input が `hooks/*.sh` の payload schema と一致
+- [ ] `daemon/src/security/token.ts` の chmod 600 + bind 127.0.0.1 が SPEC §12 の security baseline と一致
+- [ ] `install.sh` の hooks/ symlink + settings.json 配線が `hooks/*.sh` 5 種を完全 cover
+
+`agents/*.md` を編集した時（M1 後の継続的維持）：
+
+- [ ] daemon が読む event payload schema と各 agent の hook 起動経路が整合
