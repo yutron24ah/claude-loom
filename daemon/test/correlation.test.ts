@@ -3,12 +3,34 @@
  * TDD: RED phase — write failing tests first
  * SPEC §6.4: PreToolUse(Task) + SubagentStart FIFO matching
  */
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { mkdirSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { randomUUID } from "node:crypto";
+import { createDBClient, runMigrations } from "../src/db/client.js";
 import {
   pushTaskDispatch,
   popTaskDispatch,
   correlateSubagent,
 } from "../src/hooks/correlation.js";
+
+let testDir: string;
+
+beforeEach(() => {
+  testDir = join(tmpdir(), `correlation-test-${randomUUID()}`);
+  mkdirSync(testDir, { recursive: true });
+  const dbPath = join(testDir, "test.db");
+  // Run migrations on the test db
+  const db = createDBClient(dbPath);
+  runMigrations(db);
+  process.env.CLAUDE_LOOM_DB_PATH = dbPath;
+});
+
+afterEach(() => {
+  delete process.env.CLAUDE_LOOM_DB_PATH;
+  rmSync(testDir, { recursive: true, force: true });
+});
 
 describe("hooks/correlation.ts (Task 12)", () => {
   describe("FIFO queue: pushTaskDispatch / popTaskDispatch", () => {
