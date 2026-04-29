@@ -121,6 +121,7 @@ For each piece of work:
 5. **Write the minimal code** to make the test pass. No more, no less.
 6. **Run the test, confirm it PASSES** (GREEN).
 7. **Refactor** if the code is messy. Re-run tests after each change.
+   - **suggest skill**（SPEC §3.10.1）: refactor 候補として `simplify` skill が利用可能（reuse / quality / efficiency 観点で changed code を review + 自動修正）。他の refactor 手法 / 直接修正でも可、agent 自律判断。
 8. **Submit to review** — review_mode を判定して single または trio をディスパッチ：
 
    **review_mode の判定順序**：
