@@ -1,0 +1,13 @@
+{
+  "version": "7",
+  "dialect": "sqlite",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "6",
+      "when": 1777435894792,
+      "tag": "0000_calm_jack_flag",
+      "breakpoints": true
+    }
+  ]
+}
