@@ -7,8 +7,9 @@ import { consistencyRouter } from "./routes/consistency.js";
 import { approvalRouter } from "./routes/approval.js";
 import { noteRouter } from "./routes/note.js";
 import { configRouter } from "./routes/config.js";
+import { eventsRouter } from "./routes/events.js";
 
-// Sub-routers wired in Task 8 (M1)
+// Sub-routers wired in Task 8 (M1), events added in Task 9
 export const appRouter = router({
   health: publicProcedure.query(() => ({
     status: "ok",
@@ -22,6 +23,7 @@ export const appRouter = router({
   approval: approvalRouter,
   note: noteRouter,
   config: configRouter,
+  events: eventsRouter,
 });
 
 export type AppRouter = typeof appRouter;
