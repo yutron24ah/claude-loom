@@ -365,18 +365,18 @@ SCREEN_REQUIREMENTS ブラッシュアップ (Q1-Q6) で identified された UI
 - routes/discipline.ts (Q6): metrics live (subscription) + history + violations
 - events router 拡張: onLearnedGuidanceChange / onWorktreeChange / onDisciplineMetricUpdate
 
-- [ ] PLAN.md M1.5 milestone 挿入（本タスク） <!-- id: m1.5-t1 status: todo -->
-- [ ] tests/REQUIREMENTS.md REQ-029 追加 <!-- id: m1.5-t2 status: todo -->
-- [ ] daemon/src/routes/retro.ts 新設 (Q1) <!-- id: m1.5-t3 status: todo -->
-- [ ] daemon/src/routes/prefs.ts 新設 (Q2/Q4/Q5、user-prefs/project-prefs/learned_guidance) <!-- id: m1.5-t4 status: todo -->
-- [ ] daemon/src/routes/personality.ts 新設 (Q2、preset list/detail) <!-- id: m1.5-t5 status: todo -->
-- [ ] daemon/src/routes/worktree.ts 新設 (Q3、git worktree CLI wrapper) <!-- id: m1.5-t6 status: todo -->
-- [ ] daemon/src/routes/coexistence.ts 新設 (Q5、mode + features + detect) <!-- id: m1.5-t7 status: todo -->
-- [ ] daemon/src/routes/discipline.ts 新設 (Q6、metrics + violations) <!-- id: m1.5-t8 status: todo -->
-- [ ] events.ts に subscription 3 種追加 (onLearnedGuidanceChange / onWorktreeChange / onDisciplineMetricUpdate) <!-- id: m1.5-t9 status: todo -->
-- [ ] router.ts に 6 router wire-up + AppRouter type 更新 <!-- id: m1.5-t10 status: todo -->
-- [ ] daemon vitest 拡張 (各 router の単体 test) <!-- id: m1.5-t11 status: todo -->
-- [ ] 全 test PASS + tag m1.5-complete + main merge <!-- id: m1.5-t12 status: todo -->
+- [x] PLAN.md M1.5 milestone 挿入（本タスク） <!-- id: m1.5-t1 status: done -->
+- [x] tests/REQUIREMENTS.md REQ-029 追加 <!-- id: m1.5-t2 status: done -->
+- [x] daemon/src/routes/retro.ts 新設 (Q1) <!-- id: m1.5-t3 status: done -->
+- [x] daemon/src/routes/prefs.ts 新設 (Q2/Q4/Q5、user-prefs/project-prefs/learned_guidance) <!-- id: m1.5-t4 status: done -->
+- [x] daemon/src/routes/personality.ts 新設 (Q2、preset list/detail) <!-- id: m1.5-t5 status: done -->
+- [x] daemon/src/routes/worktree.ts 新設 (Q3、git worktree CLI wrapper) <!-- id: m1.5-t6 status: done -->
+- [x] daemon/src/routes/coexistence.ts 新設 (Q5、mode + features + detect) <!-- id: m1.5-t7 status: done -->
+- [x] daemon/src/routes/discipline.ts 新設 (Q6、metrics + violations) <!-- id: m1.5-t8 status: done -->
+- [x] events.ts に subscription 3 種追加 (onLearnedGuidanceChange / onWorktreeChange / onDisciplineMetricUpdate) <!-- id: m1.5-t9 status: done -->
+- [x] router.ts に 6 router wire-up + AppRouter type 更新 <!-- id: m1.5-t10 status: done -->
+- [x] daemon vitest 拡張 (各 router の単体 test) <!-- id: m1.5-t11 status: done -->
+- [x] 全 test PASS + tag m1.5-complete + main merge <!-- id: m1.5-t12 status: done -->
 
 **M1.5 完成基準**：`pnpm --filter @claude-loom/daemon test` で全 PASS、`AppRouter` type に retro/prefs/personality/worktree/coexistence/discipline router 含む、各 router で最低 2 procedure（list/detail/mutation 等）+ zod schema、events router に 3 新 subscription、frontend (M2) から `import type { AppRouter } from "@claude-loom/daemon"` で 6 新 router の型推論可能、`./tests/run_tests.sh` で 12 PASS 維持、`tag m1.5-complete` 設置、`m0`〜`m1-complete` 全保持。
 
