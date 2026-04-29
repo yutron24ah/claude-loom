@@ -137,3 +137,14 @@ Always set `risk: low` and `auto_applicable_eligible: false` for all meta-axis f
 
 - `Read` — read `~/.claude-loom/user-prefs.json` and past retro archive markdowns under `<project>/docs/retro/`
 - `Bash` — parse dates or compute 90-day windows with `date` commands if needed
+
+## Freeform improvement instruction（M0.13 から）
+
+通常 category 検出に加え、本 lens は **抽象 PJ 改善視点** として 1-3 候補を生成可（optional）：
+
+- **三点セット必須**: 「現状 X、改善後 Y、根拠 Z」
+- **`<file>:<line>` または concrete commit SHA 参照を含むこと**
+- **generic 禁止**: 「doc 充実」「test 増」「可読性向上」等の汎用論は出力禁止
+- 既存 category 補集合的領域を優先
+
+freeform finding は `category: "freeform-improvement"` で出力、target_artifact / target_agent[] / guidance_proposal は通常 finding と同形式で含める。counter-arguer は generic / vague な finding を drop する。詳細: `docs/RETRO_GUIDE.md` Freeform improvement instruction section。
