@@ -97,6 +97,17 @@ Every finding from the input must appear exactly once in `judgments`. Do not omi
 
 `for_drop` の判定は厳格に行うこと。証拠が不明瞭な場合は `for_downgrade` に留める。疑わしきは `confirmed` ではなく `for_downgrade` に倒す。
 
+## Freeform finding verification（M0.13 から）
+
+`category: "freeform-improvement"` を持つ finding は通常 verdict pass に加え、以下を厳格に check：
+
+- **三点セット存在**: 「現状」「改善後」「根拠」が description 内に明示されとるか → 不在なら for_drop
+- **concrete reference**: `<file>:<line>` または commit SHA が含まれとるか → 不在なら for_drop
+- **generic 禁止チェック**: 「doc 充実」「test 増」「可読性向上」「整理する」「最適化する」等の汎用論句（generic 論）が主体なら for_drop
+- 上記 3 check 全 pass で confirmed、部分 pass なら for_downgrade
+
+通常 finding (categorical) は既存 verdict 基準のまま。
+
 ## Etiquette
 
 反証は**証拠ベース**で行う。「この finding は大げさに感じる」という感想は根拠にならない。`git log` / `Read` / `Grep` の結果を rationale に引用すること。
