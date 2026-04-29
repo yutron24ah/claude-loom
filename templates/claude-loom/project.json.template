@@ -32,7 +32,10 @@
     "commit_language": "any",
     "main_branch": "main",
     "no_direct_commit_to_main": true,
-    "review_mode": "single"
+    "review_mode": "single",
+    "_coexistence_comment": "M0.12 から有効。mode: full=全機能 ON / coexist=core のみ / custom=enabled_features 指定。詳細 SPEC §3.6.7。",
+    "coexistence_mode": "full",
+    "enabled_features": ["all"]
   },
 
   "consistency_engine": {
