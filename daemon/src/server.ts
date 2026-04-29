@@ -1,5 +1,11 @@
 import Fastify from "fastify";
 import websocket from "@fastify/websocket";
+import {
+  fastifyTRPCPlugin,
+  type FastifyTRPCPluginOptions,
+} from "@trpc/server/adapters/fastify";
+import { appRouter, type AppRouter } from "./router.js";
+import { createContext } from "./trpc.js";
 
 export async function buildServer() {
   const app = Fastify({
@@ -9,6 +15,15 @@ export async function buildServer() {
   });
 
   await app.register(websocket);
+
+  await app.register(fastifyTRPCPlugin, {
+    prefix: "/trpc",
+    useWSS: true,
+    trpcOptions: {
+      router: appRouter,
+      createContext,
+    } satisfies FastifyTRPCPluginOptions<AppRouter>["trpcOptions"],
+  });
 
   app.get("/health", async () => ({
     status: "ok",
