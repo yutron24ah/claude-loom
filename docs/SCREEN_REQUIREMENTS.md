@@ -316,7 +316,7 @@ degraded mode の承認と violation の retro への昇格を行いたい。
 ### 6.1 全体トーン
 
 - **ピクセル RPG 風**（Stardew Valley 系の方向性）
-- ダーク基調（ライトテーマは Phase 2）
+- **配色方針は frontend-design に委譲**（ダーク / ライト / 時間帯切替 等の方向性は frontend-design が決定）
 - キャラクター愛着を最優先
 
 ### 6.2 必須のキャラ表現
@@ -374,7 +374,6 @@ frontend-design への hint（決定権は frontend-design に委譲）：
 - GUI からの spec/go 起動（CLI 不要化）
 - キャラの移動アニメ（idle → 着席のような遷移をスムーズに）
 - キーボードショートカット網羅
-- ライトテーマ
 - 多言語化（英語化）
 - 接続断中の write キューイング
 - トークンメーターの詳細ドリルダウン
@@ -440,3 +439,4 @@ frontend-design への hint（決定権は frontend-design に委譲）：
 - 2026-04-26: 全面書き直し。**「ユーザーが UI で何をしたいか」のみ** に絞り、レイアウトは frontend-design 委譲に統一
 - 2026-04-26: §3.1 にプロジェクト切替主軸 + PM 常時表示 を明記、§3.6 進捗の時間軸表現（ガント系）追加、§6.3 ガントの表現方針追加（ピクセル世界観統一）
 - 2026-04-29: M0.8〜M0.13 feature 反映ブラッシュアップ（Q1 Retro / Q2 Customization Layer / Q3 Worktree / Q4 learned_guidance / Q5 Coexistence Mode / Q6 Process Discipline metrics）。Phase 1 MVP に retro 画面昇格、観測 31 項目 + 介入 27 項目 追加。Visual hint 追加（sub-room / guidance indicator / 経験値ゲージ風）。
+- 2026-04-30: §6.1 ダーク基調制約撤去、配色方針を完全に frontend-design 委譲に。§7.2 Phase 2「ライトテーマ」項目削除（dark/light の dichotomy 自体が消えたため）。SPEC §6.10 `ui.theme` default を `dark` → `system` に変更。

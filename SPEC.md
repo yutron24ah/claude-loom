@@ -1116,7 +1116,7 @@ final_value = project_prefs.agents[name].field
 | `retention.days` | 30 | events 保持日数 |
 | `retention.size_mb` | 200 | events 最大サイズ MB |
 | `polling.token_usage_sec` | 30 | transcript polling 間隔 |
-| `ui.theme` | `dark` | テーマ（Phase 1 は dark のみ） |
+| `ui.theme` | `system` | テーマ（frontend-design の決定に従う、`system` / `dark` / `light` 等を許容） |
 | `consistency.claude_cmd` | `claude` | `claude -p` 起動時のコマンド名 |
 
 config.json が存在しない場合は daemon 起動時にデフォルト値で生成。
