@@ -1436,7 +1436,7 @@ uninstall.sh の流れ:
 | **Daemon auth token（M1 から）** | nanoid 生成、`~/.claude-loom/daemon-token` (chmod 600) に保存、tRPC headers で送信 | daemon `127.0.0.1` bind 前提でも UI 経由攻撃を防ぐ |
 | **Bind address（M1 から）** | `127.0.0.1` のみ | localhost 専用、外部公開禁止 |
 | **CORS（M1 から）** | development: `localhost:5173` (Vite default) 許可、production: 同 origin (UI も daemon serve) | M2 frontend dev 時 |
-| Visual 方向性 | ピクセル RPG（Stardew 系） | キャラクター愛着優先（Q9） |
+| Visual 方向性 | ピクセル RPG（Stardew 系）+ **猫系（or アニマル系）キャラ**「猫の開発室」コンセプト | キャラクター愛着優先（Q9）+ 統一感ある世界観 |
 | Daemon ライフサイクル | Lazy 起動、30 分アイドルで停止 | リソース節約 + シームレス UX |
 | Daemon ポート | 5757（config 変更可） | — |
 | プロジェクト判定 | git root + `.claude-loom/project.json` marker | 自動 + 明示の hybrid |
