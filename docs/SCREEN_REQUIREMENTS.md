@@ -322,8 +322,10 @@ degraded mode の承認と violation の retro への昇格を行いたい。
 ### 6.2 必須のキャラ表現
 
 - 各エージェントは **キャラクターとして可視化** される
+- **モチーフ：猫系（または猫メインのアニマル系）**「**猫の開発室**」コンセプトで統一感とキャラクター愛着を強化（agent ごとに異なる猫種 / 動物種でキャラ立て）
 - ステータスが **見ただけで分かる**（idle / busy / 完了 / エラー）
 - プロジェクト所属が **アイコン等で識別可能**
+- 13 agent (PM / Developer / 4 reviewer / 7 retro 体) の個別キャラ design は frontend-design に委譲（例：PM = リーダー猫、Developer = 作業猫、Reviewer = 監視猫、retro lens = 観察役 etc.）
 
 ### 6.3 進捗ビュー（ガント）の表現方針
 
@@ -440,3 +442,4 @@ frontend-design への hint（決定権は frontend-design に委譲）：
 - 2026-04-26: §3.1 にプロジェクト切替主軸 + PM 常時表示 を明記、§3.6 進捗の時間軸表現（ガント系）追加、§6.3 ガントの表現方針追加（ピクセル世界観統一）
 - 2026-04-29: M0.8〜M0.13 feature 反映ブラッシュアップ（Q1 Retro / Q2 Customization Layer / Q3 Worktree / Q4 learned_guidance / Q5 Coexistence Mode / Q6 Process Discipline metrics）。Phase 1 MVP に retro 画面昇格、観測 31 項目 + 介入 27 項目 追加。Visual hint 追加（sub-room / guidance indicator / 経験値ゲージ風）。
 - 2026-04-30: §6.1 ダーク基調制約撤去、配色方針を完全に frontend-design 委譲に。§7.2 Phase 2「ライトテーマ」項目削除（dark/light の dichotomy 自体が消えたため）。SPEC §6.10 `ui.theme` default を `dark` → `system` に変更。
+- 2026-04-30: §6.2 キャラ表現に **「猫の開発室」コンセプト**（猫系 / アニマル系モチーフ）を追加。13 agent それぞれに異なる猫種 / 動物種でキャラ立て、キャラクター愛着強化。SPEC §12 visual 方向性も同期更新。
