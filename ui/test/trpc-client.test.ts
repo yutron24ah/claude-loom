@@ -12,7 +12,7 @@
  * NOTE: We do NOT test actual WebSocket connections here (no real daemon).
  * We extract and test the pure functions / mock the wsLink factory.
  */
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { useConnectionStore } from '@/store/connection';
 
 // ---------------------------------------------------------------------------
@@ -60,10 +60,6 @@ describe('wsLink callbacks → useConnectionStore bridge', () => {
   beforeEach(() => {
     // Reset store to clean initial state between tests
     useConnectionStore.setState({ status: 'connecting', attempts: 0 });
-  });
-
-  afterEach(() => {
-    vi.restoreAllMocks();
   });
 
   it('onOpen callback → status transitions to "connected"', () => {

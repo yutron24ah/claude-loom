@@ -12,9 +12,14 @@
     "prototype:open": "serve prototype -p 8080"
   },
   "dependencies": {
+    "@claude-loom/daemon": "workspace:*",
+    "@tanstack/react-query": "^5.75.0",
+    "@trpc/client": "^11.1.0",
+    "@trpc/react-query": "^11.1.0",
     "react": "^18.3.0",
     "react-dom": "^18.3.0",
     "react-router-dom": "^6.30.3",
+    "superjson": "^2.2.2",
     "zustand": "^4.5.0"
   },
   "devDependencies": {
