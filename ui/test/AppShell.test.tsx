@@ -116,9 +116,7 @@ describe('AppShell — panel overlay behavior', () => {
 
 describe('AppShell — panel close interactions', () => {
   it('Escape key navigates to / (panel dismissal)', async () => {
-    let currentPath = '/plan';
-
-    const { container } = render(
+    render(
       <MemoryRouter initialEntries={['/plan']}>
         <Routes>
           <Route element={<AppShell />}>
