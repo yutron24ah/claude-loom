@@ -172,6 +172,44 @@ else
     failures=$((failures + 1))
 fi
 
+# REQ-031 (a): loom-retro-pm Stage 0 verdict_evidence build step (M2.1)
+# SPEC §6.9.5 lazy build 5 step + 独立 file path の記述が存在することを verify
+if grep -q "verdict_evidence.json" agents/loom-retro-pm.md && \
+   grep -qE "lazy build|5 step" agents/loom-retro-pm.md; then
+    echo "PASS [agents]: loom-retro-pm.md has verdict_evidence.json lazy build (M2.1 REQ-031a)"
+else
+    echo "FAIL [agents]: loom-retro-pm.md missing verdict_evidence.json or lazy build 5 step description"
+    failures=$((failures + 1))
+fi
+
+# REQ-031 (b): loom-pm [reviewer-dispatch-refs] block format (M2.1)
+# PM hint reference block 形式の記述存在を verify
+if grep -q "\[reviewer-dispatch-refs\]" agents/loom-pm.md; then
+    echo "PASS [agents]: loom-pm.md has [reviewer-dispatch-refs] block format (M2.1 REQ-031b)"
+else
+    echo "FAIL [agents]: loom-pm.md missing [reviewer-dispatch-refs] block format description"
+    failures=$((failures + 1))
+fi
+
+# REQ-031 (c) / M0.14 t7: loom-retro-process-judge 3 new category schema (M0.14)
+# process-permission-friction / process-routine-automation-opportunity / process-keybind-opportunity
+check_process_judge_categories() {
+    local fname="agents/loom-retro-process-judge.md"
+    local missing=()
+    for category in "process-permission-friction" "process-routine-automation-opportunity" "process-keybind-opportunity"; do
+        if ! grep -q "$category" "$fname"; then
+            missing+=("$category")
+        fi
+    done
+    if [ ${#missing[@]} -eq 0 ]; then
+        echo "PASS [agents]: loom-retro-process-judge.md has all 3 new categories (M0.14 t7)"
+    else
+        echo "FAIL [agents]: loom-retro-process-judge.md missing categories: ${missing[*]}"
+        failures=$((failures + 1))
+    fi
+}
+check_process_judge_categories
+
 if [ "$failures" -gt 0 ]; then
   echo "agents_test FAILED with $failures violations"
   exit 1
