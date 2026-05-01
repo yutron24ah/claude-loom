@@ -400,8 +400,8 @@ prototype design (`ui/prototype/`) を Vite + React 18 + TS strict + Tailwind �
 
 - [x] Vite + React 18 + TS strict + Tailwind 雛形 <!-- id: m2-t1 status: done -->
 - [x] tokens.css rgb 変換 + tailwind.config.ts variable 参照 extend（3 theme 維持） <!-- id: m2-t2 status: done -->
-- [ ] AppShell: react-router v6 + persistent Room layer + panel routing <!-- id: m2-t3 status: todo -->
-- [ ] zustand store skeleton（connection / view 別 slice） <!-- id: m2-t4 status: todo -->
+- [x] AppShell: react-router v6 + persistent Room layer + panel routing <!-- id: m2-t3 status: done -->
+- [x] zustand store skeleton（connection / view 別 slice） <!-- id: m2-t4 status: done -->
 - [ ] tRPC client + wsLink + exponential backoff retryDelayMs（max 30s） <!-- id: m2-t5 status: todo -->
 - [ ] ConnectionBanner + toast 通知システム（5 event MVP） <!-- id: m2-t6 status: todo -->
 - [ ] 9 画面 visual port（mock data、DOM-based RoomView 含） <!-- id: m2-t7 status: todo -->
