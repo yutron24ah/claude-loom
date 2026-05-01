@@ -151,8 +151,55 @@ For each piece of work:
    - Fix the issues.
    - Re-run all tests.
    - Re-submit to all dispatched reviewer(s)（single mode = 1 体、trio mode = 3 体並列、back to step 8）.
-10. **All reviewer verdicts `pass`** → commit using the project's commit prefix convention (see `CLAUDE.md`).
-11. **Report back** to the PM with: what you built, file paths, test count, commit SHA.
+10. **All reviewer verdicts `pass`** → commit. **必ず以下の順序で実行**（M0.14.x で codified、retro 2026-05-02-001 finding-proc-001 由来 — reviewer pass 後に commit せず final report を返す handoff anomaly が M2 Task 5/6/7/8 で 4 連発したため）：
+    1. `Bash`: `git status` で staged / unstaged / untracked を確認
+    2. `Bash`: `git add <files>` で対象ファイルを stage（`git add -A` 禁止、明示 path のみ）
+    3. `Bash`: `git commit -m "<conventional prefix>: <subject>"` で commit
+    4. `Bash`: `git log -1 --format=%H` で commit SHA (40-char) を取得
+    5. final report (Step 11) に commit SHA を必ず含める
+11. **Report back** to the PM with the following **mandatory** report template：
+    ```
+    ## Developer Report — <task title>
+
+    **commit_handoff**: dev | pm   ← dev = この dev が commit 完了 / pm = PM が統合 commit 担当（Strategy b）
+    **committed_sha**: <40-char-sha> | null   ← null は commit_handoff: pm の場合のみ許容
+    **branch**: <git branch name>
+
+    ### What was built
+    ...
+
+    ### Files modified/created
+    ...
+
+    ### Test results
+    - <suite>: <pass>/<total>
+    ...
+
+    ### Reviewer verdict
+    - verdict: pass | needs_fix
+    - findings JSON: ...
+    ```
+
+    `committed_sha: null + commit_handoff: dev` の組合せは **invalid response**（PM が refuse + retry または follow-up ask を出す）。Strategy b (PM 統合 commit) は dispatch 時に PM が `commit_handoff=pm` を `[loom-meta]` prefix or task spec で明示宣言した場合のみ許容（次節 §"Commit handoff strategy" 参照）。
+
+## Commit handoff strategy（M0.14.x、retro 2026-05-02-001 finding-proc-002）
+
+dispatch 時に commit responsibility を明確化する 2 戦略：
+
+### Strategy a — dev 自身 commit（**default**）
+
+dev が Step 10 全 5 step を完遂し、`committed_sha` を report に含める。single subagent / 単純 task / sequential dispatch の標準形。M0.14.x 以前の暗黙 default。
+
+### Strategy b — PM 統合 commit（parallel batch / heavy workload 用 fallback）
+
+PM が dispatch 時に `[loom-meta]` prefix or task spec で `commit_handoff=pm` を明示宣言した場合のみ。dev は code + reviewer dispatch + final report のみ実施、`git commit` 禁止。final report に `commit_handoff: pm + committed_sha: null` を明記、ファイル変更は working tree に残置。PM が後で RED + GREEN を統合 commit する。
+
+**選択基準**：
+- 3 subagent 以上の parallel batch（例: M2 Task 9 = 3 view group の並列 port）
+- 9+ files の heavy workload（subagent 単位の commit が 過粒度になる場面）
+- 1 logical unit が複数 subagent に物理分割されとる（例: 同 milestone 内の 3 subagent が同じ commit message prefix を共有する場合）
+
+それ以外は Strategy a を default とする。dispatch 時 PM は明示判断、不明示なら Strategy a。
 
 ## TDD red commit 時系列 enforcement（M0.13 から、SPEC §3.6.8.6）
 
