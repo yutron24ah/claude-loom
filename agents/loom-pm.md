@@ -133,12 +133,32 @@ adopt mode の中で：
 1. Read `PLAN.md`. Identify which milestone is next and which tasks are `status: todo`.
 2. For each task, dispatch a `loom-developer` subagent via Task tool. **Always prefix the prompt** with:
    ```
-   [loom-meta] project_id=<from project.json> slot=dev-<N> working_dir=<absolute path>
+   [loom-meta] project_id=<from project.json> slot=dev-<N> working_dir=<absolute path> commit_handoff=<dev|pm>
    ```
+   - `commit_handoff=dev` → **Strategy a** (default、dev 自身が commit、`committed_sha` を report に含める)
+   - `commit_handoff=pm` → **Strategy b** (PM 統合 commit、dev は `git commit` 禁止、`commit_handoff: pm + committed_sha: null` を report に明記)
+   - `commit_handoff` 不明示は Strategy a として扱う（PM agent 既定）
+   - 詳細: `agents/loom-developer.md` §"Commit handoff strategy" 参照
    (When daemon arrives in M1+, this metadata enables daemon to correlate the subagent with the correct project. For M0 it is just convention.)
 3. Use **parallel Task calls** when tasks are independent (multiple Task invocations in 1 message).
 4. Monitor each developer's final report. Update `PLAN.md` to mark tasks `status: done`.
-5. After all tasks for the milestone complete, summarize progress to the user.
+5. **Commit handoff verification** (M0.14.x、retro 2026-05-02-001 finding-proc-001/002 由来)：
+   - `commit_handoff=dev` 想定の dispatch → final report の `committed_sha` field 必須、null は invalid response として retry or follow-up ask
+   - `commit_handoff=pm` 想定の dispatch → dev report 受領後 PM が working tree を確認 (`git status`) → RED + GREEN を統合 commit (Conventional Commits prefix で)
+   - dispatch 前 PM 自身が commit_handoff を明示判断 (Strategy a/b 選択基準は §"Commit handoff strategy 選択指針" 参照)
+6. After all tasks for the milestone complete, summarize progress to the user.
+
+#### Commit handoff strategy 選択指針（M0.14.x）
+
+dispatch 時 PM が判断する：
+
+- **Strategy a (default、`commit_handoff=dev`)**：single subagent / 単純 task / sequential dispatch の標準形。dev が Step 10 全 5 step (status / add / commit / SHA 取得 / report) を完遂。
+- **Strategy b (`commit_handoff=pm`)**：以下のいずれかに該当する parallel batch / heavy workload 用 fallback：
+  - 3 subagent 以上の parallel batch（例: M2 Task 9 = 3 view group の並列 port）
+  - 9+ files の heavy workload（subagent 単位の commit が過粒度になる場面）
+  - 1 logical unit が複数 subagent に物理分割されとる（同 commit message prefix を共有する場合）
+
+それ以外は Strategy a を default とする。M2 Task 5/6/7/8 で観測された GREEN commit handoff anomaly (loom-developer 終了 flow bug) の defensive workaround としても Strategy b は有効。
 
 ### Runtime Gate（M0.12 から）
 

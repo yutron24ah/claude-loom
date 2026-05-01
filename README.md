@@ -190,8 +190,33 @@ curl http://127.0.0.1:5757/health                 # health check
 
 ### Frontend 渡し（M2 で UI 作成時）
 
+> **NOTE**：以下の sample code は **Phase 2 production 接続例** (M5 polish 完了後の最終形)。**M2 dev mode の現実装は React + React Query 統合 pattern (`createTRPCReact` + `wsLink` のみ、`httpBatchLink` と `x-loom-token` headers は M5 polish へ defer)** を採用しとる。実 M2 実装の最新形は [`ui/src/trpc/client.ts`](ui/src/trpc/client.ts) を参照。
+
+**M2 実装 (現在):**
+
 ```typescript
-// ui/src/api.ts
+// ui/src/trpc/client.ts (excerpt)
+import type { AppRouter } from "@claude-loom/daemon";
+import { createTRPCReact } from "@trpc/react-query";
+import { wsLink, createWSClient } from "@trpc/client";
+import { useConnectionStore } from "@/store/connection";
+
+const wsClient = createWSClient({
+  url: "ws://localhost:5757/trpc",
+  retryDelayMs: (attempt) => Math.min(1000 * 2 ** attempt, 30000),
+  onOpen: () => useConnectionStore.getState().handleOpen(),
+  onClose: () => useConnectionStore.getState().handleClose(),
+  onError: (e) => useConnectionStore.getState().handleError(e),
+});
+
+export const trpc = createTRPCReact<AppRouter>();
+// 利用側: `const { data } = trpc.plan.list.useQuery({ projectId });`
+```
+
+**Phase 2 production 接続例 (M5 polish 後):**
+
+```typescript
+// ui/src/api.ts (M5 完了後の最終形)
 import type { AppRouter } from "@claude-loom/daemon";
 import type { Project, Session, PlanItem } from "@claude-loom/daemon/db";
 import { createTRPCClient, httpBatchLink, wsLink, createWSClient } from "@trpc/client";

@@ -1,0 +1,36 @@
+/*
+ * claude-loom UI — Global styles entry point.
+ * WHY: @import must precede @tailwind directives per CSS/PostCSS spec.
+ * tokens.css is imported first so CSS variables are available when
+ * Tailwind's @layer base processes the body defaults below.
+ * Element defaults from prototype/styles.css are intentionally omitted —
+ * Tailwind preflight + utility classes handle resets; per-view styling
+ * lives in component files (Task 9+).
+ */
+
+/* Design tokens (CSS variables — theme-aware via [data-theme] attribute) */
+@import './tokens.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * Base reset layer: minimal overrides on top of Tailwind preflight.
+ * WHY: sets font smoothing and applies token-driven defaults to body
+ * without conflicting with Tailwind's utility system.
+ */
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    background-color: rgb(var(--bg));
+    color: rgb(var(--text));
+    font-family: var(--font-sans);
+    font-size: var(--fs-base);
+    line-height: var(--lh-body);
+  }
+}
