@@ -3,7 +3,6 @@
  * WHY: centralises connection status so ConnectionBanner (Task 8) and
  * other consumers can subscribe without coupling to the tRPC wsLink internals.
  * Task 7 (tRPC client) will call handleOpen/handleClose/handleError from wsLink callbacks.
- * Task 8 will implement the actual toast emissions (see TODO markers below).
  *
  * State machine:
  *   connecting  →  connected         (handleOpen)
@@ -11,8 +10,13 @@
  *   disconnected → reconnecting      (handleClose, subsequent attempts)
  *   *           →  reconnecting      (handleError)
  *   reconnecting → connected         (handleOpen, wasReconnecting path)
+ *
+ * Toast emissions (Task 8):
+ *   handleClose → emitDaemonDisconnected (warning, persistent)
+ *   handleOpen (wasReconnecting) → emitDaemonReconnected (success, 3s)
  */
 import { create } from 'zustand';
+import { emitDaemonDisconnected, emitDaemonReconnected } from '../notifications/toastBus';
 
 export type Status = 'connecting' | 'connected' | 'reconnecting' | 'disconnected';
 
@@ -35,7 +39,8 @@ export const useConnectionStore = create<ConnectionState>((set, get) => ({
     set({ status: 'connected', attempts: 0 });
 
     if (wasReconnecting) {
-      // TODO Task 8: emit toast — daemon_reconnected (success, 3s)
+      // WHY: only emit reconnected toast on reconnect, not on the first connect
+      emitDaemonReconnected();
     }
   },
 
@@ -45,13 +50,16 @@ export const useConnectionStore = create<ConnectionState>((set, get) => ({
       // WHY: first close → disconnected (no prior reconnect cycle),
       //      subsequent closes → reconnecting (exponential backoff in progress)
       const nextStatus: Status = nextAttempts === 1 ? 'disconnected' : 'reconnecting';
-      // TODO Task 8: emit toast — daemon_disconnected (warning, persistent)
       return { status: nextStatus, attempts: nextAttempts };
     });
+    // WHY: emit after state update so subscribers see current status.
+    //      daemon_disconnected is always emitted on any close event.
+    emitDaemonDisconnected();
   },
 
   handleError: (_err: unknown) => {
     set({ status: 'reconnecting' });
-    // TODO Task 8: emit toast — daemon_disconnected (warning, persistent) on error path
+    // WHY: error path also counts as a disconnect — user needs to know
+    emitDaemonDisconnected();
   },
 }));

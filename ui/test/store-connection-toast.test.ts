@@ -49,3 +49,17 @@ describe('useConnectionStore × toastBus — handleOpen emits daemon_reconnected
     expect(emitted).toHaveLength(0);
   });
 });
+
+describe('useConnectionStore × toastBus — handleError emits daemon_disconnected toast', () => {
+  it('should emit daemon_disconnected warning toast when handleError is called', () => {
+    useConnectionStore.setState({ status: 'connected', attempts: 0 });
+    const emitted: Toast[] = [];
+    const unsub = toastBus.subscribe((t) => emitted.push(t));
+    useConnectionStore.getState().handleError(new Error('ws error'));
+    unsub();
+    expect(emitted).toHaveLength(1);
+    expect(emitted[0].event).toBe('daemon_disconnected');
+    expect(emitted[0].kind).toBe('warning');
+    expect(emitted[0].ttl_ms).toBeNull();
+  });
+});

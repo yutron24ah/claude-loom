@@ -12,6 +12,8 @@
 import { useEffect } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { RoomView } from '../views/room/RoomView';
+import { ConnectionBanner } from '../notifications/ConnectionBanner';
+import { ToastContainer } from '../notifications/ToastContainer';
 
 export function AppShell(): JSX.Element {
   const navigate = useNavigate();
@@ -40,6 +42,11 @@ export function AppShell(): JSX.Element {
 
   return (
     <div className="relative w-screen h-screen overflow-hidden">
+      {/* Connection banner — always shown above header when not connected */}
+      <div className="absolute top-0 left-0 right-0 z-30">
+        <ConnectionBanner />
+      </div>
+
       {/* Persistent discipline header — Task 9 Subagent B で本実装 */}
       <header
         data-testid="discipline-header"
@@ -64,6 +71,9 @@ export function AppShell(): JSX.Element {
           <Outlet />
         </div>
       )}
+
+      {/* Toast container — always visible, z-50 above all layers */}
+      <ToastContainer />
     </div>
   );
 }
