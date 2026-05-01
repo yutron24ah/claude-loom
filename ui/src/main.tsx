@@ -2,6 +2,7 @@
  * Entry point — React 18 createRoot mount.
  * Tasks 4-9 will wrap App with providers (tRPC, router, etc.).
  */
+import './styles/index.css';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { App } from './App';

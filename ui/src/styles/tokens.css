@@ -1,0 +1,175 @@
+/* ============================================================
+   claude-loom UI — Design Tokens
+   Ported from ui/prototype/tokens.css (Kintai Auto origin).
+   WHY: hex values converted to space-separated rgb integers
+   (e.g. 248 249 251 instead of #f8f9fb) so that Tailwind's
+   `rgb(var(--x) / <alpha-value>)` pattern supports opacity
+   modifiers like bg-bg1/80 for semi-transparent panel overlays.
+
+   Theme switching: set [data-theme="dusk"] or [data-theme="night"]
+   on <html> to override variables. Default = "pop" (light mode).
+   ============================================================ */
+
+:root {
+  /* ---------- Color: primitives ---------- */
+  /* #f8f9fb -> 248 249 251 */
+  --bg:            248 249 251;
+  /* #ffffff -> 255 255 255 */
+  --surface:       255 255 255;
+  /* #4f46e5 -> 79 70 229 */
+  --primary:       79 70 229;
+  /* #4338ca -> 67 56 202 */
+  --primary-hover: 67 56 202;
+  /* #1f2937 -> 31 41 55 */
+  --text:          31 41 55;
+  /* #6b7280 -> 107 114 128 */
+  --text-muted:    107 114 128;
+  /* #e5e7eb -> 229 231 235 */
+  --border:        229 231 235;
+  /* #dc2626 -> 220 38 38 */
+  --error:         220 38 38;
+  /* #059669 -> 5 150 105 */
+  --success:       5 150 105;
+  /* #f3f4f6 -> 243 244 246 */
+  --tint-slate-100: 243 244 246;
+
+  /* ---------- Color: semantic aliases ---------- */
+  /* WHY: single-name tokens for consistent usage across components */
+  --fg1:         var(--text);
+  --fg2:         var(--text-muted);
+  --bg1:         var(--bg);
+  --bg2:         var(--surface);
+  --bg3:         var(--tint-slate-100);
+  --accent:      var(--primary);
+  --accent-hover: var(--primary-hover);
+
+  /* ---------- Type: family ---------- */
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI",
+               "Hiragino Sans", "Yu Gothic UI", sans-serif;
+
+  /* ---------- Type: scale (px) ---------- */
+  --fs-xs:   12px;
+  --fs-sm:   13px;
+  --fs-body: 14px;
+  --fs-md:   15px;
+  --fs-base: 16px;
+  --fs-h1:   22px;
+
+  /* ---------- Type: weight ---------- */
+  --fw-normal:   400;
+  --fw-semibold: 600;
+  --fw-bold:     700;
+
+  /* ---------- Type: line-height ---------- */
+  --lh-body: 1.6;
+
+  /* ---------- Shape ---------- */
+  --radius-card: 12px;
+  --radius-ctrl: 8px;
+  --radius-pill: 50%;
+
+  /* ---------- Shadow ---------- */
+  /* WHY: kept as non-color CSS value; Tailwind exposes via shadow-token */
+  --shadow: 0 1px 3px rgba(0, 0, 0, 0.04),
+            0 4px 20px rgba(79, 70, 229, 0.06);
+
+  /* ---------- Spacing ---------- */
+  --sp-1:  4px;
+  --sp-2:  6px;
+  --sp-3:  8px;
+  --sp-4:  12px;
+  --sp-5:  16px;
+  --sp-6:  18px;
+  --sp-7:  20px;
+  --sp-8:  24px;
+  --sp-9:  32px;
+  --sp-10: 48px;
+
+  /* ---------- Layout ---------- */
+  --container-max: 480px;
+}
+
+/* ============================================================
+   Theme: dusk — warmer, low-lit evening palette
+   WHY: overrides color primitives so all semantic aliases
+   automatically pick up the new values (cascading).
+   RGB values derived from ui/prototype/styles.css .theme-dusk
+   p-* palette mapped to semantic equivalents.
+   ============================================================ */
+[data-theme="dusk"] {
+  /* bg-family: dark purple-brown */
+  /* #2a2540 -> 42 37 64 */
+  --bg:            42 37 64;
+  /* #3d3354 -> 61 51 84 */
+  --surface:       61 51 84;
+  /* #efe7d2 -> 239 231 210 */
+  --tint-slate-100: 239 231 210;
+
+  /* text: warm near-white */
+  /* #f0e9d8 -> 240 233 216 */
+  --text:          240 233 216;
+  /* #c8b9d8 -> 200 185 216 */
+  --text-muted:    200 185 216;
+
+  /* border: dark purple */
+  /* #1a1330 -> 26 19 48 */
+  --border:        26 19 48;
+
+  /* accent: purple (dusk accent) */
+  /* #7c3aed -> 124 58 237 */
+  --primary:       124 58 237;
+  /* #6d28d9 -> 109 40 217 */
+  --primary-hover: 109 40 217;
+
+  /* error / success: same hue, slightly adjusted */
+  /* #dc2626 -> 220 38 38 */
+  --error:         220 38 38;
+  /* #059669 -> 5 150 105 */
+  --success:       5 150 105;
+
+  /* shadow: darker purple tinted */
+  --shadow: 0 1px 3px rgba(15, 10, 30, 0.4),
+            0 4px 20px rgba(124, 58, 237, 0.18);
+}
+
+/* ============================================================
+   Theme: night — secret base, deep dark palette
+   WHY: overrides color primitives for full dark mode.
+   RGB values derived from ui/prototype/styles.css .theme-night
+   p-* palette mapped to semantic equivalents.
+   ============================================================ */
+[data-theme="night"] {
+  /* bg-family: deep navy */
+  /* #0b0f1d -> 11 15 29 */
+  --bg:            11 15 29;
+  /* #161a26 -> 22 26 38 */
+  --surface:       22 26 38;
+  /* #232838 -> 35 40 56 */
+  --tint-slate-100: 35 40 56;
+
+  /* text: light cool-white */
+  /* #e8ecf3 -> 232 236 243 */
+  --text:          232 236 243;
+  /* #94a3b8 -> 148 163 184 */
+  --text-muted:    148 163 184;
+
+  /* border: very dark navy */
+  /* #050811 -> 5 8 17 */
+  --border:        5 8 17;
+
+  /* accent: indigo-violet (night accent) */
+  /* #818cf8 -> 129 140 248 */
+  --primary:       129 140 248;
+  /* #6366f1 -> 99 102 241 */
+  --primary-hover: 99 102 241;
+
+  /* error / success: night-adjusted warm */
+  /* #f87171 -> 248 113 113 */
+  --error:         248 113 113;
+  /* #34d399 -> 52 211 153 */
+  --success:       52 211 153;
+
+  /* shadow: deep black */
+  --shadow: 0 1px 3px rgba(0, 0, 0, 0.6),
+            0 4px 20px rgba(129, 140, 248, 0.2);
+}
