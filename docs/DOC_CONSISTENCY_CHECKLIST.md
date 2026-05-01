@@ -122,7 +122,7 @@ SPEC §3.9.x / §3.6.8 / RETRO_GUIDE.md を編集した時：
 - [ ] 4 retro lens prompt の freeform improvement instruction が RETRO_GUIDE.md と整合
 - [ ] `agents/loom-retro-aggregator.md` の action plan section が P3 と整合
 - [ ] `agents/loom-retro-counter-arguer.md` の freeform 検証強化が RETRO_GUIDE.md と整合
-- [ ] `agents/loom-retro-pm.md` の user lens 公式組込 + verdict 保存 hook が SPEC §3.9.x と整合
+- [ ] `agents/loom-retro-pm.md` の user lens 公式組込 が SPEC §3.9.x と整合（verdict 保存 hook は M2.1 で SPEC §3.9.10 / §6.9.5 に refactor、本 checklist M2.1 セクション参照）
 - [ ] `agents/loom-pm.md` の workflow discipline 5 項目が SPEC §3.6.8 と整合
 - [ ] `agents/loom-developer.md` の TDD red 順序 enforcement が SPEC §3.6.8.6 と整合
 - [ ] `tests/retro_test.sh` / `tests/agents_test.sh` の M0.13 assertion が SPEC と整合
@@ -142,6 +142,21 @@ SPEC §6.2 / §6.3 / §6.4 / §6.10 / §7.3 / §12 を編集した時：
 `agents/*.md` を編集した時（M1 後の継続的維持）：
 
 - [ ] daemon が読む event payload schema と各 agent の hook 起動経路が整合
+
+## M2.1 verdict_evidence + M0.14 closure 関連 check
+
+SPEC §3.9.10（verdict_evidence 概念 + write timing）/ §6.9.5（zod 完全 schema）を編集した時：
+
+- [ ] `agents/loom-retro-pm.md` Stage 0 の verdict_evidence build 5 step（git log → task_id 推定 → transcript 抽出 → PM hint 優先 → zod validate + file write）が SPEC §6.9.5 lazy build 手順と整合
+- [ ] `agents/loom-pm.md` milestone tag hook の `[reviewer-dispatch-refs]` block 形式（`task_id` / `commit_sha` / `reviewer_agent` / `review_mode` の 4 field 1 行 N entries）が SPEC §3.9.10 PM hint 規約と整合
+- [ ] `docs/RETRO_GUIDE.md` "verdict_evidence 保存規律" section が SPEC §3.9.10 / §6.9.5 と整合
+- [ ] `tests/agents_test.sh` の M2.1 assertion 3 種（retro-pm Stage 0 build step / PM hint block / process-judge 3 新 category）が SPEC + RETRO_GUIDE と整合
+
+M0.14 essence cleanup（M2.1 統合実施、M0.14 t6/t7 closure）：
+
+- [ ] `agents/loom-retro-process-judge.md` の 3 新 category（`process-permission-friction` / `process-routine-automation-opportunity` / `process-keybind-opportunity`）が SPEC §3.10.1 mandate/suggest table と整合（M0.14 essence は SPEC + CLAUDE.md + agents/loom-retro-process-judge.md に既反映済、M2.1 で test rigor 追加で closure）
+- [ ] `tests/agents_test.sh` の process-judge 3 新 category schema assertion が SPEC §3.10.1 と整合（M0.14 t7 closure）
+- [ ] PLAN.md M0.14 セクション末尾の PLAN-SSoT 整合性注記が retro 2026-05-02-001-report.md pj-003 / proc-004 と整合（M0.14 t6 closure 補強）
 
 ## SCREEN_REQUIREMENTS.md 更新時の整合性 check
 
