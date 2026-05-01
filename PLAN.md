@@ -380,6 +380,18 @@ SCREEN_REQUIREMENTS ブラッシュアップ (Q1-Q6) で identified された UI
 
 **M1.5 完成基準**：`pnpm --filter @claude-loom/daemon test` で全 PASS、`AppRouter` type に retro/prefs/personality/worktree/coexistence/discipline router 含む、各 router で最低 2 procedure（list/detail/mutation 等）+ zod schema、events router に 3 新 subscription、frontend (M2) から `import type { AppRouter } from "@claude-loom/daemon"` で 6 新 router の型推論可能、`./tests/run_tests.sh` で 12 PASS 維持、`tag m1.5-complete` 設置、`m0`〜`m1-complete` 全保持。
 
+## マイルストーン M2.0: Static Prototype Embed（design SSoT 保存）
+
+claude.ai/design 由来の **frontend-design 出力**（pixel RPG × 猫の開発室、9 section）を `ui/prototype/` に embed。M2 proper 実装前の design SSoT として repo に保存、視覚検証可能化。
+
+- [x] ui/ workspace package init <!-- id: m2.0-t1 status: done -->
+- [x] design files copy to ui/prototype/ <!-- id: m2.0-t2 status: done -->
+- [x] pnpm-workspace.yaml に "ui" 追加 <!-- id: m2.0-t3 status: done -->
+- [x] ui/package.json + serve devDep 設定 <!-- id: m2.0-t4 status: done -->
+- [x] ui/README.md（起動方法 + 9 section 概要） <!-- id: m2.0-t5 status: done -->
+
+**M2.0 完成基準**：`pnpm install` 成功、`pnpm --filter @claude-loom/ui prototype` で http://localhost:8080 起動 → index.html が 200 で配信、design 9 section（Room View / character sheet / Gantt / Plan / Retro / Worktree / Consistency / Customization / learned_guidance）すべて閲覧可能。`m0`〜`m1.5-complete` tag 全保持。
+
 ## マイルストーン M2: UI Shell
 
 詳細: 未作成（M1 完了後 writing-plans で詳細化）

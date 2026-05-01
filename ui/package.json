@@ -1,0 +1,13 @@
+{
+  "name": "@claude-loom/ui",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "prototype": "serve prototype -p 8080 -L",
+    "prototype:open": "serve prototype -p 8080"
+  },
+  "devDependencies": {
+    "serve": "^14.2.4"
+  }
+}
