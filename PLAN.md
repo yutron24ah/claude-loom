@@ -404,7 +404,7 @@ prototype design (`ui/prototype/`) を Vite + React 18 + TS strict + Tailwind �
 - [x] zustand store skeleton（connection / view 別 slice） <!-- id: m2-t4 status: done -->
 - [x] tRPC client + wsLink + exponential backoff retryDelayMs（max 30s） <!-- id: m2-t5 status: done -->
 - [x] ConnectionBanner + toast 通知システム（5 event MVP） <!-- id: m2-t6 status: done -->
-- [ ] 9 画面 visual port（mock data、DOM-based RoomView 含） <!-- id: m2-t7 status: todo -->
+- [x] 9 画面 visual port（mock data、DOM-based RoomView 含） <!-- id: m2-t7 status: done -->
 - [ ] Vertical slice live: Room agentList subscription または Plan planItems query <!-- id: m2-t8 status: todo -->
 - [ ] M2 acceptance test（visual + WS retry + toast） <!-- id: m2-t9 status: todo -->
 
