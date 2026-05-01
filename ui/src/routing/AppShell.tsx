@@ -12,6 +12,7 @@
 import { useEffect } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { RoomView } from '../views/room/RoomView';
+import { DisciplineHeader } from '../components/DisciplineHeader';
 import { ConnectionBanner } from '../notifications/ConnectionBanner';
 import { ToastContainer } from '../notifications/ToastContainer';
 
@@ -47,11 +48,10 @@ export function AppShell(): JSX.Element {
         <ConnectionBanner />
       </div>
 
-      {/* Persistent discipline header — Task 9 Subagent B で本実装 */}
-      <header
-        data-testid="discipline-header"
-        className="absolute top-0 left-0 right-0 z-20 h-sp-10 bg-bg2 border-b border-border"
-      />
+      {/* Persistent discipline header — Task 9 Subagent B 実装済 */}
+      <div className="absolute top-0 left-0 right-0 z-20">
+        <DisciplineHeader />
+      </div>
 
       {/* Room canvas — always mounted, z-index 0 */}
       <div className="absolute inset-0 z-0">
