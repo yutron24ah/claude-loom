@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <title>claude-loom — 猫の開発室</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="styles.css?v=4" />
+  <style>
+    body { margin: 0; background: #1a1f2e; }
+    .canvas-section-header { background: #ffffff; }
+  </style>
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+  <script type="text/babel" src="design-canvas.jsx"></script>
+  <script type="text/babel" src="cat.jsx"></script>
+  <script type="text/babel" src="room.jsx"></script>
+  <script type="text/babel" src="screens-a.jsx"></script>
+  <script type="text/babel" src="screens-b.jsx"></script>
+  <script type="text/babel" src="screens-c.jsx"></script>
+  <script type="text/babel" src="subroom.jsx"></script>
+  <script type="text/babel" src="char-sheet.jsx"></script>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+    const { DesignCanvas, DCSection, DCArtboard } = window;
+    const { RoomView, Workstation, RoomBg } = window;
+    const { DisciplineHeader, AgentDetailPanel, Gantt } = window;
+    const { PlanView, RetroView, WorktreeView } = window;
+    const { CharSheet, ThemeShowcase, CatSprite, ROSTER } = window;
+    const { ConsistencyView, CustomizationView, LearnedGuidanceView } = window;
+
+    // -------- Variation 1: pop / cute / bright (default theme) --------
+    const RoomPop = () => (
+      <div data-screen-label="01 Room — pop" style={{ width: 980 }}>
+        <DisciplineHeader width={1080} />
+        <div style={{ height: 12 }} />
+        <RoomView width={1080} height={660} />
+      </div>
+    );
+
+    // -------- Variation 2: dusk --------
+    const RoomDusk = () => (
+      <div className="theme-dusk" data-screen-label="02 Room — dusk" style={{ width: 980 }}>
+        <DisciplineHeader width={1080} />
+        <div style={{ height: 12 }} />
+        <RoomView width={1080} height={660} />
+      </div>
+    );
+
+    // -------- Variation 3: night / secret base --------
+    const RoomNight = () => (
+      <div className="theme-night" data-screen-label="03 Room — night" style={{ width: 980 }}>
+        <DisciplineHeader width={1080} />
+        <div style={{ height: 12 }} />
+        <RoomView width={1080} height={660} />
+      </div>
+    );
+
+    // -------- Room with Dev selected by default --------
+    const RoomWithDetail = () => (
+      <div data-screen-label="04 Room — Dev selected" style={{ width: 980 }}>
+        <DisciplineHeader width={1080} />
+        <div style={{ height: 12 }} />
+        <RoomView width={1080} height={660} initialSelected="dev" />
+      </div>
+    );
+
+    const App = () => (
+      <DesignCanvas
+        title="claude-loom — 猫の開発室"
+        subtitle="Phase 1 MVP design exploration · pixel RPG × Kintai DS"
+      >
+        <DCSection id="rooms" title="Room View — 3つの世界観" subtitle="同じ部屋を時間帯で着替えさせる方針。System default。Tweaks で固定も可。">
+          <DCArtboard id="room-pop"   label="A. 昼 / pop · クリックで詳細" width={1100} height={720}><RoomPop /></DCArtboard>
+          <DCArtboard id="room-dusk"  label="B. 夕暮れ / cozy"            width={1100} height={720}><RoomDusk /></DCArtboard>
+          <DCArtboard id="room-night" label="C. 深夜 / 秘密基地"          width={1100} height={720}><RoomNight /></DCArtboard>
+          <DCArtboard id="room-detail"label="D. Dev選択中（初期表示）"   width={1100} height={720}><RoomWithDetail /></DCArtboard>
+        </DCSection>
+
+        <DCSection id="chars" title="13 agent — キャラクターシート" subtitle="PM / Developer / 4 reviewer / 7 retro. 全員に猫種・名前・一言性格。">
+          <DCArtboard id="cs"      label="character sheet"             width={920} height={620}><CharSheet /></DCArtboard>
+          <DCArtboard id="theme"   label="theme palette · 3 worlds"    width={920} height={420}><ThemeShowcase /></DCArtboard>
+        </DCSection>
+
+        <DCSection id="gantt" title="進捗 Gantt — 歩く猫が bar を伸ばす" subtitle="リアルタイム伸長中の bar の右端に猫スプライトが歩く。">
+          <DCArtboard id="g1" label="進捗 Gantt — 直近1時間" width={920} height={420}><Gantt /></DCArtboard>
+        </DCSection>
+
+        <DCSection id="plan" title="計画 — 短期 Todo + 長期 plan_items" subtitle="左 = TodoWrite mirror（read-only）。右 = 長期計画ツリー（編集可）。">
+          <DCArtboard id="plan" label="Plan View" width={920} height={420}><PlanView /></DCArtboard>
+        </DCSection>
+
+        <DCSection id="retro" title="Retro 詳細 — 4 lens findings + action plan" subtitle="archive markdown render + 1-click action（accept/reject/defer/discuss）">
+          <DCArtboard id="retro" label="Retro session" width={920} height={760}><RetroView /></DCArtboard>
+        </DCSection>
+
+        <DCSection id="worktree" title="Worktree — サブルーム" subtitle="branch ごとに小部屋。所属 subagent が中で作業。">
+          <DCArtboard id="wt" label="Worktree list" width={920} height={520}><WorktreeView /></DCArtboard>
+        </DCSection>
+
+        <DCSection id="consistency" title="整合性 — Consistency Findings (§3.4)" subtitle="SPEC 変更検知 + finding ごとの 4 アクション (Acknowledge / Mark Fixed / Dismiss / Open in Editor)">
+          <DCArtboard id="consistency" label="Consistency findings" width={960} height={780}><ConsistencyView /></DCArtboard>
+        </DCSection>
+
+        <DCSection id="customization" title="Customization Layer — 13 agent × model + personality (§3.8)" subtitle="agent ごとに opus/sonnet/haiku + 4 preset + custom override / scope (user vs project)">
+          <DCArtboard id="customization" label="Agent customization" width={960} height={820}><CustomizationView /></DCArtboard>
+        </DCSection>
+
+        <DCSection id="guidance" title="Learned Guidance — agent への学習注入 (§3.10)" subtitle="retro / finding 由来の guidance を agent ごとに監査。頭上 scroll icon と連動。">
+          <DCArtboard id="guidance" label="Learned guidance audit" width={960} height={680}><LearnedGuidanceView /></DCArtboard>
+        </DCSection>
+
+      </DesignCanvas>
+    );
+
+    ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+  </script>
+</body>
+</html>

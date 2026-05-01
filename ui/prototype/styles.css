@@ -1,0 +1,523 @@
+/* claude-loom — 猫の開発室
+   Pixel RPG meets Kintai DS (indigo + slate + white)
+   ============================================================ */
+
+@import url('tokens.css');
+
+/* ---------- Theme palettes (3 worlds) ---------- */
+
+:root {
+  /* Default = "cozy noon" — DS-aligned light */
+  --p-bg-sky:        #eef0f8;
+  --p-bg-floor:      #d9d4c4;
+  --p-bg-floor-2:    #c8c2af;
+  --p-wall:          #ece6d5;
+  --p-wall-2:        #ddd5bf;
+  --p-wood:          #8a6a46;
+  --p-wood-dark:     #6a4f31;
+  --p-stone:         #a8a39a;
+  --p-rug:           #4f46e5;
+  --p-rug-2:         #6366f1;
+  --p-leaf:          #4c8a4a;
+  --p-leaf-2:        #6aaf63;
+  --p-cat-base:      #f4f0e6;
+  --p-cat-line:      #1f2937;
+  --p-cat-cheek:     #f4a3b3;
+  --p-cat-pad:       #e5e7eb;
+  --p-screen:        #4f46e5;
+  --p-screen-glow:   #c7d2fe;
+  --p-text:          #1f2937;
+  --p-text-muted:    #6b7280;
+  --p-border:        #1f2937;
+  --p-paper:         #ffffff;
+  --p-tint:          #f3f4f6;
+  --p-accent:        #4f46e5;
+  --p-accent-soft:   rgba(79, 70, 229, 0.12);
+  --p-success:       #059669;
+  --p-error:         #dc2626;
+  --p-warn:          #d97706;
+  --p-shadow:        rgba(31, 41, 55, 0.18);
+}
+
+/* dusk — warmer, low-lit */
+.theme-dusk {
+  --p-bg-sky:        #2a2540;
+  --p-bg-floor:      #5b4a3a;
+  --p-bg-floor-2:    #4a3a2c;
+  --p-wall:          #3d3354;
+  --p-wall-2:        #2e2643;
+  --p-wood:          #6a4a30;
+  --p-wood-dark:     #4a321f;
+  --p-stone:         #635b6f;
+  --p-rug:           #c084fc;
+  --p-rug-2:         #a855f7;
+  --p-leaf:          #6a8e4a;
+  --p-leaf-2:        #8aaf63;
+  --p-cat-base:      #f0e9d8;
+  --p-cat-line:      #1a1330;
+  --p-cat-cheek:     #ec8aa0;
+  --p-cat-pad:       #c8b9d8;
+  --p-screen:        #ffd86b;
+  --p-screen-glow:   #fff1b6;
+  --p-text:          #1f2937;
+  --p-text-muted:    #6b7280;
+  --p-border:        #1a1330;
+  --p-paper:         #fff8e7;
+  --p-tint:          #efe7d2;
+  --p-accent:        #7c3aed;
+  --p-accent-soft:   rgba(124, 58, 237, 0.18);
+  --p-shadow:        rgba(15, 10, 30, 0.4);
+}
+
+/* night — secret base */
+.theme-night {
+  --p-bg-sky:        #0b0f1d;
+  --p-bg-floor:      #1c1f2c;
+  --p-bg-floor-2:    #14171f;
+  --p-wall:          #161a26;
+  --p-wall-2:        #0f1320;
+  --p-wood:          #2a2a3a;
+  --p-wood-dark:     #1a1a26;
+  --p-stone:         #3a3f4f;
+  --p-rug:           #6366f1;
+  --p-rug-2:         #818cf8;
+  --p-leaf:          #2d6a4f;
+  --p-leaf-2:        #40916c;
+  --p-cat-base:      #e8e5d8;
+  --p-cat-line:      #050811;
+  --p-cat-cheek:     #ff6b8b;
+  --p-cat-pad:       #6b7280;
+  --p-screen:        #38bdf8;
+  --p-screen-glow:   #67e8f9;
+  --p-text:          #e8ecf3;
+  --p-text-muted:    #94a3b8;
+  --p-border:        #050811;
+  --p-paper:         #1a1f2e;
+  --p-tint:          #232838;
+  --p-accent:        #818cf8;
+  --p-accent-soft:   rgba(129, 140, 248, 0.2);
+  --p-success:       #34d399;
+  --p-error:         #f87171;
+  --p-warn:          #fbbf24;
+  --p-shadow:        rgba(0, 0, 0, 0.6);
+}
+
+/* ---------- Pixel base ---------- */
+.pixel * { image-rendering: pixelated; }
+.pixel { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; }
+
+/* ---------- Reusable RPG window chrome ---------- */
+.rpg-frame {
+  background: var(--p-paper);
+  border: 3px solid var(--p-border);
+  box-shadow: 0 4px 0 0 var(--p-shadow), inset 0 0 0 2px var(--p-paper), inset 0 0 0 4px var(--p-tint);
+  padding: 12px;
+}
+
+.rpg-frame-tight {
+  background: var(--p-paper);
+  border: 2px solid var(--p-border);
+  box-shadow: 0 2px 0 0 var(--p-shadow);
+}
+
+.rpg-title {
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  font-size: 13px;
+  color: var(--p-text);
+  text-transform: none;
+}
+
+.rpg-label {
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  color: var(--p-text-muted);
+  text-transform: uppercase;
+}
+
+/* status dots */
+.dot { width: 8px; height: 8px; display: inline-block; border: 1px solid var(--p-border); }
+.dot.busy   { background: var(--p-success); }
+.dot.idle   { background: var(--p-stone); }
+.dot.review { background: var(--p-accent); }
+.dot.fail   { background: var(--p-error); }
+.dot.tdd    { background: var(--p-warn); }
+
+/* chip */
+.chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 10px; letter-spacing: 0.02em;
+  padding: 3px 6px;
+  background: var(--p-tint);
+  border: 1px solid var(--p-border);
+  color: var(--p-text);
+}
+
+/* exp gauge — 経験値ゲージ */
+.exp-bar {
+  position: relative;
+  height: 10px;
+  background: var(--p-tint);
+  border: 1px solid var(--p-border);
+  overflow: hidden;
+}
+.exp-bar > i {
+  display: block; height: 100%;
+  background: var(--p-accent);
+  background-image: linear-gradient(90deg, var(--p-accent) 0 50%, transparent 50% 100%);
+  background-size: 4px 100%;
+  image-rendering: pixelated;
+}
+
+/* button (pixel) */
+.btn-px {
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 11px; font-weight: 700; letter-spacing: 0.02em;
+  padding: 8px 12px;
+  background: var(--p-paper);
+  border: 2px solid var(--p-border);
+  color: var(--p-text);
+  cursor: pointer;
+  box-shadow: 2px 2px 0 0 var(--p-border);
+  user-select: none;
+}
+.btn-px.primary { background: var(--p-accent); color: white; }
+.btn-px.success { background: var(--p-success); color: white; }
+.btn-px.warn    { background: var(--p-warn); color: white; }
+.btn-px.danger  { background: var(--p-error); color: white; }
+.btn-px.ghost   { background: var(--p-tint); }
+
+/* scanline texture overlay (subtle) */
+.scanlines::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background-image: repeating-linear-gradient(0deg, rgba(0,0,0,0.04) 0 1px, transparent 1px 3px);
+  mix-blend-mode: multiply;
+}
+
+/* ============================================================
+   ROOM — BEM hierarchy
+   .room                       (top-level container)
+   .room__bg                   (svg floor + wall paint)
+   .room__wall                 (semantic upper region — no own styles, just a marker layer)
+   .room__floor                (semantic lower region)
+   .room__decor                (plants etc)
+
+   Wall fixtures:
+   .room-sign                  (small badge — branch/clock/island label)
+   .room-sign--branch
+   .room-sign--clock
+   .room-sign--island
+   .room-sign--retro
+   .room-window                (the iconic 田-shaped window)
+
+   Wall posters (clickable info):
+   .room-poster                  (block)
+   .room-poster--gantt
+   .room-poster--plan
+   .room-poster__header
+   .room-poster__title
+   .room-poster__hint
+   .room-poster__body
+   .room-poster__col             (BEM element — left/right column inside plan)
+   .room-poster__section-label
+   .room-poster__row             (a single bar/todo row)
+   .room-poster__bar
+   .room-poster__bar-fill
+   .room-poster__bar-now         (red 'now' marker line)
+   .room-poster__check           (checkbox square)
+   .room-poster__check-text
+   .room-poster__footer
+
+   Floor regions:
+   .room-island                (block — rug area)
+   .room-island--pm
+   .room-island--dev
+   .room-island--review
+   .room-island__inner-border
+   .room-island-sign
+   .room-island-sign--pm
+   .room-island-sign--dev
+   .room-island-sign--review
+   .room-floor-cushion         (retro-mode bottom strip)
+
+   People + workstations:
+   .room-desk                  (block — one cat workstation)
+   .room-desk__bubble
+   .room-desk__bubble-tail
+   .room-desk__cat
+   .room-desk__monitor
+   .room-desk__keyboard
+
+   Top-level controls + overlays:
+   .room-mode-toggle
+   .room-modal
+   .room-modal__panel
+   .room-modal__close
+   ============================================================ */
+
+.room {
+  position: relative;
+  border: 3px solid var(--p-border);
+  background: var(--p-bg-sky);
+  overflow: hidden;
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+
+.room__bg { position: absolute; inset: 0; image-rendering: pixelated; }
+
+.room-window {
+  position: absolute;
+  background: var(--p-bg-sky);
+  border: 3px solid var(--p-border);
+  box-shadow: inset 0 0 0 2px var(--p-screen-glow);
+}
+.room-window::before,
+.room-window::after {
+  content: ""; position: absolute; background: var(--p-border);
+}
+.room-window::before { left: 50%; top: 0; bottom: 0; width: 3px; margin-left: -1.5px; }
+.room-window::after  { left: 0; right: 0; top: 50%;  height: 3px; margin-top: -1.5px; }
+
+.room-sign {
+  position: absolute;
+  padding: 3px 10px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: white;
+  border: 2px solid var(--p-border);
+  box-shadow: 2px 2px 0 0 var(--p-shadow);
+  z-index: 2;
+}
+.room-sign--branch { background: var(--p-accent); }
+.room-sign--clock  { background: var(--p-success); }
+.room-sign--island--pm     { background: var(--p-accent); }
+.room-sign--island--dev    { background: var(--p-warn); }
+.room-sign--island--review { background: var(--p-success); }
+.room-sign--retro  { background: var(--p-accent); font-size: 10px; padding: 4px 14px; letter-spacing: 0.06em; }
+
+.room-poster {
+  all: unset;
+  cursor: pointer;
+  position: absolute;
+  background: var(--p-paper);
+  border: 3px solid var(--p-border);
+  padding: 6px 8px;
+  box-shadow: 3px 3px 0 0 var(--p-shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  box-sizing: border-box;
+  overflow: hidden;
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  transition: transform 0.08s ease;
+}
+.room-poster:hover { transform: translate(-1px, -1px); box-shadow: 4px 4px 0 0 var(--p-shadow); }
+.room-poster__header {
+  display: flex; justify-content: space-between; align-items: center;
+  border-bottom: 2px solid var(--p-border);
+  padding-bottom: 2px;
+  flex-shrink: 0;
+}
+.room-poster__title {
+  font-size: 9px; font-weight: 700; color: var(--p-accent);
+  letter-spacing: 0.04em;
+}
+.room-poster__hint {
+  font-size: 7px; color: var(--p-text-muted);
+}
+.room-poster__body { display: flex; gap: 6px; flex: 1; min-height: 0; overflow: hidden; }
+.room-poster__col  { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; min-height: 0; overflow: hidden; }
+.room-poster__col + .room-poster__col { border-left: 1px dashed var(--p-border); padding-left: 6px; }
+.room-poster__section-label {
+  font-size: 7px; font-weight: 700; color: var(--p-text-muted);
+  letter-spacing: 0.05em; margin-bottom: 1px;
+  flex-shrink: 0;
+}
+.room-poster__row { display: flex; align-items: center; gap: 4px; font-size: 8px; flex-shrink: 0; }
+.room-poster__row-name { width: 26px; font-weight: 700; flex-shrink: 0; color: var(--p-text); font-size: 8px; }
+.room-poster__row-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.room-poster__row-meta { font-size: 7px; color: var(--p-text-muted); flex-shrink: 0; }
+.room-poster__bar {
+  flex: 1; height: 5px;
+  background: var(--p-tint);
+  border: 1px solid var(--p-border);
+  position: relative;
+  min-width: 0;
+}
+.room-poster__bar-fill {
+  position: absolute; top: 0; bottom: 0;
+  background-image: repeating-linear-gradient(45deg, rgba(255,255,255,0.25) 0 2px, transparent 2px 4px);
+}
+.room-poster__bar-now {
+  position: absolute; top: -1px; bottom: -1px; width: 1px; background: var(--p-error);
+}
+.room-poster__check {
+  width: 8px; height: 8px;
+  border: 1.5px solid var(--p-border);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 6px; color: white; font-weight: 700;
+  flex-shrink: 0; box-sizing: border-box;
+}
+.room-poster__check--pending     { background: var(--p-paper); }
+.room-poster__check--in_progress { background: var(--p-warn); }
+.room-poster__check--completed   { background: var(--p-success); }
+.room-poster__check-text {
+  flex: 1; min-width: 0;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font-size: 8px;
+}
+.room-poster__check-text--completed { text-decoration: line-through; color: var(--p-text-muted); }
+.room-poster__footer {
+  font-size: 7px; color: var(--p-text-muted);
+  text-align: right;
+  border-top: 1px dashed var(--p-border);
+  padding-top: 3px;
+  margin-top: auto;
+}
+
+.room-island {
+  position: absolute;
+  border: 3px solid var(--p-border);
+  z-index: 0;
+}
+.room-island::before {
+  content: ""; position: absolute; inset: 5px;
+  border: 2px solid var(--p-border);
+}
+.room-island--pm     { background: var(--p-rug); }
+.room-island--pm::before     { border-color: var(--p-rug-2); }
+.room-island--dev    { background: var(--p-rug-2); opacity: 0.75; }
+.room-island--review { background: var(--p-rug); opacity: 0.85; }
+.room-island--review::before { border-color: var(--p-rug-2); }
+
+.room-floor-cushion {
+  position: absolute; left: 30px; right: 30px; bottom: 14px; height: 50px;
+  background: var(--p-rug-2);
+  border: 3px solid var(--p-border);
+  border-radius: 6px;
+  z-index: 0;
+  opacity: 0.5;
+}
+
+.room-mode-toggle {
+  all: unset;
+  cursor: pointer;
+  position: absolute;
+  z-index: 3;
+  padding: 4px 10px;
+  font-size: 9px;
+  font-weight: 700;
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  background: var(--p-paper);
+  color: var(--p-text);
+  border: 2px solid var(--p-border);
+  box-shadow: 2px 2px 0 0 var(--p-shadow);
+  letter-spacing: 0.04em;
+}
+.room-mode-toggle--active { background: var(--p-accent); color: white; }
+
+.room-modal {
+  position: absolute; inset: 0; z-index: 20;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px;
+}
+.room-modal__panel { position: relative; }
+.room-modal__close {
+  position: absolute; top: -10px; right: -10px;
+  width: 28px; height: 28px;
+  background: var(--p-paper);
+  border: 2px solid var(--p-border);
+  cursor: pointer;
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-weight: 700; font-size: 14px;
+  z-index: 1;
+  box-shadow: 2px 2px 0 0 var(--p-shadow);
+}
+
+/* ============================================================
+   SUBROOM — clones working in worktree sub-agents
+   .subroom-clone                (block — half-transparent ghost cat behind main dev)
+   .subroom-clone__sprite
+   .subroom-clone__label         (small worktree branch tag below)
+   .subroom-clone__dot           (status dot — pulsing while busy)
+   .subroom-portal               (door-like marker behind island showing sub-room exists)
+   .subroom-portal__label
+   ============================================================ */
+
+.subroom-clone {
+  all: unset;
+  cursor: pointer;
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  opacity: 0.62;
+  filter: saturate(0.6);
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  z-index: 1;
+}
+.subroom-clone:hover { opacity: 0.95; filter: saturate(1); transform: translateY(-2px); }
+.subroom-clone__sprite {
+  position: relative;
+  /* aura ring — subtle glow showing this is a clone */
+}
+.subroom-clone__sprite::before {
+  content: ""; position: absolute;
+  left: -3px; right: -3px; top: -2px; bottom: -2px;
+  border: 1.5px dashed var(--p-accent);
+  opacity: 0.5;
+  animation: subroom-pulse 2.4s ease-in-out infinite;
+}
+@keyframes subroom-pulse {
+  0%, 100% { opacity: 0.25; }
+  50%      { opacity: 0.7; }
+}
+.subroom-clone__label {
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 7px;
+  font-weight: 700;
+  color: var(--p-text);
+  background: var(--p-paper);
+  border: 1.5px solid var(--p-border);
+  padding: 1px 4px;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  box-shadow: 1px 1px 0 0 var(--p-shadow);
+}
+.subroom-clone__dot {
+  width: 5px; height: 5px;
+  border: 1px solid var(--p-border);
+  flex-shrink: 0;
+}
+.subroom-clone__dot--busy   { background: var(--p-success); animation: subroom-pulse 1.2s ease-in-out infinite; }
+.subroom-clone__dot--review { background: var(--p-accent); }
+.subroom-clone__dot--idle   { background: var(--p-stone); }
+
+.subroom-portal {
+  position: absolute;
+  width: 36px; height: 44px;
+  background: var(--p-tint);
+  border: 2px solid var(--p-border);
+  border-bottom: 4px solid var(--p-border);
+  z-index: 0;
+  opacity: 0.7;
+}
+.subroom-portal::before {
+  content: "▢"; position: absolute; left: 50%; top: 4px; transform: translateX(-50%);
+  font-family: ui-monospace, monospace; font-size: 10px;
+  color: var(--p-accent);
+}
+.subroom-portal__label {
+  position: absolute; left: 50%; bottom: -14px; transform: translateX(-50%);
+  font-family: ui-monospace, monospace; font-size: 6px;
+  color: var(--p-text-muted);
+  white-space: nowrap;
+}
