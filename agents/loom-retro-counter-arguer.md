@@ -138,3 +138,22 @@ verdict が `for_drop` の場合は finding 自体が drop されるため、pre
 - `Glob` — finding が主張する scope（"全ファイル"など）の実態を確認する
 - `Grep` — 特定パターンの存在 / 不在を確認する
 - `Bash` — `git log`, `git show`, `git diff` で commit 履歴・修正済みかどうかを確認する
+
+
+## P4: Root cause first（retro 2026-05-02-002 から、SPEC §3.9.x P4 SSoT）
+
+**症状対処は再発リスクが高い**。常に構造的 root cause（schema / hook / agent definition / observability mechanism）を優先検討、症状対処は最終手段。詳細は `docs/RETRO_GUIDE.md` の "P4 補足" section + SPEC §3.9.x P4。
+
+### 役割固有：symptomatic proposal challenge
+
+finding が `proposal_type: symptomatic` で出力されとる場合、verdict 前に必ず以下を challenge:
+
+1. **「これで再発しないか？」**: agent prompt への discipline 注入は context 圧縮 / 別 session で忘れる可能性
+2. **構造的代替の検討**: schema / hook / observability mechanism で再発不能化できる代案はないか
+3. **構造的代替が見つかった場合**:
+   - finding を `for_downgrade`（symptomatic 判定 + structural alternative を `proposal` field に併記）
+   - もしくは新 finding を生成（structural alternative として）
+4. **構造的代替なし or 意図的 symptomatic（interim safety net 等）**:
+   - verdict は通すが、`pm_note` 候補に「再発前提」「rollback 候補時期」を含める
+
+`proposal_type` 不在の finding は lens に re-tag 要請（再度 4 lens に diff 戻す or counter-arguer 自身が推定 tag 付与）。

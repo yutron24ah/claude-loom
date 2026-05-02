@@ -483,6 +483,7 @@ retro 機能は以下 3 原則を不変条件とする：
 - **P1**: retro = retrospective、**自己改善（claude-loom 自身の workflow / agent prompt 最適化）+ PJ 改善（user の PJ への提案・改善）の両輪が基本目的**
 - **P2**: **user は retro 参加者**（external lens じゃなく Stage 1 内に正式組込）、user findings は retro-pm finding と同等扱い
 - **P3**: retro = 改善点洗い出し → **action 化** → 計画立てる、findings は archive じゃなくて actionable plan に。user と着手項目を決定し、改善計画を pending state に保存
+- **P4**: **Root cause first**（retro 2026-05-02-002 meta-NEW-1 起源、user 由来）— **症状対処（discipline 注入 / 注意喚起 / prompt 強化）は再発リスクが高い**。常に構造的 root cause（schema / hook / agent definition / observability mechanism）を優先検討、症状対処は明示的に「次回も忘れる前提で書く」最終手段とする。finding 提案時は `proposal_type` field（`symptomatic` / `structural` / `record-only`）で区別を明示。symptomatic 採用時は **構造的代替の併設**（後で symptomatic patch を rollback できる structural 機構） を試みる。
 
 #### 3.9.1 retro の役割
 

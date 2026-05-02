@@ -130,3 +130,18 @@ Always set `risk` and `auto_applicable_eligible` per this table. Do not override
 - 既存 category 補集合的領域を優先
 
 freeform finding は `category: "freeform-improvement"` で出力、target_artifact / target_agent[] / guidance_proposal は通常 finding と同形式で含める。counter-arguer は generic / vague な finding を drop する。詳細: `docs/RETRO_GUIDE.md` Freeform improvement instruction section。
+
+
+## P4: Root cause first（retro 2026-05-02-002 から、SPEC §3.9.x P4 SSoT）
+
+**症状対処は再発リスクが高い**。常に構造的 root cause（schema / hook / agent definition / observability mechanism）を優先検討、症状対処は最終手段。詳細は `docs/RETRO_GUIDE.md` の "P4 補足" section + SPEC §3.9.x P4。
+
+### 役割固有：finding 出力時 `proposal_type` 必須化
+
+finding 出力 JSON に `proposal_type` field を必ず含める。値は 3 種：
+
+- `structural`（推奨）: schema / hook / agent definition / SPEC SSoT 拡張など、忘れたら壊れる構造変更
+- `symptomatic`（最終手段）: agent prompt への discipline 注入 / 注意喚起 / 1 段落追記 — 採用時は構造的代替の検討を明示、可能なら併設
+- `record-only`: action 不要、archive へ observation として記録のみ
+
+判別 heuristic: 「次回 retro session で context 圧縮されてもこの解決策は有効か？」が yes なら `structural`、no なら `symptomatic`。

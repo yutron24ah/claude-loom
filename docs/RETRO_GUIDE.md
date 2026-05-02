@@ -4,13 +4,36 @@ claude-loom が採用する **retro 機能** の運用 SSoT。SPEC §3.9 の pol
 
 ## 基本方針（M0.13 から、SSoT）
 
-retro 機能の不変条件 3 項目：
+retro 機能の不変条件 4 項目：
 
 - **P1**: retro = **自己改善 + PJ 改善** の両輪。claude-loom 自身の最適化 + user PJ への提案両方を扱う
 - **P2**: **user は retro 参加者** — external lens じゃなく Stage 1 公式メンバー、user findings は retro-pm finding と同等扱い
 - **P3**: findings は **archive じゃなく action plan 化** — 改善点洗い出し → user と着手項目決定 → 改善計画を pending state に保存。「即時適用 / milestone 化 / 保留」の 3 分類で整理。
+- **P4**: **Root cause first**（M3.0 retro 2026-05-02-002 から、user 由来）— **症状対処は再発リスクが高い**。構造的 root cause を優先検討、症状対処は最終手段。finding 出力時 `proposal_type` field で `symptomatic` / `structural` / `record-only` を必ず区別。
 
 詳細は SPEC §3.9.x（基本方針）+ §3.6.8（process discipline）。
+
+## P4 補足: proposal_type の区別 + 例示
+
+### `structural`（推奨）
+- **特性**: schema 変更 / hook / agent definition / observability mechanism / SPEC SSoT 拡張など、**忘れたら壊れる構造変更**。再発リスク低
+- **例**: pending.json schema 拡張で `applied_in` field 追加（M3.0 retro proc-NEW-2）/ retro-pm Stage 0 で `verdict_evidence.json` lazy build 機構（M2.1 proc-003）/ SPEC §3.9.x P4 + 7 agent prompt 注入（M3.0 retro meta-NEW-1）
+
+### `symptomatic`（最終手段）
+- **特性**: agent prompt への discipline 注入 / 注意喚起 / 1 段落追記など、**prompt context 圧縮 / 別 session で忘れる risk あり**
+- **採用時の必須条件**:
+  1. 構造的代替の検討を明示
+  2. 構造的代替がある場合は **併設**（symptomatic patch を後で rollback できる構造）
+  3. `pm_note` に「再発前提」「rollback 候補時期」を記録
+- **例**: counter-arguer に stale check 段落追記（M3.0 retro proc-NEW-1、proc-NEW-2 structural の interim safety net、proc-NEW-2 完了時 rollback 候補）
+
+### `record-only`
+- **特性**: action 不要、archive へ observation として記録のみ。codify effect の post-hoc 観測 / approval_history 蓄積など
+- **例**: M2.1 codify 後 M3.0 で Strategy a 0 anomaly 観測（M3.0 retro proc-001）/ 5 件中 3 件 measurable effect 観測（M3.0 retro meta-003）
+
+### symptomatic → structural 移行の retro hook
+
+symptomatic finding を採用したら、approve 時に「構造的代替の milestone scope」を併設する。**structural milestone closure 後** に symptomatic patch を **rollback** する task を retro process-axis で finding 化、cleanup loop を構造化する。
 
 ## なぜ retro か
 
