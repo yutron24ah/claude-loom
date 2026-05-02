@@ -63,9 +63,9 @@ pending_path = sys.argv[2]
 apply_map = {
     # === 2026-04-29-001 ===
     # finding-pj-001: PLAN.md staleness → addressed via Phaser fix + plan update commits
-    "2026-04-29-001/finding-pj-001": ("300e2cb", "commit", "pj-001 Phaser version drift fix (commit 300e2cb)"),
+    "2026-04-29-001/finding-pj-001": ("300e2cb", "immediate", "pj-001 Phaser version drift fix (300e2cb)"),
     # finding-proc-001: TDD red 順序 → M2.1 loom-developer.md codify
-    "2026-04-29-001/finding-proc-001": ("d190168", "commit", "proc-001 TDD red 順序 codify in loom-developer.md Strategy a/b"),
+    "2026-04-29-001/finding-proc-001": ("d190168", "immediate", "proc-001 TDD red 順序 codify in loom-developer.md Strategy a/b"),
     # Others: not yet applied (pending/deferred)
     "2026-04-29-001/finding-proc-002": (None, None, ""),
     "2026-04-29-001/finding-proc-004": (None, None, ""),
@@ -77,11 +77,11 @@ apply_map = {
 
     # === 2026-05-02-001 ===
     # pj-002 (accepted): README §M2 tRPC sample alignment
-    "2026-05-02-001/pj-002": ("860fee3", "commit", "README §M2 tRPC sample aligned (860fee3)"),
+    "2026-05-02-001/pj-002": ("860fee3", "immediate", "README §M2 tRPC sample aligned (860fee3)"),
     # proc-001 (accepted): dev commit handoff codify
-    "2026-05-02-001/proc-001": ("d190168", "commit", "loom-developer Strategy a/b commit handoff codify (d190168)"),
+    "2026-05-02-001/proc-001": ("d190168", "immediate", "loom-developer Strategy a/b commit handoff codify (d190168)"),
     # proc-002 (accepted): commit handoff strategy codify
-    "2026-05-02-001/proc-002": ("d190168", "commit", "loom-pm + loom-developer commit_handoff strategy codify (d190168)"),
+    "2026-05-02-001/proc-002": ("d190168", "immediate", "loom-pm + loom-developer commit_handoff strategy codify (d190168)"),
     # Others: pending/deferred
     "2026-05-02-001/pj-001": (None, None, ""),
     "2026-05-02-001/pj-003": (None, None, ""),
@@ -96,7 +96,7 @@ apply_map = {
 
     # === 2026-05-02-002 ===
     # pj-001 (approved): Phaser 3→4 version drift fix
-    "2026-05-02-002/pj-001": ("300e2cb", "commit", "pj-001 Phaser 3→4 fix (300e2cb)"),
+    "2026-05-02-002/pj-001": ("300e2cb", "immediate", "pj-001 Phaser 3→4 fix (300e2cb)"),
     # pj-002 (for_drop): stale finding — not applied
     "2026-05-02-002/pj-002": (None, None, ""),
     # proc-001 (approved): record-only success record
@@ -110,11 +110,11 @@ apply_map = {
     # meta-003 (approved): M2.1 codify effect record
     "2026-05-02-002/meta-003": (None, "record-only", "record-only: M2.1 codify effect record"),
     # proc-NEW-1 (approved): counter-arguer stale check interim safety net
-    "2026-05-02-002/proc-NEW-1": ("a3f3cee", "commit", "proc-NEW-1 counter-arguer stale check added (a3f3cee)"),
+    "2026-05-02-002/proc-NEW-1": ("a3f3cee", "immediate", "proc-NEW-1 counter-arguer stale check added (a3f3cee)"),
     # proc-NEW-2 (approved): M0.11.1 milestone insertion
     "2026-05-02-002/proc-NEW-2": ("fd3c1c3", "milestone", "milestone: M0.11.1 lifecycle tracking milestone insertion (fd3c1c3)"),
     # meta-NEW-1 (pending→applied): P4 + 7 agent prompt injection
-    "2026-05-02-002/meta-NEW-1": ("e4aa0ea", "commit", "meta-NEW-1 P4 Root cause first + 7 retro agent prompt (e4aa0ea)"),
+    "2026-05-02-002/meta-NEW-1": ("e4aa0ea", "immediate", "meta-NEW-1 P4 Root cause first + 7 retro agent prompt (e4aa0ea)"),
 }
 
 with open(pending_path, 'r', encoding='utf-8') as f:
