@@ -204,11 +204,13 @@ describe('M2 Criterion 7 — Full test suite PASS (structural check)', () => {
     'tokens.test.ts',
     'trpc-client.test.ts',
     'views/agent-detail-panel.test.tsx',
-    'views/cat-sprite.test.tsx',
+    // WHY: cat-sprite.test.tsx + desk-station.test.tsx removed in M3.0.
+    // CatSprite + DeskStation DOM components are replaced by Phaser sprites.
+    // Coverage for the Phaser components is in room-phaser-mount / room-tile-theme /
+    // room-sprite-state test files.
     'views/char-sheet.test.tsx',
     'views/consistency.test.tsx',
     'views/customization.test.tsx',
-    'views/desk-station.test.tsx',
     'views/discipline-header.test.tsx',
     'views/gantt.test.tsx',
     'views/guidance.test.tsx',
@@ -217,9 +219,13 @@ describe('M2 Criterion 7 — Full test suite PASS (structural check)', () => {
     'views/retro.test.tsx',
     'views/room.test.tsx',
     'views/worktree.test.tsx',
-    // New files added by this task
+    // M2 files
     'm2-acceptance.test.ts',
     'theme-switch.test.tsx',
+    // M3.0 files
+    'room-phaser-mount.test.tsx',
+    'room-tile-theme.test.tsx',
+    'room-sprite-state.test.tsx',
   ];
 
   for (const rel of expectedTestFiles) {
