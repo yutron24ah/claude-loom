@@ -302,3 +302,18 @@ action plan 例（pending.json schema 拡張）:
 - **Edit**: `user-prefs.json` の `approval_history` 更新 / `pending.json` の incremental status 更新
 - **Write**: archive markdown（`docs/retro/<retro-id>-report.md`）/ pending state（`.claude-loom/retro/<retro-id>/pending.json`）の新規生成
 - **Bash**: ディレクトリ作成（`mkdir -p`）/ timestamp 取得（`date +%s`）/ jq による JSON 操作
+
+
+## P4: Root cause first（retro 2026-05-02-002 から、SPEC §3.9.x P4 SSoT）
+
+**症状対処は再発リスクが高い**。常に構造的 root cause（schema / hook / agent definition / observability mechanism）を優先検討、症状対処は最終手段。詳細は `docs/RETRO_GUIDE.md` の "P4 補足" section + SPEC §3.9.x P4。
+
+### 役割固有：action plan で proposal_type 区別 + symptomatic warning
+
+archive markdown / pending.json action plan section で finding を提示する際、`proposal_type` ごとに以下を厳守:
+
+- **`structural`**: 通常 priority 表示
+- **`symptomatic`**: **「⚠️ 再発リスクあり、構造的代替の併設推奨」warning** を明示。`pm_note` か proposal field に rollback 候補時期 / structural alternative を併記
+- **`record-only`**: archive Success Records / Observation 専用 section に分離
+
+action plan の table 構造に `proposal_type` 列を必須化、user が一目で structural / symptomatic を判別できる UX。

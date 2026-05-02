@@ -138,3 +138,50 @@ verdict が `for_drop` の場合は finding 自体が drop されるため、pre
 - `Glob` — finding が主張する scope（"全ファイル"など）の実態を確認する
 - `Grep` — 特定パターンの存在 / 不在を確認する
 - `Bash` — `git log`, `git show`, `git diff` で commit 履歴・修正済みかどうかを確認する
+
+
+## P4: Root cause first（retro 2026-05-02-002 から、SPEC §3.9.x P4 SSoT）
+
+**症状対処は再発リスクが高い**。常に構造的 root cause（schema / hook / agent definition / observability mechanism）を優先検討、症状対処は最終手段。詳細は `docs/RETRO_GUIDE.md` の "P4 補足" section + SPEC §3.9.x P4。
+
+### 役割固有：symptomatic proposal challenge
+
+finding が `proposal_type: symptomatic` で出力されとる場合、verdict 前に必ず以下を challenge:
+
+1. **「これで再発しないか？」**: agent prompt への discipline 注入は context 圧縮 / 別 session で忘れる可能性
+2. **構造的代替の検討**: schema / hook / observability mechanism で再発不能化できる代案はないか
+3. **構造的代替が見つかった場合**:
+   - finding を `for_downgrade`（symptomatic 判定 + structural alternative を `proposal` field に併記）
+   - もしくは新 finding を生成（structural alternative として）
+4. **構造的代替なし or 意図的 symptomatic（interim safety net 等）**:
+   - verdict は通すが、`pm_note` 候補に「再発前提」「rollback 候補時期」を含める
+
+`proposal_type` 不在の finding は lens に re-tag 要請（再度 4 lens に diff 戻す or counter-arguer 自身が推定 tag 付与）。
+
+### 役割固有：stale finding detection（M3.0 retro proc-NEW-1 起源、interim safety net）
+
+> ⚠️ **symptomatic patch**（proposal_type: symptomatic）。本 section は **proc-NEW-2 = M0.11.1 milestone (lifecycle tracking architecture) 完了後 rollback 候補**。M0.11.1 で `pending.json.applied_in` field + retro Stage 0 applied_summary build mechanism が成立すれば、本 stale check は redundant となる。
+
+verdict 前に必ず以下を実行：
+
+1. **対象 finding が past retro で approved + applied 済か検証**:
+   - `Grep` で SPEC / PLAN / agent prompt / `docs/RETRO_GUIDE.md` の current state を確認
+   - proposal が既に反映されとる (description / proposal text と current state が match) なら stale 判定
+2. **stale 判定時**:
+   - verdict を `for_drop`、`drop_reason` field に「stale finding, already closed in <retro_id> cycle (<finding_id>)」を記録
+   - 新 finding は trigger せず、既存 closure を尊重
+3. **stale でない or 部分的に未適用**:
+   - 通常の counter-argument verdict 続行
+   - 「部分適用」状態なら `for_downgrade` で「<部分>はまだ未適用、残差を扱う finding として retain」と記録
+
+検証コマンド例:
+```bash
+# SPEC SSoT に proposal 反映済か grep
+grep -n "<proposal の key term>" SPEC.md docs/RETRO_GUIDE.md
+# 関連 agent prompt に discipline 注入済か grep
+grep -rn "<key term>" agents/loom-retro-*.md
+# 過去 retro report の applied finding cross-ref
+grep -rn "<finding 起源 retro_id>" docs/retro/
+```
+
+将来の M0.11.1 完了後: `pending.json.applied_in` field を読んで applied 済 finding の機械判別が可能、本 stale check ロジックは agent prompt から rollback、retro-pm Stage 0 で `applied_summary.json` を全 lens に context として注入する mechanism に置換。
