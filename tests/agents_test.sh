@@ -210,6 +210,45 @@ check_process_judge_categories() {
 }
 check_process_judge_categories
 
+# REQ-035: M0.11.1 — loom-retro-pm Stage 0 applied_summary lazy build 記述
+if grep -q "applied_summary" agents/loom-retro-pm.md && \
+   grep -q "lazy build" agents/loom-retro-pm.md; then
+    echo "PASS [agents]: loom-retro-pm.md has applied_summary lazy build (M0.11.1 REQ-035)"
+else
+    echo "FAIL [agents]: loom-retro-pm.md missing applied_summary or lazy build description (M0.11.1 t8)"
+    failures=$((failures + 1))
+fi
+
+# REQ-035: M0.11.1 — 4 lens prompt に applied_summary_path injection + Read 参照記述
+for fname in agents/loom-retro-pj-judge.md agents/loom-retro-process-judge.md \
+             agents/loom-retro-meta-judge.md agents/loom-retro-researcher.md; do
+    if [ -f "$fname" ]; then
+        if grep -q "applied_summary_path\|applied_summary" "$fname"; then
+            echo "PASS [agents]: $fname has applied_summary_path reference (M0.11.1 REQ-035 t9)"
+        else
+            echo "FAIL [agents]: $fname missing applied_summary_path reference (M0.11.1 t9)"
+            failures=$((failures + 1))
+        fi
+    fi
+done
+
+# REQ-035: M0.11.1 — loom-retro-counter-arguer に "stale finding detection" section 不在
+# t12 物理削除後 green 化する assertion (削除前は FAIL)
+if ! grep -q "stale finding detection" agents/loom-retro-counter-arguer.md; then
+    echo "PASS [agents]: loom-retro-counter-arguer.md stale finding detection section absent (M0.11.1 t12 rollback)"
+else
+    echo "FAIL [agents]: loom-retro-counter-arguer.md still has stale finding detection section (M0.11.1 t12 rollback needed)"
+    failures=$((failures + 1))
+fi
+
+# REQ-035: M0.11.1 — loom-retro-aggregator に auto-prune logic 記述
+if grep -qE "auto-prune|ttl_sessions|last_used_in" agents/loom-retro-aggregator.md; then
+    echo "PASS [agents]: loom-retro-aggregator.md has auto-prune logic (M0.11.1 REQ-035 t10)"
+else
+    echo "FAIL [agents]: loom-retro-aggregator.md missing auto-prune / ttl_sessions / last_used_in reference (M0.11.1 t10)"
+    failures=$((failures + 1))
+fi
+
 if [ "$failures" -gt 0 ]; then
   echo "agents_test FAILED with $failures violations"
   exit 1
