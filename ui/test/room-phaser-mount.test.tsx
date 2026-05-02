@@ -70,29 +70,24 @@ describe('PhaserCanvas — mount lifecycle', () => {
 });
 
 describe('PhaserCanvas — HMR dispose', () => {
-  it('registers import.meta.hot.dispose callback that calls game.destroy(true)', async () => {
+  it('registers dispose callback via _hmrRegisterDispose that calls game.destroy(true)', async () => {
     // WHY: HMR dispose must clean up Phaser instance to prevent memory leak on hot reload.
-    // We simulate the HMR lifecycle by checking the dispose callback is invoked.
-    const hotDisposeFn = vi.fn();
-    const mockHot = { dispose: hotDisposeFn };
-
-    // Patch import.meta.hot before mount
-    const originalHot = (import.meta as Record<string, unknown>).hot;
-    (import.meta as Record<string, unknown>).hot = mockHot;
+    // import.meta.hot is module-scoped and not patchable cross-module in Vitest.
+    // We use the _hmrRegisterDispose seam prop to inject a mock registrar.
+    const registeredCallbacks: Array<() => void> = [];
+    const mockHmrRegister = (cb: () => void) => {
+      registeredCallbacks.push(cb);
+    };
 
     await act(async () => {
-      render(<PhaserCanvas />);
+      render(<PhaserCanvas _hmrRegisterDispose={mockHmrRegister} />);
     });
 
-    // Restore
-    (import.meta as Record<string, unknown>).hot = originalHot;
-
-    // The component should have registered a dispose callback
-    expect(hotDisposeFn).toHaveBeenCalledTimes(1);
+    // The component should have registered exactly one dispose callback
+    expect(registeredCallbacks).toHaveLength(1);
 
     // Simulate HMR fire: call the registered dispose callback
-    const disposeCallback = hotDisposeFn.mock.calls[0][0];
-    disposeCallback();
+    registeredCallbacks[0]();
     expect(mockDestroy).toHaveBeenCalledWith(true);
   });
 });
