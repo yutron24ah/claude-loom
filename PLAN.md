@@ -514,28 +514,30 @@ M3 開始前の cleanup milestone。proc-003 finding（verdict_evidence の独�
 
 詳細: 未作成（impl phase で `docs/plans/2026-05-XX-claude-loom-m3.1-plan-gantt.md` を `loom-write-plan` skill で詳細化）
 
-設計合意（2026-05-02 spec phase 対話、SPEC §3.6.9.2 / §3.6.9.3 SSoT）:
+設計合意（2026-05-02 spec phase 対話、SPEC §3.6.9.2 / §3.6.9.3 / §3.6.9.7 SSoT）:
 - **β-3 確定**: PLAN.md 双方向同期 = hybrid debounce (500ms-1s) + last-write-wins (mtime) + `plan_conflict_detected` toast + localStorage backup
 - **γ-3 確定**: Gantt = 自前 SVG（rect/line/text + tokens.css var 直参照、200-400 LoC）
+- **res-001 確定**: Visual regression check = Playwright e2e（`@playwright/test` devDep、independent infra、`toHaveScreenshot()` built-in、M5 frontend-design baseline 継続価値、SPEC §3.6.9.7 SSoT、retro 2026-05-02-002 spec phase 解決）
 - toast 6 event 化（M2 5 + plan_conflict_detected 追加）
 
-retro 2026-05-02-002 由来の追加 design 分岐（M3.1 spec phase で詰める）:
-- **res-001**: Phaser visual regression check 機構 1 つ選定（候補: `canvas` polyfill / `@vitest/browser` / Playwright e2e）+ M3.1 完成基準に「Phaser visual regression check 1 機構導入」追加 — M3.0 mock-only test の構造的 hole を sprite 拡張前に塞ぐ
+retro 2026-05-02-002 由来で M3.1 で扱う残 design 分岐:
 - **meta-001**: aggregator agent prompt に auto-apply promote logic 追加（3 件目連続承認到達時に user に「`user-prefs.json.auto_apply.categories` に追加？」prompt 提示）+ SPEC §3.9.7/.8 に threshold value（3 件想定）+ max_risk 引上げ rule 明記 — SPEC §3.9.8 recursive 自己最適化の具体実装
 
-技術 risk 軸: **複雑 design (β-3 hybrid sync) を独立 milestone 化、edge case finding を retro 集中扱い**。
+技術 risk 軸: **複雑 design (β-3 hybrid sync) + visual regression infra 初導入を独立 milestone 化、edge case finding を retro 集中扱い**。
 
 - [ ] Plan View 短期レーン（TodoWrite mirror、read-only、daemon `todoChange` subscription） <!-- id: m3.1-t1 status: todo -->
 - [ ] Plan View 長期レーン（plan_items ツリー、編集可、daemon mutation 接続） <!-- id: m3.1-t2 status: todo -->
 - [ ] PLAN.md パース + 双方向同期（chokidar + 500ms debounce + last-write-wins + plan_conflict_detected toast + localStorage backup） <!-- id: m3.1-t3 status: todo -->
 - [ ] 進捗ビュー（自前 SVG Gantt、リアクティブ bar、3 theme 統合、行 click → Agent Detail navigate） <!-- id: m3.1-t4 status: todo -->
+- [ ] Playwright e2e infra 導入（`@playwright/test` devDep + `ui/e2e/` dir + `pnpm --filter @claude-loom/ui e2e` script + CI workflow 並列 step + Room View pop theme screenshot baseline 1 件確立、test 大量化は M3.2 以降に分配） <!-- id: m3.1-t5 status: todo -->
 
 **M3.1 完成基準**：
 - Plan View 短期 (TodoWrite mirror) が daemon `todoChange` subscription で live 更新
 - Plan View 長期 (plan_items) tree edit が GUI → daemon → DB 流通、debounce 500ms で write-back
 - PLAN.md 外部 edit を chokidar 検知 → daemon → UI へ push、conflict 時 `plan_conflict_detected` toast + localStorage backup 動作
 - Gantt SVG が plan_items 進捗を bar で描画、3 theme 切替で `var(--color-bar)` 即反映、bar click で Agent Detail navigate
-- `pnpm --filter @claude-loom/ui test` 全 PASS（debounce / conflict toast / Gantt SVG render test 追加）
+- Playwright e2e で Room View pop theme screenshot baseline 1 件 green、`pnpm --filter @claude-loom/ui e2e` で実行可能、CI workflow に並列 step として組込（vitest と独立 fail）
+- `pnpm --filter @claude-loom/ui test` 全 PASS（debounce / conflict toast / Gantt SVG render test 追加、既存 13 vitest test の green 状態保持）
 - `pnpm --filter @claude-loom/daemon test` 全 PASS（chokidar + debounce + conflict resolution test 追加）
 - `tag m3.1-complete` 設置、`m0`〜`m3.0-complete` 全保持
 
