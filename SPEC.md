@@ -555,6 +555,29 @@ retro session 開始時、`loom-retro-pm` agent は **直前 milestone の revie
 
 **保存 path 規約**: `<project>/.claude-loom/retro/<retro_id>/verdict_evidence.json`（retro session 単位の per-instance file、prefs と分離）
 
+#### 3.9.11 Lifecycle Tracking Architecture（M0.11.1 から）
+
+retro 機能の **finding lifecycle + guidance lifecycle** を構造的に追跡する mechanism。SPEC §3.9.x P4 (Root cause first) の理想形：M3.0 retro 由来の symptomatic patch（proc-NEW-1 counter-arguer stale finding detection section）を本 architecture で構造的に置換、symptomatic patch を rollback する cleanup loop の最初の実例。
+
+**責務 / write timing**:
+- **書込主体**:
+  - `pending.json.<finding>.applied_in` + `apply_history`: aggregator（or PM 中継時 retro-pm）が apply commit 時に update
+  - `applied_summary.json`: `loom-retro-pm` が Stage 0 lazy build（retro_id 採番直後 / Stage 1 dispatch 前）
+- **build 戦略**: Lazy build — retro-pm Stage 0 で過去 retro session の `<project>/.claude-loom/retro/*/pending.json` を scan、applied finding 集約 → `<project>/.claude-loom/retro/<retro_id>/applied_summary.json` write。M2.1 §6.9.5 verdict_evidence.json と同 pattern（**retro file architecture = file 永続 + lazy read by lens** SSoT 統一）。
+- **読込主体**: 4 lens（Stage 1）、特に「過去 retro で applied 済 finding を re-up しない」stale prevention に使用。lens は agent prompt prefix で渡された `applied_summary_path` を `Read` tool で参照、必要時のみ load（C2 design 確定）。
+- **rollback discipline**: M3.0 retro proc-NEW-1（counter-arguer stale check）は本 architecture 完成時 **rollback 必須**（M0.11.1 task list 内 mandatory）、SPEC §3.9.x P4「symptomatic patch 構造解決後の消滅」理想形 archive 例。
+
+**schema**:
+- `pending.json` 完全 schema: §6.9.6（schema_version 1 → 2 で `applied_in` + `apply_history` field 追加）
+- `applied_summary.json` 完全 schema: §6.9.7
+
+**保存 path 規約**:
+- `<project>/.claude-loom/retro/<retro_id>/pending.json`（既存、`applied_in` + `apply_history` field 追加）
+- `<project>/.claude-loom/retro/<retro_id>/applied_summary.json`（新設、retro session 単位の per-instance file）
+
+**guidance lifecycle 統合**:
+`learned_guidance` の auto-prune rule（§6.9.4 末尾拡張参照）: `ttl_sessions` main（`null` = infinite default、`> 0` = N retro 後 auto-deactivate） + `last_used_in` audit（retro 参照時 aggregator update、N session 連続未使用 → meta lens stale guidance finding）。責務分離: auto-deactivate = 決定論的（ttl）、user 承認 prune = dynamic（last_used_in 経由 meta lens proposal）。
+
 ### 3.10 superpowers Independence（M0.9 から）
 
 claude-loom は **superpowers plugin に依存せずに完結する** ことを設計目標とする。
@@ -1184,6 +1207,41 @@ final_value = project_prefs.agents[name].field
 
 ユーザー独自 preset を作りたい場合は `prompts/personalities/<custom-name>.md` を追加し、prefs に preset 名を指定。
 
+#### 6.9.4.5 learned_guidance auto-prune rule（M0.11.1 から）
+
+M0.11 で「v1 manual prune」と意識的 deferral 決定された learned_guidance lifecycle を M0.11.1 で structural 自動化。`learned_guidance` schema に `last_used_in` field を追加 + 2 mechanism hybrid auto-prune を導入。
+
+```ts
+const learnedGuidanceSchema = z.object({
+  // 既存 field (M0.11 から)
+  id: z.string(),
+  added_at: z.string(),                                 // ISO date
+  from_retro: z.string(),
+  from_finding_id: z.string(),
+  category: z.string(),
+  guidance: z.string(),
+  active: z.boolean(),
+  ttl_sessions: z.number().int().nullable(),            // null = infinite default、> 0 = N retro 後 auto-expire
+  use_count: z.number().int().default(0),
+
+  // M0.11.1 新設
+  last_used_in: z.string().nullable().optional(),       // 最終参照 retro_id、null = 未使用
+});
+```
+
+**auto-prune 2 mechanism**:
+
+1. **`ttl_sessions` main（auto-deactivate、決定論的）**: aggregator が retro 終了時に以下 logic 実行
+   - 各 active learned_guidance について `retro_session_distance = current_retro_session_count - first_retro_session_index_after_added_at`
+   - `ttl_sessions != null && retro_session_distance >= ttl_sessions` → `active: false` 自動化
+   - `ttl_sessions: null`（default）は infinite、break compat なし
+2. **`last_used_in` audit（proposal、dynamic）**: meta lens が Stage 1 で以下 audit 実行
+   - 各 active learned_guidance の `last_used_in` を確認
+   - `current_retro_id - last_used_in > 3`（N retro session 連続未使用、3 は threshold initial value）→ "stale guidance" として meta-axis finding 化
+   - user 承認後 deactivate（auto じゃない、user 主導）
+
+**lens 参照時の `last_used_in` update**: 各 retro lens が learned_guidance を Customization Layer 経由で injection した時、aggregator が retro 終了時に該当 guidance の `last_used_in: <current_retro_id>` を update（lens は read のみ、write は aggregator 中央集権、責務分離）。
+
 ### 6.9.5 `<project>/.claude-loom/retro/<retro_id>/verdict_evidence.json` 完全スキーマ（M2.1 から）
 
 retro session 開始時に `loom-retro-pm` が write する per-retro-instance file。schema は zod で定義され、daemon (M3+) からも `import type { VerdictEvidence } from "@claude-loom/daemon"` で参照可能（M3 以降で daemon-side 永続化検討）。proc-003 finding 起源、概念 / write timing は §3.9.10 参照。
@@ -1245,6 +1303,124 @@ export type VerdictEvidence = z.infer<typeof verdictEvidenceSchema>;
 3. session transcript（直前 implementation phase）から該当 task_id の reviewer dispatch JSON を抽出
 4. PM final report の hint reference があれば優先的に使用（PM hint 機構、§3.9.10 参照）
 5. zod schema validate → file write、schema 不整合は warning として log（retro 自体は continue、機能 block しない）
+
+### 6.9.6 `<project>/.claude-loom/retro/<retro_id>/pending.json` 完全スキーマ（M0.8 から、M0.11.1 で v2 拡張）
+
+retro session の finding queue + user 確定 verdict + apply trace 用 file。M0.8 から運用、M0.11.1 で `applied_in` + `apply_history` field 追加（schema_version 1 → 2）。M3.0 retro 起源の **finding lifecycle tracking** SSoT。
+
+```ts
+import { z } from "zod";
+
+export const pendingFindingSchema = z.object({
+  id: z.string(),                                   // e.g., "pj-001", "proc-NEW-1"
+  lens: z.enum(["pj-axis", "process-axis", "researcher", "meta-axis", "user-axis"]),
+  category: z.string(),                             // category enum (RETRO_GUIDE §2 参照)
+  risk: z.enum(["low", "medium", "high", "medium-high"]),
+  auto_applicable_eligible: z.boolean(),
+  status: z.enum(["pending", "approved", "for_drop", "for_downgrade", "rejected", "deferred"]),
+
+  // M0.11 から
+  target_artifact: z.array(z.enum(["agent-prompt", "spec-section", "doc-file", "retro-config", "test-strategy", "plan-file"])).optional(),
+  target_agent: z.array(z.string()).nullable().optional(),
+  guidance_proposal: z.string().nullable().optional(),
+
+  // M3.0 retro meta-NEW-1 から (proposal_type 区別)
+  proposal_type: z.enum(["symptomatic", "structural", "record-only"]).optional(),
+
+  // M0.11.1 新設 (lifecycle tracking)
+  applied_in: z.object({
+    commit_sha: z.string().nullable(),              // 最新 apply 状態の commit、record-only なら null
+    milestone_tag: z.string().nullable(),           // 別 milestone scope で apply された場合
+    applied_at: z.number().int(),                   // ms
+    apply_type: z.enum(["immediate", "milestone", "record-only", "rollback"]),
+  }).nullable(),                                    // applied 前は null
+  apply_history: z.array(z.object({
+    commit_sha: z.string(),
+    applied_at: z.number().int(),
+    apply_type: z.enum(["immediate", "milestone", "record-only", "rollback"]),
+    note: z.string().optional(),                    // rollback の理由等
+  })).default([]),                                  // multi-apply / rollback の trace
+
+  // 既存 (M0.8 から)
+  applicable_files: z.array(z.string()).optional(),
+  summary: z.string(),
+  description: z.string().optional(),
+  proposal: z.string().optional(),
+  approved_at: z.number().int().optional(),
+  drop_reason: z.string().optional(),
+  pm_note: z.string().optional(),
+  origin: z.string().optional(),
+  milestone_assignment: z.string().optional(),      // approved + 新 milestone scope 時
+});
+
+export const pendingSchema = z.object({
+  schema_version: z.literal(2),                      // M0.8 v1 → M0.11.1 v2 (applied_in/apply_history 追加)
+  retro_id: z.string(),
+  milestone_tag: z.string(),
+  mode: z.enum(["conversation", "report"]),
+  executor_protocol: z.enum(["normal", "degraded"]).optional(),
+  findings: z.array(pendingFindingSchema),
+});
+
+export type Pending = z.infer<typeof pendingSchema>;
+export type PendingFinding = z.infer<typeof pendingFindingSchema>;
+```
+
+**`apply_type` enum 定義**:
+
+| value | 意味 | 例 |
+|---|---|---|
+| `immediate` | retro session 内で即時 apply | M3.0 retro meta-NEW-1 (e4aa0ea) |
+| `milestone` | 別 milestone scope で apply | M3.0 retro proc-NEW-2 (M0.11.1) |
+| `record-only` | commit なし observability | M3.0 retro proc-001 / meta-003 |
+| `rollback` | symptomatic patch を構造的解決後に rollback | M0.11.1 closure 時の proc-NEW-1 rollback |
+
+**migration**: 既存 4 retro session（2026-04-29-001 / 2026-05-02-001 / 2026-05-02-002 + 古い 1 件確認）の `pending.json` に `applied_in` + `apply_history` field 後付け書き込み（M0.11.1 task `m0.11.1-t7` で migration script、apply commit を git log + commit message 解析で推定）。schema_version `1 → 2` migrate flag。
+
+### 6.9.7 `<project>/.claude-loom/retro/<retro_id>/applied_summary.json` 完全スキーマ（M0.11.1 から）
+
+retro session 開始時に `loom-retro-pm` が **過去全 retro session の pending.json を scan + 集約** した file。4 lens が Stage 1 で `Read` tool で参照、stale finding re-up を構造的に防ぐ。M2.1 §6.9.5 verdict_evidence.json と同 pattern（lazy build family）。
+
+```ts
+export const appliedSummarySchema = z.object({
+  schema_version: z.literal(1),
+  retro_id: z.string(),                              // 本 retro session の id (生成元)
+  generated_at: z.number().int(),
+  total_retro_sessions: z.number().int(),            // scan 対象 retro session 数
+  applied_findings: z.array(z.object({
+    finding_id: z.string(),                          // 元 retro 内 id (e.g., "pj-001")
+    origin_retro_id: z.string(),                     // どの retro session 由来か
+    category: z.string(),
+    proposal_type: z.enum(["symptomatic", "structural", "record-only"]).optional(),
+    summary: z.string(),
+    applied_in: z.object({
+      commit_sha: z.string().nullable(),
+      milestone_tag: z.string().nullable(),
+      applied_at: z.number().int(),
+      apply_type: z.enum(["immediate", "milestone", "record-only", "rollback"]),
+    }),
+    last_apply_history_entry: z.object({              // apply_history の最新 entry (rollback case の trace)
+      commit_sha: z.string(),
+      apply_type: z.string(),
+      note: z.string().optional(),
+    }).nullable(),
+  })),
+});
+
+export type AppliedSummary = z.infer<typeof appliedSummarySchema>;
+```
+
+**lazy build 5 step**（`loom-retro-pm` Stage 0 で実行）:
+1. `<project>/.claude-loom/retro/*/pending.json` を glob、existing retro session list 取得
+2. 各 pending.json を read、`status: "approved"` + `applied_in: not null` finding を抽出
+3. finding ごとに集約 entry build（`finding_id` + `origin_retro_id` + summary + apply trace）
+4. apply_history が rollback entry を含む場合は `last_apply_history_entry` に最新 rollback note を埋め込み（lens に「once applied but later rolled back」を伝える）
+5. zod schema validate → file write、schema 不整合は warning として log（retro 自体は continue、機能 block しない）
+
+**lens 注入 mechanism**:
+- 4 lens（`loom-retro-pj-judge` / `process-judge` / `meta-judge` / `researcher`）の agent dispatch prompt prefix に `applied_summary_path: <path>` を追加
+- lens は category 関連 finding を `Read` tool で参照、stale check を Stage 1 内で自前実行
+- M3.0 retro proc-NEW-1 の「counter-arguer 単独 stale check」を構造的に置換、4 lens 全体が stale 判別能力を獲得（root cause 解決、SPEC §3.9.x P4 理想形）
 
 ### 6.10 `~/.claude-loom/config.json` スキーマ（方針サマリ）
 
