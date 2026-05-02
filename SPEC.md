@@ -298,6 +298,71 @@ retro session 開始時、`loom-retro-pm` agent が **直前 milestone の revie
 
 dev は milestone 内で test 拡張 commit が feat 実装 commit より時系列で **前** にあることを保証。実装直前に `git log` で確認、無ければ「process-tdd-violation」self-finding 生成。
 
+### 3.6.9 M3 UI Architecture（M3 から）
+
+M3 milestone の核となる frontend 設計判断を SSoT として集約。spec phase 2026-05-02 で確定（design 分岐 α/β/γ + M3 分割判断の 4 件）。
+
+#### 3.6.9.1 Phaser 3 React 内 mount pattern（α-1 確定）
+
+- **採用**: 自前 `useEffect` + `useRef` mount（library 依存ゼロ）
+- **lifecycle**: `useEffect(() => { gameRef.current = new Phaser.Game(config); return () => gameRef.current?.destroy() }, [])`
+- **state bridge**: zustand subscribe + Phaser scene event は **agent state → sprite state の単方向 push が主**、双方向 OT は不要
+- **HMR**: Vite HMR で scene 状態保持のため stable ref + `import.meta.hot.dispose` で `game.destroy()` 必須
+- **却下案**: react-phaser-fiber（library 更新ペース遅）/ @phaserjs/react（ecosystem 例少ない）/ canvas 直書き（SPEC §12 Phaser 3 確定値を覆す）
+
+#### 3.6.9.2 PLAN.md 双方向同期戦略（β-3 確定）
+
+- **採用**: hybrid debounce + last-write-wins + `plan_conflict_detected` toast
+- **debounce**: GUI 編集 500ms-1s で batch write、chokidar event も同 debounce で集約、race window を狭める
+- **last-write-wins**: `mtime` 比較で新しい側採用、conflict 検知時は **新 toast event `plan_conflict_detected`** を push
+- **data 救済**: GUI 側 change を localStorage に backup、user が手動 restore 可能
+- **却下案**: pure last-write-wins（silent data loss）/ file lock + queue（lock manager 重）/ Yjs/Automerge OT（M3 で overkill、bundle 50-100KB 増）
+
+#### 3.6.9.3 Gantt 実装方法（γ-3 確定）
+
+- **採用**: 自前 SVG（`<rect>` bar + `<line>` grid + `<text>` label）
+- **theme 統合**: tokens.css の CSS variable `var(--color-bar)` 等を SVG 直参照、3 theme (pop/dusk/night) 即反映
+- **scope**: read-only bar + 行 click で Agent Detail navigate（edit / zoom / pan は M5 以降）
+- **実装規模**: 200-400 LoC（library 依存ゼロ、bundle 増ゼロ）
+- **却下案**: gantt-task-react（50KB 増 + theme bridge hack）/ frappe-gantt（React wrapper 自前 + TS 型不在）/ react-google-charts（external CDN 依存、SPEC §3.5 security model と相性悪）
+
+#### 3.6.9.4 Toast event 拡張（M2 5 event → M3 6 event）
+
+M2 で確定した 5 event に **`plan_conflict_detected`** を追加：
+
+| # | event | 起源 | 意味 |
+|---|---|---|---|
+| 1 | `daemon_disconnected` | M2 | daemon 接続切断 |
+| 2 | `daemon_reconnected` | M2 | daemon 再接続成功 |
+| 3 | `consistency_finding_new` | M2 | doc 整合性 finding 検出（M4 で発火） |
+| 4 | `subagent_failed` | M2 | subagent dispatch 失敗 |
+| 5 | `project_added` | M2 | 新規 project 検出 |
+| 6 | `plan_conflict_detected` | **M3** | PLAN.md 双方向同期で conflict 検知 |
+
+§6.3 Event payload 仕様に payload 定義追加（schema は実装時 `daemon/src/events/types.ts` で確定）。
+
+#### 3.6.9.5 frontend「自前 control」哲学
+
+α (Phaser mount) + γ (Gantt) の 2 大判断で **library 依存最小化** を選択。理由 3 つ：
+
+1. **claude-loom dogfood project のメンテ負荷最小化** — library breaking change で詰まらん
+2. **frontend-design 委譲との相性最大化（M5）** — pixel art aesthetic を library override で hack するより、自前で control する方が直接的
+3. **3 theme (pop/dusk/night) 統合** — tokens.css CSS variable 直参照が最も seamless
+
+trade-off として実装 LoC は増えるが、claude-loom が成熟するにつれ各 component を独立 refactor / 入れ替え可能な状態を維持。
+
+#### 3.6.9.6 M3 分割（3 段細分割）
+
+M3 は scope 大（10 task = M2 同等規模 + 新技術 Phaser + 複雑 design 双方向同期）、proc-001 / proc-004 リスク低減のため **3 段細分割** を採用：
+
+| sub-milestone | scope | task 数 | technical risk 軸 |
+|---|---|---|---|
+| **M3.0** Room View | Phaser mount + tile + sprite + 状態アニメ | 3 | 新技術 (Phaser) 投入、独立 milestone で retro 集中 |
+| **M3.1** Plan + Gantt + sync | Plan View 短期/長期 + 双方向同期 + Gantt | 4 | 複雑 design (β-3 hybrid sync)、独立 milestone で edge case finding |
+| **M3.2** Detail views | Session List + Agent Detail + notes | 3 | CRUD polish、新技術/複雑 design は M3.0/M3.1 で扱い済 |
+
+各 milestone closure 後に retro hook（M0.13 milestone retro 規約）、verdict_evidence (M2.1 整備済) の運用試験 3 回 = proc-003 hook 妥当性も並行検証。詳細 task は PLAN.md M3.0 / M3.1 / M3.2 セクション参照。
+
 ### 3.7 プロジェクトライフサイクルと adopt 戦略
 
 claude-loom は **新規プロジェクトの立ち上げ** にも **既存プロジェクトの取り込み（adopt）** にも対応する。両者は明確に区別され、PM が異なるフローで処理する。
@@ -1513,6 +1578,9 @@ uninstall.sh の流れ:
 | **Bind address（M1 から）** | `127.0.0.1` のみ | localhost 専用、外部公開禁止 |
 | **CORS（M1 から）** | development: `localhost:5173` (Vite default) 許可、production: 同 origin (UI も daemon serve) | M2 frontend dev 時 |
 | Visual 方向性 | ピクセル RPG（Stardew 系）+ **猫系（or アニマル系）キャラ**「猫の開発室」コンセプト | キャラクター愛着優先（Q9）+ 統一感ある世界観 |
+| **Phaser React 内 mount pattern（M3 から）** | 自前 `useEffect` + `useRef`、HMR 用 stable ref + `import.meta.hot.dispose` で `game.destroy()` | library 依存ゼロ、frontend-design 委譲との相性、α-1 確定 / 詳細 §3.6.9.1 |
+| **Gantt 実装（M3 から）** | 自前 SVG（rect/line/text + tokens.css var 直参照、200-400 LoC） | 3 theme 統合 seamless、bundle 増ゼロ、γ-3 確定 / 詳細 §3.6.9.3 |
+| **PLAN.md 双方向同期（M3 から）** | hybrid debounce (500ms-1s) + last-write-wins (mtime) + `plan_conflict_detected` toast + localStorage backup | data 救済 + race window 狭く + bundle 増ゼロ、β-3 確定 / 詳細 §3.6.9.2 |
 | Daemon ライフサイクル | Lazy 起動、30 分アイドルで停止 | リソース節約 + シームレス UX |
 | Daemon ポート | 5757（config 変更可） | — |
 | プロジェクト判定 | git root + `.claude-loom/project.json` marker | 自動 + 明示の hybrid |
