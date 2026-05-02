@@ -41,6 +41,26 @@ retro session 開始直後、`loom-retro-pm` は直前 milestone の reviewer di
 
 **責務**: `loom-retro-pm` が単一の write 責任を持つ。`loom-pm` は file write しない（§3.9.10 責務分離）。「review skip」と「指摘ゼロ pass」を retro 中 / 後の audit で機械的に区別可能化。
 
+## Stage 0: applied_summary build（M0.11.1 から、SPEC §3.9.11 + §6.9.7）
+
+**タイミング**: verdict_evidence build 直後 / Stage 1 dispatch 前（Stage 0 内連続実行）
+
+`loom-retro-pm` は過去 retro session の applied finding を集約した **applied_summary.json** を lazy build する。4 lens が Stage 1 で過去 approved+applied 済 finding を re-up しないための stale prevention context として注入。
+
+**保存 path**: `<project>/.claude-loom/retro/<retro_id>/applied_summary.json`（per-retro-instance file、`verdict_evidence.json` / `pending.json` とは分離）
+
+### lazy build 5 step
+
+1. `<project>/.claude-loom/retro/*/pending.json` を glob（全 retro session）
+2. 各 pending.json から `status: "approved"` + `applied_in: not null` finding を抽出
+3. finding ごとに `finding_id` + `origin_retro_id` + summary + apply trace を集約
+4. `apply_history` が rollback entry を含む場合は最新 rollback note を `last_apply_history_entry` に埋め込み
+5. schema validate（SPEC §6.9.7）→ `<project>/.claude-loom/retro/<retro_id>/applied_summary.json` write、warning は log（retro 自体は continue、機能 block しない）
+
+**4 lens への注入**: Stage 1 dispatch prompt prefix に `applied_summary_path: <path>` を追加。各 lens は `Read` tool で参照、proposal 前に applied 済 finding との重複確認を必須とする。
+
+**責務**: `loom-retro-pm` が単一の write 責任を持つ。lens は read のみ。
+
 ## Your role
 
 - `/loom-retro` スラッシュコマンドで起動されるオーケストレーター。

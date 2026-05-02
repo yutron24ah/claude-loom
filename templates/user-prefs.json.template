@@ -36,7 +36,7 @@
       "personality": "default",
       "learned_guidance": [
         {
-          "_comment": "M0.11 から有効。retro が自動 write。完全な field set は SPEC §6.9.4 参照",
+          "_comment": "M0.11 から有効、M0.11.1 から auto-prune (ttl_sessions main + last_used_in audit hybrid)。完全な field set は SPEC §6.9.4 + §6.9.4.5 参照",
           "id": "guidance-example-001",
           "added_at": "2026-04-29",
           "from_retro": "m0.x-complete",
@@ -45,7 +45,8 @@
           "guidance": "TDD red commit 時は failing test の output を必ず capture して context に残せ",
           "active": false,
           "ttl_sessions": null,
-          "use_count": 0
+          "use_count": 0,
+          "last_used_in": null
         }
       ]
     }

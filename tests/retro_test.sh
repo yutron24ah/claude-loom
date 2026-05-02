@@ -135,6 +135,85 @@ else
     failures=$((failures + 1))
 fi
 
+# REQ-035: M0.11.1 — pending.json schema_version 2 + applied_in / apply_history field
+RETRO_DIR="$ROOT_DIR/.claude-loom/retro"
+
+check_pending_schema_v2() {
+    local session_dir="$1"
+    local session_id
+    session_id=$(basename "$session_dir")
+    local pending="$session_dir/pending.json"
+    if [ ! -f "$pending" ]; then
+        echo "SKIP [retro]: $session_id/pending.json not found, skip schema v2 check"
+        return
+    fi
+    if ! jq empty "$pending" 2>/dev/null; then
+        echo "FAIL [retro]: $session_id/pending.json invalid JSON"
+        failures=$((failures + 1))
+        return
+    fi
+    local schema_ver
+    schema_ver=$(jq -r '.schema_version // "missing"' "$pending")
+    if [ "$schema_ver" = "2" ]; then
+        echo "PASS [retro]: $session_id/pending.json has schema_version: 2 (REQ-035 M0.11.1)"
+        passes=$((passes + 1))
+    else
+        echo "FAIL [retro]: $session_id/pending.json schema_version=$schema_ver (expected 2)"
+        failures=$((failures + 1))
+    fi
+}
+
+check_pending_applied_in_field() {
+    local session_dir="$1"
+    local session_id
+    session_id=$(basename "$session_dir")
+    local pending="$session_dir/pending.json"
+    if [ ! -f "$pending" ]; then
+        return
+    fi
+    # All findings (approved or pending) should have applied_in field after migration
+    local missing
+    missing=$(jq '[.findings[] | select(has("applied_in") | not)] | length' "$pending" 2>/dev/null || echo 1)
+    if [ "$missing" -eq 0 ]; then
+        echo "PASS [retro]: $session_id/pending.json all findings have applied_in field (REQ-035 M0.11.1)"
+        passes=$((passes + 1))
+    else
+        echo "FAIL [retro]: $session_id/pending.json has $missing findings missing applied_in field"
+        failures=$((failures + 1))
+    fi
+}
+
+check_pending_apply_history_field() {
+    local session_dir="$1"
+    local session_id
+    session_id=$(basename "$session_dir")
+    local pending="$session_dir/pending.json"
+    if [ ! -f "$pending" ]; then
+        return
+    fi
+    # All findings should have apply_history array field after migration
+    local missing
+    missing=$(jq '[.findings[] | select(has("apply_history") | not)] | length' "$pending" 2>/dev/null || echo 1)
+    if [ "$missing" -eq 0 ]; then
+        echo "PASS [retro]: $session_id/pending.json all findings have apply_history field (REQ-035 M0.11.1)"
+        passes=$((passes + 1))
+    else
+        echo "FAIL [retro]: $session_id/pending.json has $missing findings missing apply_history field"
+        failures=$((failures + 1))
+    fi
+}
+
+if [ -d "$RETRO_DIR" ]; then
+    for session_dir in "$RETRO_DIR"/*/; do
+        [ -d "$session_dir" ] || continue
+        check_pending_schema_v2 "$session_dir"
+        check_pending_applied_in_field "$session_dir"
+        check_pending_apply_history_field "$session_dir"
+    done
+else
+    echo "SKIP [retro]: $RETRO_DIR not found, skip pending.json schema v2 checks"
+fi
+
 if [ "$failures" -gt 0 ]; then
   echo "retro_test FAILED with $failures violations"
   exit 1

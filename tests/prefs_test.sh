@@ -122,6 +122,49 @@ check_coexistence_schema() {
 
 check_coexistence_schema
 
+# REQ-035: M0.11.1 — learned_guidance entries に last_used_in field が存在する (string | null)
+check_last_used_in_field() {
+    local fname="$1"
+    # all learned_guidance entries that exist should have last_used_in field (string or null)
+    local count_entries
+    count_entries=$(jq '[.agents | to_entries[] | select(.value | type == "object" and has("learned_guidance")) | .value.learned_guidance[]] | length' "$fname" 2>/dev/null || echo 0)
+    if [ "$count_entries" -eq 0 ]; then
+        # no learned_guidance entries — skip
+        echo "PASS [prefs]: $fname has no learned_guidance entries, skip last_used_in check"
+        ((passes++))
+        return
+    fi
+    local missing
+    missing=$(jq '[.agents | to_entries[] | select(.value | type == "object" and has("learned_guidance")) | .value.learned_guidance[] | select(has("last_used_in") | not)] | length' "$fname" 2>/dev/null || echo 1)
+    if [ "$missing" -eq 0 ]; then
+        echo "PASS [prefs]: $fname learned_guidance entries all have last_used_in field (REQ-035 M0.11.1)"
+        ((passes++))
+    else
+        echo "FAIL [prefs]: $fname has $missing learned_guidance entries missing last_used_in field"
+        ((fails++))
+    fi
+}
+
+check_last_used_in_field "templates/user-prefs.json.template"
+check_last_used_in_field "templates/project-prefs.json.template"
+
+# REQ-035: M0.11.1 — last_used_in value は string or null
+check_last_used_in_type() {
+    local fname="$1"
+    local invalid
+    invalid=$(jq '[.agents | to_entries[] | select(.value | type == "object" and has("learned_guidance")) | .value.learned_guidance[] | select(has("last_used_in")) | .last_used_in | select(. != null and (type != "string"))] | length' "$fname" 2>/dev/null || echo 0)
+    if [ "$invalid" -eq 0 ]; then
+        echo "PASS [prefs]: $fname last_used_in values are string|null (REQ-035 M0.11.1)"
+        ((passes++))
+    else
+        echo "FAIL [prefs]: $fname has $invalid last_used_in values with invalid type (expected string|null)"
+        ((fails++))
+    fi
+}
+
+check_last_used_in_type "templates/user-prefs.json.template"
+check_last_used_in_type "templates/project-prefs.json.template"
+
 echo ""
 echo "prefs_test summary: $passes PASS / $fails FAIL"
 exit $fails

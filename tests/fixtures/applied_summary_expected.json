@@ -1,0 +1,206 @@
+{
+  "schema_version": 1,
+  "retro_id": "test-dry-run",
+  "generated_at": 1778025600,
+  "total_retro_sessions": 3,
+  "applied_findings": [
+    {
+      "finding_id": "pj-002",
+      "origin_retro_id": "2026-05-02-001",
+      "category": "spec-drift-architectural",
+      "proposal_type": null,
+      "summary": "README §M2 の tRPC 接続例 (createTRPCClient + httpBatchLink + x-loom-token) と実装 (cre",
+      "applied_in": {
+        "commit_sha": "860fee3",
+        "milestone_tag": null,
+        "applied_at": 1778025600,
+        "apply_type": "immediate"
+      },
+      "last_apply_history_entry": {
+        "commit_sha": "860fee3",
+        "apply_type": "immediate",
+        "note": "README §M2 tRPC sample aligned (860fee3)"
+      }
+    },
+    {
+      "finding_id": "proc-001",
+      "origin_retro_id": "2026-05-02-001",
+      "category": "process-blocker-pattern",
+      "proposal_type": null,
+      "summary": "M2 Task 5/6/7/8 で GREEN commit handoff anomaly 4 連発 — loom-developer が reviewer ",
+      "applied_in": {
+        "commit_sha": "d190168",
+        "milestone_tag": null,
+        "applied_at": 1778025600,
+        "apply_type": "immediate"
+      },
+      "last_apply_history_entry": {
+        "commit_sha": "d190168",
+        "apply_type": "immediate",
+        "note": "loom-developer Strategy a/b commit handoff codify (d190168)"
+      }
+    },
+    {
+      "finding_id": "proc-002",
+      "origin_retro_id": "2026-05-02-001",
+      "category": "process-blocker-pattern",
+      "proposal_type": null,
+      "summary": "Strategy b (PM 統合 commit) が Task 9/10/11 で proc-001 を mitigate した実証あり、ただし dev TD",
+      "applied_in": {
+        "commit_sha": "d190168",
+        "milestone_tag": null,
+        "applied_at": 1778025600,
+        "apply_type": "immediate"
+      },
+      "last_apply_history_entry": {
+        "commit_sha": "d190168",
+        "apply_type": "immediate",
+        "note": "loom-pm + loom-developer commit_handoff strategy codify (d190168)"
+      }
+    },
+    {
+      "finding_id": "pj-001",
+      "origin_retro_id": "2026-05-02-002",
+      "category": "spec-drift-architectural",
+      "proposal_type": null,
+      "summary": "Phaser version drift: SPEC \"Phaser 3\" vs 実装 ^4.1.0、major bump 未反映",
+      "applied_in": {
+        "commit_sha": "300e2cb",
+        "milestone_tag": null,
+        "applied_at": 1778025600,
+        "apply_type": "immediate"
+      },
+      "last_apply_history_entry": {
+        "commit_sha": "300e2cb",
+        "apply_type": "immediate",
+        "note": "pj-001 Phaser 3→4 fix (300e2cb)"
+      }
+    },
+    {
+      "finding_id": "proc-001",
+      "origin_retro_id": "2026-05-02-002",
+      "category": "process-discipline-success-record",
+      "proposal_type": null,
+      "summary": "M2.1 codify effect 観測: M3.0 で Strategy a 完遂 0 anomaly (record only)",
+      "applied_in": {
+        "commit_sha": null,
+        "milestone_tag": null,
+        "applied_at": 1778025600,
+        "apply_type": "record-only"
+      },
+      "last_apply_history_entry": {
+        "commit_sha": null,
+        "apply_type": "record-only",
+        "note": "record-only: M2.1 codify effect 0-anomaly success record"
+      }
+    },
+    {
+      "finding_id": "res-001",
+      "origin_retro_id": "2026-05-02-002",
+      "category": "researcher-ux-improvement",
+      "proposal_type": "structural",
+      "summary": "Phaser test 戦略 trade-off: mock-only で visual regression 不可、M3.1 commit 前 1 機構導入提案",
+      "applied_in": {
+        "commit_sha": null,
+        "milestone_tag": null,
+        "applied_at": 1778025600,
+        "apply_type": "milestone"
+      },
+      "last_apply_history_entry": {
+        "commit_sha": null,
+        "apply_type": "milestone",
+        "note": "milestone: M3.1 spec phase visual regression task 組み込み予定"
+      }
+    },
+    {
+      "finding_id": "meta-001",
+      "origin_retro_id": "2026-05-02-002",
+      "category": "meta-auto-apply-proposal",
+      "proposal_type": "structural",
+      "summary": "approval_history 蓄積開始: process-blocker-pattern 2/2 / spec-drift-architectural 1/1、3 件目で promote 候補化",
+      "applied_in": {
+        "commit_sha": null,
+        "milestone_tag": null,
+        "applied_at": 1778025600,
+        "apply_type": "milestone"
+      },
+      "last_apply_history_entry": {
+        "commit_sha": null,
+        "apply_type": "milestone",
+        "note": "milestone: M3.1 spec phase aggregator promote logic codify 予定"
+      }
+    },
+    {
+      "finding_id": "meta-002",
+      "origin_retro_id": "2026-05-02-002",
+      "category": "meta-auto-apply-proposal",
+      "proposal_type": "symptomatic",
+      "summary": "learned_guidance use_count 0 → 1 manual update (前回 retro meta-003 carryover)",
+      "applied_in": {
+        "commit_sha": null,
+        "milestone_tag": null,
+        "applied_at": 1778025600,
+        "apply_type": "record-only"
+      },
+      "last_apply_history_entry": {
+        "commit_sha": null,
+        "apply_type": "record-only",
+        "note": "record-only: manual update acknowledged, structural auto-prune M0.11.1 scope"
+      }
+    },
+    {
+      "finding_id": "meta-003",
+      "origin_retro_id": "2026-05-02-002",
+      "category": "meta-auto-apply-proposal",
+      "proposal_type": "record-only",
+      "summary": "M2.1 codify effect record: 5 件中 3 件で measurable effect 観測 (record only)",
+      "applied_in": {
+        "commit_sha": null,
+        "milestone_tag": null,
+        "applied_at": 1778025600,
+        "apply_type": "record-only"
+      },
+      "last_apply_history_entry": {
+        "commit_sha": null,
+        "apply_type": "record-only",
+        "note": "record-only: M2.1 codify effect record"
+      }
+    },
+    {
+      "finding_id": "proc-NEW-1",
+      "origin_retro_id": "2026-05-02-002",
+      "category": "process-blocker-pattern",
+      "proposal_type": "symptomatic",
+      "summary": "counter-arguer に stale finding detection 観点を追加 (M2/M3.0 retro で 2 連続 stale re-up 観測、interim safety net)",
+      "applied_in": {
+        "commit_sha": "a3f3cee",
+        "milestone_tag": null,
+        "applied_at": 1778025600,
+        "apply_type": "immediate"
+      },
+      "last_apply_history_entry": {
+        "commit_sha": "3b3e9e8",
+        "apply_type": "rollback",
+        "note": "structural M0.11.1 完成 (applied_summary mechanism + 4 lens injection)、symptomatic patch 物理削除 (SPEC §3.9.x P4 理想形初例)"
+      }
+    },
+    {
+      "finding_id": "proc-NEW-2",
+      "origin_retro_id": "2026-05-02-002",
+      "category": "process-blocker-pattern",
+      "proposal_type": "structural",
+      "summary": "pending.json schema 拡張 + applied_in field (finding lifecycle tracking) — proc-NEW-1 の root-cause 置換",
+      "applied_in": {
+        "commit_sha": "fd3c1c3",
+        "milestone_tag": null,
+        "applied_at": 1778025600,
+        "apply_type": "milestone"
+      },
+      "last_apply_history_entry": {
+        "commit_sha": "fd3c1c3",
+        "apply_type": "milestone",
+        "note": "milestone: M0.11.1 lifecycle tracking milestone insertion (fd3c1c3)"
+      }
+    }
+  ]
+}
