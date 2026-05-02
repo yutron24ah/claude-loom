@@ -3,8 +3,11 @@
  * WHY: ported from ui/prototype/char-sheet.jsx; shows breed/name/quote per agent.
  * Grouped by core / review / retro with section dividers (pixel RPG aesthetic).
  */
+/**
+ * WHY: CatSprite removed in M3.0 (Phaser sprites replace DOM sprites).
+ * CharSheet uses a simple color circle for agent avatars (placeholder until M5).
+ */
 import React from 'react';
-import { CatSprite } from '../room/CatSprite';
 import { ROSTER } from '../room/roster';
 import type { GroupType } from '../room/roster';
 
@@ -67,11 +70,18 @@ export function CharSheet({ width = 920 }: CharSheetProps): JSX.Element {
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                    {/* Agent avatar circle — CatSprite replaced by Phaser sprite in M3.0.
+                        Pixel art avatar restoration is M5 (frontend-design). */}
                     <div style={{
                       background: 'var(--p-tint, #e8e0d0)',
                       border: '1px solid var(--p-border, #2a2a35)', padding: 2,
+                      width: 52, height: 52, display: 'flex', alignItems: 'center', justifyContent: 'center',
                     }}>
-                      <CatSprite size={48} fur={cat.fur} cheek={cat.cheek} hat={cat.hat} pose="sit" />
+                      <div style={{
+                        width: 40, height: 40, borderRadius: '50%',
+                        background: cat.fur ?? 'var(--p-accent, #6366f1)',
+                        border: '2px solid var(--p-border, #2a2a35)',
+                      }} />
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--p-text, #1a1a2e)' }}>

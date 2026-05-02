@@ -3,8 +3,12 @@
  * WHY: ported from ui/prototype/screens-a.jsx AgentDetailPanel.
  * onClose default: calls useViewStore.setSelectedAgentId(null) per Task 9 spec.
  */
+/**
+ * WHY: CatSprite DOM component removed in M3.0 (Phaser sprites replace it).
+ * AgentDetailPanel now uses a simple color circle for the agent avatar preview.
+ * Pixel art avatar is deferred to M5 (frontend-design).
+ */
 import React from 'react';
-import { CatSprite } from './CatSprite';
 import { useViewStore } from '../../store/view';
 import type { RosterEntry } from './roster';
 
@@ -65,11 +69,17 @@ export function AgentDetailPanel({ agent, onClose }: AgentDetailPanelProps): JSX
 
       {/* Sprite + name + role */}
       <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+        {/* Agent avatar circle — placeholder. M5 replaces with pixel art cat sprite. */}
         <div style={{
           background: 'var(--p-tint, #e8e0d0)',
           border: '2px solid var(--p-border, #2a2a35)', padding: 4,
+          width: 72, height: 72, display: 'flex', alignItems: 'center', justifyContent: 'center',
         }}>
-          <CatSprite size={72} fur={agent.fur} cheek={agent.cheek} hat={agent.hat} pose="sit" />
+          <div style={{
+            width: 48, height: 48, borderRadius: '50%',
+            background: agent.fur ?? 'var(--p-accent, #6366f1)',
+            border: '2px solid var(--p-border, #2a2a35)',
+          }} />
         </div>
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--p-text, #1a1a2e)' }}>
