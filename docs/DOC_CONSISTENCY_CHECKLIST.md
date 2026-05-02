@@ -187,6 +187,21 @@ M3.2（Session/Agent/notes）実装時：
 - [ ] Agent Detail `agent.markAttention` mutation が daemon `agent` route + DB schema と整合
 - [ ] notes `note.create` mutation + plan_items 連結が daemon `note` route + `plan_items` table schema と整合
 
+## M0.11.1 Lifecycle Tracking Architecture 関連 check
+
+SPEC §3.9.11（Lifecycle Tracking Architecture）/ §6.9.6（pending.json schema v2）/ §6.9.7（applied_summary.json schema）/ §6.9.4.5（learned_guidance auto-prune rule）を編集した時：
+
+- [ ] §3.9.11 の write timing / 責務 / lazy build 戦略が §6.9.6 + §6.9.7 schema と整合
+- [ ] §6.9.6 schema_version: 2 が `pending.json` 既存 4 retro session の migration 後 state と整合
+- [ ] §6.9.7 lazy build 5 step が `agents/loom-retro-pm.md` Stage 0 拡張記述と整合
+- [ ] §6.9.4.5 auto-prune 2 mechanism (ttl_sessions + last_used_in) が `agents/loom-retro-aggregator.md` write logic と整合
+- [ ] 4 lens prompt（pj-judge / process-judge / meta-judge / researcher）が `applied_summary_path` injection + `Read` tool 参照 mechanism を記述
+- [ ] `agents/loom-retro-counter-arguer.md` の stale finding detection section が **物理削除** (M0.11.1 closure 時、SPEC §3.9.x P4 理想形 archive)
+- [ ] `templates/{user,project}-prefs.json.template` の learned_guidance example に `last_used_in` field 追加
+- [ ] `docs/RETRO_GUIDE.md` "Lifecycle Tracking Architecture" section が SPEC §3.9.11 + §6.9.6 + §6.9.7 + §6.9.4.5 と整合
+- [ ] migration script (M0.11.1 t7) が既存 4 retro session の pending.json に `applied_in` + `apply_history` 後付けして schema_version 2 に migrate 完了
+- [ ] dry-run test (M0.11.1 t12) で applied_summary build → schema validate → fixture diff の動作確認 (rollback 前安全網)
+
 ## SCREEN_REQUIREMENTS.md 更新時の整合性 check
 
 `docs/SCREEN_REQUIREMENTS.md` を編集した時：
