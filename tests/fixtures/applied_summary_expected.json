@@ -179,7 +179,7 @@
         "apply_type": "immediate"
       },
       "last_apply_history_entry": {
-        "commit_sha": "pending",
+        "commit_sha": "3b3e9e8",
         "apply_type": "rollback",
         "note": "structural M0.11.1 完成 (applied_summary mechanism + 4 lens injection)、symptomatic patch 物理削除 (SPEC §3.9.x P4 理想形初例)"
       }
