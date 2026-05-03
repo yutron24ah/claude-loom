@@ -1,176 +1,330 @@
 /**
- * GanttView — progress bars showing agent activity over the last hour.
+ * GanttView — SVG-based progress bars showing agent / plan activity.
  *
- * WHY: SCREEN_REQUIREMENTS §3.6 — gives the user a visual timeline of
- * what each agent was doing, making it easy to spot parallelism,
- * blocked periods, and live-running tasks.
+ * WHY: M3.1 t4 rewrites the M2 Tailwind-div mock to pure SVG so that
+ * CSS variable tokens (--color-bar, --color-border etc.) directly control
+ * SVG fill/stroke. This makes theme switching (pop/dusk/night) instant
+ * with zero JS — the browser re-paints on CSS variable change alone.
  *
- * M2 Task 9: ported from prototype screens-a.jsx Gantt component.
- * Mock data hard-coded (M3 will wire to daemon tRPC events).
+ * SPEC §3.6.9.3 (Gantt γ-3): self-contained SVG, tokens.css var reference,
+ * 200-400 LoC, bar click → Agent Detail navigate.
+ *
+ * Layout constants:
+ *   LABEL_WIDTH  — px reserved for row label column
+ *   ROW_HEIGHT   — px per agent row
+ *   BAR_INSET    — px top/bottom inset from row boundary
+ *   TICK_COUNT   — number of vertical grid lines
+ *   HEADER_H     — px for top time-axis row
  */
+import { useNavigate } from 'react-router-dom';
+import { useGanttData } from '../../live/useGanttData';
+import type { GanttRow, GanttBar } from '../../live/useGanttData';
 
-/** A single progress bar segment within a Gantt row. */
-interface GanttBar {
-  /** Start position as percentage 0-100 */
-  startPct: number;
-  /** End position as percentage 0-100 */
-  endPct: number;
-  /** Display label inside bar */
-  label: string;
-  /** Tailwind bg class for bar color */
-  colorClass: string;
-  /** Whether this bar is currently live (shows cat sprite) */
-  live?: boolean;
+// ---------------------------------------------------------------------------
+// Layout constants
+// ---------------------------------------------------------------------------
+const LABEL_WIDTH = 130;
+const ROW_HEIGHT = 44;
+const BAR_INSET = 8;
+const TICK_COUNT = 5;
+const HEADER_H = 24;
+const FONT_MONO = 'ui-monospace, monospace';
+/**
+ * Track width in logical SVG units.
+ * WHY: module-level constant so TRACK_W and SVG_W are stable references
+ * across renders. SVG_H remains in render because it depends on rows.length.
+ */
+const TRACK_W = 600;
+const SVG_W = LABEL_WIDTH + TRACK_W;
+
+/**
+ * Time tick labels displayed on the time axis.
+ * WHY: Hard-coded for M3.1; M3.2 will derive from real session start time.
+ */
+const TIME_LABELS = ['13:30', '13:45', '14:00', '14:15', 'now'];
+
+// ---------------------------------------------------------------------------
+// Sub-components
+// ---------------------------------------------------------------------------
+
+/** Renders the time-axis header row with tick labels. */
+function TimeAxis({
+  trackW,
+  y,
+}: {
+  trackW: number;
+  y: number;
+}): JSX.Element {
+  return (
+    <g data-testid="gantt-time-axis">
+      {TIME_LABELS.map((label, i) => {
+        const xPos = LABEL_WIDTH + (i / (TIME_LABELS.length - 1)) * trackW;
+        return (
+          <text
+            key={label}
+            x={xPos}
+            y={y + 14}
+            fontSize={9}
+            fontFamily={FONT_MONO}
+            fill="var(--color-muted)"
+            textAnchor="middle"
+          >
+            {label}
+          </text>
+        );
+      })}
+    </g>
+  );
 }
 
-/** One agent row in the Gantt chart. */
-interface GanttRow {
-  id: string;
-  label: string;
-  bars: GanttBar[];
+/** Renders vertical grid <line> elements spanning the full chart height. */
+function GridLines({
+  trackW,
+  totalH,
+}: {
+  trackW: number;
+  totalH: number;
+}): JSX.Element {
+  const ticks = Array.from({ length: TICK_COUNT }, (_, i) => i);
+  return (
+    <g>
+      {ticks.map((i) => {
+        const x = LABEL_WIDTH + (i / (TICK_COUNT - 1)) * trackW;
+        return (
+          <line
+            key={i}
+            data-testid="gantt-grid-line"
+            x1={x}
+            y1={HEADER_H}
+            x2={x}
+            y2={totalH}
+            stroke="var(--color-border)"
+            strokeWidth={1}
+            strokeOpacity={0.3}
+          />
+        );
+      })}
+    </g>
+  );
 }
 
-/** Time axis tick labels */
-const TIME_TICKS = ['13:30', '13:45', '14:00', '14:15', 'now'];
+/**
+ * Renders a single bar <rect> with label <text>.
+ * WHY: fill="var(--color-bar)" is a CSS variable reference that SVG
+ * supports natively — theme changes propagate without any JS re-render.
+ */
+function BarRect({
+  bar,
+  agentId,
+  rowY,
+  trackW,
+  onBarClick,
+}: {
+  bar: GanttBar;
+  agentId: string;
+  rowY: number;
+  trackW: number;
+  onBarClick: (agentId: string) => void;
+}): JSX.Element {
+  const x = LABEL_WIDTH + (bar.startPct / 100) * trackW;
+  const w = ((bar.endPct - bar.startPct) / 100) * trackW;
+  const y = rowY + BAR_INSET;
+  const h = ROW_HEIGHT - BAR_INSET * 2;
 
-/** Mock Gantt rows — 6 agent rows with 7 bars total (5-8 range). */
-const MOCK_ROWS: GanttRow[] = [
-  {
-    id: 'pm',
-    label: 'ニケ (PM)',
-    bars: [{ startPct: 5, endPct: 95, label: 'PM session', colorClass: 'bg-accent', live: true }],
-  },
-  {
-    id: 'dev',
-    label: 'サバ (Dev)',
-    bars: [
-      { startPct: 12, endPct: 38, label: 'auth: login spec', colorClass: 'bg-success' },
-      { startPct: 44, endPct: 74, label: 'auth: TDD red', colorClass: 'bg-error' },
-    ],
-  },
-  {
-    id: 'code-rev',
-    label: 'ペン (Code Rev)',
-    bars: [
-      { startPct: 40, endPct: 56, label: 'review: PR #42', colorClass: 'bg-accent' },
-    ],
-  },
-  {
-    id: 'sec-rev',
-    label: 'シノビ (Sec)',
-    bars: [{ startPct: 18, endPct: 34, label: 'secret scan', colorClass: 'bg-accent' }],
-  },
-  {
-    id: 'test-rev',
-    label: 'メメ (Test Rev)',
-    bars: [
-      { startPct: 22, endPct: 48, label: 'coverage check', colorClass: 'bg-accent' },
-      { startPct: 60, endPct: 80, label: 'verdict', colorClass: 'bg-success' },
-    ],
-  },
-  {
-    id: 'agg',
-    label: 'マル (Aggregator)',
-    bars: [{ startPct: 86, endPct: 95, label: 'retro summary', colorClass: 'bg-accent', live: true }],
-  },
-];
+  return (
+    <g
+      style={{ cursor: 'pointer' }}
+      onClick={() => onBarClick(agentId)}
+    >
+      <rect
+        data-testid="gantt-bar-rect"
+        x={x}
+        y={y}
+        width={w}
+        height={h}
+        fill="var(--color-bar)"
+        stroke="var(--color-border)"
+        strokeWidth={1}
+        rx={2}
+      />
+      {/* Bar label — clipped to bar width; uses foreignObject is avoided per KISS */}
+      <text
+        x={x + 4}
+        y={y + h / 2 + 4}
+        fontSize={9}
+        fontFamily={FONT_MONO}
+        fontWeight="bold"
+        fill="var(--color-bar-text)"
+        style={{ pointerEvents: 'none', userSelect: 'none' }}
+      >
+        {bar.label}
+      </text>
+    </g>
+  );
+}
 
+/** Renders one agent row: label text + bar track background + bars. */
+function AgentRow({
+  row,
+  rowIdx,
+  trackW,
+  onBarClick,
+}: {
+  row: GanttRow;
+  rowIdx: number;
+  trackW: number;
+  onBarClick: (agentId: string) => void;
+}): JSX.Element {
+  const rowY = HEADER_H + rowIdx * ROW_HEIGHT;
+  const midY = rowY + ROW_HEIGHT / 2;
+
+  return (
+    <g data-testid="gantt-row">
+      {/* Row separator line */}
+      {rowIdx > 0 && (
+        <line
+          x1={0}
+          y1={rowY}
+          x2={LABEL_WIDTH + trackW}
+          y2={rowY}
+          stroke="var(--color-border)"
+          strokeWidth={1}
+          strokeDasharray="4 2"
+          strokeOpacity={0.4}
+        />
+      )}
+
+      {/* Agent label */}
+      <text
+        x={LABEL_WIDTH - 8}
+        y={midY + 4}
+        fontSize={10}
+        fontFamily={FONT_MONO}
+        fontWeight="bold"
+        fill="var(--color-fg1)"
+        textAnchor="end"
+      >
+        {row.label}
+      </text>
+
+      {/* Bar track background */}
+      <rect
+        x={LABEL_WIDTH}
+        y={rowY + 2}
+        width={trackW}
+        height={ROW_HEIGHT - 4}
+        fill="var(--color-bg3)"
+        stroke="var(--color-border)"
+        strokeWidth={1}
+      />
+
+      {/* Bars */}
+      {row.bars.map((bar) => (
+        <BarRect
+          key={bar.barKey}
+          bar={bar}
+          agentId={row.agentId}
+          rowY={rowY}
+          trackW={trackW}
+          onBarClick={onBarClick}
+        />
+      ))}
+    </g>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Main component
+// ---------------------------------------------------------------------------
+
+/**
+ * GanttView — renders a Gantt chart as a pure SVG element.
+ *
+ * Viewport width: fills the container div (100% wide, fixed height).
+ * CSS variables are referenced directly in SVG fill/stroke attributes,
+ * so [data-theme="pop|dusk|night"] changes on <html> propagate instantly.
+ */
 export function GanttView(): JSX.Element {
+  const navigate = useNavigate();
+  const { rows, isLoading, error } = useGanttData();
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <div
+        data-testid="gantt-loading"
+        className="bg-bg2 border border-border rounded-card p-sp-4 text-fg2 text-fs-sm"
+      >
+        読み込み中…
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div
+        data-testid="gantt-error"
+        className="bg-bg2 border border-border rounded-card p-sp-4 text-fs-sm"
+        style={{ color: 'rgb(var(--error))' }}
+      >
+        接続エラー
+      </div>
+    );
+  }
+
+  const handleBarClick = (agentId: string) => {
+    navigate(`/agent/${agentId}`);
+  };
+
+  // SVG height computed from row count; TRACK_W + SVG_W are module-level constants.
+  const SVG_H = HEADER_H + rows.length * ROW_HEIGHT + 4;
+
   return (
     <div className="bg-bg2 border border-border rounded-card p-sp-4 font-sans">
-      {/* Header row */}
-      <div className="flex justify-between items-center mb-sp-2">
-        <h2 className="font-bold text-fs-sm tracking-wide text-fg1">
-          進捗ガント — 直近 1 時間
-        </h2>
-        <div className="flex gap-sp-1">
-          {['30m', '1h', '4h', 'all'].map((z, i) => (
-            <span
-              key={z}
-              className={`px-sp-2 py-[2px] text-[9px] border border-border rounded-ctrl cursor-pointer ${
-                i === 1 ? 'bg-accent text-bg2 font-bold' : 'bg-bg3 text-fg2'
-              }`}
-            >
-              {z}
-            </span>
-          ))}
-        </div>
-      </div>
-
-      {/* Time axis */}
-      <div
-        data-testid="gantt-time-axis"
-        className="flex pl-[130px] mb-sp-1 text-[9px] text-text-muted font-mono"
+      {/* Chart title */}
+      <h2
+        className="font-bold text-fs-sm tracking-wide mb-sp-2"
+        style={{ color: 'rgb(var(--fg1))' }}
       >
-        {TIME_TICKS.map((t, i, a) => (
-          <div
-            key={t}
-            style={{ width: `${100 / (a.length - 1)}%` }}
-            className={i === 0 ? 'text-left' : 'text-center'}
-          >
-            {t}
-          </div>
+        進捗ガント — 直近 1 時間
+      </h2>
+
+      {/* SVG chart */}
+      <svg
+        data-testid="gantt-svg"
+        viewBox={`0 0 ${SVG_W} ${SVG_H}`}
+        width="100%"
+        height={SVG_H}
+        style={{ display: 'block', overflow: 'visible' }}
+      >
+        {/* Vertical grid lines behind rows */}
+        <GridLines trackW={TRACK_W} totalH={SVG_H} />
+
+        {/* Time axis header */}
+        <TimeAxis trackW={TRACK_W} y={0} />
+
+        {/* Agent rows */}
+        {rows.map((row, idx) => (
+          <AgentRow
+            key={row.agentId}
+            row={row}
+            rowIdx={idx}
+            trackW={TRACK_W}
+            onBarClick={handleBarClick}
+          />
         ))}
-      </div>
 
-      {/* Rows */}
-      {MOCK_ROWS.map((row, ri) => (
-        <div
-          key={row.id}
-          data-testid="gantt-row"
-          className={`flex items-center h-11 ${ri > 0 ? 'border-t border-dashed border-border' : ''}`}
-        >
-          {/* Label */}
-          <div className="w-[130px] flex items-center gap-sp-1 shrink-0">
-            <span className="text-[10px] font-bold font-mono text-fg1 truncate">{row.label}</span>
-          </div>
-
-          {/* Bar track */}
-          <div className="relative flex-1 h-9 bg-bg3 border border-border overflow-hidden">
-            {/* Grid lines */}
-            {[25, 50, 75].map((p) => (
-              <div
-                key={p}
-                className="absolute top-0 bottom-0 w-px bg-border opacity-20"
-                style={{ left: `${p}%` }}
-              />
-            ))}
-
-            {/* Bars */}
-            {row.bars.map((bar, bi) => (
-              <div
-                key={bi}
-                data-testid="gantt-bar"
-                title={bar.label}
-                className={`absolute top-1.5 bottom-1.5 ${bar.colorClass} border border-border flex items-center pl-1 text-[9px] text-bg2 font-bold font-mono overflow-hidden whitespace-nowrap`}
-                style={{ left: `${bar.startPct}%`, width: `${bar.endPct - bar.startPct}%` }}
-              >
-                {bar.label}
-                {bar.live && (
-                  <span
-                    className="absolute -right-2 top-1/2 -translate-y-1/2 text-[10px]"
-                    aria-label="live"
-                  >
-                    🐈
-                  </span>
-                )}
-              </div>
-            ))}
-
-            {/* "now" indicator line */}
-            <div className="absolute top-0 bottom-0 w-[2px] bg-error" style={{ left: '95%' }} />
-          </div>
-        </div>
-      ))}
-
-      {/* Legend */}
-      <div className="flex gap-sp-3 mt-sp-2 text-[9px] text-text-muted">
-        <span>busy</span>
-        <span>review</span>
-        <span>TDD red</span>
-        <span>failed</span>
-        <span className="ml-auto">🐈 = ライブ伸長中</span>
-      </div>
+        {/* "now" indicator — rightmost position */}
+        <line
+          x1={LABEL_WIDTH + TRACK_W * 0.95}
+          y1={HEADER_H}
+          x2={LABEL_WIDTH + TRACK_W * 0.95}
+          y2={SVG_H}
+          stroke="var(--color-error)"
+          strokeWidth={2}
+        />
+      </svg>
     </div>
   );
 }

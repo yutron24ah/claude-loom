@@ -43,6 +43,17 @@
   --accent:      var(--primary);
   --accent-hover: var(--primary-hover);
 
+  /* ---------- Gantt-specific tokens ---------- */
+  /* WHY: Gantt SVG uses fill="var(--color-bar)" directly so theme switching
+     propagates to SVG elements without JS. Mapped from semantic aliases. */
+  --color-bar:       rgb(var(--accent));
+  --color-bar-text:  rgb(var(--surface));
+  --color-border:    rgb(var(--border));
+  --color-bg3:       rgb(var(--bg3));
+  --color-fg1:       rgb(var(--fg1));
+  --color-muted:     rgb(var(--text-muted));
+  --color-error:     rgb(var(--error));
+
   /* ---------- Type: family ---------- */
   --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI",
                "Hiragino Sans", "Yu Gothic UI", sans-serif;
