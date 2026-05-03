@@ -4,8 +4,16 @@
  * DOM assertions are limited to the container and overlay (not sprite rendering,
  * which is Phaser-internal and cannot be verified in jsdom).
  * Phaser is mocked globally in setup.ts.
+ * WHY mock AgentDetailNotes: M3.2 t3 added notes sub-component which uses tRPC hooks.
+ * RoomView tests focus on Phaser canvas and panel visibility, not notes behavior.
  */
-import { describe, it, expect, afterEach } from 'vitest';
+import { describe, it, expect, afterEach, vi } from 'vitest';
+
+// WHY: AgentDetailNotes uses tRPC hooks which require provider context.
+// RoomView tests focus on canvas and panel visibility, not notes — mock away.
+vi.mock('../../src/views/room/AgentDetailNotes', () => ({
+  AgentDetailNotes: () => null,
+}));
 import { render, screen, cleanup } from '@testing-library/react';
 import { RoomView } from '../../src/views/room/RoomView';
 
