@@ -380,6 +380,49 @@ M3.0 mock-only test の構造的 hole（Phaser を完全 vi.mock、canvas pixel 
 - **dependency**: `@playwright/test` (`ui/package.json` devDependencies)、`ui/e2e/` dir、`pnpm --filter @claude-loom/ui e2e` script、CI workflow に並列 step 追加（vitest と独立 fail で原因切り分け）
 - **frontend「自前 control」哲学整合**: §3.6.9.5 の library 依存最小化方針に対し、Playwright は「test infra」レイヤで application code には侵入せず、独立 infra として breaking risk を application 本体に伝播させない設計
 
+### 3.6.10 SSoT cross-check rule（M3.1 retro 由来、2026-05-03 から）
+
+#### 3.6.10.1 背景
+
+M3.1 t3 で `daemon/src/events/types.ts` の `planChangeEventSchema.status` enum が `'in_progress'` だった一方、DB schema (drizzle / `daemon/src/db/schema.ts`) と plan.ts route の status は `'doing'` に統一されとった。**M0.X 系列で看過されとった SSoT enum drift** を、M3.1 t3 の reviewer が **偶然** high severity finding として発見・修正。SSoT 規約持つ project で SSoT 群 (DB schema / event schema / UI store / config) 間の **cross-check 機構が無い** 構造 gap を露呈した（retro 2026-05-03-001 finding pj-002）。
+
+#### 3.6.10.2 Coding 原則: 文字列リテラル回避
+
+backend / frontend 問わず、code 中の文字列リテラル（特に enum / status / type 値）を可能な限り **変数・定数・enum 経由** で比較・参照する。文字列直接比較ではなく **typed constant の比較** で保守性と SSoT 整合性を上げる方針。
+
+- **理由**: 文字列直接記述は SSoT drift の温床、type system の保護を受けられず、refactor 時の検出が grep 頼みになる
+- **具体例**:
+  - ❌ `if (item.status === 'doing')` — 文字列直接
+  - ✅ `if (item.status === PlanItemStatus.Doing)` — enum 参照
+  - ✅ `import { planItemStatusEnum } from "../db/schema"` で primary SSoT を引っ張る
+
+#### 3.6.10.3 SSoT cross-check rule
+
+enum / schema / status 値を複数 file で共有する場合：
+
+1. **primary SSoT file 明示**: 当該値の source of truth となる単一 file を define（例: enum ならば DB schema が SSoT、event schema は派生）
+2. **派生 file は import 経由**: primary SSoT file から `import type` or `import { ... }` で参照し、派生定義禁止。型 export pattern (SPEC §12 「daemon が AppRouter / Drizzle schema type を export、frontend が import type ...」) を活用
+3. **import 不可な場合は test cross-check**: `<a>` と `<b>` で同 enum を独立に持つ必然性ある場合（例: zod schema と TS const が別 layer で必要）、両者の値が一致することを assert する test を必ず追加。`tests/REQUIREMENTS.md` に該当 cross-check assertion を REQ 化
+
+#### 3.6.10.4 適用対象
+
+primary SSoT 候補（M3.1 retro 時点）:
+
+| domain | primary SSoT | 派生 file 群 |
+|---|---|---|
+| plan_items status enum | `daemon/src/db/schema.ts` (Drizzle) | `daemon/src/events/types.ts` / `daemon/src/routes/plan.ts` / `ui/src/views/plan/*` / `ui/src/store/planConflict.ts` |
+| TodoWrite status | `daemon/src/events/types.ts` (`todoChangeEventSchema`) | `ui/src/live/useTodoWrite.ts` / `ui/src/views/plan/PlanView.tsx` |
+| toast event 種別 | `daemon/src/events/types.ts` (`loomEventSchema` discriminated union) | `ui/src/store/connection.ts` / `ui/src/notifications/toastBus.ts` |
+| review_mode | `templates/claude-loom/project.json.template` (`rules.review_mode`) | `agents/loom-developer.md` / skills/loom-review/* |
+
+#### 3.6.10.5 reviewer 観点への組込
+
+`agents/loom-reviewer.md` および `agents/loom-code-reviewer.md` の review checklist に「文字列リテラル直接比較の検出 → constant/enum 抽出提案 (severity: medium 候補)」「派生 file の SSoT cross-check 確認」を追加。
+
+#### 3.6.10.6 doc consistency checklist 連動
+
+`docs/DOC_CONSISTENCY_CHECKLIST.md` に M3.1 retro 関連 section を追加し、enum / schema を持つ file を編集した時の派生 file cross-check 項目を明記する。
+
 ### 3.7 プロジェクトライフサイクルと adopt 戦略
 
 claude-loom は **新規プロジェクトの立ち上げ** にも **既存プロジェクトの取り込み（adopt）** にも対応する。両者は明確に区別され、PM が異なるフローで処理する。
@@ -1829,3 +1872,4 @@ uninstall.sh の流れ:
 - 2026-04-27: §3.9 追加（M0.8 retro 機能、4 lens / 3-stage protocol / 3-file state / hybrid auto-apply / recursive 自己最適化）
 - 2026-04-27: §6.9.1 / §6.9.2 / §6.9.3 追加（M0.8 retro の user-prefs / project-prefs schema + merge 規則）
 - 2026-05-02: §3.6.9.7 追加 + §3.6.9.6 表 M3.1 行更新 (task 4→5、scope に visual regression infra 追記) + §12 確定値表に "Visual regression check (M3.1 から)" 行追加（res-001 確定 = Playwright e2e、retro 2026-05-02-002 由来、M3.1 spec phase 解決）
+- 2026-05-03: §3.6.10 新設「SSoT cross-check rule」+ Coding 原則「文字列リテラル回避、enum/定数経由比較」codify（retro 2026-05-03-001 pj-002 由来、M3.1 t3 で偶然発見した SSoT enum drift bug を構造 pattern として spec 化、user feedback memory 「avoid string literals, prefer typed constants/enums」を SSoT 昇格）
