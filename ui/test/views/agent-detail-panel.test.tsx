@@ -1,10 +1,19 @@
 /**
  * AgentDetailPanel TDD tests — Red phase (Task 9 Subagent A)
  * WHY: verify panel renders agent data and onClose fires.
+ * WHY mock AgentDetailNotes: M3.2 t3 added notes sub-component which uses tRPC hooks.
+ * AgentDetailPanel tests focus on panel structure, not notes behavior — notes are
+ * tested separately in agent-notes.test.tsx.
  */
 import { describe, it, expect, afterEach, vi } from 'vitest';
 import { render, screen, cleanup, fireEvent } from '@testing-library/react';
 import { AgentDetailPanel } from '../../src/views/room/AgentDetailPanel';
+
+// WHY: AgentDetailNotes uses tRPC hooks which require provider context.
+// Panel tests focus on panel structure, not notes — mock away the sub-component.
+vi.mock('../../src/views/room/AgentDetailNotes', () => ({
+  AgentDetailNotes: () => null,
+}));
 
 afterEach(() => {
   cleanup();

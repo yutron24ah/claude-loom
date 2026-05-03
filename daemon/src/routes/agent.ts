@@ -1,6 +1,6 @@
 // daemon/src/routes/agent.ts
 import { z } from "zod";
-import { eq, and } from "drizzle-orm";
+import { eq, and, desc } from "drizzle-orm";
 import { router, publicProcedure } from "../trpc.js";
 import { createDBClient } from "../db/client.js";
 import { subagents, agentPool } from "../db/schema.js";
@@ -52,5 +52,54 @@ export const agentRouter = router({
         .select()
         .from(agentPool)
         .where(eq(agentPool.projectId, input.projectId));
+    }),
+
+  /**
+   * markAttention — toggle the attention flag on a subagent.
+   * WHY: lets PM/user flag a specific subagent for follow-up without
+   * mutating unrelated fields. Returns the updated subagent row.
+   */
+  markAttention: publicProcedure
+    .input(
+      z.object({
+        agentId: z.string(),
+        flag: z.boolean(),
+      })
+    )
+    .mutation(async ({ input }) => {
+      await db
+        .update(subagents)
+        .set({ attention: input.flag })
+        .where(eq(subagents.subagentId, input.agentId));
+
+      const updated = await db
+        .select()
+        .from(subagents)
+        .where(eq(subagents.subagentId, input.agentId))
+        .get();
+
+      return updated ?? null;
+    }),
+
+  /**
+   * dispatchHistory — query all subagents spawned from a given parent session.
+   * WHY: the AgentDetailPanel needs a timeline of dispatches for a session.
+   * Orders by startedAt desc (newest first) for display purposes.
+   */
+  dispatchHistory: publicProcedure
+    .input(z.object({ agentId: z.string() }))
+    .query(async ({ input }) => {
+      return await db
+        .select({
+          subagentId: subagents.subagentId,
+          agentType: subagents.agentType,
+          status: subagents.status,
+          startedAt: subagents.startedAt,
+          endedAt: subagents.endedAt,
+          resultSummary: subagents.resultSummary,
+        })
+        .from(subagents)
+        .where(eq(subagents.parentSessionId, input.agentId))
+        .orderBy(desc(subagents.startedAt));
     }),
 });

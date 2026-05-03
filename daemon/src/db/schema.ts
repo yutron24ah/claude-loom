@@ -76,6 +76,9 @@ export const subagents = sqliteTable("subagents", {
   startedAt: integer("started_at", { mode: "timestamp_ms" }).notNull(),
   endedAt: integer("ended_at", { mode: "timestamp_ms" }),
   resultSummary: text("result_summary"),
+  // WHY: attention flag lets PM/user mark a specific subagent for follow-up.
+  // Stored as integer(boolean) to match SQLite convention; default false.
+  attention: integer("attention", { mode: "boolean" }).notNull().default(false),
 });
 
 export type Subagent = typeof subagents.$inferSelect;
