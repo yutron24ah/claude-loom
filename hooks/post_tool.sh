@@ -33,8 +33,32 @@ post_event() {
 
 SESSION_ID="${CLAUDE_SESSION_ID:-unknown}"
 TOOL_NAME="${CLAUDE_TOOL_NAME:-unknown}"
+# CLAUDE_TOOL_INPUT_FILE_PATH is set by Claude Code for Edit/Write tools (absolute path of edited file)
+FILE_PATH="${CLAUDE_TOOL_INPUT_FILE_PATH:-}"
 S_ESC=$(json_escape "$SESSION_ID")
 T_ESC=$(json_escape "$TOOL_NAME")
 TS=$(date +%s%3N)
-PAYLOAD='{"sessionId":'"$S_ESC"',"eventType":"post_tool","toolName":'"$T_ESC"',"payload":{"timestamp":'"$TS"'}}'
+
+# WHY: spec_edit_candidate flag tells the daemon to check if this is a SPEC file edit.
+# We flag it when tool is Edit or Write AND the file is a .md file.
+# The daemon resolves whether it matches the project's spec_path using the projectRootPath.
+SPEC_EDIT_CANDIDATE="false"
+PROJECT_ROOT_PATH=""
+if [ "$TOOL_NAME" = "Edit" ] || [ "$TOOL_NAME" = "Write" ]; then
+  if [ -n "$FILE_PATH" ]; then
+    case "$FILE_PATH" in
+      *.md)
+        SPEC_EDIT_CANDIDATE="true"
+        # Derive project root from git root of the edited file's directory
+        FILE_DIR="$(dirname "$FILE_PATH")"
+        PROJECT_ROOT_PATH="$(git -C "$FILE_DIR" rev-parse --show-toplevel 2>/dev/null || echo "")"
+        ;;
+    esac
+  fi
+fi
+
+FP_ESC=$(json_escape "$FILE_PATH")
+PR_ESC=$(json_escape "$PROJECT_ROOT_PATH")
+
+PAYLOAD='{"sessionId":'"$S_ESC"',"eventType":"post_tool","toolName":'"$T_ESC"',"payload":{"timestamp":'"$TS"',"filePath":'"$FP_ESC"',"specEditCandidate":'"$SPEC_EDIT_CANDIDATE"',"projectRootPath":'"$PR_ESC"'}}'
 post_event "$PAYLOAD"
