@@ -592,13 +592,13 @@ retro 2026-05-02-002 由来で M3.1 で扱う残 design 分岐:
 
 詳細: 未作成（M3 完了後 writing-plans で詳細化）
 
-- [ ] PostToolUse(Edit|Write) hook で SPEC 編集検知 <!-- id: m4-t1 status: todo -->
-- [ ] spec_changes / consistency_findings テーブル + diff 計算 <!-- id: m4-t2 status: todo -->
-- [ ] Phase A: 語彙抽出 + grep スクリーニング <!-- id: m4-t3 status: todo -->
-- [ ] Phase B: claude -p subprocess による意味解析 <!-- id: m4-t4 status: todo -->
-- [ ] Consistency Findings UI（severity 別、4 アクション） <!-- id: m4-t5 status: todo -->
-- [ ] Acknowledge → plan_items 自動追加 <!-- id: m4-t6 status: todo -->
-- [ ] バッジ通知 + WebSocket push <!-- id: m4-t7 status: todo -->
+- [x] PostToolUse(Edit|Write) hook で SPEC 編集検知 <!-- id: m4-t1 status: done -->
+- [x] spec_changes / consistency_findings テーブル + diff 計算 <!-- id: m4-t2 status: done -->
+- [x] Phase A: 語彙抽出 + grep スクリーニング <!-- id: m4-t3 status: done -->
+- [x] Phase B: claude -p subprocess による意味解析 <!-- id: m4-t4 status: done -->
+- [x] Consistency Findings UI（severity 別、4 アクション） <!-- id: m4-t5 status: done -->
+- [x] Acknowledge → plan_items 自動追加 <!-- id: m4-t6 status: done -->
+- [x] バッジ通知 + WebSocket push <!-- id: m4-t7 status: done -->
 
 ## マイルストーン M5: Integration + Polish
 
