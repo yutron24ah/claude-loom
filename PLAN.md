@@ -526,10 +526,10 @@ retro 2026-05-02-002 由来で M3.1 で扱う残 design 分岐:
 技術 risk 軸: **複雑 design (β-3 hybrid sync) + visual regression infra 初導入を独立 milestone 化、edge case finding を retro 集中扱い**。
 
 - [x] Plan View 短期レーン（TodoWrite mirror、read-only、daemon `todoChange` subscription） <!-- id: m3.1-t1 status: done -->
-- [ ] Plan View 長期レーン（plan_items ツリー、編集可、daemon mutation 接続） <!-- id: m3.1-t2 status: todo -->
+- [x] Plan View 長期レーン（plan_items ツリー、編集可、daemon mutation 接続） <!-- id: m3.1-t2 status: done -->
 - [ ] PLAN.md パース + 双方向同期（chokidar + 500ms debounce + last-write-wins + plan_conflict_detected toast + localStorage backup） <!-- id: m3.1-t3 status: todo -->
 - [x] 進捗ビュー（自前 SVG Gantt、リアクティブ bar、3 theme 統合、行 click → Agent Detail navigate） <!-- id: m3.1-t4 status: done -->
-- [ ] Playwright e2e infra 導入（`@playwright/test` devDep + `ui/e2e/` dir + `pnpm --filter @claude-loom/ui e2e` script + CI workflow 並列 step + Room View pop theme screenshot baseline 1 件確立、test 大量化は M3.2 以降に分配） <!-- id: m3.1-t5 status: todo -->
+- [x] Playwright e2e infra 導入（`@playwright/test` devDep + `ui/e2e/` dir + `pnpm --filter @claude-loom/ui e2e` script + CI workflow 並列 step + Room View pop theme screenshot baseline 1 件確立、test 大量化は M3.2 以降に分配） <!-- id: m3.1-t5 status: done -->
 
 **M3.1 完成基準**：
 - Plan View 短期 (TodoWrite mirror) が daemon `todoChange` subscription で live 更新
