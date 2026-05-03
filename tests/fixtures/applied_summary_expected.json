@@ -2,7 +2,7 @@
   "schema_version": 1,
   "retro_id": "test-dry-run",
   "generated_at": 1778025600,
-  "total_retro_sessions": 3,
+  "total_retro_sessions": 4,
   "applied_findings": [
     {
       "finding_id": "pj-002",
@@ -201,6 +201,104 @@
         "apply_type": "milestone",
         "note": "milestone: M0.11.1 lifecycle tracking milestone insertion (fd3c1c3)"
       }
+    },
+    {
+      "finding_id": "pj-001",
+      "origin_retro_id": "2026-05-03-001",
+      "category": "readme-staleness",
+      "proposal_type": "symptomatic",
+      "summary": "README.md に M3.0 (Phaser 4 Room View) / M3.1 (Plan View / Gantt SVG / 双方向同期 / Pl",
+      "applied_in": {
+        "commit_sha": "97bfe61",
+        "milestone_tag": null,
+        "applied_at": 1778025600,
+        "apply_type": "immediate"
+      },
+      "last_apply_history_entry": null
+    },
+    {
+      "finding_id": "pj-002",
+      "origin_retro_id": "2026-05-03-001",
+      "category": "spec-drift-architectural",
+      "proposal_type": "structural",
+      "summary": "M3.1 t3 reviewer が daemon/src/events/types.ts の planChangeEventSchema.status enu",
+      "applied_in": {
+        "commit_sha": "7345276",
+        "milestone_tag": null,
+        "applied_at": 1778025600,
+        "apply_type": "immediate"
+      },
+      "last_apply_history_entry": null
+    },
+    {
+      "finding_id": "proc-001",
+      "origin_retro_id": "2026-05-03-001",
+      "category": "process-tdd-violation",
+      "proposal_type": "structural",
+      "summary": "Strategy b (PM 統合 commit) を採用した M3.1 で test ファイルと impl ファイルが同 commit に統合され、git h",
+      "applied_in": {
+        "commit_sha": "acd0fac",
+        "milestone_tag": null,
+        "applied_at": 1778025600,
+        "apply_type": "immediate"
+      },
+      "last_apply_history_entry": null
+    },
+    {
+      "finding_id": "proc-002",
+      "origin_retro_id": "2026-05-03-001",
+      "category": "process-blocker-pattern",
+      "proposal_type": "structural",
+      "summary": "M3.1 t4 (dev-B) と t3 (dev-A) で reviewer initial verdict needs_fix を受けた dev が **i",
+      "applied_in": {
+        "commit_sha": "acd0fac",
+        "milestone_tag": null,
+        "applied_at": 1778025600,
+        "apply_type": "immediate"
+      },
+      "last_apply_history_entry": null
+    },
+    {
+      "finding_id": "res-001",
+      "origin_retro_id": "2026-05-03-001",
+      "category": "researcher-ux-improvement",
+      "proposal_type": "symptomatic",
+      "summary": "ui/src/trpc/client.ts L58 `WS_URL = 'ws://localhost:5757/trpc'` literal、SPEC §3.",
+      "applied_in": {
+        "commit_sha": "97bfe61",
+        "milestone_tag": null,
+        "applied_at": 1778025600,
+        "apply_type": "immediate"
+      },
+      "last_apply_history_entry": null
+    },
+    {
+      "finding_id": "meta-001",
+      "origin_retro_id": "2026-05-03-001",
+      "category": "meta-auto-apply-proposal",
+      "proposal_type": "structural",
+      "summary": "approval_history 現状: process-blocker-pattern 4/4 (3 件超え) / spec-drift-architectu",
+      "applied_in": {
+        "commit_sha": "2ad7468",
+        "milestone_tag": null,
+        "applied_at": 1778025600,
+        "apply_type": "immediate"
+      },
+      "last_apply_history_entry": null
+    },
+    {
+      "finding_id": "meta-003",
+      "origin_retro_id": "2026-05-03-001",
+      "category": "meta-auto-apply-proposal",
+      "proposal_type": "structural",
+      "summary": "M0.11.1 applied_summary architecture は **status: approved + applied_in: not null",
+      "applied_in": {
+        "commit_sha": "85fe8bd",
+        "milestone_tag": null,
+        "applied_at": 1778025600,
+        "apply_type": "milestone"
+      },
+      "last_apply_history_entry": null
     }
   ]
 }
