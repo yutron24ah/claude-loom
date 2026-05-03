@@ -8,10 +8,13 @@
  * M2 Task 9: ported from prototype screens-b.jsx PlanView component.
  * M2 Task 10: right pane wired to live daemon via usePlanItems hook.
  * M3.1 t1: left pane wired to live daemon via useTodoWrite hook (replaces MOCK_TODOS).
+ * M3.1 t2: right pane edit-wired — + add button, status toggle, inline title edit.
  * PlanItem type aligns with daemon/src/db/schema.ts planItems schema.
  */
+import { useState } from 'react';
 import { usePlanItems } from '../../live/usePlanItems';
 import { useTodoWrite } from '../../live/useTodoWrite';
+import { usePlanMutations } from '../../live/usePlanMutations';
 import type { PlanItem } from '@claude-loom/daemon';
 
 /** Status of a todo or plan item. */
@@ -44,9 +47,70 @@ function daemonStatusColorClass(status: PlanItem['status']): string {
   }
 }
 
+/**
+ * Cycle status: todo → doing → done → todo.
+ * WHY: single consistent cycle matches the daemon enum progression.
+ */
+function nextStatus(current: PlanItem['status']): PlanItem['status'] {
+  switch (current) {
+    case 'todo':
+      return 'doing';
+    case 'doing':
+      return 'done';
+    case 'done':
+      return 'todo';
+  }
+}
+
 export function PlanView(): JSX.Element {
   const { todos } = useTodoWrite();
   const { data: planItems, isLoading, error } = usePlanItems();
+  const { upsertItem, updateItemStatus } = usePlanMutations();
+
+  /**
+   * editingId: which plan item is currently being inline-edited (null = none).
+   * WHY: local UI state — does not need to live in a global store.
+   */
+  const [editingId, setEditingId] = useState<number | null>(null);
+
+  /**
+   * editingTitle: the current draft value while inline editing.
+   * WHY: controlled input avoids contentEditable complexity (KISS).
+   */
+  const [editingTitle, setEditingTitle] = useState<string>('');
+
+  /** Enter inline edit mode for a plan item. */
+  function handleTitleClick(item: PlanItem): void {
+    setEditingId(item.id);
+    setEditingTitle(item.title);
+  }
+
+  /** Commit inline edit on blur — only fire upsert if title actually changed. */
+  function handleTitleBlur(item: PlanItem): void {
+    setEditingId(null);
+    if (editingTitle !== item.title) {
+      upsertItem({
+        id: item.id,
+        title: editingTitle,
+        status: item.status,
+        position: item.position,
+        parentId: item.parentId,
+        body: item.body,
+        sourcePath: item.sourcePath,
+      });
+    }
+  }
+
+  /** Add a new root-level plan item. */
+  function handleAddItem(): void {
+    const position = planItems !== undefined ? planItems.length : 0;
+    upsertItem({
+      title: '新しいアイテム',
+      status: 'todo',
+      position,
+      parentId: null,
+    });
+  }
 
   return (
     <div className="grid grid-cols-2 gap-sp-3 font-sans">
@@ -89,7 +153,7 @@ export function PlanView(): JSX.Element {
         ))}
       </div>
 
-      {/* ---- Right pane: long-term plan tree (live tRPC) ---- */}
+      {/* ---- Right pane: long-term plan tree (live tRPC, editable) ---- */}
       <div
         data-testid="plan-long-term"
         className="bg-bg2 border border-border rounded-card p-sp-4"
@@ -98,9 +162,10 @@ export function PlanView(): JSX.Element {
           <h2 className="font-bold text-fs-sm tracking-wide text-fg1">
             長期 — plan_items ツリー
           </h2>
-          {/* + add button — display only in M2 */}
+          {/* + add button — fires upsert mutation (M3.1 t2) */}
           <button
             type="button"
+            onClick={handleAddItem}
             className="px-sp-2 py-[2px] text-[9px] bg-accent text-bg2 border border-border rounded-ctrl font-bold"
           >
             + 追加
@@ -130,36 +195,57 @@ export function PlanView(): JSX.Element {
           </p>
         )}
 
-        {/* Data: render live plan items from daemon */}
+        {/* Data: render live plan items from daemon (editable) */}
         {!isLoading && error === null && planItems !== undefined && planItems.length > 0 && (
           planItems.map((item, i) => {
             const level = item.parentId === null ? 0 : 1;
+            const isEditing = editingId === item.id;
             return (
-            <div
-              key={item.id}
-              data-testid="plan-item"
-              data-level={level}
-              className={`flex items-start gap-sp-2 py-[5px] text-fs-xs ${
-                i < planItems.length - 1 ? 'border-b border-dashed border-border' : ''
-              }`}
-              style={{ paddingLeft: level * 18 }}
-            >
-              {/* Expand/indent marker */}
-              <span className="text-text-muted">{level === 0 ? '▸' : '└'}</span>
-              {/* Status square */}
-              <span
-                className={`mt-[3px] w-[10px] h-[10px] shrink-0 border border-border ${daemonStatusColorClass(item.status)}`}
-              />
-              {/* Title */}
-              <span
-                className={`flex-1 ${level === 0 ? 'font-bold' : 'font-normal'} text-fg1`}
+              <div
+                key={item.id}
+                data-testid="plan-item"
+                data-level={level}
+                className={`flex items-start gap-sp-2 py-[5px] text-fs-xs ${
+                  i < planItems.length - 1 ? 'border-b border-dashed border-border' : ''
+                }`}
+                style={{ paddingLeft: level * 18 }}
               >
-                {item.title}
-              </span>
-              {/* Status label */}
-              <span className="text-[9px] text-text-muted font-mono">{item.status}</span>
-            </div>
-          );
+                {/* Expand/indent marker */}
+                <span className="text-text-muted">{level === 0 ? '▸' : '└'}</span>
+                {/* Status square — clickable to cycle status */}
+                <button
+                  type="button"
+                  data-testid="plan-item-status"
+                  aria-label={`status: ${item.status}`}
+                  onClick={() => updateItemStatus({ id: item.id, status: nextStatus(item.status) })}
+                  className={`mt-[3px] w-[10px] h-[10px] shrink-0 border border-border cursor-pointer ${daemonStatusColorClass(item.status)}`}
+                />
+                {/* Title — click to enter inline edit mode */}
+                {isEditing ? (
+                  <input
+                    data-testid={`plan-item-input-${item.id}`}
+                    type="text"
+                    value={editingTitle}
+                    autoFocus
+                    onChange={(e) => setEditingTitle(e.target.value)}
+                    onBlur={() => handleTitleBlur(item)}
+                    className={`flex-1 bg-transparent border-b border-accent text-fs-xs outline-none ${
+                      level === 0 ? 'font-bold' : 'font-normal'
+                    } text-fg1`}
+                  />
+                ) : (
+                  <span
+                    data-testid={`plan-item-title-${item.id}`}
+                    onClick={() => handleTitleClick(item)}
+                    className={`flex-1 cursor-text ${level === 0 ? 'font-bold' : 'font-normal'} text-fg1`}
+                  >
+                    {item.title}
+                  </span>
+                )}
+                {/* Status label */}
+                <span className="text-[9px] text-text-muted font-mono">{item.status}</span>
+              </div>
+            );
           })
         )}
       </div>

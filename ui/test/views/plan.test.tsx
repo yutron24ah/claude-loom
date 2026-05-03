@@ -17,9 +17,10 @@ import { render, screen, cleanup } from '@testing-library/react';
 import type { PlanItem } from '@claude-loom/daemon';
 
 // WHY: vi.hoisted ensures the mock fns are available when vi.mock factory runs
-const { mockUsePlanItems, mockUseTodoWrite } = vi.hoisted(() => ({
+const { mockUsePlanItems, mockUseTodoWrite, mockUsePlanMutations } = vi.hoisted(() => ({
   mockUsePlanItems: vi.fn(),
   mockUseTodoWrite: vi.fn(),
+  mockUsePlanMutations: vi.fn(),
 }));
 
 vi.mock('@/live/usePlanItems', () => ({
@@ -28,6 +29,11 @@ vi.mock('@/live/usePlanItems', () => ({
 
 vi.mock('@/live/useTodoWrite', () => ({
   useTodoWrite: mockUseTodoWrite,
+}));
+
+// WHY: PlanView now calls usePlanMutations (M3.1 t2); mock to avoid tRPC context error
+vi.mock('@/live/usePlanMutations', () => ({
+  usePlanMutations: mockUsePlanMutations,
 }));
 
 import { PlanView } from '../../src/views/plan/PlanView';
@@ -46,10 +52,19 @@ const DEFAULT_MOCK_TODOS = [
 beforeEach(() => {
   mockUsePlanItems.mockClear();
   mockUseTodoWrite.mockClear();
+  mockUsePlanMutations.mockClear();
   // Default: connected, no data yet (empty plan items)
   mockUsePlanItems.mockReturnValue({ data: [], isLoading: false, error: null });
   // Default: 3 mock todos for short-term pane
   mockUseTodoWrite.mockReturnValue({ todos: DEFAULT_MOCK_TODOS, isLoading: false });
+  // Default: no-op mutations (M3.1 t2 — PlanView calls usePlanMutations)
+  mockUsePlanMutations.mockReturnValue({
+    upsertItem: vi.fn(),
+    updateItemStatus: vi.fn(),
+    deleteItem: vi.fn(),
+    isUpsertPending: false,
+    isUpdateStatusPending: false,
+  });
 });
 
 // Helper to create a minimal PlanItem
