@@ -271,6 +271,32 @@ retro 2026-05-02-002 で観測された **lifecycle tracking 不在** を構造�
 - dry-run test pass (rollback 前安全網、t11 → t12 順序遵守)
 - `tag m0.11.1-complete` 設置、`m0`〜`m3.0-complete` 全保持
 
+## マイルストーン M0.11.2: Pending Lifecycle Tracking（M0.11.1 next iteration）
+
+詳細: 未作成（spec phase 開始時に `loom-write-plan` skill で詳細化）
+retro 起源: `docs/retro/2026-05-03-001-report.md` finding meta-003 (structural、M0.X cleanup 系列候補)
+
+retro 2026-05-03-001 で観測された **pending finding lifecycle tracking 不在** を構造的に解決する milestone。M0.11.1 で applied finding の lifecycle tracking architecture (`applied_summary.json`) を確立したが、**status: pending のまま carryover される finding** は applied_summary に集約されず、4 lens は 'pending として宙ぶらりん状態' を context として取得できん。本 retro で res-001 (carryover from 2026-05-02-001) と proc-003 (parallel-batch audit log carryover) が surface したが、stale 排除でも apply 候補でもない、'未処理の宙ぶらりん' 状態が permanent に積み上がる pattern。M0.11.1 lifecycle tracking architecture の **next iteration** として proposed。
+
+### 設計合意候補（M0.11.2 spec phase で詰める）
+
+- **pending_summary schema 新設**: SPEC §3.9.x or §6.9.x で `pending_summary.json` schema 定義、retro-pm Stage 0 で過去全 retro session の status: pending findings 集約
+- **4 lens prompt 拡張**: `pending_summary_path` 注入、lens は applied_summary と pending_summary 両方を `Read` で参照、'pending carryover' を re-up じゃなく 'still relevant?' assessment 対象として扱う
+- **finding lifecycle 状態遷移 formalize**: SPEC §3.9.x で pending → approved → applied (M0.11.1 既存) + pending → expired (TTL or N session 越え auto-close) + pending → re-evaluated-still-relevant (lens 判定で本 retro の新 finding に格上げ) を define
+- **migration**: 既存 4+ retro session の pending.json から carryover 候補抽出 + lifecycle field 後付け (M0.11.1 migration script の延長)
+
+### Task （spec phase で確定後 list 化、現時点 candidate のみ）
+
+- [ ] SPEC §3.9.x or §6.9.x に pending_summary schema 新設 <!-- id: m0.11.2-t1 status: todo -->
+- [ ] retro-pm Stage 0 で pending_summary.json lazy build mechanism 追加 <!-- id: m0.11.2-t2 status: todo -->
+- [ ] 4 lens prompt に pending_summary_path injection + 'still relevant?' assessment guidance 追加 <!-- id: m0.11.2-t3 status: todo -->
+- [ ] finding lifecycle 状態遷移 (pending → expired auto-close 等) formalize <!-- id: m0.11.2-t4 status: todo -->
+- [ ] migration script: 既存 retro session の pending.json に lifecycle field 後付け <!-- id: m0.11.2-t5 status: todo -->
+- [ ] tests 拡張 (pending_summary build + auto-expiration assertion) <!-- id: m0.11.2-t6 status: todo -->
+- [ ] tag m0.11.2-complete 設置、m0〜m3.1-complete 全保持 <!-- id: m0.11.2-t7 status: todo -->
+
+**M0.11.2 着手タイミング**: M3.2 (UI MVP closure) 完了後、M4 (doc consistency v1) 着手前に挿入を推奨。M0.X cleanup 系列 (M0.11.1 / M0.13 / M0.14 と同 family) として short milestone (推定 5-7 task)。本 milestone は SPEC §3.9.x P4 (Root cause first) の 2 回目 application、M0.11.1 の lifecycle tracking architecture を pending side に拡張する cumulative refinement。
+
 ## マイルストーン M0.12: Coexistence Mode（既存 PJ 検出 + 機能 opt-in/opt-out）
 
 詳細: `docs/plans/2026-04-29-claude-loom-m0.12-coexistence.md`
