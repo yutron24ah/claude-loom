@@ -1,0 +1,93 @@
+name: CI
+
+on:
+  push:
+    branches: [main, 'feat/**', 'fix/**', 'chore/**', 'refactor/**', 'test/**']
+  pull_request:
+    branches: [main]
+
+jobs:
+  # ──────────────────────────────────────────────────────────
+  # vitest — unit / integration tests (UI + daemon)
+  # WHY: independent job so playwright failures don't mask unit failures
+  # ──────────────────────────────────────────────────────────
+  vitest:
+    name: vitest (UI + daemon)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v3
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Build daemon (type-check)
+        run: pnpm --filter @claude-loom/daemon build
+
+      - name: Run UI unit tests
+        run: pnpm --filter @claude-loom/ui test
+
+      - name: Run daemon unit tests
+        run: pnpm --filter @claude-loom/daemon test
+
+  # ──────────────────────────────────────────────────────────
+  # playwright — e2e visual regression tests (UI)
+  # WHY: separate job enables independent failure diagnosis.
+  #      vitest catches logic bugs; playwright catches visual regressions.
+  #      SPEC §3.6.9.7 (res-001) requires this as a distinct CI layer.
+  # ──────────────────────────────────────────────────────────
+  playwright:
+    name: playwright e2e (UI visual regression)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v3
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install
+
+      # Cache Playwright browser binaries to avoid re-downloading ~200MB on every run
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        id: playwright-cache
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-playwright-
+
+      - name: Install Playwright Chromium browser
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: pnpm --filter @claude-loom/ui e2e:install
+
+      - name: Run Playwright e2e tests
+        run: pnpm --filter @claude-loom/ui e2e
+
+      # Upload screenshots on failure for diff inspection
+      - name: Upload Playwright test results on failure
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-test-results
+          # WHY: outputDir in playwright.config.ts is './test-results' relative to
+          # the config at ui/e2e/ — so the actual path from repo root is ui/e2e/test-results/
+          path: ui/e2e/test-results/
+          retention-days: 7

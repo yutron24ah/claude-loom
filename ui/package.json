@@ -8,6 +8,8 @@
     "build": "vite build",
     "preview": "vite preview",
     "test": "vitest run",
+    "e2e": "playwright test --config e2e/playwright.config.ts",
+    "e2e:install": "playwright install chromium",
     "prototype": "serve prototype -p 8080 -L",
     "prototype:open": "serve prototype -p 8080"
   },
@@ -24,6 +26,7 @@
     "zustand": "^4.5.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.49.0",
     "@testing-library/jest-dom": "^6.6.0",
     "@testing-library/react": "^14.3.0",
     "@types/react": "^18.3.0",
