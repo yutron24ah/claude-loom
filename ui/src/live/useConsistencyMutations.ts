@@ -5,8 +5,9 @@
  * so ConsistencyViewLive stays a pure rendering + interaction component (SRP).
  * Pattern follows usePlanMutations.ts (M3.1).
  *
- * Cache invalidation: all mutations call utils.consistency.list.invalidate()
- * after success so the live query refetches with updated finding statuses.
+ * Cache invalidation: all mutations call utils.consistency.list.invalidate().
+ * M4 t6: acknowledgeFinding now calls acknowledgeAndCreatePlanItem which also
+ * invalidates plan.list (new plan item was created from the finding).
  *
  * openInEditor: uses vscode://file/<path> URL scheme for simple M4 impl.
  * WHY vscode:// only: M5 polish concern — covers the common dev env case
@@ -20,7 +21,11 @@ import { trpc } from '../trpc/client';
 const PROJECT_ID = 'claude-loom';
 
 export interface UseConsistencyMutationsResult {
-  /** Set finding status to 'acknowledged'. */
+  /**
+   * Acknowledge finding AND create a plan_item from it (SPEC §7.5 Step 6).
+   * WHY: M4 t6 — acknowledgement promotes the finding to the long-term plan lane.
+   * Internally calls acknowledgeAndCreatePlanItem mutation (not bare acknowledge).
+   */
   acknowledgeFinding: (id: number) => void;
   /** Set finding status to 'fixed'. */
   markFindingFixed: (id: number) => void;
@@ -41,9 +46,14 @@ export interface UseConsistencyMutationsResult {
 export function useConsistencyMutations(): UseConsistencyMutationsResult {
   const utils = trpc.useUtils();
 
-  const acknowledgeMutation = trpc.consistency.acknowledge.useMutation({
+  // M4 t6: use acknowledgeAndCreatePlanItem instead of bare acknowledge.
+  // WHY: SPEC §7.5 Step 6 — Acknowledge = plan_items 追加 are unified.
+  // On success: invalidate both consistency.list (status changed) and
+  // plan.list (new plan item created from the finding).
+  const acknowledgeMutation = trpc.consistency.acknowledgeAndCreatePlanItem.useMutation({
     onSuccess: () => {
       void utils.consistency.list.invalidate({ projectId: PROJECT_ID });
+      void utils.plan.list.invalidate({ projectId: PROJECT_ID });
     },
   });
 
@@ -60,7 +70,8 @@ export function useConsistencyMutations(): UseConsistencyMutationsResult {
   });
 
   function acknowledgeFinding(id: number): void {
-    acknowledgeMutation.mutate({ id });
+    // M4 t6: pass findingId + projectId for the combined acknowledge+plan mutation.
+    acknowledgeMutation.mutate({ findingId: id, projectId: PROJECT_ID });
   }
 
   function markFindingFixed(id: number): void {

@@ -85,3 +85,24 @@ export const FindingTypeSchema = z.enum([
   FINDING_TYPE.SEMANTIC_DRIFT,
   FINDING_TYPE.TERM_MENTION,
 ]);
+
+// ---------------------------------------------------------------------------
+// plan_items.source — M4 t6: consistency findings → plan_items integration
+// WHY §3.6.10: SSoT enum for plan_items.source values.
+// CONSISTENCY = generated from consistency_finding acknowledge action.
+// ---------------------------------------------------------------------------
+export const PLAN_ITEM_SOURCE = {
+  CONSISTENCY: "consistency",
+  MANUAL: "manual",
+  SPEC: "spec",
+} as const;
+
+export type PlanItemSource =
+  (typeof PLAN_ITEM_SOURCE)[keyof typeof PLAN_ITEM_SOURCE];
+
+// ---------------------------------------------------------------------------
+// Title prefix for plan_items generated from consistency_findings.
+// WHY §3.6.10: string literal SSoT — never use raw "[整合性]" in code,
+// always import this constant.
+// ---------------------------------------------------------------------------
+export const FINDING_TO_PLAN_TITLE_PREFIX = "[整合性]";

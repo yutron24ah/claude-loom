@@ -16,6 +16,13 @@ export const configSchema = z.object({
   eventRetentionDays: z.number().int().min(1).default(30),
   eventMaxSizeMb: z.number().int().min(1).default(200),
   dbPath: z.string().default(`${homedir()}/.claude-loom/loom.db`),
+  // WHY consistency sub-object: SPEC §6.10 — consistency analysis config is grouped
+  // to keep the top-level config flat and avoid field name collisions with future modules.
+  consistency: z
+    .object({
+      claude_cmd: z.string().default("claude"),
+    })
+    .default({}),
 });
 
 export type Config = z.infer<typeof configSchema>;

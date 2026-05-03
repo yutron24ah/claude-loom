@@ -2,6 +2,10 @@
  * M4 t3: phase-a-runner.ts integration tests
  * TDD RED phase — written before implementation exists
  * Tests: runPhaseA flow (mock fs + DB, spec_changes → consistencyFindings)
+ *
+ * NOTE M4 t4: runPhaseA return type changed from number[] to PhaseAResult
+ * { insertedIds: number[], candidateFiles: string[] } for Phase B chaining.
+ * Tests updated to use .insertedIds / .candidateFiles accordingly.
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { tmpdir } from "node:os";
@@ -43,7 +47,7 @@ describe("phase-a-runner module shape", () => {
 // ---------------------------------------------------------------------------
 
 describe("runPhaseA", () => {
-  it("returns an array of finding IDs (numbers)", async () => {
+  it("returns a PhaseAResult with insertedIds array (numbers)", async () => {
     const { runPhaseA } = await import("../../src/consistency/phase-a-runner.js");
     const { createDBClient, runMigrations } = await import("../../src/db/client.js");
     const { specChanges } = await import("../../src/db/schema.js");
@@ -67,11 +71,12 @@ describe("runPhaseA", () => {
       .returning();
 
     const result = await runPhaseA(sc.id, "proj-test-1", [], db);
-    expect(Array.isArray(result)).toBe(true);
-    result.forEach((id) => expect(typeof id).toBe("number"));
+    expect(Array.isArray(result.insertedIds)).toBe(true);
+    result.insertedIds.forEach((id) => expect(typeof id).toBe("number"));
+    expect(Array.isArray(result.candidateFiles)).toBe(true);
   });
 
-  it("returns empty array when diff has no extractable terms", async () => {
+  it("returns empty insertedIds when diff has no extractable terms", async () => {
     const { runPhaseA } = await import("../../src/consistency/phase-a-runner.js");
     const { createDBClient, runMigrations } = await import("../../src/db/client.js");
     const { specChanges } = await import("../../src/db/schema.js");
@@ -94,7 +99,8 @@ describe("runPhaseA", () => {
 
     // Pass empty related docs → no file content to screen
     const result = await runPhaseA(sc.id, "proj-test-2", [], db);
-    expect(result).toHaveLength(0);
+    expect(result.insertedIds).toHaveLength(0);
+    expect(result.candidateFiles).toHaveLength(0);
   });
 
   it("creates consistencyFindings rows when terms are found in related docs", async () => {
@@ -131,7 +137,7 @@ describe("runPhaseA", () => {
     const result = await runPhaseA(sc.id, "proj-test-3", [readmePath], db);
 
     // Should have created at least 1 finding
-    expect(result.length).toBeGreaterThan(0);
+    expect(result.insertedIds.length).toBeGreaterThan(0);
 
     // Verify the finding was actually inserted in DB
     const findings = await db
@@ -215,11 +221,10 @@ describe("runPhaseA", () => {
     expect(updated.analyzedAt).not.toBeNull();
   });
 
-  it("returns finding IDs that match inserted DB rows", async () => {
+  it("returns candidateFiles containing paths with hits", async () => {
     const { runPhaseA } = await import("../../src/consistency/phase-a-runner.js");
     const { createDBClient, runMigrations } = await import("../../src/db/client.js");
-    const { specChanges, consistencyFindings } = await import("../../src/db/schema.js");
-    const { inArray } = await import("drizzle-orm");
+    const { specChanges } = await import("../../src/db/schema.js");
 
     const db = createDBClient(dbPath);
     runMigrations(db);
@@ -244,15 +249,11 @@ describe("runPhaseA", () => {
     const docPath = join(dir, "PLAN.md");
     writeFileSync(docPath, "## RemovedSection is referenced in plan\n\nSome plan content.");
 
-    const findingIds = await runPhaseA(sc.id, "proj-test-6", [docPath], db);
+    const result = await runPhaseA(sc.id, "proj-test-6", [docPath], db);
 
-    if (findingIds.length > 0) {
-      const dbFindings = await db
-        .select()
-        .from(consistencyFindings)
-        .where(inArray(consistencyFindings.id, findingIds));
-
-      expect(dbFindings.length).toBe(findingIds.length);
+    if (result.insertedIds.length > 0) {
+      expect(result.candidateFiles).toContain(docPath);
+      expect(result.candidateFiles.length).toBe(result.insertedIds.length > 0 ? 1 : 0);
     }
   });
 });

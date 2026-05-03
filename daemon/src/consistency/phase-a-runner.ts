@@ -15,6 +15,22 @@ import { SPEC_CHANGE_STATUS, FINDING_STATUS } from "../constants/consistency.js"
 // Inferred DB type from createDBClient return
 type DB = ReturnType<typeof createDBClient>;
 
+// ---------------------------------------------------------------------------
+// Return type
+// ---------------------------------------------------------------------------
+
+/**
+ * Result of Phase A analysis.
+ * WHY struct (not bare number[]): Phase B needs candidateFiles to know which
+ * files to forward to claude -p. Returning both avoids a second DB round-trip.
+ */
+export interface PhaseAResult {
+  /** IDs of inserted consistency_findings rows. */
+  insertedIds: number[];
+  /** File paths that had at least one screening hit (candidate for Phase B). */
+  candidateFiles: string[];
+}
+
 /**
  * Run Phase A analysis for a given spec_changes row.
  *
@@ -26,7 +42,7 @@ type DB = ReturnType<typeof createDBClient>;
  *  5. INSERT consistency_findings for each hit
  *  6. UPDATE spec_changes.status → 'analyzed', set analyzedAt
  *
- * Returns array of inserted consistency_findings IDs.
+ * Returns PhaseAResult with inserted finding IDs and candidate file paths.
  *
  * @param specChangeId  Primary key of the spec_changes row to analyse
  * @param projectId     Project identifier (passed through to finding context)
@@ -38,7 +54,7 @@ export async function runPhaseA(
   projectId: string,
   relatedDocPaths: string[],
   db: DB,
-): Promise<number[]> {
+): Promise<PhaseAResult> {
   // 1. Fetch spec change row
   const [specChange] = await db
     .select()
@@ -69,6 +85,7 @@ export async function runPhaseA(
 
   // 5. Insert consistency_findings rows
   const insertedIds: number[] = [];
+  const candidateFilesSet = new Set<string>();
   const now = new Date();
 
   for (const sf of screeningFindings) {
@@ -86,6 +103,8 @@ export async function runPhaseA(
       .returning();
 
     insertedIds.push(inserted.id);
+    // Track which files had hits — Phase B will re-analyze these for semantic drift
+    candidateFilesSet.add(sf.targetPath);
   }
 
   // 6. Update spec_changes status → analyzed
@@ -97,5 +116,8 @@ export async function runPhaseA(
     })
     .where(eq(specChanges.id, specChangeId));
 
-  return insertedIds;
+  return {
+    insertedIds,
+    candidateFiles: Array.from(candidateFilesSet),
+  };
 }

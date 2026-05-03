@@ -1,8 +1,12 @@
 /**
- * TDD tests for useConsistencyMutations hook (RED phase — written before implementation).
+ * TDD tests for useConsistencyMutations hook.
  *
  * WHY: Verify mutations call correct tRPC procedures and invalidate the list cache.
  * Follows usePlanMutations pattern (M3.1).
+ *
+ * M4 t6 update: acknowledgeFinding now routes through acknowledgeAndCreatePlanItem
+ * (not bare acknowledge). Mock updated to match new tRPC procedure.
+ * Detailed tests for the new acknowledge path are in use-consistency-mutations-ack-plan.test.ts.
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
@@ -11,12 +15,12 @@ import { renderHook, act } from '@testing-library/react';
 // Mock @/trpc/client — expose consistency mutation spies
 // ---------------------------------------------------------------------------
 const {
-  mockAcknowledgeMutate,
+  mockAcknowledgeAndCreatePlanItemMutate,
   mockMarkFixedMutate,
   mockDismissMutate,
   mockInvalidate,
 } = vi.hoisted(() => ({
-  mockAcknowledgeMutate: vi.fn(),
+  mockAcknowledgeAndCreatePlanItemMutate: vi.fn(),
   mockMarkFixedMutate: vi.fn(),
   mockDismissMutate: vi.fn(),
   mockInvalidate: vi.fn(),
@@ -25,10 +29,11 @@ const {
 vi.mock('@/trpc/client', () => ({
   trpc: {
     consistency: {
-      acknowledge: {
+      // M4 t6: acknowledgeFinding now uses acknowledgeAndCreatePlanItem
+      acknowledgeAndCreatePlanItem: {
         useMutation: vi.fn((opts: { onSuccess?: () => void }) => ({
           mutate: (input: unknown) => {
-            mockAcknowledgeMutate(input);
+            mockAcknowledgeAndCreatePlanItemMutate(input);
             opts?.onSuccess?.();
           },
           isPending: false,
@@ -52,18 +57,16 @@ vi.mock('@/trpc/client', () => ({
           isPending: false,
         })),
       },
-      useUtils: vi.fn(() => ({
-        consistency: {
-          list: {
-            invalidate: mockInvalidate,
-          },
-        },
-      })),
     },
     useUtils: vi.fn(() => ({
       consistency: {
         list: {
           invalidate: mockInvalidate,
+        },
+      },
+      plan: {
+        list: {
+          invalidate: vi.fn(),
         },
       },
     })),
@@ -76,18 +79,21 @@ import { useConsistencyMutations } from '@/live/useConsistencyMutations';
 
 describe('useConsistencyMutations — acknowledgeFinding', () => {
   beforeEach(() => {
-    mockAcknowledgeMutate.mockClear();
+    mockAcknowledgeAndCreatePlanItemMutate.mockClear();
     mockMarkFixedMutate.mockClear();
     mockDismissMutate.mockClear();
     mockInvalidate.mockClear();
   });
 
-  it('calls acknowledge mutation with { id }', () => {
+  it('calls acknowledgeAndCreatePlanItem mutation with { findingId, projectId }', () => {
     const { result } = renderHook(() => useConsistencyMutations());
     act(() => {
       result.current.acknowledgeFinding(42);
     });
-    expect(mockAcknowledgeMutate).toHaveBeenCalledWith({ id: 42 });
+    expect(mockAcknowledgeAndCreatePlanItemMutate).toHaveBeenCalledWith({
+      findingId: 42,
+      projectId: 'claude-loom',
+    });
   });
 });
 
@@ -172,7 +178,7 @@ describe('useConsistencyMutations — openInEditor', () => {
 // Finding #6 (MEDIUM): all mutations invalidate cache on success
 describe('useConsistencyMutations — cache invalidation on success', () => {
   beforeEach(() => {
-    mockAcknowledgeMutate.mockClear();
+    mockAcknowledgeAndCreatePlanItemMutate.mockClear();
     mockMarkFixedMutate.mockClear();
     mockDismissMutate.mockClear();
     mockInvalidate.mockClear();
