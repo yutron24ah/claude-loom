@@ -15,6 +15,8 @@ import { personalityRouter } from "./routes/personality.js";
 import { worktreeRouter } from "./routes/worktree.js";
 import { coexistenceRouter } from "./routes/coexistence.js";
 import { disciplineRouter } from "./routes/discipline.js";
+// M5 t4: token usage read-only router
+import { tokenRouter } from "./routes/token.js";
 
 // Sub-routers wired in Task 8 (M1), events added in Task 9, 6 new in Task 10 (M1.5)
 export const appRouter = router({
@@ -39,6 +41,8 @@ export const appRouter = router({
   worktree: worktreeRouter,
   coexistence: coexistenceRouter,
   discipline: disciplineRouter,
+  // M5 t4: token usage
+  token: tokenRouter,
 });
 
 export type AppRouter = typeof appRouter;

@@ -29,3 +29,5 @@ export type {
   FindingType,
   SpecChangeStatus,
 } from "./constants/consistency.js";
+// M5 t4: TokenUsage type re-export for frontend polling UI
+export type { TokenUsage, NewTokenUsage } from "./db/schema.js";

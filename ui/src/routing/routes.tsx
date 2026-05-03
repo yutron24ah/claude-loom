@@ -13,6 +13,8 @@
  *   /customization    → CustomizationView panel
  *   /guidance         → LearnedGuidanceView panel
  *   /sessions         → SessionListView panel (M3.2 t1)
+ *   /project-settings → ProjectSettingsView panel (M5 t3)
+ *   /tokens           → TokenMeterView panel (M5 t4)
  *   /agents/:id       → AgentDetailPanel
  */
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
@@ -25,6 +27,8 @@ import { ConsistencyView } from '../views/consistency/ConsistencyView';
 import { CustomizationView } from '../views/customization/CustomizationView';
 import { LearnedGuidanceView } from '../views/guidance/LearnedGuidanceView';
 import { SessionListView } from '../views/session-list/SessionListView';
+import { ProjectSettingsView } from '../views/project-settings/ProjectSettingsView';
+import { TokenMeterView } from '../views/tokens/TokenMeterView';
 import { AgentDetailPanel } from '../views/room/AgentDetailPanel';
 
 export function AppRouter(): JSX.Element {
@@ -44,6 +48,10 @@ export function AppRouter(): JSX.Element {
           <Route path="guidance" element={<LearnedGuidanceView />} />
           {/* M3.2 t1: Session list view */}
           <Route path="sessions" element={<SessionListView />} />
+          {/* M5 t3: Project settings view */}
+          <Route path="project-settings" element={<ProjectSettingsView />} />
+          {/* M5 t4: Token usage meter */}
+          <Route path="tokens" element={<TokenMeterView />} />
           <Route path="agents/:id" element={<AgentDetailPanel />} />
         </Route>
       </Routes>

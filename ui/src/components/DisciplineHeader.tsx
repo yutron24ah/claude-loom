@@ -1,5 +1,5 @@
 /**
- * DisciplineHeader — process discipline metrics header bar.
+ * DisciplineHeader — process discipline metrics header bar + nav links.
  *
  * WHY: SCREEN_REQUIREMENTS §3.12 / §5.1 — show 4 live process discipline
  * metrics at the top of the UI so the user can immediately see the health
@@ -8,6 +8,11 @@
  *
  * M2 Task 9: ported from prototype screens-a.jsx DisciplineHeader.
  * Mock data is hard-coded (M3 will wire to daemon tRPC).
+ * M5 t3: added "Project Settings" nav link.
+ *
+ * WHY anchor instead of Link/useNavigate: DisciplineHeader is used outside
+ * BrowserRouter in AppShell test setups. An <a href> avoids the Router
+ * context requirement while still providing correct navigation.
  */
 
 /** Props for DisciplineHeader. width is currently unused (full-width via CSS). */
@@ -68,6 +73,15 @@ export function DisciplineHeader({ width: _width = 1080 }: DisciplineHeaderProps
         claude-loom{' '}
         <span className="text-text-muted font-normal">/ 猫の開発室</span>
       </div>
+
+      {/* Nav links — M5 t3 */}
+      <a
+        data-testid="nav-project-settings"
+        href="/project-settings"
+        className="text-fs-xs text-text-muted hover:text-fg1 border-b border-transparent hover:border-fg1 transition-colors no-underline"
+      >
+        Project Settings
+      </a>
 
       {/* Spacer */}
       <div className="flex-1" />

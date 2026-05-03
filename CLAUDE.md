@@ -60,6 +60,8 @@ M0 + M0.5 + M0.6 で構築した harness（PM / Developer / Reviewer agent — s
 - ui/ : React + Phaser UI (M2 以降)
 - docs/ : ドキュメント
 - ~/.claude-loom/user-prefs.json + <project>/.claude-loom/project-prefs.json : retro 学習状態（M0.8 から）
+- install.sh : symlink 設置 + settings.json hooks 配線
+- uninstall.sh : install.sh が設置した symlink + hooks 配線を除去（M5 から）
 
 ## テスト実行
 

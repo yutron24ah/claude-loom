@@ -34,6 +34,37 @@ Claude Code の設定ディレクトリが標準位置にない場合は環境�
 CLAUDE_HOME=/path/to/your/claude-config ./install.sh
 ```
 
+## アンインストール
+
+```bash
+./uninstall.sh        # 確認 prompt あり
+./uninstall.sh --yes  # 確認 prompt なし
+```
+
+アンインストール時の動作：
+
+- `~/.claude/agents/loom-*.md`、`~/.claude/commands/loom-*.md`、`~/.claude/skills/loom-*/`、`~/.claude/hooks/` の loom-* symlink を削除
+- `~/.claude/settings.json` の loom hooks 配線を除去（それ以外の user 設定は保持）
+- `.claude-loom/` の local state（prefs / retro 履歴等）は **デフォルトで保持**
+
+### オプション
+
+| オプション | 動作 |
+|---|---|
+| `--yes` | confirm prompt をスキップ |
+| `--dry-run` | 実行内容を表示するだけ（変更しない） |
+| `--purge-state` | `.claude-loom/` local state も削除 |
+
+### local state について
+
+`.claude-loom/` には retro 学習状態 (learned_guidance)、personality prefs 等が保存されている。
+再インストール後もこれらの設定を引き継ぐため、デフォルトでは削除しない。
+完全クリーンアップが必要な場合のみ `--purge-state` を使用する。
+
+```bash
+./uninstall.sh --yes --purge-state  # local state も含めて完全削除
+```
+
 ## 使い方（M0）
 
 Claude Code を起動して：
