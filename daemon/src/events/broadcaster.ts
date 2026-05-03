@@ -11,6 +11,7 @@ import type {
   DisciplineMetricUpdateEvent,
   TodoChangeEvent,
   PlanConflictEvent,
+  SessionChangeEvent,
 } from "./types.js";
 
 class Broadcaster extends EventEmitter {
@@ -111,6 +112,16 @@ class Broadcaster extends EventEmitter {
       payload,
     };
     this.emit("plan.conflict", event);
+    this.emit("*", event);
+  }
+
+  emitSessionChange(payload: SessionChangeEvent["payload"]) {
+    const event: SessionChangeEvent = {
+      type: "session.change",
+      timestamp: Date.now(),
+      payload,
+    };
+    this.emit("session.change", event);
     this.emit("*", event);
   }
 }
