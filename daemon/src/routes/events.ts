@@ -12,6 +12,7 @@ import type {
   WorktreeChangeEvent,
   DisciplineMetricUpdateEvent,
   TodoChangeEvent,
+  PlanConflictEvent,
 } from "../events/types.js";
 
 export const eventsRouter = router({
@@ -130,6 +131,21 @@ export const eventsRouter = router({
         };
         broadcaster.on("todo.change", handler);
         return () => broadcaster.off("todo.change", handler);
+      });
+    }),
+
+  // M3.1 t3: PLAN.md conflict detection — emitted when file mtime < DB updatedAt (LWW conflict)
+  // WHY: UI subscribes here to push plan_conflict_detected toast + set planConflict store state
+  onPlanConflict: publicProcedure
+    .input(z.object({ projectId: z.string().optional() }).optional())
+    .subscription(({ input }) => {
+      return observable<PlanConflictEvent>((emit) => {
+        const handler = (event: PlanConflictEvent) => {
+          if (input?.projectId && event.payload.projectId !== input.projectId) return;
+          emit.next(event);
+        };
+        broadcaster.on("plan.conflict", handler);
+        return () => broadcaster.off("plan.conflict", handler);
       });
     }),
 });

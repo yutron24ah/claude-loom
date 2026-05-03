@@ -146,11 +146,13 @@ describe("events/types", () => {
   });
 
   it("exports planChangeEventSchema with projectId filter field", async () => {
+    // WHY: planChangeEventSchema.status uses 'doing' to match DB schema (planItems.status enum).
+    // 'in_progress' belongs to todo.change (TodoWrite lifecycle), not plan.change.
     const { planChangeEventSchema } = await import("../src/events/types.js");
     const valid = planChangeEventSchema.safeParse({
       type: "plan.change",
       timestamp: 1000,
-      payload: { itemId: "i-1", projectId: "proj-1", status: "in_progress", title: "Task A" },
+      payload: { itemId: "i-1", projectId: "proj-1", status: "doing", title: "Task A" },
     });
     expect(valid.success).toBe(true);
   });

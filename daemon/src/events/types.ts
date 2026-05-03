@@ -14,13 +14,16 @@ export const agentChangeEventSchema = z.object({
 export type AgentChangeEvent = z.infer<typeof agentChangeEventSchema>;
 
 // Plan item change event
+// WHY: status enum mirrors DB schema (planItems.status) which uses 'doing' — not 'in_progress'.
+// todo.change uses 'in_progress' (TodoWrite lifecycle), plan.change uses 'doing' (PLAN.md lifecycle).
+// These are intentionally separate enums for separate domains.
 export const planChangeEventSchema = z.object({
   type: z.literal("plan.change"),
   timestamp: z.number(),
   payload: z.object({
     itemId: z.string(),
     projectId: z.string(),
-    status: z.enum(["todo", "in_progress", "done"]),
+    status: z.enum(["todo", "doing", "done"]),
     title: z.string(),
   }),
 });
@@ -124,6 +127,23 @@ export const todoChangeEventSchema = z.object({
 });
 export type TodoChangeEvent = z.infer<typeof todoChangeEventSchema>;
 
+// Plan conflict event — fired when PLAN.md file mtime is outdated vs DB (M3.1 t3)
+// WHY: LWW (Last Write Wins) conflict detection: when an external editor modifies
+// PLAN.md and the DB has a more recent updatedAt, we broadcast this event so the
+// UI can notify the user and offer backup/restore.
+export const planConflictEventSchema = z.object({
+  type: z.literal("plan.conflict"),
+  timestamp: z.number(),
+  payload: z.object({
+    projectId: z.string(),
+    conflictType: z.enum(["file_vs_db"]),
+    fileMtime: z.number(),
+    dbMtime: z.number(),
+    affectedItemIds: z.array(z.string()),
+  }),
+});
+export type PlanConflictEvent = z.infer<typeof planConflictEventSchema>;
+
 // Discriminated union for all event types
 export const loomEventSchema = z.discriminatedUnion("type", [
   agentChangeEventSchema,
@@ -135,5 +155,6 @@ export const loomEventSchema = z.discriminatedUnion("type", [
   worktreeChangeEventSchema,
   disciplineMetricUpdateEventSchema,
   todoChangeEventSchema,
+  planConflictEventSchema,
 ]);
 export type LoomEvent = z.infer<typeof loomEventSchema>;

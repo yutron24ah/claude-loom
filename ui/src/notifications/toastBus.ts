@@ -16,7 +16,8 @@ export type ToastEvent =
   | 'daemon_reconnected'
   | 'consistency_finding_new'
   | 'subagent_failed'
-  | 'project_added';
+  | 'project_added'
+  | 'plan_conflict_detected';
 
 export interface Toast {
   /** Unique identifier — callers should provide a stable id (nanoid or Date.now()) */
@@ -117,5 +118,20 @@ export function emitProjectAdded(message = '新しいプロジェクトが検出
     event: 'project_added',
     message,
     ttl_ms: 5000,
+  });
+}
+
+/**
+ * Emit plan_conflict_detected warning toast (persistent — user must resolve).
+ * WHY: SPEC §3.6.9.4 toast 6 event — emitted when chokidar detects an external
+ * PLAN.md edit that is older than the DB state (LWW conflict).
+ */
+export function emitPlanConflictDetected(message = 'PLAN.md の競合が検出されました'): void {
+  toastBus.emit({
+    id: `plan_conflict_detected-${Date.now()}`,
+    kind: 'warning',
+    event: 'plan_conflict_detected',
+    message,
+    ttl_ms: null,
   });
 }
