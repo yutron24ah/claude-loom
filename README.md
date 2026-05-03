@@ -10,13 +10,29 @@ Claude Code 上で agile 開発チームを丸ごと再現する「中央指令�
 - ドキュメント整合性の自動見張り（PM の責務）
 - リアルタイム進捗ガントチャート + Plan View
 
-## 現在のステータス：M3.1 完了（Phase 1 MVP の core experience 構築中）
+## 現在のステータス：M5 完了（Phase 1 MVP completed）
 
-**dogfood で M0 → M3.1 まで完走**。M0 + M0.5/0.6/0.7/0.8/0.9/0.10/0.11/0.11.1/0.12/0.13/0.14 で harness を bootstrap、M1 で Node + tRPC + Drizzle + SQLite daemon 実装、M2 で React + Vite + Phaser shell + tRPC client 完成、M3.0 で Phaser 4 Room View（自前 useEffect mount + 3 theme）、**M3.1 で Plan View 短期/長期 + PLAN.md 双方向同期 (chokidar + 500ms debounce + LWW + plan_conflict_detected toast + localStorage backup) + Gantt SVG (自前 rect/line/text + 3 theme + bar click navigate) + Playwright e2e baseline (visual regression infra + CI 並列 step)** を実装済。
+**dogfood で M0 → M5 まで完走**。Phase 1 MVP 全マイルストーン達成：
 
-残：M3.2 (Session List + Agent Detail + notes) → M4 (Doc Consistency Engine v1) → M5 (Integration + Polish) で Phase 1 closure。
+| マイルストーン | 主要実装 |
+|---|---|
+| M0 / M0.5 / M0.6 / M0.7 | harness bootstrap（PM / Developer / Reviewer agents、slash commands、skills、Conventional Commits + GitHub Flow） |
+| M0.8 | retro architecture（4-lens / 3-stage protocol / user-prefs / project-prefs、milestone 完了時に振り返り → 改善提案 → 承認 → 反映ループ） |
+| M0.9 | Customization Layer（model + personality preset per agent） |
+| M0.10 | git worktree 統合（並列 dev / hotfix 隔離 / 実験ブランチ） |
+| M0.11 / M0.11.1 | retro → agent prompt feedback loop + Lifecycle Tracking Architecture（applied finding の永続状態管理） |
+| M0.12 | Coexistence Mode（full / coexist / custom の 3 mode で既存 PJ への段階的 adoption） |
+| M0.13 | Retro Discipline & Process Hardening（parallel dispatch / TDD red 順序 / Task tool fallback 強制） |
+| M0.14 | commit handoff strategy 明確化（Strategy a dev self-commit / Strategy b PM 統合 commit） |
+| M1 | Daemon Foundation（Node.js + TypeScript + tRPC + Drizzle + SQLite、bash hooks → event ingestion → DB 永続化 → WS live push） |
+| M2 / M2.1 | UI Shell（React + Vite + Phaser + tRPC client、AppShell + 9 views + WS retry + toast + verdict_evidence） |
+| M3.0 | Phaser Room View（自前 useEffect mount + agent sprite + 3 theme） |
+| M3.1 | Plan View + Gantt + 双方向同期（chokidar + 500ms debounce + LWW + conflict toast + Playwright e2e baseline） |
+| M3.2 | Session List + Agent Detail + notes |
+| M4 | Doc Consistency Engine v1（PostToolUse hook + Phase A diff calc + Phase B claude -p + Acknowledge → plan_items + WS push） |
+| M5 | Project Settings + Token meter + uninstall.sh + handoff docs + README + リリース準備 |
 
-Default review mode は single（1 体 reviewer）、critical path のみ trio mode に切替可。M0.8 で retro 機能（4-lens / 3-stage protocol / user-prefs / project-prefs）が加わり、milestone 完了時に振り返り → 改善提案 → 承認 → 反映のループが回る。M0.11.1 で applied finding lifecycle tracking architecture 実装、retro session 間で finding の状態管理が永続化される。
+Default review mode は single（1 体 reviewer）、critical path のみ trio mode に切替可。
 
 ## インストール
 
@@ -65,30 +81,56 @@ CLAUDE_HOME=/path/to/your/claude-config ./install.sh
 ./uninstall.sh --yes --purge-state  # local state も含めて完全削除
 ```
 
-## 使い方（M0）
+## 使い方
 
 Claude Code を起動して：
 
 ```
-/loom-pm     # PM mode に入る
-/loom-spec   # spec フェーズ開始
-/loom-go     # 実装フェーズ開始（PM が developer を dispatch）
+/loom-pm       # PM mode に入る
+/loom-spec     # spec フェーズ開始
+/loom-go       # 実装フェーズ開始（PM が developer を dispatch）
+/loom-retro    # milestone 完了後の振り返り（4-lens / 3-stage protocol）
+/loom-status   # harness + repo 状態スナップショット
+/loom-worktree # 並列 dev / hotfix 隔離 / 実験ブランチ管理
+/loom-mode     # Coexistence Mode 切替（full / coexist / custom）
+/loom-stop     # agent セッション停止
 ```
 
 詳細は `CLAUDE.md` を参照。
 
-## 利用可能な skill（M0.5 + M0.6 + M0.8）
+## スラッシュコマンド一覧
+
+`./install.sh` 実行で `~/.claude/commands/` に配置される：
+
+| コマンド | 説明 |
+|---|---|
+| `/loom-pm` | PM mode に入る |
+| `/loom-spec` | spec フェーズ開始 |
+| `/loom-go` | 実装フェーズ開始（PM が developer を dispatch） |
+| `/loom-retro` | milestone 完了後の振り返り |
+| `/loom-status` | harness + repo 状態スナップショット |
+| `/loom-worktree` | worktree 管理（create / list / remove） |
+| `/loom-mode` | Coexistence Mode 切替 |
+| `/loom-stop` | agent セッション停止 |
+| `/loom` | エントリポイント（ヘルプ表示） |
+
+## 利用可能な skill
 
 `./install.sh` 実行で以下の skill が `~/.claude/skills/` に配置される：
 
-- **loom-test** — ハーネステスト一括実行 + 構造化サマリ（bundled bash script）
-- **loom-status** — repo + harness 状態スナップショット（bundled bash script）
-- **loom-tdd-cycle** — TDD 規律ガイド（loom-developer 中核ワークフロー）
-- **loom-review** — 1 体 reviewer (loom-reviewer) dispatch のプロンプトテンプレ（**default**、多観点を順次、進捗テキスト付き）
-- **loom-review-trio** — 3 reviewer 並列 dispatch のプロンプトテンプレ（opt-in deep mode、critical path 用）
-- **loom-retro** — 4-lens 振り返り（pj-axis / process-axis / researcher / meta-axis）+ 3-stage protocol で改善提案、user 承認で適用（M0.8）
+| skill | 説明 | 種別 |
+|---|---|---|
+| **loom-tdd-cycle** | TDD 規律ガイド（Red→Green→Refactor→Review cycle） | mandate |
+| **loom-review** | 1 体 reviewer dispatch（**default** single mode） | mandate |
+| **loom-review-trio** | 3 reviewer 並列 dispatch（opt-in deep mode、critical path 用） | mandate |
+| **loom-retro** | 4-lens 振り返り + 3-stage protocol で改善提案、user 承認で適用 | mandate |
+| **loom-test** | ハーネステスト一括実行 + 構造化サマリ（bundled bash script） | mandate |
+| **loom-status** | repo + harness 状態スナップショット（bundled bash script） | mandate |
+| **loom-worktree** | worktree 管理（5 用途: 並列 dev / 安全実験 / branch 比較 / hotfix 隔離 / 一時 review） | suggest |
+| **loom-write-plan** | milestone 詳細プラン作成（`docs/plans/` 保存） | suggest |
+| **loom-debug** | 系統的 debug（symptom → root cause → fix の 3 step） | suggest |
 
-bundled script はインストール後 `templates/settings.json.template` を参考に各プロジェクトの `.claude/settings.json` allowlist に追加することで、承認プロンプトなしで利用可能。`PLACEHOLDER_CLAUDE_LOOM_INSTALL_PATH` は claude-loom の clone 先パス（例 `/Users/you/work/claude-loom`）に手動で置換する（M1 以降は自動化予定）。
+bundled script はインストール後 `templates/settings.json.template` を参考に各プロジェクトの `.claude/settings.json` allowlist に追加することで、承認プロンプトなしで利用可能。`PLACEHOLDER_CLAUDE_LOOM_INSTALL_PATH` は claude-loom の clone 先パス（例 `/Users/you/work/claude-loom`）に手動で置換する。
 
 ## Customization Layer (M0.9 から)
 
@@ -307,7 +349,20 @@ claude-loom は **Conventional Commits + GitHub Flow** を採用：
 - `docs/plans/` — 各マイルストーン詳細プラン
 - `CLAUDE.md` — Claude Code 向け作業ガイド
 
+## Phase 2 以降
+
+Phase 1 MVP 完成後のロードマップ（候補）：
+
+- **M0.11.2**: Lifecycle Tracking 拡張（ttl_sessions / use_count 自動更新）
+- **pixel art**: ピクセルアート正式 asset 制作（UI 世界観確定）
+- **Doc Consistency Engine v2**: 自動修正提案・CI integration
+- **Phase 2**: M6 以降、Phase 1 で確立した基盤の上に production 機能を追加
+
+詳細候補は `PLAN.md` の Phase 2 section を参照。
+
 ## ライセンス
+
+<!-- TODO M5: license 確認 — MIT または同等のライセンスを設定予定。リリース前に確定する。 -->
 
 未定（リリース前に設定）
 
