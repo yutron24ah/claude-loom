@@ -527,7 +527,7 @@ retro 2026-05-02-002 由来で M3.1 で扱う残 design 分岐:
 
 - [x] Plan View 短期レーン（TodoWrite mirror、read-only、daemon `todoChange` subscription） <!-- id: m3.1-t1 status: done -->
 - [x] Plan View 長期レーン（plan_items ツリー、編集可、daemon mutation 接続） <!-- id: m3.1-t2 status: done -->
-- [ ] PLAN.md パース + 双方向同期（chokidar + 500ms debounce + last-write-wins + plan_conflict_detected toast + localStorage backup） <!-- id: m3.1-t3 status: todo -->
+- [x] PLAN.md パース + 双方向同期（chokidar + 500ms debounce + last-write-wins + plan_conflict_detected toast + localStorage backup） <!-- id: m3.1-t3 status: done -->
 - [x] 進捗ビュー（自前 SVG Gantt、リアクティブ bar、3 theme 統合、行 click → Agent Detail navigate） <!-- id: m3.1-t4 status: done -->
 - [x] Playwright e2e infra 導入（`@playwright/test` devDep + `ui/e2e/` dir + `pnpm --filter @claude-loom/ui e2e` script + CI workflow 並列 step + Room View pop theme screenshot baseline 1 件確立、test 大量化は M3.2 以降に分配） <!-- id: m3.1-t5 status: done -->
 
