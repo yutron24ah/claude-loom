@@ -148,9 +148,10 @@ For each piece of work:
    - 1-2 文の change summary（reviewer がスコープ把握できるよう）
 9. **Aggregate findings**. If any reviewer's `verdict` is `needs_fix`:
    - **集約ルール**: single mode JSON は finding に `aspect` フィールドを持つ。trio mode は 3 つの JSON が返り `aspect` フィールドは無いが、`reviewer` フィールドから aspect を導出できる（`loom-code-reviewer` → `code`、`loom-security-reviewer` → `security`、`loom-test-reviewer` → `test`）。集約後の表現はどちらも `aspect`-tagged な findings 配列として扱える。
-   - Fix the issues.
-   - Re-run all tests.
-   - Re-submit to all dispatched reviewer(s)（single mode = 1 体、trio mode = 3 体並列、back to step 8）.
+   - **Dual path 判定**（retro 2026-05-03-001 proc-002 由来、M3.1 で iterate せず終了 + PM follow-up dispatch defacto 標準化を codify）:
+     - **path A — same-session iterate (default)**: fix scope clear AND context budget 余裕あり (token usage < 70%、findings 件数 ≤ 5、scope 独立) → 同 session 内で fix → re-run tests → re-submit (back to Step 8)
+     - **path B — PM handoff (fallback)**: fix scope unclear OR context budget tight (token usage ≥ 70%、findings 件数 > 5、複数 finding が相互依存) → final report に `handoff_required: true + reasoning + recommended next step + 残 findings 全文` を明記して終了、PM が follow-up dispatch する
+     - **silent termination 禁止**: needs_fix を受けた状態で何の handoff annotation もなしに final report を返すのは invalid response（PM が refuse + retry）
 10. **All reviewer verdicts `pass`** → commit. **必ず以下の順序で実行**（M0.14.x で codified、retro 2026-05-02-001 finding-proc-001 由来 — reviewer pass 後に commit せず final report を返す handoff anomaly が M2 Task 5/6/7/8 で 4 連発したため）：
     1. `Bash`: `git status` で staged / unstaged / untracked を確認
     2. `Bash`: `git add <files>` で対象ファイルを stage（`git add -A` 禁止、明示 path のみ）
@@ -192,7 +193,14 @@ dev が Step 10 全 5 step を完遂し、`committed_sha` を report に含め�
 
 ### Strategy b — PM 統合 commit（parallel batch / heavy workload 用 fallback）
 
-PM が dispatch 時に `[loom-meta]` prefix or task spec で `commit_handoff=pm` を明示宣言した場合のみ。dev は code + reviewer dispatch + final report のみ実施、`git commit` 禁止。final report に `commit_handoff: pm + committed_sha: null` を明記、ファイル変更は working tree に残置。PM が後で RED + GREEN を統合 commit する。
+PM が dispatch 時に `[loom-meta]` prefix or task spec で `commit_handoff=pm` を明示宣言した場合のみ。dev は code + reviewer dispatch + final report のみ実施、`git commit` 禁止。final report に `commit_handoff: pm + committed_sha: null` を明記、ファイル変更は working tree に残置。
+
+**TDD red 履歴維持規律**（retro 2026-05-03-001 proc-001 由来、M3.1 で全 7 dispatch Strategy b 採用時 test+impl 同 commit 化により SPEC §3.6.8.6 の TDD red 時系列規律が構造的に成立せん問題を codify）:
+
+- dev は test-first で書き、RED 段階で実 fail を確認 (self-discipline は維持)
+- final report に `tdd_red_confirmed: true` + RED test の fail output 抜粋を明記
+- **PM は必ず 2 commit に分割** (RED 単独 → GREEN)、または同 commit 内で commit message に `RED+GREEN unified` annotation 追加 (default 推奨は **2 commit 分割**、git history で RED の存在を verify 可能化)
+- reviewer は test/* と src/* の diff を時系列逆並びで cross-check 可能 (Strategy a と同等の TDD audit 性を維持)
 
 **選択基準**：
 - 3 subagent 以上の parallel batch（例: M2 Task 9 = 3 view group の並列 port）
