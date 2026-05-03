@@ -10,10 +10,13 @@ Claude Code 上で agile 開発チームを丸ごと再現する「中央指令�
 - ドキュメント整合性の自動見張り（PM の責務）
 - リアルタイム進捗ガントチャート + Plan View
 
-## 現在のステータス：M0（Dev Harness）
+## 現在のステータス：M3.1 完了（Phase 1 MVP の core experience 構築中）
 
-GUI / daemon は未実装。**agent 定義 + slash command + ワークフロー規約** のみ動作。
-M1 以降の自分自身の実装は、この M0 + M0.5 + M0.6 + M0.8 harness を使って進める（dogfood）。Default review mode は single（1 体 reviewer）、critical path のみ trio mode に切替可。M0.8 で retro 機能（4-lens / 3-stage protocol / user-prefs / project-prefs）が加わり、milestone 完了時に振り返り → 改善提案 → 承認 → 反映のループが回る。
+**dogfood で M0 → M3.1 まで完走**。M0 + M0.5/0.6/0.7/0.8/0.9/0.10/0.11/0.11.1/0.12/0.13/0.14 で harness を bootstrap、M1 で Node + tRPC + Drizzle + SQLite daemon 実装、M2 で React + Vite + Phaser shell + tRPC client 完成、M3.0 で Phaser 4 Room View（自前 useEffect mount + 3 theme）、**M3.1 で Plan View 短期/長期 + PLAN.md 双方向同期 (chokidar + 500ms debounce + LWW + plan_conflict_detected toast + localStorage backup) + Gantt SVG (自前 rect/line/text + 3 theme + bar click navigate) + Playwright e2e baseline (visual regression infra + CI 並列 step)** を実装済。
+
+残：M3.2 (Session List + Agent Detail + notes) → M4 (Doc Consistency Engine v1) → M5 (Integration + Polish) で Phase 1 closure。
+
+Default review mode は single（1 体 reviewer）、critical path のみ trio mode に切替可。M0.8 で retro 機能（4-lens / 3-stage protocol / user-prefs / project-prefs）が加わり、milestone 完了時に振り返り → 改善提案 → 承認 → 反映のループが回る。M0.11.1 で applied finding lifecycle tracking architecture 実装、retro session 間で finding の状態管理が永続化される。
 
 ## インストール
 
@@ -240,7 +243,7 @@ export const trpc = createTRPCClient<AppRouter>({
 ### Architecture
 
 - **runtime**: Node.js LTS（>= 20）+ TypeScript（strict）
-- **monorepo**: pnpm workspaces (root + `daemon/`、M2 で `ui/` 追加予定)
+- **monorepo**: pnpm workspaces (root + `daemon/` + `ui/`、M2 で `ui/` 追加済、M3.1 で `ui/e2e/` Playwright infra 追加)
 - **HTTP/WS**: Fastify + `@fastify/websocket`
 - **API**: tRPC + zod (HTTP RPC + WS subscriptions)
 - **ORM**: Drizzle + better-sqlite3 (11 tables、SPEC §6.1)
