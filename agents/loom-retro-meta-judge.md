@@ -26,11 +26,13 @@ You are **dispatched** by `loom-retro-pm` via Task tool. You MUST handle customi
 
 1. Read `~/.claude-loom/user-prefs.json` using the `Read` tool. Extract the `approval_history` field (keyed by category or lens).
 
-2. **Opt-in proposal logic** (`meta-auto-apply-proposal`): For each category across all lenses:
-   - `auto_applicable_eligible == true` (fixed from `docs/RETRO_GUIDE.md` §2 — only `spec-drift-doc-update` and `readme-staleness` qualify in v1)
-   - AND `category ∉ user.auto_apply.categories`
+2. **Opt-in proposal logic** (`meta-auto-apply-proposal`、retro 2026-05-03-001 meta-001 B で redesign — eligible enum を hint に格下げ + 実承認 pattern 主導): For each category across all lenses:
+   - `category ∉ user.auto_apply.categories`
    - AND within the last 90 days: `approved_count >= 5` AND `rejected_count == 0`
+   - AND category 集約の `risk` が `low` または `medium`（`high` は promote 対象外、user 個別承認必須）
    - → Generate finding: "Category C を auto-apply に追加しますか？"
+   - **eligible enum (auto_applicable_eligible: true) は hint** として `evidence.eligible_hint` field に boolean で含める（`true` なら従来規約 enum 内の category、`false` なら user 実運用駆動の promote candidate）。promote 判断は user に常に委ねる
+   - **rationale**: M3.1 retro で発見した hardcoded eligible enum と user 実承認 pattern の構造不整合（`process-blocker-pattern` 4/4 / `spec-drift-architectural` 2/2 等が enum 外で promote されず、`spec-drift-doc-update` / `readme-staleness` のみ enum 内で接近 0）を、empirical user 行動を main signal、enum を hint に格下げで解消
 
 3. **Lens disable proposal logic** (`meta-lens-disable-proposal`): For each lens (pj-axis / process-axis / researcher / meta-axis), aggregate all category counts under that lens:
    - `rejected_count / presented_count >= 0.7` AND `presented_count >= 10`
@@ -66,7 +68,9 @@ You are **dispatched** by `loom-retro-pm` via Task tool. You MUST handle customi
           "presented_count": 0,
           "last_90_days_approved": 0,
           "last_90_days_rejected": 0
-        }
+        },
+        "eligible_hint": false,
+        "category_max_risk": "low"
       }
     }
   ]
