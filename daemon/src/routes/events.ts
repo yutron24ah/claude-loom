@@ -11,6 +11,7 @@ import type {
   LearnedGuidanceChangeEvent,
   WorktreeChangeEvent,
   DisciplineMetricUpdateEvent,
+  TodoChangeEvent,
 } from "../events/types.js";
 
 export const eventsRouter = router({
@@ -114,6 +115,21 @@ export const eventsRouter = router({
         };
         broadcaster.on("discipline_metric.update", handler);
         return () => broadcaster.off("discipline_metric.update", handler);
+      });
+    }),
+
+  // M3.1 t1: TodoWrite mirror — streams current TodoWrite todo list per session
+  onTodoChange: publicProcedure
+    .input(z.object({ sessionId: z.string().optional() }).optional())
+    .subscription(({ input }) => {
+      return observable<TodoChangeEvent>((emit) => {
+        const handler = (event: TodoChangeEvent) => {
+          // Filter by sessionId if caller specifies one
+          if (input?.sessionId && event.payload.sessionId !== input.sessionId) return;
+          emit.next(event);
+        };
+        broadcaster.on("todo.change", handler);
+        return () => broadcaster.off("todo.change", handler);
       });
     }),
 });

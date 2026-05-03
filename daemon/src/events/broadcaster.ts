@@ -9,6 +9,7 @@ import type {
   LearnedGuidanceChangeEvent,
   WorktreeChangeEvent,
   DisciplineMetricUpdateEvent,
+  TodoChangeEvent,
 } from "./types.js";
 
 class Broadcaster extends EventEmitter {
@@ -89,6 +90,16 @@ class Broadcaster extends EventEmitter {
       payload,
     };
     this.emit("discipline_metric.update", event);
+    this.emit("*", event);
+  }
+
+  emitTodoChange(payload: TodoChangeEvent["payload"]) {
+    const event: TodoChangeEvent = {
+      type: "todo.change",
+      timestamp: Date.now(),
+      payload,
+    };
+    this.emit("todo.change", event);
     this.emit("*", event);
   }
 }

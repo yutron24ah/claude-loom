@@ -2,34 +2,20 @@
  * PlanView — short-term TodoWrite mirror + long-term plan_items tree.
  *
  * WHY: SCREEN_REQUIREMENTS §3.x — two-pane plan view. Left pane mirrors the
- * current TodoWrite state (read-only). Right pane shows the long-term
- * plan_items tree from the daemon via live tRPC query.
+ * current TodoWrite state (read-only) via live tRPC subscription.
+ * Right pane shows the long-term plan_items tree from the daemon via live tRPC query.
  *
  * M2 Task 9: ported from prototype screens-b.jsx PlanView component.
  * M2 Task 10: right pane wired to live daemon via usePlanItems hook.
- * Left pane (short-term todos) remains mock data (M3 will add TodoWrite sync).
+ * M3.1 t1: left pane wired to live daemon via useTodoWrite hook (replaces MOCK_TODOS).
  * PlanItem type aligns with daemon/src/db/schema.ts planItems schema.
  */
 import { usePlanItems } from '../../live/usePlanItems';
+import { useTodoWrite } from '../../live/useTodoWrite';
 import type { PlanItem } from '@claude-loom/daemon';
 
 /** Status of a todo or plan item. */
 type ItemStatus = 'in_progress' | 'pending' | 'completed';
-
-/** Short-term todo item (mirrors TodoWrite). */
-interface TodoItem {
-  status: ItemStatus;
-  text: string;
-}
-
-/** Mock short-term todos — 5 items matching SCREEN_REQUIREMENTS. */
-const MOCK_TODOS: TodoItem[] = [
-  { status: 'in_progress', text: 'user.service.test.ts を GREEN にする' },
-  { status: 'pending', text: 'freee OAuth callback の error path 確認' },
-  { status: 'pending', text: '整合性 finding #12 を ack' },
-  { status: 'completed', text: 'PR #41 verdict 提出' },
-  { status: 'completed', text: 'spec §3.6.5 反映' },
-];
 
 /** Map status to Tailwind bg class for the status indicator square. */
 function statusColorClass(status: ItemStatus): string {
@@ -59,6 +45,7 @@ function daemonStatusColorClass(status: PlanItem['status']): string {
 }
 
 export function PlanView(): JSX.Element {
+  const { todos } = useTodoWrite();
   const { data: planItems, isLoading, error } = usePlanItems();
 
   return (
@@ -75,7 +62,7 @@ export function PlanView(): JSX.Element {
           session: pm-2026-05-01-am
         </p>
 
-        {MOCK_TODOS.map((todo, i) => (
+        {todos.map((todo, i) => (
           <div
             key={i}
             data-testid="todo-item"

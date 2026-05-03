@@ -17,13 +17,18 @@ import { render, screen, cleanup } from '@testing-library/react';
 import type { PlanItem } from '@claude-loom/daemon';
 
 // WHY: vi.mock is hoisted to the top of the file, so we use vi.hoisted
-// to create the mock function before the mock factory executes.
-const { mockUsePlanItems } = vi.hoisted(() => ({
+// to create the mock functions before the mock factory executes.
+const { mockUsePlanItems, mockUseTodoWrite } = vi.hoisted(() => ({
   mockUsePlanItems: vi.fn(),
+  mockUseTodoWrite: vi.fn(),
 }));
 
 vi.mock('@/live/usePlanItems', () => ({
   usePlanItems: mockUsePlanItems,
+}));
+
+vi.mock('@/live/useTodoWrite', () => ({
+  useTodoWrite: mockUseTodoWrite,
 }));
 
 // Import after mock is set up
@@ -35,6 +40,9 @@ afterEach(() => {
 
 beforeEach(() => {
   mockUsePlanItems.mockClear();
+  mockUseTodoWrite.mockClear();
+  // Default: no todos (empty pane)
+  mockUseTodoWrite.mockReturnValue({ todos: [], isLoading: false });
 });
 
 // Helper to create a minimal PlanItem
@@ -140,17 +148,30 @@ describe('PlanView (live) — data state', () => {
   });
 });
 
-describe('PlanView (live) — short-term pane unchanged', () => {
-  it('still renders the short-term todos pane (mock data intact)', () => {
+describe('PlanView (live) — short-term pane via useTodoWrite', () => {
+  it('renders the short-term todos pane', () => {
     mockUsePlanItems.mockReturnValue({ data: [], isLoading: false, error: null });
     render(<PlanView />);
     expect(screen.getByTestId('plan-short-term')).toBeInTheDocument();
   });
 
-  it('still renders exactly 5 mock todo items', () => {
+  it('renders todo items from useTodoWrite hook', () => {
+    const todos = [
+      { status: 'in_progress' as const, text: 'Task A' },
+      { status: 'pending' as const, text: 'Task B' },
+    ];
+    mockUseTodoWrite.mockReturnValue({ todos, isLoading: false });
     mockUsePlanItems.mockReturnValue({ data: [], isLoading: false, error: null });
     const { container } = render(<PlanView />);
     const todoItems = container.querySelectorAll('[data-testid="todo-item"]');
-    expect(todoItems.length).toBe(5);
+    expect(todoItems.length).toBe(2);
+  });
+
+  it('renders empty short-term pane when useTodoWrite returns empty todos', () => {
+    mockUseTodoWrite.mockReturnValue({ todos: [], isLoading: false });
+    mockUsePlanItems.mockReturnValue({ data: [], isLoading: false, error: null });
+    const { container } = render(<PlanView />);
+    const todoItems = container.querySelectorAll('[data-testid="todo-item"]');
+    expect(todoItems.length).toBe(0);
   });
 });

@@ -106,6 +106,24 @@ export const disciplineMetricUpdateEventSchema = z.object({
 });
 export type DisciplineMetricUpdateEvent = z.infer<typeof disciplineMetricUpdateEventSchema>;
 
+// Todo change event — mirrors TodoWrite state (M3.1 t1)
+// WHY: TodoWrite hook writes todos into session context; this event broadcasts
+// the current list so the Plan View short-term pane can show a live mirror.
+export const todoChangeEventSchema = z.object({
+  type: z.literal("todo.change"),
+  timestamp: z.number(),
+  payload: z.object({
+    sessionId: z.string(),
+    todos: z.array(
+      z.object({
+        status: z.enum(["pending", "in_progress", "completed"]),
+        text: z.string(),
+      }),
+    ),
+  }),
+});
+export type TodoChangeEvent = z.infer<typeof todoChangeEventSchema>;
+
 // Discriminated union for all event types
 export const loomEventSchema = z.discriminatedUnion("type", [
   agentChangeEventSchema,
@@ -116,5 +134,6 @@ export const loomEventSchema = z.discriminatedUnion("type", [
   learnedGuidanceChangeEventSchema,
   worktreeChangeEventSchema,
   disciplineMetricUpdateEventSchema,
+  todoChangeEventSchema,
 ]);
 export type LoomEvent = z.infer<typeof loomEventSchema>;
