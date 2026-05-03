@@ -191,7 +191,10 @@ stop_daemon
 # Step 2: symlink 削除
 echo "Step 2: symlink を削除..."
 remove_file_symlinks "${CLAUDE_HOME}/agents"   "loom-*.md"
-remove_file_symlinks "${CLAUDE_HOME}/commands" "loom-*.md"
+# WHY: install.sh uses pattern "loom*.md" (no dash) for commands, which includes
+# both "loom-*.md" and "loom.md" (the meta-dispatch command). Use "loom*.md" here
+# to match the install pattern exactly (M5 t2 bug fix).
+remove_file_symlinks "${CLAUDE_HOME}/commands" "loom*.md"
 remove_dir_symlinks  "${CLAUDE_HOME}/skills"   "loom-*"
 remove_dir_symlinks  "${CLAUDE_HOME}/prompts"  "*"
 remove_file_symlinks "${CLAUDE_HOME}/hooks"    "*.sh"

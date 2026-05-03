@@ -13,8 +13,10 @@ export type {
 } from "./events/types.js";
 // Note attachment constants — re-exported as SSoT (SPEC §3.6.10, LOW 1 M3.2 t3 follow-up)
 // WHY: frontend consumers import from here to avoid duplicate definitions in ui/
-export { NOTE_ATTACHED_TYPE } from "./routes/note.js";
-export type { NoteAttachedType } from "./routes/note.js";
+// M5 t2: re-export from constants/note.ts (browser-safe) instead of routes/note.ts
+// to break the Node.js module chain (trpc → token.ts → node:os) that blocked vite build
+export { NOTE_ATTACHED_TYPE } from "./constants/note.js";
+export type { NoteAttachedType } from "./constants/note.js";
 // Consistency constants — re-exported as SSoT (SPEC §3.6.10, M4 t5)
 // WHY: frontend uses FINDING_STATUS / SEVERITY / TYPE / SPEC_CHANGE_STATUS via this entry point
 export {

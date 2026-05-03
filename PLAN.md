@@ -604,9 +604,9 @@ retro 2026-05-02-002 由来で M3.1 で扱う残 design 分岐:
 
 詳細: 未作成（M4 完了後 writing-plans で詳細化）
 
-- [ ] frontend-design に渡してピクセルアート確定 <!-- id: m5-t1 status: todo -->
-- [ ] エンドツーエンド体験チェック <!-- id: m5-t2 status: todo -->
-- [ ] Project Settings 画面 <!-- id: m5-t3 status: todo -->
-- [ ] トークン使用量 polling + メーター <!-- id: m5-t4 status: todo -->
-- [ ] uninstall.sh + ドキュメント完成 <!-- id: m5-t5 status: todo -->
-- [ ] README + リリース準備 <!-- id: m5-t6 status: todo -->
+- [x] frontend-design に渡してピクセルアート確定 <!-- id: m5-t1 status: done -->
+- [x] エンドツーエンド体験チェック <!-- id: m5-t2 status: done -->
+- [x] Project Settings 画面 <!-- id: m5-t3 status: done -->
+- [x] トークン使用量 polling + メーター <!-- id: m5-t4 status: done -->
+- [x] uninstall.sh + ドキュメント完成 <!-- id: m5-t5 status: done -->
+- [x] README + リリース準備 <!-- id: m5-t6 status: done -->

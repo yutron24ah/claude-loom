@@ -104,3 +104,7 @@
 ## M5 t6: README + リリース準備
 
 - **REQ-042**: `README.md` に `## ライセンス` section 存在（placeholder 許容）、`Phase 1 MVP` 完成記述あり、`M5` milestone 言及あり、`Phase 2 以降` section 存在。`CHANGELOG.md` に `[0.1.0]` entry 存在かつ `### Added` section 非空。root `package.json` / `daemon/package.json` / `ui/package.json` に `version` field（文字列型）存在。`tests/docs_release_test.sh` でカバー。
+
+## M5 t2: End-to-end Verification
+
+- **REQ-043**: `docs/M5_E2E_REPORT.md` が存在・非空・5 section（Executive summary / 7 verification / follow-up / Phase 2 / 結論）含む。`tests/m5_e2e_test.sh` が 7-stage aggregate harness として動作（route integrity 静的 check + install/uninstall round-trip check + deliverables check）。`bash tests/run_tests.sh` で **17 PASS** 達成（m5_e2e_test.sh 追加）。`pnpm --filter @claude-loom/daemon test` / `pnpm --filter @claude-loom/ui test` / `pnpm --filter @claude-loom/ui e2e` / `pnpm --filter @claude-loom/daemon build` + `pnpm --filter @claude-loom/ui build` が全て pass（UI build blockers — NOTE_ATTACHED_TYPE browser-safe 化 + process.env → import.meta.env 修正を含む）。Phase 1 MVP closure 認定。`tests/m5_e2e_test.sh` でカバー。

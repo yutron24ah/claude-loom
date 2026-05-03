@@ -77,7 +77,11 @@ export interface UseProjectSettingsResult {
 //
 // For M5 t3 initial implementation: projectId comes from the coexistence
 // route which treats the rootPath as the projectId. We mirror that pattern.
-const PROJECT_ROOT = process.env.VITE_PROJECT_ROOT ?? process.cwd?.() ?? '';
+// WHY: Vite transforms import.meta.env.* at build time; process.env is Node.js-only
+// and not available in the browser. process.cwd() is also Node.js-only; the fallback
+// to '' is safe — the hook consumer (ProjectSettingsView) passes a real projectId
+// from the URL params in practice.
+const PROJECT_ROOT = import.meta.env.VITE_PROJECT_ROOT ?? '';
 
 /**
  * Map raw project DB row + coexistence settings into the flat ProjectSettings shape.
