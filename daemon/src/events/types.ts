@@ -163,6 +163,21 @@ export const sessionChangeEventSchema = z.object({
 });
 export type SessionChangeEvent = z.infer<typeof sessionChangeEventSchema>;
 
+// Spec change detected event — fired when a SPEC file edit is detected (M4 t7)
+// WHY: SPEC §7.5 Step 3 — UI badge "⚠️ SPEC 変更検知" requires a WS push
+// immediately after spec_changes INSERT. Separate from finding.new which is
+// emitted after Phase A analysis completes (Step 5).
+export const specChangeDetectedEventSchema = z.object({
+  type: z.literal("spec_change_detected"),
+  timestamp: z.number(),
+  payload: z.object({
+    specChangeId: z.number(),
+    projectId: z.string(),
+    specPath: z.string(),
+  }),
+});
+export type SpecChangeDetectedEvent = z.infer<typeof specChangeDetectedEventSchema>;
+
 // Discriminated union for all event types
 export const loomEventSchema = z.discriminatedUnion("type", [
   agentChangeEventSchema,
@@ -176,5 +191,6 @@ export const loomEventSchema = z.discriminatedUnion("type", [
   todoChangeEventSchema,
   planConflictEventSchema,
   sessionChangeEventSchema,
+  specChangeDetectedEventSchema,
 ]);
 export type LoomEvent = z.infer<typeof loomEventSchema>;

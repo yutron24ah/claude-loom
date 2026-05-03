@@ -77,6 +77,26 @@ describe("consistencyRouter shape — M4 t2 procedures", () => {
 });
 
 // ---------------------------------------------------------------------------
+// M4 t7: WS subscription shape tests
+// ---------------------------------------------------------------------------
+
+describe("consistencyRouter shape — M4 t7 subscription procedures", () => {
+  it("consistencyRouter has subscribeFindings subscription procedure", async () => {
+    const { consistencyRouter } = await import("../../src/routes/consistency.js");
+    const def = (consistencyRouter as any)._def;
+    expect(def.procedures).toHaveProperty("subscribeFindings");
+    expect(def.procedures.subscribeFindings._def.type).toBe("subscription");
+  });
+
+  it("consistencyRouter has subscribeSpecChanges subscription procedure", async () => {
+    const { consistencyRouter } = await import("../../src/routes/consistency.js");
+    const def = (consistencyRouter as any)._def;
+    expect(def.procedures).toHaveProperty("subscribeSpecChanges");
+    expect(def.procedures.subscribeSpecChanges._def.type).toBe("subscription");
+  });
+});
+
+// ---------------------------------------------------------------------------
 // Integration tests via HTTP
 // ---------------------------------------------------------------------------
 

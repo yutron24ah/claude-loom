@@ -12,6 +12,7 @@ import type {
   TodoChangeEvent,
   PlanConflictEvent,
   SessionChangeEvent,
+  SpecChangeDetectedEvent,
 } from "./types.js";
 
 class Broadcaster extends EventEmitter {
@@ -122,6 +123,19 @@ class Broadcaster extends EventEmitter {
       payload,
     };
     this.emit("session.change", event);
+    this.emit("*", event);
+  }
+
+  // WHY: M4 t7 — SPEC §7.5 Step 3 badge notification. Fired immediately after
+  // spec_changes INSERT in ingest.ts so the UI can display the badge without
+  // waiting for Phase A analysis to complete.
+  emitSpecChangeDetected(payload: SpecChangeDetectedEvent["payload"]) {
+    const event: SpecChangeDetectedEvent = {
+      type: "spec_change_detected",
+      timestamp: Date.now(),
+      payload,
+    };
+    this.emit("spec_change_detected", event);
     this.emit("*", event);
   }
 }

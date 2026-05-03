@@ -17,7 +17,8 @@ export type ToastEvent =
   | 'consistency_finding_new'
   | 'subagent_failed'
   | 'project_added'
-  | 'plan_conflict_detected';
+  | 'plan_conflict_detected'
+  | 'spec_change_detected';
 
 export interface Toast {
   /** Unique identifier — callers should provide a stable id (nanoid or Date.now()) */
@@ -131,6 +132,22 @@ export function emitPlanConflictDetected(message = 'PLAN.md の競合が検出�
     id: `plan_conflict_detected-${Date.now()}`,
     kind: 'warning',
     event: 'plan_conflict_detected',
+    message,
+    ttl_ms: null,
+  });
+}
+
+/**
+ * Emit spec_change_detected warning toast (persistent — user must acknowledge).
+ * WHY: SPEC §7.5 Step 3 badge — emitted when a SPEC file edit is detected
+ * and spec_changes row is inserted, before Phase A analysis begins.
+ * Persistent because user needs to be aware the spec changed.
+ */
+export function emitSpecChangeDetected(message = 'SPEC 変更が検知されました'): void {
+  toastBus.emit({
+    id: `spec_change_detected-${Date.now()}`,
+    kind: 'warning',
+    event: 'spec_change_detected',
     message,
     ttl_ms: null,
   });

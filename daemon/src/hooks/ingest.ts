@@ -111,7 +111,7 @@ async function handleSpecEditDetection(
   // Always use empty string as "before" — the hash chain is the authoritative change record.
   const { diff: diffStr } = computeDiff("", currentContent);
 
-  await db.insert(specChanges).values({
+  const [inserted] = await db.insert(specChanges).values({
     projectId: project.projectId,
     specPath: specRelPath,
     beforeHash: lastKnownHash ?? computeSpecHash(""),
@@ -119,6 +119,14 @@ async function handleSpecEditDetection(
     diff: diffStr,
     detectedAt: new Date(),
     status: SPEC_CHANGE_STATUS.PENDING,
+  }).returning();
+
+  // WHY: M4 t7 — emit WS push immediately after INSERT so UI can display
+  // "⚠️ SPEC 変更検知" badge without waiting for Phase A analysis (SPEC §7.5 Step 3).
+  broadcaster.emitSpecChangeDetected({
+    specChangeId: inserted.id,
+    projectId: project.projectId,
+    specPath: specRelPath,
   });
 }
 
