@@ -55,6 +55,69 @@ if [ -f "commands/loom-mode.md" ]; then
     fi
 fi
 
+# REQ-044 (M0.11.3): loom-ui-smoke.md が存在し valid frontmatter + 必須 keyword を持つ
+check_ui_smoke_command() {
+    local fname="$ROOT_DIR/commands/loom-ui-smoke.md"
+    local local_failures=0
+
+    if [ ! -f "$fname" ]; then
+        echo "FAIL [commands]: loom-ui-smoke.md not found (M0.11.3 t6)"
+        failures=$((failures + 1))
+        return
+    fi
+
+    # frontmatter closed
+    local closer_count
+    closer_count=$(grep -c "^---$" "$fname" 2>/dev/null || true)
+    if [ -z "$closer_count" ] || [ "$closer_count" -lt 2 ]; then
+        echo "FAIL [commands]: loom-ui-smoke.md frontmatter not closed"
+        failures=$((failures + 1))
+        local_failures=$((local_failures + 1))
+    fi
+
+    # description field
+    local desc_field
+    desc_field=$(awk '/^---$/{n++; next} n==1' "$fname" | grep -E "^description:" | sed 's/^description:[[:space:]]*//' | tr -d '"' | tr -d "'" || true)
+    if [ -z "$desc_field" ]; then
+        echo "FAIL [commands]: loom-ui-smoke.md missing description field"
+        failures=$((failures + 1))
+        local_failures=$((local_failures + 1))
+    fi
+
+    # body: scope parameter 記述
+    if ! grep -q "\-\-scope" "$fname"; then
+        echo "FAIL [commands]: loom-ui-smoke.md missing --scope parameter description"
+        failures=$((failures + 1))
+        local_failures=$((local_failures + 1))
+    fi
+
+    # body: auto-start flag 記述
+    if ! grep -q "\-\-auto-start" "$fname"; then
+        echo "FAIL [commands]: loom-ui-smoke.md missing --auto-start flag description"
+        failures=$((failures + 1))
+        local_failures=$((local_failures + 1))
+    fi
+
+    # body: SPEC §3.6.11 参照
+    if ! grep -q "3\.6\.11\|§3\.6\.11" "$fname"; then
+        echo "FAIL [commands]: loom-ui-smoke.md missing SPEC §3.6.11 reference"
+        failures=$((failures + 1))
+        local_failures=$((local_failures + 1))
+    fi
+
+    # body: docs/smoke-tests 出力ディレクトリ参照
+    if ! grep -q "docs/smoke-tests" "$fname"; then
+        echo "FAIL [commands]: loom-ui-smoke.md missing docs/smoke-tests reference"
+        failures=$((failures + 1))
+        local_failures=$((local_failures + 1))
+    fi
+
+    if [ "$local_failures" -eq 0 ]; then
+        echo "PASS [commands]: loom-ui-smoke.md valid frontmatter + body (M0.11.3 t6)"
+    fi
+}
+check_ui_smoke_command
+
 if [ "$failures" -gt 0 ]; then
   echo "commands_test FAILED with $failures violations"
   exit 1

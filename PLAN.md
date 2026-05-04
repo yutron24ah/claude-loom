@@ -297,7 +297,40 @@ retro 2026-05-03-001 で観測された **pending finding lifecycle tracking 不
 - [ ] **Token meter UX iteration** (retro 2026-05-04-001 F-res-003): ui/src/live/useTokenUsage.ts に refetchInterval enabled flag (session-active 時のみ polling) + ui/src/components/Sidebar.tsx を AppShell に wire up (M5 t4 reviewer 指摘の dead export 解消) <!-- id: m0.11.2-t8 status: todo -->
 - [ ] tag m0.11.2-complete 設置、Phase 1 全 milestone tag 全保持 <!-- id: m0.11.2-t9 status: todo -->
 
-**M0.11.2 着手タイミング**: Phase 1 → Phase 2 boundary milestone、Phase 2 entry 前の cleanup として実施推奨。M0.X cleanup 系列 (M0.11.1 / M0.13 / M0.14 と同 family) として short milestone (推定 7-9 task)。本 milestone は SPEC §3.9.x P4 (Root cause first) の 2 回目 application、M0.11.1 の lifecycle tracking architecture を pending side + durability side に拡張する cumulative refinement。
+**M0.11.2 着手タイミング**: Phase 1 → Phase 2 boundary milestone、Phase 2 entry 前の cleanup として実施推奨。**M0.11.3 完了後に着手**（M0.11.3 で確立する loom-ui-smoke skill を本 milestone 自身の verify にも活用、cumulative refinement chain）。M0.X cleanup 系列 (M0.11.1 / M0.13 / M0.14 と同 family) として short milestone (推定 7-9 task)。本 milestone は SPEC §3.9.x P4 (Root cause first) の 2 回目 application、M0.11.1 の lifecycle tracking architecture を pending side + durability side に拡張する cumulative refinement。
+
+## マイルストーン M0.11.3: UI Smoke Test Skill（loom-ui-smoke skill 新設）
+
+詳細: 未作成（spec phase 開始時に `loom-write-plan` skill で詳細化候補）
+retro 起源: `docs/retro/2026-05-04-001-report.md` finding F-proc-005 拡張 (success record + structural codify)、`memory/feedback_ui_smoke_test_skill.md` SSoT 昇格
+
+retro 2026-05-04-001 で F-proc-005 を success record として codify した直後、Phase 1 MVP main 統合 + Playwright MCP smoke test で **追加 4 件 critical bug**（Phaser 描画ゼロ / WS transform error / TodoWrite mock 残存 / Sidebar dead code）が発覚 → `hotfix/m5-smoke-bugs` で全 fix 済。「automated test green ≠ 画面が動く」gap を構造的に塞ぐ **`loom-ui-smoke` skill** を新設、各 milestone closure で **bash E2E + browser smoke の 2 層 verification** を default 化。
+
+### 設計合意（2026-05-05 spec phase 対話、SPEC §3.6.11 + §10.4 SSoT）
+
+- **Skill 形式**: suggest skill (UI 開発時のみ必要、§3.10.1 mandate vs suggest table の suggest 側)、Phase 2 で agent 化検討
+- **Pipeline**: hybrid Option C — Stage 1 戦略 derive (AI prompt-driven、creative) + Stage 2 実機 verify (AI が Playwright MCP browser_* tool 駆動、deterministic order) + Stage 3 report 生成 (bundled script `format-report.sh` + JSON schema validate、deterministic)
+- **Output dir**: `docs/smoke-tests/<YYYY-MM-DD>-<scope>/` (strategy.md / report.md / screenshots/<NN>-<route>.png / console.log / findings.json)
+- **Invocation**: 3 pattern (`/loom-ui-smoke` slash command + `[loom-meta] suggest_skill=loom-ui-smoke` injection + 自律 invoke at milestone closure)
+- **Scope param**: full (default) / route:<name> / smoke-only
+- **dev server lifecycle**: hybrid Option C (auto-detect + opt-in `--auto-start` flag、既起動時は流用、未起動時は user prompt)
+- **Failure handling**: skill は report 生成のみ、fix dispatch せん (PM 受領 + user 確認後 dispatch、SRP 整合)
+- **Consumer**: primary loom-developer / secondary loom-pm、loom-test-reviewer は scope 外
+- **依存**: Playwright MCP tool 群 + bash + jq (graceful skip 規約)
+
+### Task （9 task、推定）
+
+- [x] SPEC §3.6.11 + §10.4 新設 (loom-ui-smoke skill design SSoT) <!-- id: m0.11.3-t1 status: done -->
+- [x] tests/REQUIREMENTS.md REQ-044 追加 (UI smoke skill acceptance) <!-- id: m0.11.3-t2 status: done -->
+- [x] skills/loom-ui-smoke/SKILL.md draft (Stage 1 prompt augmentation + Stage 2 Playwright MCP 駆動 instruction) <!-- id: m0.11.3-t3 status: done -->
+- [x] skills/loom-ui-smoke/scripts/format-report.sh + templates/findings.schema.json (Stage 3 deterministic formatter) <!-- id: m0.11.3-t4 status: done -->
+- [x] skills/loom-ui-smoke/scripts/start-servers.sh (Q1 hybrid C 補助、auto-detect + opt-in) <!-- id: m0.11.3-t5 status: done -->
+- [x] commands/loom-ui-smoke.md (slash command 新設) <!-- id: m0.11.3-t6 status: done -->
+- [x] agents/loom-developer.md + loom-pm.md に suggest skill 参照記述 + milestone closure 自律 invoke logic 追記 <!-- id: m0.11.3-t7 status: done -->
+- [x] skill self-test: 自身を main HEAD で実行、hotfix 完了後の状態を smoke verify、report 生成 + findings.json schema validate 動作確認 <!-- id: m0.11.3-t8 status: done -->
+- [x] tag m0.11.3-complete + harness 18 PASS 維持 + Phase 1 全 milestone tag 全保持 <!-- id: m0.11.3-t9 status: done -->
+
+**M0.11.3 着手タイミング**: M0.11.2 より **先** に実施 (Phase 1 → Phase 2 boundary、cumulative dogfood reasoning — skill 完成後 M0.11.2 自身の verify にも活用可)。M0.X cleanup 系列、推定 5-7 task 規模 (script 実装含めて 9 task)。本 milestone は retro feedback loop (M3.1 codify → M4/M5 で運用 → M5 closure smoke で gap 検出 → 本 skill で gap 埋め) の **3 周目 cumulative refinement**。
 
 ## マイルストーン M0.12: Coexistence Mode（既存 PJ 検出 + 機能 opt-in/opt-out）
 

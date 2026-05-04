@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "smoke_id": "2026-05-05-full",
+  "scope": "full",
+  "started_at": 1777915502502,
+  "completed_at": 1777915802502,
+  "stats": {
+    "routes_tested": 11,
+    "routes_passed": 11,
+    "routes_failed": 0,
+    "console_errors": 1,
+    "console_warnings": 22
+  },
+  "findings": [
+    {
+      "id": "F-001",
+      "route": "/",
+      "severity": "info",
+      "category": "rendering",
+      "description": "favicon.ico returns 404 — no favicon file present in ui/public/. Not a functional failure, cosmetic only.",
+      "expected": "favicon.ico loads with HTTP 200",
+      "actual": "404 Not Found @ http://localhost:5173/favicon.ico",
+      "recommended_action": "Add a favicon.ico to ui/public/ in a follow-up polish task (low priority)"
+    },
+    {
+      "id": "F-002",
+      "route": "/*",
+      "severity": "info",
+      "category": "console-error",
+      "description": "React Router v7 future flag warnings emitted on every navigation (v7_startTransition and v7_relativeSplatPath). These are upgrade-readiness hints, not functional errors. Appear on all 11 routes.",
+      "expected": "No React Router deprecation warnings",
+      "actual": "2 React Router future flag warnings per navigation (22 total across 11 routes)",
+      "recommended_action": "Add v7_startTransition and v7_relativeSplatPath future flags to BrowserRouter config as a cleanup task"
+    }
+  ]
+}

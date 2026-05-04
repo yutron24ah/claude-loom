@@ -93,6 +93,35 @@ check_skill_sections "loom-debug" "When to use" "Process" "Hypothesis enumeratio
 # REQ-024: loom-worktree must have 6 required sections
 check_skill_sections "loom-worktree" "When to use" "Decision tree" "Commands" "Path convention" "Safety rules" "Anti-patterns"
 
+# REQ-044: loom-ui-smoke must exist and have required sections
+# SPEC §3.6.11 — UI Smoke Test Skill
+check_skill_sections "loom-ui-smoke" \
+  "Purpose" \
+  "Pre-flight" \
+  "Stage 1" \
+  "Stage 2" \
+  "Stage 3" \
+  "Scope" \
+  "Failure handling" \
+  "Output" \
+  "Invocation" \
+  "不変条件"
+
+# REQ-044: loom-ui-smoke minimum char count (skeleton prevention)
+loom_ui_smoke_md="skills/loom-ui-smoke/SKILL.md"
+if [ -f "$loom_ui_smoke_md" ]; then
+  char_count=$(wc -c < "$loom_ui_smoke_md")
+  if [ "$char_count" -ge 5000 ]; then
+    echo "PASS [loom-ui-smoke]: minimum char count ($char_count >= 5000)"
+  else
+    echo "FAIL [loom-ui-smoke]: REQ-044 violation: SKILL.md too short ($char_count < 5000 chars)"
+    ((failures++))
+  fi
+else
+  echo "FAIL [loom-ui-smoke]: REQ-044 violation: skills/loom-ui-smoke/SKILL.md missing"
+  ((failures++))
+fi
+
 if [ "$failures" -gt 0 ]; then
   echo "skills_test FAILED with $failures violations"
   exit 1
