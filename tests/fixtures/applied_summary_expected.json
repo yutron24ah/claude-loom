@@ -3,5 +3,160 @@
   "retro_id": "test-dry-run",
   "generated_at": 1778025600,
   "total_retro_sessions": 1,
-  "applied_findings": []
+  "applied_findings": [
+    {
+      "finding_id": "F-pj-001",
+      "origin_retro_id": "2026-05-04-001",
+      "category": "",
+      "proposal_type": "structural",
+      "summary": "Phase 1 MVP は PR 未 open、main 未 merge。32+ commits stacked、4-branch chain。",
+      "applied_in": {
+        "commit_sha": "0531afe",
+        "milestone_tag": null,
+        "applied_at": 1778025600,
+        "apply_type": "immediate"
+      },
+      "last_apply_history_entry": null
+    },
+    {
+      "finding_id": "F-pj-002",
+      "origin_retro_id": "2026-05-04-001",
+      "category": "",
+      "proposal_type": "structural",
+      "summary": "SPEC §3.6.8.6 unified-vs-2-commit ドリフト。5 連続 unified annotation 採用、SPEC default を inversion すべき。",
+      "applied_in": {
+        "commit_sha": "b7900b8",
+        "milestone_tag": null,
+        "applied_at": 1778025600,
+        "apply_type": "immediate"
+      },
+      "last_apply_history_entry": null
+    },
+    {
+      "finding_id": "F-pj-003",
+      "origin_retro_id": "2026-05-04-001",
+      "category": "",
+      "proposal_type": "structural",
+      "summary": "uninstall.sh repo-state safety boundary 未定義 (SPEC §9.3)。M5 t5 で実害発生。",
+      "applied_in": {
+        "commit_sha": "c8ec6ef",
+        "milestone_tag": null,
+        "applied_at": 1778025600,
+        "apply_type": "immediate"
+      },
+      "last_apply_history_entry": null
+    },
+    {
+      "finding_id": "F-pj-005",
+      "origin_retro_id": "2026-05-04-001",
+      "category": "",
+      "proposal_type": "structural",
+      "summary": "M3.2 + M4 retro 未実行 (retro debt)、carryover findings 不在。",
+      "applied_in": {
+        "commit_sha": "d041b6e",
+        "milestone_tag": null,
+        "applied_at": 1778025600,
+        "apply_type": "immediate"
+      },
+      "last_apply_history_entry": null
+    },
+    {
+      "finding_id": "F-proc-001",
+      "origin_retro_id": "2026-05-04-001",
+      "category": "",
+      "proposal_type": "structural",
+      "summary": "Task tool degraded mode persistence、proc-002 path C (self-review safety) 未定義。HIGH priority。",
+      "applied_in": {
+        "commit_sha": "b7900b8",
+        "milestone_tag": null,
+        "applied_at": 1778025600,
+        "apply_type": "immediate"
+      },
+      "last_apply_history_entry": null
+    },
+    {
+      "finding_id": "F-proc-002",
+      "origin_retro_id": "2026-05-04-001",
+      "category": "",
+      "proposal_type": "structural",
+      "summary": "unified annotation default 化 (process side、F-pj-002 と pair)。",
+      "applied_in": {
+        "commit_sha": "b7900b8",
+        "milestone_tag": null,
+        "applied_at": 1778025600,
+        "apply_type": "immediate"
+      },
+      "last_apply_history_entry": null
+    },
+    {
+      "finding_id": "F-proc-003",
+      "origin_retro_id": "2026-05-04-001",
+      "category": "",
+      "proposal_type": "structural",
+      "summary": ".claude-loom/retro/ 削除 incident root cause、3 層 structural fix 候補。",
+      "applied_in": {
+        "commit_sha": "c8ec6ef",
+        "milestone_tag": null,
+        "applied_at": 1778025600,
+        "apply_type": "immediate"
+      },
+      "last_apply_history_entry": null
+    },
+    {
+      "finding_id": "F-proc-004",
+      "origin_retro_id": "2026-05-04-001",
+      "category": "",
+      "proposal_type": "structural",
+      "summary": "branch hygiene gap codification、milestone tag = PR opening trigger 化。",
+      "applied_in": {
+        "commit_sha": "d041b6e",
+        "milestone_tag": null,
+        "applied_at": 1778025600,
+        "apply_type": "immediate"
+      },
+      "last_apply_history_entry": null
+    },
+    {
+      "finding_id": "F-meta-002",
+      "origin_retro_id": "2026-05-04-001",
+      "category": "",
+      "proposal_type": "structural",
+      "summary": "applied_summary graceful skip is symptomatic、retro state durability gap (git tracking 化 candidate)。",
+      "applied_in": {
+        "commit_sha": "6d9b36b",
+        "milestone_tag": null,
+        "applied_at": 1778025600,
+        "apply_type": "milestone"
+      },
+      "last_apply_history_entry": null
+    },
+    {
+      "finding_id": "F-meta-005",
+      "origin_retro_id": "2026-05-04-001",
+      "category": "",
+      "proposal_type": "structural",
+      "summary": "retro-pm degraded mode synthesis codification、本 session 自身が evidence。",
+      "applied_in": {
+        "commit_sha": "6d9b36b",
+        "milestone_tag": null,
+        "applied_at": 1778025600,
+        "apply_type": "immediate"
+      },
+      "last_apply_history_entry": null
+    },
+    {
+      "finding_id": "F-res-003",
+      "origin_retro_id": "2026-05-04-001",
+      "category": "",
+      "proposal_type": "structural",
+      "summary": "Token meter polling UX iteration (refetchInterval enabled flag + Sidebar wiring)。",
+      "applied_in": {
+        "commit_sha": "d041b6e",
+        "milestone_tag": null,
+        "applied_at": 1778025600,
+        "apply_type": "milestone"
+      },
+      "last_apply_history_entry": null
+    }
+  ]
 }
