@@ -25,6 +25,12 @@ test-results/
 playwright-report/
 .last-run.json
 
+# Playwright MCP (browser_* tool 経由の ad-hoc smoke test 残骸、git track しない)
+# M0.11.3 の loom-ui-smoke skill が docs/smoke-tests/<date>-<scope>/ に
+# 構造化保存する SSoT を確立予定 (未実装)
+.playwright-mcp/
+/smoke-*.png
+
 # Build output
 dist/
 build/
