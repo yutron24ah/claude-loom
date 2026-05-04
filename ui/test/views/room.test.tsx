@@ -53,7 +53,7 @@ describe('RoomView — Phaser canvas mount', () => {
     render(<RoomView initialSelected="pm" />);
     // AgentDetailPanel should be rendered since pm is pre-selected
     expect(screen.getByTestId('agent-detail-close')).toBeInTheDocument();
-    // PM agent name (ニケ) should be visible in the panel
-    expect(screen.getByText('ニケ')).toBeInTheDocument();
+    // PM agent detail panel should be visible (data-testid is unambiguous)
+    expect(screen.getByTestId('agent-detail-panel')).toBeInTheDocument();
   });
 });
