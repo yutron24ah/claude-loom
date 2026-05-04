@@ -13,6 +13,12 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { buildServer } from "../../src/server.js";
 import type { FastifyInstance } from "fastify";
 import { randomUUID } from "node:crypto";
+import superjson from "superjson";
+
+/** Serialize payload for tRPC POST mutation body (superjson transformer required). */
+function sjPayload(value: unknown): string {
+  return JSON.stringify(superjson.serialize(value));
+}
 
 let app: FastifyInstance;
 
@@ -35,7 +41,7 @@ async function createProject(): Promise<string> {
     method: "POST",
     url: "/trpc/project.upsert",
     headers: { "content-type": "application/json" },
-    payload: JSON.stringify({
+    payload: sjPayload({
       name: "Test Project",
       rootPath: path,
       specPath: `${path}/SPEC.md`,
@@ -43,7 +49,7 @@ async function createProject(): Promise<string> {
     }),
   });
   expect(response.statusCode).toBe(200);
-  return JSON.parse(response.body).result.data.projectId;
+  return JSON.parse(response.body).result.data.json.projectId;
 }
 
 async function createSpecChange(projectId: string): Promise<number> {
@@ -51,7 +57,7 @@ async function createSpecChange(projectId: string): Promise<number> {
     method: "POST",
     url: "/trpc/consistency.recordSpecChange",
     headers: { "content-type": "application/json" },
-    payload: JSON.stringify({
+    payload: sjPayload({
       projectId,
       specPath: "/SPEC.md",
       beforeHash: "aaa",
@@ -60,7 +66,7 @@ async function createSpecChange(projectId: string): Promise<number> {
     }),
   });
   expect(response.statusCode).toBe(200);
-  return JSON.parse(response.body).result.data.id;
+  return JSON.parse(response.body).result.data.json.id;
 }
 
 async function createFindingDirectly(specChangeId: number): Promise<number> {
@@ -103,11 +109,11 @@ describe("consistencyRouter.acknowledgeAndCreatePlanItem", () => {
       method: "POST",
       url: "/trpc/consistency.acknowledgeAndCreatePlanItem",
       headers: { "content-type": "application/json" },
-      payload: JSON.stringify({ findingId, projectId }),
+      payload: sjPayload({ findingId, projectId }),
     });
 
     expect(response.statusCode).toBe(200);
-    const data = JSON.parse(response.body).result.data;
+    const data = JSON.parse(response.body).result.data.json;
     expect(typeof data.planItemId).toBe("number");
   });
 
@@ -120,7 +126,7 @@ describe("consistencyRouter.acknowledgeAndCreatePlanItem", () => {
       method: "POST",
       url: "/trpc/consistency.acknowledgeAndCreatePlanItem",
       headers: { "content-type": "application/json" },
-      payload: JSON.stringify({ findingId, projectId }),
+      payload: sjPayload({ findingId, projectId }),
     });
 
     // Verify finding status is now 'acknowledged'
@@ -146,10 +152,10 @@ describe("consistencyRouter.acknowledgeAndCreatePlanItem", () => {
       method: "POST",
       url: "/trpc/consistency.acknowledgeAndCreatePlanItem",
       headers: { "content-type": "application/json" },
-      payload: JSON.stringify({ findingId, projectId }),
+      payload: sjPayload({ findingId, projectId }),
     });
 
-    const { planItemId } = JSON.parse(response.body).result.data;
+    const { planItemId } = JSON.parse(response.body).result.data.json;
 
     // Verify plan_item exists in DB
     const { createDBClient } = await import("../../src/db/client.js");
@@ -176,10 +182,10 @@ describe("consistencyRouter.acknowledgeAndCreatePlanItem", () => {
       method: "POST",
       url: "/trpc/consistency.acknowledgeAndCreatePlanItem",
       headers: { "content-type": "application/json" },
-      payload: JSON.stringify({ findingId, projectId }),
+      payload: sjPayload({ findingId, projectId }),
     });
 
-    const { planItemId } = JSON.parse(response.body).result.data;
+    const { planItemId } = JSON.parse(response.body).result.data.json;
 
     const { createDBClient } = await import("../../src/db/client.js");
     const { planItems } = await import("../../src/db/schema.js");
@@ -204,10 +210,10 @@ describe("consistencyRouter.acknowledgeAndCreatePlanItem", () => {
       method: "POST",
       url: "/trpc/consistency.acknowledgeAndCreatePlanItem",
       headers: { "content-type": "application/json" },
-      payload: JSON.stringify({ findingId, projectId }),
+      payload: sjPayload({ findingId, projectId }),
     });
 
-    const { planItemId } = JSON.parse(response.body).result.data;
+    const { planItemId } = JSON.parse(response.body).result.data.json;
 
     const { createDBClient } = await import("../../src/db/client.js");
     const { planItems } = await import("../../src/db/schema.js");
@@ -234,10 +240,10 @@ describe("consistencyRouter.acknowledgeAndCreatePlanItem", () => {
       method: "POST",
       url: "/trpc/consistency.acknowledgeAndCreatePlanItem",
       headers: { "content-type": "application/json" },
-      payload: JSON.stringify({ findingId, projectId }),
+      payload: sjPayload({ findingId, projectId }),
     });
 
-    const { planItemId } = JSON.parse(response.body).result.data;
+    const { planItemId } = JSON.parse(response.body).result.data.json;
 
     const { createDBClient } = await import("../../src/db/client.js");
     const { planItems } = await import("../../src/db/schema.js");
@@ -265,7 +271,7 @@ describe("consistencyRouter.acknowledgeAndCreatePlanItem — errors", () => {
       method: "POST",
       url: "/trpc/consistency.acknowledgeAndCreatePlanItem",
       headers: { "content-type": "application/json" },
-      payload: JSON.stringify({ findingId: 99999999, projectId }),
+      payload: sjPayload({ findingId: 99999999, projectId }),
     });
 
     const body = JSON.parse(response.body);
@@ -282,7 +288,7 @@ describe("consistencyRouter.acknowledgeAndCreatePlanItem — errors", () => {
       method: "POST",
       url: "/trpc/consistency.acknowledgeAndCreatePlanItem",
       headers: { "content-type": "application/json" },
-      payload: JSON.stringify({ findingId, projectId: "nonexistent-project-id" }),
+      payload: sjPayload({ findingId, projectId: "nonexistent-project-id" }),
     });
 
     const body = JSON.parse(response.body);

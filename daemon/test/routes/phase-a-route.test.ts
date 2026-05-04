@@ -10,6 +10,12 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { mkdirSync } from "node:fs";
 import { randomUUID } from "node:crypto";
+import superjson from "superjson";
+
+/** Serialize payload for tRPC POST mutation body (superjson transformer required). */
+function sjPayload(value: unknown): string {
+  return JSON.stringify(superjson.serialize(value));
+}
 
 let app: FastifyInstance;
 let dbPath: string;
@@ -35,20 +41,20 @@ async function createSpecChange(): Promise<{ projectId: string; specChangeId: nu
     method: "POST",
     url: "/trpc/project.upsert",
     headers: { "content-type": "application/json" },
-    payload: JSON.stringify({
+    payload: sjPayload({
       name: "Test Project",
       rootPath,
       specPath: `${rootPath}/SPEC.md`,
       status: "active",
     }),
   });
-  const { projectId } = JSON.parse(projectResp.body).result.data;
+  const { projectId } = JSON.parse(projectResp.body).result.data.json;
 
   const scResp = await app.inject({
     method: "POST",
     url: "/trpc/consistency.recordSpecChange",
     headers: { "content-type": "application/json" },
-    payload: JSON.stringify({
+    payload: sjPayload({
       projectId,
       specPath: "SPEC.md",
       beforeHash: "h0",
@@ -56,7 +62,7 @@ async function createSpecChange(): Promise<{ projectId: string; specChangeId: nu
       diff: "@@ -1 +1 @@\n-old line\n+new line",
     }),
   });
-  const { id: specChangeId } = JSON.parse(scResp.body).result.data;
+  const { id: specChangeId } = JSON.parse(scResp.body).result.data.json;
 
   return { projectId, specChangeId };
 }
@@ -86,11 +92,11 @@ describe("consistencyRouter.runAnalysis", () => {
       method: "POST",
       url: "/trpc/consistency.runAnalysis",
       headers: { "content-type": "application/json" },
-      payload: JSON.stringify({ specChangeId }),
+      payload: sjPayload({ specChangeId }),
     });
 
     expect(resp.statusCode).toBe(200);
-    const data = JSON.parse(resp.body).result.data;
+    const data = JSON.parse(resp.body).result.data.json;
     expect(data).toHaveProperty("findingsCreated");
     expect(typeof data.findingsCreated).toBe("number");
     expect(data.findingsCreated).toBeGreaterThanOrEqual(0);
@@ -104,7 +110,7 @@ describe("consistencyRouter.runAnalysis", () => {
       method: "POST",
       url: "/trpc/consistency.runAnalysis",
       headers: { "content-type": "application/json" },
-      payload: JSON.stringify({ specChangeId }),
+      payload: sjPayload({ specChangeId }),
     });
 
     // Query the latest spec change via getLatestSpecChange would need projectId
@@ -113,7 +119,7 @@ describe("consistencyRouter.runAnalysis", () => {
       method: "POST",
       url: "/trpc/consistency.runAnalysis",
       headers: { "content-type": "application/json" },
-      payload: JSON.stringify({ specChangeId }),
+      payload: sjPayload({ specChangeId }),
     });
     // Should still succeed (even if already analyzed)
     expect(resp2.statusCode).toBe(200);
@@ -124,7 +130,7 @@ describe("consistencyRouter.runAnalysis", () => {
       method: "POST",
       url: "/trpc/consistency.runAnalysis",
       headers: { "content-type": "application/json" },
-      payload: JSON.stringify({ specChangeId: 99999 }),
+      payload: sjPayload({ specChangeId: 99999 }),
     });
 
     // tRPC returns either non-200 or a body with error field
@@ -141,7 +147,7 @@ describe("consistencyRouter.runAnalysis", () => {
       method: "POST",
       url: "/trpc/consistency.runAnalysis",
       headers: { "content-type": "application/json" },
-      payload: JSON.stringify({ specChangeId }),
+      payload: sjPayload({ specChangeId }),
     });
 
     expect(resp.statusCode).toBe(200);

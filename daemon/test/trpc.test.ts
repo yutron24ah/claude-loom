@@ -66,7 +66,7 @@ describe("tRPC Fastify integration", () => {
     expect(response.statusCode).toBe(200);
     const body = JSON.parse(response.body);
     expect(body.result).toBeDefined();
-    expect(body.result.data.status).toBe("ok");
-    expect(typeof body.result.data.timestamp).toBe("number");
+    expect(body.result.data.json.status).toBe("ok");
+    expect(typeof body.result.data.json.timestamp).toBe("number");
   });
 });

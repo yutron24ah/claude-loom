@@ -1,5 +1,6 @@
 import { initTRPC, TRPCError } from "@trpc/server";
 import type { CreateFastifyContextOptions } from "@trpc/server/adapters/fastify";
+import superjson from "superjson";
 import { getOrCreateToken, verifyToken } from "./security/token.js";
 
 export type Context = {
@@ -12,7 +13,10 @@ export function createContext({ req }: CreateFastifyContextOptions): Context {
   return { token };
 }
 
-const t = initTRPC.context<Context>().create();
+// WHY: superjson transformer must match the ui client (wsLink transformer: superjson).
+// Without this, all WS responses produce TransformResultError — the server sends raw
+// JSON while the client expects superjson envelope format (bug-2 root cause).
+const t = initTRPC.context<Context>().create({ transformer: superjson });
 
 export const router = t.router;
 export const publicProcedure = t.procedure;

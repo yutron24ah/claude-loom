@@ -50,6 +50,11 @@ export class RoomScene extends Phaser.Scene {
       attributes: true,
       attributeFilter: ['data-theme'],
     });
+
+    // WHY: testability seam for Playwright e2e — signals that create() ran
+    // successfully. Verifiable via `window.__roomSceneReady` in e2e tests.
+    // This avoids reading WebGL pixel data (which is cross-origin inaccessible).
+    (window as unknown as Record<string, unknown>)['__roomSceneReady'] = true;
   }
 
   /**

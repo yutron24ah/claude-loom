@@ -3,6 +3,11 @@
  * WHY: verify Phaser game instance lifecycle (mount/unmount/HMR dispose).
  * Phaser is mocked — real Phaser.Game cannot run in jsdom (WebGL/Canvas noop).
  * Test only verifies constructor call count + destroy call timing.
+ *
+ * Updated for bug-1 fix: RoomScene and agentSpriteSync are now imported by
+ * PhaserCanvas — they are mocked here to prevent jsdom incompatibility.
+ * _resetModuleLevelGame() is called in beforeEach to isolate tests from the
+ * module-level singleton that prevents StrictMode double-mount in production.
  */
 import { describe, it, expect, afterEach, vi, beforeEach } from 'vitest';
 import { render, cleanup, act } from '@testing-library/react';
@@ -14,6 +19,8 @@ import React from 'react';
 const mockDestroy = vi.fn();
 const MockGameConstructor = vi.fn(() => ({
   destroy: mockDestroy,
+  // WHY: PhaserCanvas now calls game.events?.once() with optional chaining.
+  // No events mock needed since optional chaining skips undefined safely.
 }));
 
 vi.mock('phaser', () => ({
@@ -23,12 +30,30 @@ vi.mock('phaser', () => ({
   },
 }));
 
-// Import AFTER mock is set up
-const { PhaserCanvas } = await import('../src/views/room/PhaserCanvas');
+// WHY: PhaserCanvas now imports RoomScene. RoomScene extends Phaser.Scene
+// (mocked above) but the constructor would still fail in jsdom. Mock it away.
+vi.mock('../src/views/room/scenes/RoomScene', () => ({
+  RoomScene: vi.fn().mockImplementation(() => ({})),
+}));
+
+// WHY: PhaserCanvas now imports syncAgentsToScene. It calls scene.add.graphics()
+// which requires a real Phaser scene context. Mock it to a no-op.
+vi.mock('../src/views/room/agentSpriteSync', () => ({
+  syncAgentsToScene: vi.fn(),
+}));
+
+// Import AFTER mocks are set up
+const { PhaserCanvas, _resetModuleLevelGame } = await import(
+  '../src/views/room/PhaserCanvas'
+);
 
 beforeEach(() => {
   MockGameConstructor.mockClear();
   mockDestroy.mockClear();
+  // WHY: reset module-level singleton so each test starts with a clean slate.
+  // In production, the singleton prevents StrictMode double-mount. In tests,
+  // each test case must create a fresh Phaser.Game to verify constructor counts.
+  _resetModuleLevelGame();
 });
 
 afterEach(() => {

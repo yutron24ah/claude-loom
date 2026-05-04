@@ -16,6 +16,12 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { mkdirSync } from "node:fs";
 import { randomUUID } from "node:crypto";
+import superjson from "superjson";
+
+/** Serialize input for tRPC GET query ?input= param (superjson transformer required). */
+function sjInput(value: unknown): string {
+  return encodeURIComponent(JSON.stringify(superjson.serialize(value)));
+}
 
 let app: FastifyInstance;
 let dbPath: string;
@@ -62,12 +68,11 @@ describe("tokenRouter.getUsageSummary", () => {
   it("returns zero totals when no token_usage rows exist", async () => {
     const resp = await app.inject({
       method: "GET",
-      url: "/trpc/token.getUsageSummary?input=" +
-        encodeURIComponent(JSON.stringify({ sinceMs: 0 })),
+      url: "/trpc/token.getUsageSummary?input=" + sjInput({ sinceMs: 0 }),
     });
 
     expect(resp.statusCode).toBe(200);
-    const data = JSON.parse(resp.body).result.data;
+    const data = JSON.parse(resp.body).result.data.json;
     expect(data).toHaveProperty("inputTokens");
     expect(data).toHaveProperty("outputTokens");
     expect(data).toHaveProperty("cacheTokens");
@@ -92,12 +97,11 @@ describe("tokenRouter.getUsageSummary", () => {
 
     const resp = await app.inject({
       method: "GET",
-      url: "/trpc/token.getUsageSummary?input=" +
-        encodeURIComponent(JSON.stringify({ sinceMs: now - 10000 })),
+      url: "/trpc/token.getUsageSummary?input=" + sjInput({ sinceMs: now - 10000 }),
     });
 
     expect(resp.statusCode).toBe(200);
-    const data = JSON.parse(resp.body).result.data;
+    const data = JSON.parse(resp.body).result.data.json;
     expect(data.inputTokens).toBe(250);
     expect(data.outputTokens).toBe(500);
     expect(data.cacheTokens).toBe(125);
@@ -118,12 +122,11 @@ describe("tokenRouter.getUsageSummary", () => {
 
     const resp = await app.inject({
       method: "GET",
-      url: "/trpc/token.getUsageSummary?input=" +
-        encodeURIComponent(JSON.stringify({ sessionId: sessionA, sinceMs: now - 10000 })),
+      url: "/trpc/token.getUsageSummary?input=" + sjInput({ sessionId: sessionA, sinceMs: now - 10000 }),
     });
 
     expect(resp.statusCode).toBe(200);
-    const data = JSON.parse(resp.body).result.data;
+    const data = JSON.parse(resp.body).result.data.json;
     expect(data.inputTokens).toBe(100);
     expect(data.outputTokens).toBe(200);
     expect(data.cacheTokens).toBe(0);
@@ -143,12 +146,11 @@ describe("tokenRouter.getUsageSummary", () => {
 
     const resp = await app.inject({
       method: "GET",
-      url: "/trpc/token.getUsageSummary?input=" +
-        encodeURIComponent(JSON.stringify({ sinceMs: now - 500 })),
+      url: "/trpc/token.getUsageSummary?input=" + sjInput({ sinceMs: now - 500 }),
     });
 
     expect(resp.statusCode).toBe(200);
-    const data = JSON.parse(resp.body).result.data;
+    const data = JSON.parse(resp.body).result.data.json;
     expect(data.inputTokens).toBe(50);
     expect(data.outputTokens).toBe(100);
     expect(data.cacheTokens).toBe(10);
@@ -163,12 +165,11 @@ describe("tokenRouter.getUsageSeries", () => {
   it("returns empty array when no token_usage rows exist", async () => {
     const resp = await app.inject({
       method: "GET",
-      url: "/trpc/token.getUsageSeries?input=" +
-        encodeURIComponent(JSON.stringify({ sinceMs: 0 })),
+      url: "/trpc/token.getUsageSeries?input=" + sjInput({ sinceMs: 0 }),
     });
 
     expect(resp.statusCode).toBe(200);
-    const data = JSON.parse(resp.body).result.data;
+    const data = JSON.parse(resp.body).result.data.json;
     expect(Array.isArray(data)).toBe(true);
     expect(data).toHaveLength(0);
   });
@@ -189,12 +190,11 @@ describe("tokenRouter.getUsageSeries", () => {
 
     const resp = await app.inject({
       method: "GET",
-      url: "/trpc/token.getUsageSeries?input=" +
-        encodeURIComponent(JSON.stringify({ sinceMs: now - 10000 })),
+      url: "/trpc/token.getUsageSeries?input=" + sjInput({ sinceMs: now - 10000 }),
     });
 
     expect(resp.statusCode).toBe(200);
-    const data = JSON.parse(resp.body).result.data;
+    const data = JSON.parse(resp.body).result.data.json;
     expect(Array.isArray(data)).toBe(true);
     expect(data.length).toBeGreaterThanOrEqual(2);
 
@@ -218,12 +218,11 @@ describe("tokenRouter.getUsageSeries", () => {
 
     const resp = await app.inject({
       method: "GET",
-      url: "/trpc/token.getUsageSeries?input=" +
-        encodeURIComponent(JSON.stringify({ sinceMs: bucket - 1000 })),
+      url: "/trpc/token.getUsageSeries?input=" + sjInput({ sinceMs: bucket - 1000 }),
     });
 
     expect(resp.statusCode).toBe(200);
-    const data = JSON.parse(resp.body).result.data;
+    const data = JSON.parse(resp.body).result.data.json;
     // Both rows are at the same bucket — should be aggregated
     const bucketRow = data.find((d: any) => d.bucketAt === bucket);
     expect(bucketRow).toBeDefined();
