@@ -214,3 +214,18 @@ SPEC §3.9.11（Lifecycle Tracking Architecture）/ §6.9.6（pending.json schem
 - [ ] §5 通知 toast と daemon WS event types (`daemon/src/events/types.ts`) が対応
 - [ ] §6 visual hint と SPEC §12 visual 方向性 (ピクセル RPG) が整合
 - [ ] §7 Phase 振り分けと PLAN.md M2-M5 milestone tasks が整合
+
+## M0.11.3 UI Smoke Test Skill 関連 check
+
+SPEC §3.6.11（UI Smoke Test Skill）+ §10.4（Browser-interactive verification layer）を編集した時：
+
+- [ ] §3.6.11.3 4 stage pipeline (Stage 1 derive / Stage 2 verify / Stage 3 report) と `skills/loom-ui-smoke/SKILL.md` instruction が整合
+- [ ] §3.6.11.4 Output 階層 (`docs/smoke-tests/<date>-<scope>/{strategy.md, report.md, screenshots/, console.log, findings.json}`) と `scripts/format-report.sh` 出力 path が一致
+- [ ] §3.6.11.5 Invocation 3 pattern (`/loom-ui-smoke` slash + suggest skill injection + 自律 invoke at milestone closure) と `commands/loom-ui-smoke.md` + `agents/loom-{developer,pm}.md` 記述が整合
+- [ ] §3.6.11.6 Scope param (`full|route:<name>|smoke-only`) と slash command parameter parsing が整合
+- [ ] §3.6.11.7 dev server lifecycle (hybrid Option C、port detect + `--auto-start` opt-in) と `scripts/start-servers.sh` が整合
+- [ ] §3.6.11.8 Failure handling (skill report only、fix dispatch せん、SRP 整合) と SKILL.md 規律記述が整合
+- [ ] §3.6.11.9 依存 (Playwright MCP + bash + jq、graceful skip) と SKILL.md dependency check 手順が整合
+- [ ] §3.6.11.10 Consumer agents (loom-developer primary / loom-pm secondary、loom-test-reviewer は scope 外) と agent prompt suggest skill 記述が整合
+- [ ] §10.4 Layer 1 / Layer 2 の 2 層 verification 規約と PLAN.md milestone closure default 記述が整合
+- [ ] tests/REQUIREMENTS.md REQ-044 が SPEC §3.6.11 + §10.4 と整合

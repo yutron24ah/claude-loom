@@ -446,6 +446,88 @@ primary SSoT 候補（M3.1 retro 時点）:
 
 `docs/DOC_CONSISTENCY_CHECKLIST.md` に M3.1 retro 関連 section を追加し、enum / schema を持つ file を編集した時の派生 file cross-check 項目を明記する。
 
+### 3.6.11 UI Smoke Test Skill（M0.11.3 から、retro 2026-05-04-001 F-proc-005 拡張）
+
+#### 3.6.11.1 背景
+
+retro 2026-05-04-001 で F-proc-005「t2 E2E verification gate effectiveness」を success record として記録、M5 t2 の bash + automated test 7-stage verification が 4 件 MVP-blocking bug を発見・修正した実例を codify。しかし**その verification layer は browser interactive を含まず**、Phase 1 MVP main 統合直後の Playwright MCP 経由 smoke test で **追加 4 件 critical bug**（Phaser 描画ゼロ / WS transform error / TodoWrite mock 残存 / Sidebar dead code）が発覚。「automated test green ≠ 画面が動く」gap を構造的に塞ぐ skill を新設。
+
+#### 3.6.11.2 Skill purpose
+
+**画面要件・機能要件・design から test 戦略を derive、Playwright MCP browser tool 経由で実機 verify、構造化 report を返す。** UI 開発時のみ必要、blanket mandate せん **suggest skill** category（§3.10.1 mandate vs suggest table）。
+
+#### 3.6.11.3 4 stage pipeline (hybrid Option C)
+
+| Stage | 方式 | output |
+|---|---|---|
+| **Stage 1: 戦略 derive** | AI prompt-driven (creative) | `docs/smoke-tests/<date>-<scope>/strategy.md` (route × expected behavior matrix) |
+| **Stage 2: 実機 verify** | AI が SKILL.md 手順に従い Playwright MCP `browser_*` tool 駆動 (deterministic order) | `screenshots/<NN>-<route>.png` + `console.log` (各 route の error / warning capture) |
+| **Stage 3: report 生成** | bundled script (`scripts/format-report.sh`、jq + bash) | `report.md` (REQ マッピング込み) + `findings.json` (machine-readable、JSON schema validate) |
+
+#### 3.6.11.4 Output 階層構造
+
+```
+docs/smoke-tests/                              ← git-tracked (history of UI verification)
+└── <YYYY-MM-DD>-<scope>/                     ← <date>-<scope>、scope = milestone tag or hotfix label
+    ├── strategy.md                           ← Stage 1 derive 結果
+    ├── report.md                             ← Stage 3 final report
+    ├── screenshots/
+    │   ├── 01-home.png                       ← <NN>-<route>.png
+    │   ├── 02-plan.png
+    │   └── ...
+    ├── console.log                           ← 全 route 通しの error + warning collected
+    └── findings.json                         ← machine-readable findings (failed assertion + REQ ref)
+```
+
+#### 3.6.11.5 Invocation pattern
+
+3 pattern 全て support：
+
+1. **`/loom-ui-smoke` slash command**: user 手動 ad-hoc smoke test
+2. **`[loom-meta] suggest_skill=loom-ui-smoke` injection**: loom-developer / loom-pm が UI feature dispatch 時に skill 名注入、agent 自律判断で invoke
+3. **自律 invoke (milestone closure default)**: loom-pm が `git tag -a m*-complete` 設置直後に skill 自動 invoke、F-proc-005 codify の 2 層 verification (bash E2E + browser smoke) 第 2 layer
+
+#### 3.6.11.6 Scope parameter
+
+```bash
+/loom-ui-smoke              # default = full (全 route navigate + verify、screenshot 取得)
+/loom-ui-smoke route:plan   # 単一 route のみ（部分 verify）
+/loom-ui-smoke smoke-only   # screenshot 取らず console error / DOM check only (light mode、CI-friendly)
+```
+
+#### 3.6.11.7 dev server lifecycle (hybrid Option C)
+
+skill 起動時に port 5757 (daemon) + 5173 (ui) listen 確認：
+
+- **既起動**: 既存 dev session を流用 (user の `pnpm dev` 同居 friendly)
+- **未起動 + `--auto-start` flag**: skill が `pnpm --filter @claude-loom/{daemon,ui} dev` を background 起動、smoke test 完了後に `lsof -tiTCP:<port> | xargs kill` で cleanup
+- **未起動 + flag なし**: user に prompt「dev server 未起動、auto-start するか？」、yes で起動 / no で abort
+- **graceful fallback**: ぴあぴあ port conflict 検出時は別 port で起動 retry or skill abort + 明確 error message
+
+#### 3.6.11.8 Failure handling（responsibility separation）
+
+skill は **読み取り専用 + report 生成のみ**、bug 発見時に fix dispatch せん（SRP 整合）：
+
+- skill final report に pass/fail 件数 + failure 詳細 (route × expected vs actual + screenshot ref) + recommended next action
+- recommended action 候補: `loom-developer dispatch` (PM 経由)、retro session への carryover findings 提案、follow-up smoke test schedule
+- PM がそれを受領して fix dispatch 判断（user 確認後）
+
+#### 3.6.11.9 依存
+
+- **必須**: Playwright MCP tool 群 (`browser_navigate` / `browser_snapshot` / `browser_take_screenshot` / `browser_console_messages` / `browser_close`)
+- **必須**: `bash` + `jq` (script formatter 用)
+- **任意**: `pnpm dev` 起動済 (auto-detect、§3.6.11.7)
+- skill `SKILL.md` 冒頭で dependency check 手順記載、不在時は graceful skip + WARN 出力
+
+#### 3.6.11.10 Consumer agents
+
+primary: **loom-developer** (UI feature 実装完了時 + milestone closure E2E task)、secondary: **loom-pm** (milestone closure default invoke)。**loom-test-reviewer は consumer 外** (review 責任が scope、execution は SRP 違反)。各 agent prompt に suggest skill 参照記述：
+
+```
+UI 関連 task / milestone closure verification の候補として `loom-ui-smoke` skill。
+他 verification approach (Playwright e2e baseline / 手動 browser test) も agent 自律判断で可。
+```
+
 ### 3.7 プロジェクトライフサイクルと adopt 戦略
 
 claude-loom は **新規プロジェクトの立ち上げ** にも **既存プロジェクトの取り込み（adopt）** にも対応する。両者は明確に区別され、PM が異なるフローで処理する。
@@ -1828,6 +1910,17 @@ M5 t5 で uninstall.sh が repo の `.claude-loom/retro/` を削除する incide
 `tests/REQUIREMENTS.md` に ID 付きで記録（claude-blog-skill 流儀）。
 例：`REQ-001: /loom 実行で daemon が起動し、ブラウザが localhost:5757 を開く`
 
+### 10.4 Browser-interactive verification layer（M0.11.3 から、retro 2026-05-04-001 F-proc-005 拡張）
+
+UI 開発時の test 戦略を **2 層化**：
+
+| Layer | 担当 | 検出する gap |
+|---|---|---|
+| **Layer 1: bash + automated test** | `bash tests/run_tests.sh` + `pnpm test` (vitest unit + integration) + `pnpm e2e` (Playwright baseline) | 論理 correctness、build / install / unit behavior、既知 baseline regression |
+| **Layer 2: browser-interactive smoke** | `loom-ui-smoke` skill (§3.6.11)、Playwright MCP `browser_*` tool 経由 | **実機での描画・WS 流通・state propagation・navigation・interactivity** が automated test mock の隙間に隠れた gap を検出 |
+
+両 layer を **milestone closure default** として実行、F-proc-005 success record の継続的拡張。Layer 2 は UI 開発を含む milestone のみ適用 (suggest skill、§3.10.1)、daemon-only / agent-prompt-only の milestone では skip 可能。
+
 ---
 
 ## 11. エラーハンドリング方針
@@ -1926,3 +2019,4 @@ M5 t5 で uninstall.sh が repo の `.claude-loom/retro/` を削除する incide
 - 2026-04-27: §6.9.1 / §6.9.2 / §6.9.3 追加（M0.8 retro の user-prefs / project-prefs schema + merge 規則）
 - 2026-05-02: §3.6.9.7 追加 + §3.6.9.6 表 M3.1 行更新 (task 4→5、scope に visual regression infra 追記) + §12 確定値表に "Visual regression check (M3.1 から)" 行追加（res-001 確定 = Playwright e2e、retro 2026-05-02-002 由来、M3.1 spec phase 解決）
 - 2026-05-03: §3.6.10 新設「SSoT cross-check rule」+ Coding 原則「文字列リテラル回避、enum/定数経由比較」codify（retro 2026-05-03-001 pj-002 由来、M3.1 t3 で偶然発見した SSoT enum drift bug を構造 pattern として spec 化、user feedback memory 「avoid string literals, prefer typed constants/enums」を SSoT 昇格）
+- 2026-05-05: §3.6.11 新設「UI Smoke Test Skill」+ §10.4 新設「Browser-interactive verification layer」（retro 2026-05-04-001 F-proc-005 拡張、Phase 1 MVP main 統合直後 4 件 critical bug 発覚を構造的に塞ぐ skill 設計、user feedback memory「UI smoke test capability」を SSoT 昇格、M0.11.3 milestone で実装）
