@@ -1,9 +1,13 @@
 /**
- * tokens.css migration test (Task 4, m2-t2)
+ * tokens.css migration test (Task 4, m2-t2; extended M0.11.4-t3)
  * WHY: verify tokens.css is properly migrated from prototype with:
  *   1. hex values converted to rgb space-separated integers (for <alpha-value> Tailwind syntax)
  *   2. [data-theme="dusk"] and [data-theme="night"] theme override blocks present
  *   3. all expected CSS variables present in :root
+ *   4. (M0.11.4-t3) RPG 3 theme palette --p-* variables present (default + .theme-dusk + .theme-night)
+ *   5. (M0.11.4-t3) RPG primitive CSS classes present (.rpg-frame, .btn-px, .dot, etc.)
+ *   6. (M0.11.4-t3) Room BEM primitives present (.room, .room-poster, .room-island, etc.)
+ *   7. (M0.11.4-t3) Subroom primitives present (.subroom-clone, .subroom-portal)
  */
 import { describe, it, expect, beforeAll } from 'vitest';
 import { readFileSync } from 'fs';
@@ -251,5 +255,207 @@ describe('tailwind-config variable expose', () => {
     const configPath = resolve(__dirname, '../tailwind.config.ts');
     const content = readFileSync(configPath, 'utf-8');
     expect(content).toContain('var(--radius-card)');
+  });
+});
+
+// ============================================================
+// M0.11.4-t3: RPG 3 theme palette assertions
+// WHY: Phase B/C views rely on --p-* CSS variables for Room rendering.
+// These tests ensure all palette vars are present in tokens.css.
+// ============================================================
+
+describe('tokens.css RPG palette — default (cozy noon)', () => {
+  it('contains --p-bg-sky in file', () => {
+    expect(tokensContent).toContain('--p-bg-sky');
+  });
+  it('contains --p-bg-floor in file', () => {
+    expect(tokensContent).toContain('--p-bg-floor');
+  });
+  it('contains --p-wall in file', () => {
+    expect(tokensContent).toContain('--p-wall');
+  });
+  it('contains --p-rug in file', () => {
+    expect(tokensContent).toContain('--p-rug');
+  });
+  it('contains --p-cat-base in file', () => {
+    expect(tokensContent).toContain('--p-cat-base');
+  });
+  it('contains --p-cat-line in file', () => {
+    expect(tokensContent).toContain('--p-cat-line');
+  });
+  it('contains --p-screen in file', () => {
+    expect(tokensContent).toContain('--p-screen');
+  });
+  it('contains --p-accent in file', () => {
+    expect(tokensContent).toContain('--p-accent');
+  });
+  it('contains --p-success in file', () => {
+    expect(tokensContent).toContain('--p-success');
+  });
+  it('contains --p-error in file', () => {
+    expect(tokensContent).toContain('--p-error');
+  });
+  it('contains --p-warn in file', () => {
+    expect(tokensContent).toContain('--p-warn');
+  });
+  it('contains --p-text in file', () => {
+    expect(tokensContent).toContain('--p-text');
+  });
+  it('contains --p-paper in file', () => {
+    expect(tokensContent).toContain('--p-paper');
+  });
+  it('contains --p-shadow in file', () => {
+    expect(tokensContent).toContain('--p-shadow');
+  });
+});
+
+describe('tokens.css RPG palette — .theme-dusk', () => {
+  it('has .theme-dusk class block', () => {
+    expect(tokensContent).toMatch(/\.theme-dusk\s*\{/);
+  });
+  it('.theme-dusk overrides --p-bg-sky', () => {
+    expect(tokensContent).toMatch(/\.theme-dusk[\s\S]*?--p-bg-sky/);
+  });
+  it('.theme-dusk overrides --p-accent', () => {
+    expect(tokensContent).toMatch(/\.theme-dusk[\s\S]*?--p-accent/);
+  });
+  it('.theme-dusk overrides --p-rug', () => {
+    expect(tokensContent).toMatch(/\.theme-dusk[\s\S]*?--p-rug/);
+  });
+});
+
+describe('tokens.css RPG palette — .theme-night', () => {
+  it('has .theme-night class block', () => {
+    expect(tokensContent).toMatch(/\.theme-night\s*\{/);
+  });
+  it('.theme-night overrides --p-bg-sky', () => {
+    expect(tokensContent).toMatch(/\.theme-night[\s\S]*?--p-bg-sky/);
+  });
+  it('.theme-night overrides --p-accent', () => {
+    expect(tokensContent).toMatch(/\.theme-night[\s\S]*?--p-accent/);
+  });
+  it('.theme-night overrides --p-paper', () => {
+    expect(tokensContent).toMatch(/\.theme-night[\s\S]*?--p-paper/);
+  });
+});
+
+// ============================================================
+// M0.11.4-t3: RPG primitive CSS class assertions
+// WHY: Phase B Room view components reference these classes for pixel RPG chrome.
+// ============================================================
+
+describe('tokens.css RPG window chrome primitives', () => {
+  it('contains .rpg-frame class', () => {
+    expect(tokensContent).toMatch(/\.rpg-frame\s*\{/);
+  });
+  it('contains .rpg-frame-tight class', () => {
+    expect(tokensContent).toMatch(/\.rpg-frame-tight\s*\{/);
+  });
+  it('contains .rpg-title class', () => {
+    expect(tokensContent).toMatch(/\.rpg-title\s*\{/);
+  });
+  it('contains .rpg-label class', () => {
+    expect(tokensContent).toMatch(/\.rpg-label\s*\{/);
+  });
+  it('contains .dot class with status variants', () => {
+    expect(tokensContent).toMatch(/\.dot\s*\{/);
+    expect(tokensContent).toContain('.dot.busy');
+    expect(tokensContent).toContain('.dot.idle');
+    expect(tokensContent).toContain('.dot.review');
+    expect(tokensContent).toContain('.dot.fail');
+    expect(tokensContent).toContain('.dot.tdd');
+  });
+  it('contains .chip class', () => {
+    expect(tokensContent).toMatch(/\.chip\s*\{/);
+  });
+  it('contains .exp-bar class', () => {
+    expect(tokensContent).toMatch(/\.exp-bar\s*\{/);
+  });
+  it('contains .btn-px class with color variants', () => {
+    expect(tokensContent).toMatch(/\.btn-px\s*\{/);
+    expect(tokensContent).toContain('.btn-px.primary');
+    expect(tokensContent).toContain('.btn-px.success');
+    expect(tokensContent).toContain('.btn-px.warn');
+    expect(tokensContent).toContain('.btn-px.danger');
+    expect(tokensContent).toContain('.btn-px.ghost');
+  });
+  it('contains .scanlines::after class', () => {
+    expect(tokensContent).toContain('.scanlines::after');
+  });
+  it('contains .pixel class', () => {
+    expect(tokensContent).toMatch(/\.pixel\s*\{/);
+  });
+});
+
+describe('tokens.css Room BEM primitives', () => {
+  it('contains .room class', () => {
+    expect(tokensContent).toMatch(/\.room\s*\{/);
+  });
+  it('contains .room__bg class', () => {
+    expect(tokensContent).toContain('.room__bg');
+  });
+  it('contains .room-window class', () => {
+    expect(tokensContent).toMatch(/\.room-window\s*\{/);
+  });
+  it('contains .room-sign class with variants', () => {
+    expect(tokensContent).toMatch(/\.room-sign\s*\{/);
+    expect(tokensContent).toContain('.room-sign--branch');
+    expect(tokensContent).toContain('.room-sign--clock');
+    expect(tokensContent).toContain('.room-sign--retro');
+  });
+  it('contains .room-poster class', () => {
+    expect(tokensContent).toMatch(/\.room-poster\s*\{/);
+  });
+  it('contains .room-poster BEM elements', () => {
+    expect(tokensContent).toContain('.room-poster__header');
+    expect(tokensContent).toContain('.room-poster__title');
+    expect(tokensContent).toContain('.room-poster__body');
+    expect(tokensContent).toContain('.room-poster__bar');
+    expect(tokensContent).toContain('.room-poster__bar-fill');
+    expect(tokensContent).toContain('.room-poster__bar-now');
+    expect(tokensContent).toContain('.room-poster__check');
+    expect(tokensContent).toContain('.room-poster__footer');
+  });
+  it('contains .room-poster check variants', () => {
+    expect(tokensContent).toContain('.room-poster__check--pending');
+    expect(tokensContent).toContain('.room-poster__check--in_progress');
+    expect(tokensContent).toContain('.room-poster__check--completed');
+  });
+  it('contains .room-island class with variants', () => {
+    expect(tokensContent).toMatch(/\.room-island\s*\{/);
+    expect(tokensContent).toContain('.room-island--pm');
+    expect(tokensContent).toContain('.room-island--dev');
+    expect(tokensContent).toContain('.room-island--review');
+  });
+  it('contains .room-floor-cushion class', () => {
+    expect(tokensContent).toMatch(/\.room-floor-cushion\s*\{/);
+  });
+  it('contains .room-mode-toggle class', () => {
+    expect(tokensContent).toMatch(/\.room-mode-toggle\s*\{/);
+  });
+  it('contains .room-modal class', () => {
+    expect(tokensContent).toMatch(/\.room-modal\s*\{/);
+    expect(tokensContent).toContain('.room-modal__panel');
+    expect(tokensContent).toContain('.room-modal__close');
+  });
+});
+
+describe('tokens.css Subroom primitives', () => {
+  it('contains .subroom-clone class', () => {
+    expect(tokensContent).toMatch(/\.subroom-clone\s*\{/);
+  });
+  it('contains .subroom-clone BEM elements', () => {
+    expect(tokensContent).toContain('.subroom-clone__sprite');
+    expect(tokensContent).toContain('.subroom-clone__label');
+    expect(tokensContent).toContain('.subroom-clone__dot');
+  });
+  it('contains .subroom-clone__dot status variants', () => {
+    expect(tokensContent).toContain('.subroom-clone__dot--busy');
+    expect(tokensContent).toContain('.subroom-clone__dot--review');
+    expect(tokensContent).toContain('.subroom-clone__dot--idle');
+  });
+  it('contains .subroom-portal class', () => {
+    expect(tokensContent).toMatch(/\.subroom-portal\s*\{/);
+    expect(tokensContent).toContain('.subroom-portal__label');
   });
 });
