@@ -123,6 +123,8 @@ retro 自身の最適化。再帰的 auto-apply 拡張機構。
 | `meta-risk-threshold-proposal` | max_risk 上げ提案 | low | false |
 
 > v1 では `spec-drift-doc-update` と `readme-staleness` のみが `auto_applicable_eligible: true`。残りは user 承認必須。Phase 2 evolution で拡張可。
+>
+> **2026-05-03 update (retro 2026-05-03-001 meta-001 B)**: meta-axis judge の `meta-auto-apply-proposal` promote logic は **eligible enum を hint に格下げ + 実承認 pattern を main signal** に redesign。`auto_applicable_eligible: true` でなくとも、`approved_count >= 5 AND rejected_count == 0 AND category_max_risk ∈ {low, medium}` を満たせば promote 候補として user に提示する。eligible enum は `evidence.eligible_hint` field で参考表示。詳細: `agents/loom-retro-meta-judge.md` Step 2。
 
 #### meta-axis lens の M0.9 拡張：Customization Layer 観測
 

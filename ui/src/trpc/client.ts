@@ -6,7 +6,7 @@
  * factory are exported separately to keep them unit-testable without
  * instantiating a real WebSocket (SPEC §3.6 — behaviour > implementation).
  *
- * URL const: M2 uses localhost:5757 literal; M5 polish will env-var-ise this.
+ * URL const: 127.0.0.1:5757 (SPEC §3.5 daemon 127.0.0.1 only bind と整合); M5 polish で env-var 化予定。
  * Auth token: M5 polish concern — dev env has no auth gate.
  */
 import { createTRPCReact } from '@trpc/react-query';
@@ -55,7 +55,7 @@ export function createWsCallbacks(): {
 // tRPC + WS client singletons
 // ---------------------------------------------------------------------------
 
-const WS_URL = 'ws://localhost:5757/trpc';
+const WS_URL = 'ws://127.0.0.1:5757/trpc';
 
 const callbacks = createWsCallbacks();
 

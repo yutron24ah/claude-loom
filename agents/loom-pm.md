@@ -160,6 +160,22 @@ dispatch 時 PM が判断する：
 
 それ以外は Strategy a を default とする。M2 Task 5/6/7/8 で観測された GREEN commit handoff anomaly (loom-developer 終了 flow bug) の defensive workaround としても Strategy b は有効。
 
+**Strategy b 採用時 PM の commit 分割規約**（retro 2026-05-03-001 proc-001 由来、M3.1 で test+impl 同 commit 化により SPEC §3.6.8.6 TDD red 時系列規律が構造的崩壊した問題を codify）:
+
+- PM は dev の final report で `tdd_red_confirmed: true` を確認後、working tree から **必ず 2 commit に分割** する：
+  1. `test(<scope>): <task-id> RED — <subject>` で test/* のみ commit
+  2. `feat(<scope>): <task-id> GREEN — <subject>` で src/* のみ commit
+- 例外的に同 commit 統合する場合は commit message に `RED+GREEN unified` annotation を必須付与（git log で grep 検出可能化）
+- default 推奨は **2 commit 分割**（Strategy a と同等の TDD audit 性維持、git history で RED 単独 commit 存在を verify 可能）
+
+**Step 9 dual path に対する PM 受領規律**（retro 2026-05-03-001 proc-002 由来）:
+
+dev final report の `handoff_required` field を確認：
+
+- `handoff_required: false` (path A 完了) → Strategy b なら commit 分割実施 → PLAN.md status 更新 → 次 task dispatch
+- `handoff_required: true` (path B handoff) → final report の `reasoning + recommended next step + 残 findings` を読み、follow-up dev dispatch (`slot=<orig>-followup` 命名規約)、follow-up dev に残 findings 全文 + 既存 working tree state を再渡し
+- `handoff_required` field 不在で needs_fix 状態 → invalid、refuse + retry or follow-up ask
+
 ### Runtime Gate（M0.12 から）
 
 session 開始時 + 各 dispatch 前に project.json を Read し `rules.enabled_features` を check：
