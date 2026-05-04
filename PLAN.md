@@ -320,15 +320,15 @@ retro 2026-05-04-001 で F-proc-005 を success record として codify した�
 
 ### Task （9 task、推定）
 
-- [ ] SPEC §3.6.11 + §10.4 新設 (loom-ui-smoke skill design SSoT) <!-- id: m0.11.3-t1 status: done --> ※本 spec phase で完了済
-- [ ] tests/REQUIREMENTS.md REQ-044 追加 (UI smoke skill acceptance) <!-- id: m0.11.3-t2 status: todo -->
-- [ ] skills/loom-ui-smoke/SKILL.md draft (Stage 1 prompt augmentation + Stage 2 Playwright MCP 駆動 instruction) <!-- id: m0.11.3-t3 status: todo -->
-- [ ] skills/loom-ui-smoke/scripts/format-report.sh + templates/findings.schema.json (Stage 3 deterministic formatter) <!-- id: m0.11.3-t4 status: todo -->
-- [ ] skills/loom-ui-smoke/scripts/start-servers.sh (Q1 hybrid C 補助、auto-detect + opt-in) <!-- id: m0.11.3-t5 status: todo -->
-- [ ] commands/loom-ui-smoke.md (slash command 新設) <!-- id: m0.11.3-t6 status: todo -->
-- [ ] agents/loom-developer.md + loom-pm.md に suggest skill 参照記述 + milestone closure 自律 invoke logic 追記 <!-- id: m0.11.3-t7 status: todo -->
-- [ ] skill self-test: 自身を main HEAD で実行、hotfix 完了後の状態を smoke verify、report 生成 + findings.json schema validate 動作確認 <!-- id: m0.11.3-t8 status: todo -->
-- [ ] tag m0.11.3-complete + harness 17 PASS / 0 FAIL 維持 + Phase 1 全 milestone tag 全保持 <!-- id: m0.11.3-t9 status: todo -->
+- [x] SPEC §3.6.11 + §10.4 新設 (loom-ui-smoke skill design SSoT) <!-- id: m0.11.3-t1 status: done -->
+- [x] tests/REQUIREMENTS.md REQ-044 追加 (UI smoke skill acceptance) <!-- id: m0.11.3-t2 status: done -->
+- [x] skills/loom-ui-smoke/SKILL.md draft (Stage 1 prompt augmentation + Stage 2 Playwright MCP 駆動 instruction) <!-- id: m0.11.3-t3 status: done -->
+- [x] skills/loom-ui-smoke/scripts/format-report.sh + templates/findings.schema.json (Stage 3 deterministic formatter) <!-- id: m0.11.3-t4 status: done -->
+- [x] skills/loom-ui-smoke/scripts/start-servers.sh (Q1 hybrid C 補助、auto-detect + opt-in) <!-- id: m0.11.3-t5 status: done -->
+- [x] commands/loom-ui-smoke.md (slash command 新設) <!-- id: m0.11.3-t6 status: done -->
+- [x] agents/loom-developer.md + loom-pm.md に suggest skill 参照記述 + milestone closure 自律 invoke logic 追記 <!-- id: m0.11.3-t7 status: done -->
+- [x] skill self-test: 自身を main HEAD で実行、hotfix 完了後の状態を smoke verify、report 生成 + findings.json schema validate 動作確認 <!-- id: m0.11.3-t8 status: done -->
+- [x] tag m0.11.3-complete + harness 18 PASS 維持 + Phase 1 全 milestone tag 全保持 <!-- id: m0.11.3-t9 status: done -->
 
 **M0.11.3 着手タイミング**: M0.11.2 より **先** に実施 (Phase 1 → Phase 2 boundary、cumulative dogfood reasoning — skill 完成後 M0.11.2 自身の verify にも活用可)。M0.X cleanup 系列、推定 5-7 task 規模 (script 実装含めて 9 task)。本 milestone は retro feedback loop (M3.1 codify → M4/M5 で運用 → M5 closure smoke で gap 検出 → 本 skill で gap 埋め) の **3 周目 cumulative refinement**。
 
