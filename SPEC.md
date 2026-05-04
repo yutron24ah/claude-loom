@@ -658,6 +658,26 @@ retro 機能の **finding lifecycle + guidance lifecycle** を構造的に追跡
 - `<project>/.claude-loom/retro/<retro_id>/pending.json`（既存、`applied_in` + `apply_history` field 追加）
 - `<project>/.claude-loom/retro/<retro_id>/applied_summary.json`（新設、retro session 単位の per-instance file）
 
+#### 3.9.12 Retro state durability（2026-05-04 retro F-meta-002 由来）
+
+`<project>/.claude-loom/` は `.gitignore` 対象 (local-only)、M5 t5 の incident で `.claude-loom/retro/` が削除されると過去 retro pending.json が消失、`applied_summary` build 不能（graceful skip は症状対処）。下記 durability mechanism を SPEC SSoT 化：
+
+- **archive markdown SSoT**: `<project>/docs/retro/<retro_id>-report.md` は git-tracked、過去 retro の findings + applied/recorded status を可読形式で永続保存。これは M0.8 から既存の機構、本 SPEC 改訂で **retro state durability の primary SSoT** として位置付け
+- **pending.json は cache layer**: `.claude-loom/retro/*/pending.json` は archive markdown から **再生成可能な cache** として扱う、消失時は archive markdown から reconstruct (manual or M0.11.2 milestone で auto reconstruction logic 導入候補)
+- **retro-pm Stage 0 fallback**: applied_summary build 時 pending.json 不在なら graceful skip + WARN 出力、archive markdown scan による applied/recorded status 抽出は **M0.11.2 milestone で導入候補** (本 SPEC では durability boundary を define するのみ、reconstruction logic は別 milestone)
+- **uninstall.sh との関係**: `--purge-state` flag で `.claude-loom/` 削除しても archive markdown は残存、retro 履歴の git-tracked SSoT を user に保証
+
+#### 3.9.13 Degraded synthesis protocol（2026-05-04 retro F-meta-005 由来）
+
+Task tool unavailable 時 (degraded mode) に retro-pm が 4 lens dispatch 不能、自前で synthesis する flow が ad-hoc。下記 protocol を SPEC SSoT 化：
+
+- **degraded mode 検出**: retro-pm session 開始時 Task tool 利用可否 check、不可 → degraded mode 突入を user に明示宣言
+- **synthesis 自前実施**: retro-pm が 4 lens (pj-axis / process-axis / meta-axis / researcher) の責務を sequential 実行、各 lens の prompt 規約 (RETRO_GUIDE.md §1) を self-apply
+- **echo-chamber risk acknowledge**: 通常 protocol の 4 並列 lens + counter-arguer 別 agent による echo-chamber 抑制が degraded mode では適用されず、findings は **retro-pm 単一視点の synthesis**。confidence は通常 retro より低めに評価
+- **findings tag 必須**: degraded mode 由来 findings は全て `degraded_mode_synthesis: true` field を含む、user に透明化
+- **archive markdown disclosure**: archive markdown 末尾に "degraded-mode-synthesis disclosure" section を必須記載、findings の confidence について user に明示
+- **schema_version 出力規律**: retro-pm が pending.json を新規 write する時 `schema_version: 2` 必須 (§6.9.6 v2)、`schema_version: 1.0.0` 等の semver 形式 / v1 形式 出力は invalid (本 retro session で発生した bug の codify)
+
 **guidance lifecycle 統合**:
 `learned_guidance` の auto-prune rule（§6.9.4 末尾拡張参照）: `ttl_sessions` main（`null` = infinite default、`> 0` = N retro 後 auto-deactivate） + `last_used_in` audit（retro 参照時 aggregator update、N session 連続未使用 → meta lens stale guidance finding）。責務分離: auto-deactivate = 決定論的（ttl）、user 承認 prune = dynamic（last_used_in 経由 meta lens proposal）。
 
