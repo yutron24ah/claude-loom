@@ -23,8 +23,12 @@ set -euo pipefail
 # --------------------------------------------------------------------------
 CLAUDE_HOME="${CLAUDE_HOME:-${HOME:-}/.claude}"
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-# LOOM_STATE_DIR allows tests to override the local state path
-LOCAL_STATE_DIR="${LOOM_STATE_DIR:-${PWD}/.claude-loom}"
+# LOOM_STATE_DIR default を ${HOME}/.claude-loom に固定 (retro 2026-05-04-001
+# F-pj-003 / F-proc-003 で codify。M5 t5 で repo の .claude-loom/retro/ が
+# 削除された incident の root cause = repo-local PWD/.claude-loom default。
+# user state は global ${HOME}/.claude-loom が SSoT、tests は LOOM_STATE_DIR
+# 環境変数で sandbox に override する pattern)
+LOCAL_STATE_DIR="${LOOM_STATE_DIR:-${HOME:-}/.claude-loom}"
 DAEMON_PORT="5757"
 DAEMON_SHUTDOWN_URL="http://localhost:${DAEMON_PORT}/shutdown"
 SETTINGS_FILE="${CLAUDE_HOME}/settings.json"
@@ -35,19 +39,43 @@ SETTINGS_FILE="${CLAUDE_HOME}/settings.json"
 OPT_YES=false
 OPT_DRY_RUN=false
 OPT_PURGE_STATE=false
+OPT_REPO_STATE_OK=false
 
 for arg in "$@"; do
   case "$arg" in
     --yes)          OPT_YES=true ;;
     --dry-run)      OPT_DRY_RUN=true ;;
     --purge-state)  OPT_PURGE_STATE=true ;;
+    --repo-state-ok) OPT_REPO_STATE_OK=true ;;
     *)
       echo "ERROR: 不明な引数: $arg" >&2
-      echo "Usage: $0 [--yes] [--dry-run] [--purge-state]" >&2
+      echo "Usage: $0 [--yes] [--dry-run] [--purge-state] [--repo-state-ok]" >&2
       exit 2
       ;;
   esac
 done
+
+# --------------------------------------------------------------------------
+# Safety boundary check (retro 2026-05-04-001 F-pj-003 / F-proc-003)
+# --------------------------------------------------------------------------
+# LOCAL_STATE_DIR が現 git repo 内に解決されとる場合 (repo-local state) は、
+# 明示的な --repo-state-ok flag が無ければ refuse。
+# M5 t5 の incident: PWD/.claude-loom default で repo 状態を破壊したため。
+
+if command -v git >/dev/null 2>&1 && git rev-parse --show-toplevel >/dev/null 2>&1; then
+  GIT_ROOT="$(git rev-parse --show-toplevel)"
+  case "$LOCAL_STATE_DIR" in
+    "$GIT_ROOT"|"$GIT_ROOT"/*)
+      if ! "$OPT_REPO_STATE_OK"; then
+        echo "ERROR: LOCAL_STATE_DIR ($LOCAL_STATE_DIR) は git repo 内 ($GIT_ROOT) に解決されとる。" >&2
+        echo "  user state の global SSoT は \${HOME}/.claude-loom (LOOM_STATE_DIR で override 可)。" >&2
+        echo "  repo-local state を意図的に対象とする場合は --repo-state-ok flag を付与してください (test fixture 等)。" >&2
+        exit 2
+      fi
+      echo "WARN: --repo-state-ok 指定で repo-local state を対象とします: $LOCAL_STATE_DIR" >&2
+      ;;
+  esac
+fi
 
 # --------------------------------------------------------------------------
 # ヘルパー関数

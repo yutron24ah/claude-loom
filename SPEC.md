@@ -1769,6 +1769,16 @@ uninstall.sh の流れ:
    - --purge オプション付きなら全削除
 ```
 
+#### 9.3.1 LOCAL_STATE_DIR safety boundary（retro 2026-05-04-001 F-pj-003 / F-proc-003）
+
+M5 t5 で uninstall.sh が repo の `.claude-loom/retro/` を削除する incident 発生（root cause: `LOCAL_STATE_DIR="${LOOM_STATE_DIR:-${PWD}/.claude-loom}"` で default が repo-local PWD に解決された）。下記 boundary を SPEC SSoT 化：
+
+- **LOCAL_STATE_DIR default は `${HOME}/.claude-loom` 固定**（user state global SSoT）
+- **`LOOM_STATE_DIR` env var で override 可能**（test sandbox 用、`mktemp -d` で temp dir に向ける）
+- **safety boundary check**: uninstall.sh は実行時に LOCAL_STATE_DIR が git repo 内に解決されとるか check、解決されとる場合は `--repo-state-ok` flag が無ければ refuse + exit code 2
+- **`--repo-state-ok` flag**: repo-local state を意図的に対象とする場合（test fixture / 開発時）の明示 opt-in
+- **tests/uninstall_test.sh**: 全 test scenario で `LOOM_STATE_DIR=$SBn/.claude-loom` を必ず set、repo-local default に依存せん write boundary 厳密化
+
 ### 9.4 依存関係
 
 - bash, jq, curl（hooks 層）
