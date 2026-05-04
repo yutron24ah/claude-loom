@@ -229,3 +229,15 @@ SPEC §3.6.11（UI Smoke Test Skill）+ §10.4（Browser-interactive verificatio
 - [ ] §3.6.11.10 Consumer agents (loom-developer primary / loom-pm secondary、loom-test-reviewer は scope 外) と agent prompt suggest skill 記述が整合
 - [ ] §10.4 Layer 1 / Layer 2 の 2 層 verification 規約と PLAN.md milestone closure default 記述が整合
 - [ ] tests/REQUIREMENTS.md REQ-044 が SPEC §3.6.11 + §10.4 と整合
+
+## M0.11.4 Design Implementation Pass 関連 check
+
+SPEC §3.6.12（Design Implementation）+ §3.6.9.1 改訂 (Phaser α-1 → DOM/SVG α-2) を編集した時：
+
+- [ ] §3.6.12.2 戦略 A 確定 (Phaser → DOM/SVG) と §3.6.9.1 改訂内容 + §12 確定値表 Phaser 行の archive 注記が整合
+- [ ] §3.6.12.4 Component port matrix と PLAN.md M0.11.4 task list (15 view port + 共通 components) が整合
+- [ ] §3.6.12.5 Token + style primitives port と `ui/src/styles/tokens.css` 実装内容が整合 (3 theme palette × 25+ variable + RPG primitives)
+- [ ] §3.6.12.6 MVP closure 再定義 (m5 functional / m0.11.3 verification / m0.11.4 aesthetic) と各 tag 設置 commit message + README 記述が整合
+- [ ] §3.6.12.7 Phaser dependency removal と `ui/package.json` + 物理削除 file 群 (PhaserCanvas.tsx 等) が整合
+- [ ] tests/REQUIREMENTS.md REQ-045 が SPEC §3.6.12 と整合
+- [ ] design source `claude-room-handoff.zip` (`/tmp/claude-room-handoff/claude-room/project/`) の主要 component (CatSprite / ROSTER / RoomView / 全 screens jsx) と port target (`ui/src/`) が 1:1 対応で port 完了
