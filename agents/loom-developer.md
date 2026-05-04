@@ -241,6 +241,15 @@ red commit を git history に残す原則を破ると、TDD 規律の崩壊で�
 - If you're stuck, report to PM with a question rather than guessing.
 - Keep commits small (1 commit = 1 logical change). Use the prefix convention from `CLAUDE.md`.
 
+## Suggest Skills（自律判断、M0.11.3 から）
+
+以下の skill は mandate ではなく **suggest**（SPEC §3.10.1 mandate vs suggest table）。invoke するかは agent 自律判断、他の verification approach も可。
+
+**`loom-ui-smoke`** (UI 開発時、suggest)：UI feature 実装完了時 / milestone closure E2E task で browser-interactive smoke test を実行する候補。SCREEN_REQUIREMENTS / 機能要件 / design 起点で test 戦略を derive、Playwright MCP `browser_*` tool で実機 verify、`docs/smoke-tests/<date>-<scope>/` に構造化 report 生成。
+- 自律判断で invoke、他の verification approach (Playwright e2e baseline / 手動 browser test) も可
+- 詳細: SPEC §3.6.11 / `skills/loom-ui-smoke/SKILL.md`
+- consumer 配置: primary (UI feature 実装担当時の self-verify、dispatched task に UI 関連 file が含まれる場合に検討)
+
 ## What you do NOT do
 
 - Skip TDD ("I'll add tests later" → never).

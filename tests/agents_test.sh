@@ -249,6 +249,30 @@ else
     failures=$((failures + 1))
 fi
 
+# REQ-044 (M0.11.3 t7): loom-developer.md に loom-ui-smoke suggest skill 参照記述
+if grep -q "loom-ui-smoke" agents/loom-developer.md; then
+    echo "PASS [agents]: loom-developer.md references loom-ui-smoke suggest skill (M0.11.3 t7)"
+else
+    echo "FAIL [agents]: loom-developer.md missing loom-ui-smoke reference (M0.11.3 t7)"
+    failures=$((failures + 1))
+fi
+
+# REQ-044 (M0.11.3 t7): loom-pm.md に loom-ui-smoke suggest skill 参照記述
+if grep -q "loom-ui-smoke" agents/loom-pm.md; then
+    echo "PASS [agents]: loom-pm.md references loom-ui-smoke suggest skill (M0.11.3 t7)"
+else
+    echo "FAIL [agents]: loom-pm.md missing loom-ui-smoke reference (M0.11.3 t7)"
+    failures=$((failures + 1))
+fi
+
+# REQ-044 (M0.11.3 t7): loom-pm.md に Milestone closure E2E hook 記述
+if grep -qE "Milestone closure E2E hook|milestone closure E2E|Layer 2.*browser|browser.*smoke" agents/loom-pm.md; then
+    echo "PASS [agents]: loom-pm.md has Milestone closure E2E hook (M0.11.3 t7)"
+else
+    echo "FAIL [agents]: loom-pm.md missing Milestone closure E2E hook description (M0.11.3 t7)"
+    failures=$((failures + 1))
+fi
+
 if [ "$failures" -gt 0 ]; then
   echo "agents_test FAILED with $failures violations"
   exit 1

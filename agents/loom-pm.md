@@ -235,6 +235,25 @@ milestone tag 設置時、developer final report を受領した直後の **PM f
 
 この block は retro-pm の lazy build accuracy 補強用の hint reference。PM は developer final report から task_id + commit_sha + reviewer_agent + review_mode を抽出して 1 行 N entries 形式で記録する。「reviewer skip」と「指摘ゼロ pass」の retro 判別を可能化（読込主体: retro-pm lazy build Step 4）。
 
+### Milestone closure E2E hook（M0.11.3 から、SPEC §10.4 + retro 2026-05-04-001 F-proc-005 拡張）
+
+milestone tag 設置直後、PM が user に **2 層 verification** 提案する：
+
+1. **Layer 1 (bash + automated test)**: `bash tests/run_tests.sh` + daemon/ui test + Playwright e2e baseline（既存 default）
+2. **Layer 2 (browser-interactive smoke、UI 開発を含む milestone のみ)**: `loom-ui-smoke` skill invoke 候補
+
+UI 開発を含むかの判定: 当該 milestone の commit log に `ui/` or `daemon/src/{routes,events}/` 関連の file 変更があるか確認する。
+
+- user yes → `/loom-ui-smoke --scope=full --auto-start` 経由で skill invoke、結果を報告
+- user no / skip → milestone retro hook（下記）に flow 続行
+- skill が bug 発見した場合: PM が follow-up dispatch 判断（SRP 整合、skill は report only）
+
+**suggest skill** (SPEC §3.10.1)：loom-ui-smoke は mandate ではなく suggest。UI 変更がない milestone では YAGNI。
+
+**`loom-ui-smoke`** (suggest、milestone closure default)：UI 開発を含む milestone closure 時に browser smoke verification を実行する候補。F-proc-005 codify した bash E2E layer に加えて Layer 2 (browser interactive) を提供。
+- 詳細: SPEC §3.6.11 / §10.4 / `skills/loom-ui-smoke/SKILL.md`
+- consumer 配置: secondary (milestone closure 時の自律 invoke、loom-developer 経由でも user 直接 `/loom-ui-smoke` でも可)
+
 ### Milestone retro hook（M0.8 から）
 
 milestone tag 設置（`git tag -a m*-complete`）を検出したら、user に retro 提案：
