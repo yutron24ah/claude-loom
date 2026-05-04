@@ -294,9 +294,32 @@ doc 5 file 以上の更新が必要な場合、複数 subagent 並列 dispatch�
 
 retro session 開始時、`loom-retro-pm` agent が **直前 milestone の reviewer dispatch evidence を独立 file `<project>/.claude-loom/retro/<retro_id>/verdict_evidence.json` に lazy build + write**。「review skip」と「指摘ゼロ pass」の判別を可能化。詳細規約は §3.9.10 + §6.9.5（zod 完全 schema、M2.1 から）参照。M0.13 で codify された旧設計（`pending.json` 内 field）は M2.1 で refactor、独立 file + zod schema 化に移行済。
 
-#### 3.6.8.6 TDD red commit 時系列 enforcement
+#### 3.6.8.6 TDD red commit 履歴 enforcement（2026-05-04 retro F-pj-002 で default inversion）
 
-dev は milestone 内で test 拡張 commit が feat 実装 commit より時系列で **前** にあることを保証。実装直前に `git log` で確認、無ければ「process-tdd-violation」self-finding 生成。
+**M0.13 codification (legacy)**: dev は milestone 内で test 拡張 commit が feat 実装 commit より時系列で **前** にあることを保証。実装直前に `git log` で確認、無ければ「process-tdd-violation」self-finding 生成。
+
+**Strategy b (PM 統合 commit) 採用時の commit 分割規約 (M3.1 retro 2026-05-03-001 proc-001 由来 → 2026-05-04-001 retro F-pj-002 で default inversion)**：
+
+retro 2026-05-03-001 で「2-commit 分割 (RED 単独 → GREEN) を default 推奨、annotation path は例外」と codify されたが、M3.2 / M4 Stage 2 / M4 Stage 3 / M5 Stage 1 / M5 Stage 2 の **5 連続 unified annotation 採用** で実用が逆転。M5 closure 時点で **default を inversion**：
+
+- **default = unified-with-annotation**: PM は 1 task = 1 統合 commit、commit message に `[RED+GREEN unified]` annotation 必須付与（git log で grep 検出可能化）。file overlap が常態化する parallel batch / Strategy b で実用的
+- **2-commit 分割 = strict mode**: file が完全 disjoint (test/* と src/* が衝突なし、かつ複数 task 間で file 共有なし) な場合のみ採用可能。RED + GREEN を 2 commit に分割、git history で RED 単独 commit 存在を verify 可能化
+- **TDD audit 性の維持**: dev は test-first で書き final report に `tdd_red_confirmed: true` + RED test fail output 抜粋を明記、reviewer は test/* と src/* の diff を時系列逆並びで cross-check 可能 (Strategy a と同等の audit 性)
+
+#### 3.6.8.7 Reviewer dispatch dual path → triple path（2026-05-04 retro F-proc-001 由来）
+
+dev が reviewer dispatch を実施する Step 9 に **3 つの path** を 1st-class option として定義：
+
+- **path A — same-session iterate (default)**: fix scope clear AND context budget 余裕あり → 同 session 内で fix → re-run tests → re-submit
+- **path B — PM follow-up handoff**: fix scope unclear OR context budget tight OR Task tool deferred で reviewer dispatch 不可 → final report に `handoff_required: true + reasoning + recommended next step + 残 findings 全文` 明記
+- **path C — self-review with explicit safety checklist (new)**: Task tool deferred (degraded mode) かつ scope 単純で path B handoff せず dev 自身が safety checklist 経由 self-review する場合の formal protocol：
+  1. final report に `self_review: true` + `task_tool_deferred: true` 明示
+  2. 4 観点 self-checklist 必須記載 (code 観点 / security 観点 / test 観点 / SPEC §3.6.10 SSoT cross-check 観点)
+  3. 各観点で 3 行以上の reasoning + 該当 file:line 参照
+  4. PM が follow-up loom-reviewer dispatch を後で実施する option を残す (path C completion ≠ formal review、interim safety net)
+  5. **silent self-review 禁止**: path A/B/C のいずれかを final report で必ず宣言
+
+詳細実装: `agents/loom-developer.md` Step 9、`agents/loom-pm.md` 受領規律。
 
 ### 3.6.9 M3 UI Architecture（M3 から）
 
@@ -634,6 +657,26 @@ retro 機能の **finding lifecycle + guidance lifecycle** を構造的に追跡
 **保存 path 規約**:
 - `<project>/.claude-loom/retro/<retro_id>/pending.json`（既存、`applied_in` + `apply_history` field 追加）
 - `<project>/.claude-loom/retro/<retro_id>/applied_summary.json`（新設、retro session 単位の per-instance file）
+
+#### 3.9.12 Retro state durability（2026-05-04 retro F-meta-002 由来）
+
+`<project>/.claude-loom/` は `.gitignore` 対象 (local-only)、M5 t5 の incident で `.claude-loom/retro/` が削除されると過去 retro pending.json が消失、`applied_summary` build 不能（graceful skip は症状対処）。下記 durability mechanism を SPEC SSoT 化：
+
+- **archive markdown SSoT**: `<project>/docs/retro/<retro_id>-report.md` は git-tracked、過去 retro の findings + applied/recorded status を可読形式で永続保存。これは M0.8 から既存の機構、本 SPEC 改訂で **retro state durability の primary SSoT** として位置付け
+- **pending.json は cache layer**: `.claude-loom/retro/*/pending.json` は archive markdown から **再生成可能な cache** として扱う、消失時は archive markdown から reconstruct (manual or M0.11.2 milestone で auto reconstruction logic 導入候補)
+- **retro-pm Stage 0 fallback**: applied_summary build 時 pending.json 不在なら graceful skip + WARN 出力、archive markdown scan による applied/recorded status 抽出は **M0.11.2 milestone で導入候補** (本 SPEC では durability boundary を define するのみ、reconstruction logic は別 milestone)
+- **uninstall.sh との関係**: `--purge-state` flag で `.claude-loom/` 削除しても archive markdown は残存、retro 履歴の git-tracked SSoT を user に保証
+
+#### 3.9.13 Degraded synthesis protocol（2026-05-04 retro F-meta-005 由来）
+
+Task tool unavailable 時 (degraded mode) に retro-pm が 4 lens dispatch 不能、自前で synthesis する flow が ad-hoc。下記 protocol を SPEC SSoT 化：
+
+- **degraded mode 検出**: retro-pm session 開始時 Task tool 利用可否 check、不可 → degraded mode 突入を user に明示宣言
+- **synthesis 自前実施**: retro-pm が 4 lens (pj-axis / process-axis / meta-axis / researcher) の責務を sequential 実行、各 lens の prompt 規約 (RETRO_GUIDE.md §1) を self-apply
+- **echo-chamber risk acknowledge**: 通常 protocol の 4 並列 lens + counter-arguer 別 agent による echo-chamber 抑制が degraded mode では適用されず、findings は **retro-pm 単一視点の synthesis**。confidence は通常 retro より低めに評価
+- **findings tag 必須**: degraded mode 由来 findings は全て `degraded_mode_synthesis: true` field を含む、user に透明化
+- **archive markdown disclosure**: archive markdown 末尾に "degraded-mode-synthesis disclosure" section を必須記載、findings の confidence について user に明示
+- **schema_version 出力規律**: retro-pm が pending.json を新規 write する時 `schema_version: 2` 必須 (§6.9.6 v2)、`schema_version: 1.0.0` 等の semver 形式 / v1 形式 出力は invalid (本 retro session で発生した bug の codify)
 
 **guidance lifecycle 統合**:
 `learned_guidance` の auto-prune rule（§6.9.4 末尾拡張参照）: `ttl_sessions` main（`null` = infinite default、`> 0` = N retro 後 auto-deactivate） + `last_used_in` audit（retro 参照時 aggregator update、N session 連続未使用 → meta lens stale guidance finding）。責務分離: auto-deactivate = 決定論的（ttl）、user 承認 prune = dynamic（last_used_in 経由 meta lens proposal）。
@@ -1745,6 +1788,16 @@ uninstall.sh の流れ:
    - state.db, config.json, .token を保持するかユーザーに確認
    - --purge オプション付きなら全削除
 ```
+
+#### 9.3.1 LOCAL_STATE_DIR safety boundary（retro 2026-05-04-001 F-pj-003 / F-proc-003）
+
+M5 t5 で uninstall.sh が repo の `.claude-loom/retro/` を削除する incident 発生（root cause: `LOCAL_STATE_DIR="${LOOM_STATE_DIR:-${PWD}/.claude-loom}"` で default が repo-local PWD に解決された）。下記 boundary を SPEC SSoT 化：
+
+- **LOCAL_STATE_DIR default は `${HOME}/.claude-loom` 固定**（user state global SSoT）
+- **`LOOM_STATE_DIR` env var で override 可能**（test sandbox 用、`mktemp -d` で temp dir に向ける）
+- **safety boundary check**: uninstall.sh は実行時に LOCAL_STATE_DIR が git repo 内に解決されとるか check、解決されとる場合は `--repo-state-ok` flag が無ければ refuse + exit code 2
+- **`--repo-state-ok` flag**: repo-local state を意図的に対象とする場合（test fixture / 開発時）の明示 opt-in
+- **tests/uninstall_test.sh**: 全 test scenario で `LOOM_STATE_DIR=$SBn/.claude-loom` を必ず set、repo-local default に依存せん write boundary 厳密化
 
 ### 9.4 依存関係
 

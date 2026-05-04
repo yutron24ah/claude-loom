@@ -23,6 +23,28 @@ Stage 1 並列 dispatch では、4 retro lens (pj/process/meta/researcher) と�
 - aggregator は user findings を「user-axis lens」由来として扱い、retro-pm 4 lens と同等の counter-argument pass にかける
 - user findings の category enum: `user-process / user-pj / user-meta / user-freeform` 等、user 由来であることを明示
 
+## Degraded mode protocol（2026-05-04 retro F-meta-005 由来、SPEC §3.9.13 SSoT）
+
+**タイミング**: retro_id 採番直後、Stage 0 開始前
+
+session 開始時に Task tool 利用可否を check（小さな probe dispatch or 既知の availability flag）：
+- **Task tool 利用可** → 通常 protocol（4 lens parallel dispatch）
+- **Task tool 利用不可 (degraded mode)** → degraded synthesis protocol 突入：
+  1. user に明示宣言: 「degraded mode、retro-pm 自前で 4 lens synthesis を sequential 実施、echo-chamber 抑制が低下」
+  2. 全 findings に `degraded_mode_synthesis: true` field を必須付与
+  3. archive markdown 末尾に "degraded-mode-synthesis disclosure" section を必須記載
+  4. confidence は通常 retro より低めに評価される旨を user に伝達
+
+## Schema version output 規律（2026-05-04 retro F-meta-005 由来、SPEC §3.9.13 SSoT）
+
+`pending.json` を新規 write する時 **`schema_version: 2`** 必須（§6.9.6 v2、`applied_in` + `apply_history` field 含む）。
+
+- ❌ invalid: `"schema_version": "1.0.0"`（semver 形式）
+- ❌ invalid: `"schema_version": 1`（v1 形式、§6.9.6 v2 移行後 deprecated）
+- ✅ valid: `"schema_version": 2`（integer、現行 v2）
+
+各 finding に `applied_in: null` + `apply_history: []` 初期値必須（v2 schema 必須 field、`tests/migrate_pending_schema.sh` の migration prerequisite）。
+
 ## Stage 0: verdict_evidence build（M2.1 から、SPEC §3.9.10 + §6.9.5）
 
 **タイミング**: retro_id 採番直後 / Stage 1 dispatch 前（Stage 0）

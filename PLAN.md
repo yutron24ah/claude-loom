@@ -285,7 +285,7 @@ retro 2026-05-03-001 で観測された **pending finding lifecycle tracking 不
 - **finding lifecycle 状態遷移 formalize**: SPEC §3.9.x で pending → approved → applied (M0.11.1 既存) + pending → expired (TTL or N session 越え auto-close) + pending → re-evaluated-still-relevant (lens 判定で本 retro の新 finding に格上げ) を define
 - **migration**: 既存 4+ retro session の pending.json から carryover 候補抽出 + lifecycle field 後付け (M0.11.1 migration script の延長)
 
-### Task （spec phase で確定後 list 化、現時点 candidate のみ）
+### Task （spec phase で確定後 list 化、retro 2026-05-04-001 F-meta-002 で scope 拡張済）
 
 - [ ] SPEC §3.9.x or §6.9.x に pending_summary schema 新設 <!-- id: m0.11.2-t1 status: todo -->
 - [ ] retro-pm Stage 0 で pending_summary.json lazy build mechanism 追加 <!-- id: m0.11.2-t2 status: todo -->
@@ -293,9 +293,11 @@ retro 2026-05-03-001 で観測された **pending finding lifecycle tracking 不
 - [ ] finding lifecycle 状態遷移 (pending → expired auto-close 等) formalize <!-- id: m0.11.2-t4 status: todo -->
 - [ ] migration script: 既存 retro session の pending.json に lifecycle field 後付け <!-- id: m0.11.2-t5 status: todo -->
 - [ ] tests 拡張 (pending_summary build + auto-expiration assertion) <!-- id: m0.11.2-t6 status: todo -->
-- [ ] tag m0.11.2-complete 設置、m0〜m3.1-complete 全保持 <!-- id: m0.11.2-t7 status: todo -->
+- [ ] **archive markdown reconstruction logic** (retro 2026-05-04-001 F-meta-002): pending.json 不在時 `docs/retro/<retro_id>-report.md` から applied/recorded findings を抽出して applied_summary に再構築する fallback 実装、SPEC §3.9.12 の retro state durability 補完 <!-- id: m0.11.2-t7 status: todo -->
+- [ ] **Token meter UX iteration** (retro 2026-05-04-001 F-res-003): ui/src/live/useTokenUsage.ts に refetchInterval enabled flag (session-active 時のみ polling) + ui/src/components/Sidebar.tsx を AppShell に wire up (M5 t4 reviewer 指摘の dead export 解消) <!-- id: m0.11.2-t8 status: todo -->
+- [ ] tag m0.11.2-complete 設置、Phase 1 全 milestone tag 全保持 <!-- id: m0.11.2-t9 status: todo -->
 
-**M0.11.2 着手タイミング**: M3.2 (UI MVP closure) 完了後、M4 (doc consistency v1) 着手前に挿入を推奨。M0.X cleanup 系列 (M0.11.1 / M0.13 / M0.14 と同 family) として short milestone (推定 5-7 task)。本 milestone は SPEC §3.9.x P4 (Root cause first) の 2 回目 application、M0.11.1 の lifecycle tracking architecture を pending side に拡張する cumulative refinement。
+**M0.11.2 着手タイミング**: Phase 1 → Phase 2 boundary milestone、Phase 2 entry 前の cleanup として実施推奨。M0.X cleanup 系列 (M0.11.1 / M0.13 / M0.14 と同 family) として short milestone (推定 7-9 task)。本 milestone は SPEC §3.9.x P4 (Root cause first) の 2 回目 application、M0.11.1 の lifecycle tracking architecture を pending side + durability side に拡張する cumulative refinement。
 
 ## マイルストーン M0.12: Coexistence Mode（既存 PJ 検出 + 機能 opt-in/opt-out）
 
@@ -610,3 +612,30 @@ retro 2026-05-02-002 由来で M3.1 で扱う残 design 分岐:
 - [x] トークン使用量 polling + メーター <!-- id: m5-t4 status: done -->
 - [x] uninstall.sh + ドキュメント完成 <!-- id: m5-t5 status: done -->
 - [x] README + リリース準備 <!-- id: m5-t6 status: done -->
+
+---
+
+## Phase 1 → Phase 2 boundary（retro 2026-05-04-001 由来）
+
+Phase 1 MVP 21 milestone (M0 → M5) を 2026-05-04 に main 統合完了 (4 stacked branch を `--no-ff` merge)。tag `m5-complete` 設置済。
+
+### Phase 2 entry criteria
+
+- **dogfood validation: passed** (F-meta-001、retro 2026-05-04-001) — claude-loom 自身で M0 → M5 全 milestone を dispatch (PM + dev + reviewer)、32 commits + 4 branch + 5 retro session を 1 PJ 内で運用、自己再帰的 dev workflow が機能した record。Phase 2 evolution の前提となる「自己再帰的開発が成立する」claim の 1 回目検証
+- **retro debt cleared** (F-pj-005、retro 2026-05-04-001) — M3.2 + M4 milestone retro 未実行の retro debt は本 retro 2026-05-04-001 が covering scope として acknowledge (Phase boundary retro covers all unrun milestones rule、cadence rule 緩和)
+- **branch hygiene flushed** (F-proc-004、retro 2026-05-04-001) — Phase 1 MVP の 4 branch chain × 32 commits は 2026-05-04 に main 統合完了、Phase 2 開始前の clean state 達成
+- **Visual regression baseline maintained** (F-res-001、retro 2026-05-04-001、success record) — Playwright Room View baseline が M3.1 → M3.2 → M4 → M5 全通過、視覚 regression ゼロ。Phase 2 frontend-design 連携時のベースライン source として継続活用
+
+### Phase 1 success records（retro 2026-05-04-001）
+
+- **F-proc-005**: M5 t2 E2E verification gate が 4 件 MVP-blocking bug を発見・修正 (vite chain block / Playwright crash / uninstall pattern / re-export 循環)。E2E task の構造的価値証明、Phase 2 milestone template に「milestone closure E2E verification = default」codify 候補
+- **F-proc-006**: SPEC §3.6.10 SSoT cross-check rule の learning curve 観測 (M3.1 codify → M4 t5 で initial violation → reviewer 検出 → followup 解消 → M5 t5 dev-C は最初から clean)。retro → SPEC → next milestone loop が機能している evidence
+
+### Phase 2 milestone candidates
+
+- **M0.11.2** Pending Lifecycle Tracking + retro state durability + Token meter UX iteration (本 PLAN.md 既記載)
+- **pixel art 実制作** (F-res-002): `frontend-design:frontend-design` skill invoke 試行 candidate、`docs/PIXEL_ART_HANDOFF.md` の Section 4 Option C 実行
+- **doc 整合性 v2**: SPEC §7.6 v1/v2 境界、自動修正 + 承認ループ + auto trigger（v1 は半自動 GUI ボタン）
+- **multi-contributor branch hygiene enforcement** (F-proc-004 後段): branch chain depth alert mechanism、PR auto-opening trigger
+- **Phase 2 release engineering** (F-pj-004 後段): [0.0.x] → [0.1.0] migration path doc、external user 向け release prep
+- **F-res-004 external 還元**: uninstall round-trip test pattern を claude-blog-skill 等の他 harness にも適用

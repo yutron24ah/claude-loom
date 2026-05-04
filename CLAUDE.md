@@ -25,6 +25,15 @@ M0 + M0.5 + M0.6 で構築した harness（PM / Developer / Reviewer agent — s
 - ブランチ単位で PR を上げる前に：全テスト pass + 全 reviewer verdict pass（single mode = 1 verdict、trio mode = 3 verdicts）
 - merge は `--no-ff`（マイルストーン境界を残す）または squash（WIP 多い場合）
 
+### Branch hygiene 規律（retro 2026-05-04-001 F-proc-004 由来）
+
+Phase 1 MVP closure 時に「4 branch chain × 32+ commits ahead of main、PR 不在」状態が発生 (CLAUDE.md GitHub Flow 規約と乖離)。下記 hygiene rule を codify：
+
+- **milestone tag 設置 = PR opening trigger**: `git tag -a m*-complete` 設置直後、PM は「このまま main へ PR 上げるか」を user に確認（hygiene check）。dogfood phase の continuous stacking で 32+ commits 累積する drift を防ぐ
+- **branch chain depth ≥ 2 = PR mandatory**: 「parent branch も未 merge」状態で新 child branch を切る場合、parent の PR 開設を **strongly recommend** (mandatory ではない、dogfood phase の柔軟性を残すが、stack depth ≥ 3 で alert)
+- **Phase boundary では必ず flush**: Phase 1 → Phase 2 等の phase boundary で全 stacked branch を main へ取り込む。Phase boundary 越えでの branch chain は禁止
+- **rationale**: dogfood phase の single-developer 運用ゆえ実害は低いが、Phase 2 multi-contributor 時に PR review を起動する hygiene の前段階として codify
+
 ## コミット粒度（Conventional Commits）
 
 - 1 commit = 1 論理変更（atomic、revert 単位）、build & test pass 状態を維持

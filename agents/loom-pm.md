@@ -160,21 +160,25 @@ dispatch 時 PM が判断する：
 
 それ以外は Strategy a を default とする。M2 Task 5/6/7/8 で観測された GREEN commit handoff anomaly (loom-developer 終了 flow bug) の defensive workaround としても Strategy b は有効。
 
-**Strategy b 採用時 PM の commit 分割規約**（retro 2026-05-03-001 proc-001 由来、M3.1 で test+impl 同 commit 化により SPEC §3.6.8.6 TDD red 時系列規律が構造的崩壊した問題を codify）:
+**Strategy b 採用時 PM の commit 分割規約**（retro 2026-05-03-001 proc-001 由来 → **2026-05-04-001 F-pj-002/F-proc-002 で default inversion**、SPEC §3.6.8.6 SSoT 同期）:
 
-- PM は dev の final report で `tdd_red_confirmed: true` を確認後、working tree から **必ず 2 commit に分割** する：
+retro 2026-05-03-001 codify 時 default = 2-commit 分割だったが、M3.2/M4 Stage 2/M4 Stage 3/M5 Stage 1/M5 Stage 2 で **5 連続 unified annotation 採用**、file overlap 常態化で実用逆転。M5 closure で default 反転：
+
+- **default = unified-with-annotation**: PM は 1 task = 1 統合 commit、commit message に `[RED+GREEN unified]` annotation 必須付与（git log grep 検出可能化）
+- **2-commit 分割 = strict mode**: file が完全 disjoint (test/* と src/* が衝突なし、複数 task 間で file 共有なし) な場合のみ採用可能：
   1. `test(<scope>): <task-id> RED — <subject>` で test/* のみ commit
   2. `feat(<scope>): <task-id> GREEN — <subject>` で src/* のみ commit
-- 例外的に同 commit 統合する場合は commit message に `RED+GREEN unified` annotation を必須付与（git log で grep 検出可能化）
-- default 推奨は **2 commit 分割**（Strategy a と同等の TDD audit 性維持、git history で RED 単独 commit 存在を verify 可能）
+- file overlap 検出 → unified default 自動採用、PM が dispatch 前に「parallel batch で file 共有あるか」判断
+- TDD audit 性: dev final report の `tdd_red_confirmed: true` + RED fail output 抜粋で代替担保
 
-**Step 9 dual path に対する PM 受領規律**（retro 2026-05-03-001 proc-002 由来）:
+**Step 9 path 受領規律 (dual → triple path)**（retro 2026-05-03-001 proc-002 由来 → 2026-05-04-001 F-proc-001 で path C 追加）:
 
-dev final report の `handoff_required` field を確認：
+dev final report の `handoff_required` + `self_review` field を確認：
 
-- `handoff_required: false` (path A 完了) → Strategy b なら commit 分割実施 → PLAN.md status 更新 → 次 task dispatch
-- `handoff_required: true` (path B handoff) → final report の `reasoning + recommended next step + 残 findings` を読み、follow-up dev dispatch (`slot=<orig>-followup` 命名規約)、follow-up dev に残 findings 全文 + 既存 working tree state を再渡し
-- `handoff_required` field 不在で needs_fix 状態 → invalid、refuse + retry or follow-up ask
+- `handoff_required: false` AND `self_review: false` (path A iterate 完了) → commit 分割 → PLAN.md status 更新 → 次 task
+- `handoff_required: true` (path B handoff) → final report の reasoning + 残 findings を読み、follow-up dev dispatch (`slot=<orig>-followup`)、follow-up dev に残 findings 全文 + working tree state 再渡し
+- `self_review: true + task_tool_deferred: true` (path C self-review safety) → 4 観点 self-checklist (code/security/test/SPEC §3.6.10) と 各 file:line 参照を verify、Phase 2 で formal loom-reviewer follow-up dispatch を option として残す
+- 上記いずれの field 宣言もなしで needs_fix 状態 → invalid、silent self-review 禁止、refuse + retry or follow-up ask
 
 ### Runtime Gate（M0.12 から）
 

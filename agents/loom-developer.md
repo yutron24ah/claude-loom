@@ -148,10 +148,15 @@ For each piece of work:
    - 1-2 文の change summary（reviewer がスコープ把握できるよう）
 9. **Aggregate findings**. If any reviewer's `verdict` is `needs_fix`:
    - **集約ルール**: single mode JSON は finding に `aspect` フィールドを持つ。trio mode は 3 つの JSON が返り `aspect` フィールドは無いが、`reviewer` フィールドから aspect を導出できる（`loom-code-reviewer` → `code`、`loom-security-reviewer` → `security`、`loom-test-reviewer` → `test`）。集約後の表現はどちらも `aspect`-tagged な findings 配列として扱える。
-   - **Dual path 判定**（retro 2026-05-03-001 proc-002 由来、M3.1 で iterate せず終了 + PM follow-up dispatch defacto 標準化を codify）:
+   - **Triple path 判定**（retro 2026-05-03-001 proc-002 由来 → 2026-05-04-001 F-proc-001 で path C 追加、SPEC §3.6.8.7 SSoT）:
      - **path A — same-session iterate (default)**: fix scope clear AND context budget 余裕あり (token usage < 70%、findings 件数 ≤ 5、scope 独立) → 同 session 内で fix → re-run tests → re-submit (back to Step 8)
      - **path B — PM handoff (fallback)**: fix scope unclear OR context budget tight (token usage ≥ 70%、findings 件数 > 5、複数 finding が相互依存) → final report に `handoff_required: true + reasoning + recommended next step + 残 findings 全文` を明記して終了、PM が follow-up dispatch する
-     - **silent termination 禁止**: needs_fix を受けた状態で何の handoff annotation もなしに final report を返すのは invalid response（PM が refuse + retry）
+     - **path C — self-review with safety checklist (degraded mode、Task tool deferred 時)**: Task tool deferred で reviewer dispatch 不可 AND scope 単純 AND path B handoff 不要な場合の formal protocol：
+       1. final report に `self_review: true` + `task_tool_deferred: true` を明示宣言
+       2. 4 観点 self-checklist 必須記載 (code 観点 / security 観点 / test 観点 / SPEC §3.6.10 SSoT cross-check 観点)
+       3. 各観点で **3 行以上の reasoning + 該当 file:line 参照**
+       4. PM が後で formal loom-reviewer follow-up dispatch する option を残す (path C completion ≠ formal review、interim safety net)
+     - **silent termination 禁止**: needs_fix or self-review state で何の field 宣言もなしに final report を返すのは invalid response（PM が refuse + retry）
 10. **All reviewer verdicts `pass`** → commit. **必ず以下の順序で実行**（M0.14.x で codified、retro 2026-05-02-001 finding-proc-001 由来 — reviewer pass 後に commit せず final report を返す handoff anomaly が M2 Task 5/6/7/8 で 4 連発したため）：
     1. `Bash`: `git status` で staged / unstaged / untracked を確認
     2. `Bash`: `git add <files>` で対象ファイルを stage（`git add -A` 禁止、明示 path のみ）
