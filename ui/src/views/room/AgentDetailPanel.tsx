@@ -1,17 +1,14 @@
 /**
- * AgentDetailPanel — popup panel beside a cat showing status, history, and tokens.
- * WHY: ported from ui/prototype/screens-a.jsx AgentDetailPanel.
+ * AgentDetailPanel — RPG-style popup panel beside a cat showing status, history, and tokens.
+ * WHY: M0.11.4 t10 full rewrite — ported from screens-a.jsx AgentDetailPanel (design source).
+ * M3.2 t2 features (attention toggle + dispatch history) are kept alongside new RPG visual.
  * onClose default: calls useViewStore.setSelectedAgentId(null) per Task 9 spec.
- */
-/**
- * WHY: CatSprite DOM component removed in M3.0 (Phaser sprites replace it).
- * AgentDetailPanel now uses a simple color circle for the agent avatar preview.
- * Pixel art avatar is deferred to M5 (frontend-design).
  */
 import React, { useState } from 'react';
 import { useViewStore } from '../../store/view';
 import type { RosterEntry } from './roster';
 import { AgentDetailNotes } from './AgentDetailNotes';
+import { CatSprite } from '../../components/CatSprite';
 
 // ---------------------------------------------------------------------------
 // Agent status constant values (SPEC §3.6.10 — no inline string literals)
@@ -95,13 +92,8 @@ export function AgentDetailPanel({
   return (
     <div
       data-testid="agent-detail-panel"
-      className="bg-bg2 rounded-card shadow-token"
-      style={{
-        width: 320, padding: 16,
-        border: '3px solid var(--p-border, #2a2a35)',
-        fontFamily: 'ui-monospace, monospace',
-        background: 'var(--p-paper, #f8f4ec)',
-      }}
+      className="rpg-frame pixel"
+      style={{ width: 320, padding: 16 }}
     >
       {/* Header row with close button */}
       <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 8 }}>
@@ -121,30 +113,33 @@ export function AgentDetailPanel({
         </button>
       </div>
 
-      {/* Sprite + name + role */}
+      {/* Hero: CatSprite + cat metadata — design source screens-a.jsx L43-54 */}
       <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-        {/* Agent avatar circle — placeholder. M5 replaces with pixel art cat sprite. */}
         <div style={{
           background: 'var(--p-tint, #e8e0d0)',
-          border: '2px solid var(--p-border, #2a2a35)', padding: 4,
-          width: 72, height: 72, display: 'flex', alignItems: 'center', justifyContent: 'center',
+          border: '2px solid var(--p-border, #2a2a35)',
+          padding: 4,
         }}>
-          <div style={{
-            width: 48, height: 48, borderRadius: '50%',
-            background: agent.fur ?? 'var(--p-accent, #6366f1)',
-            border: '2px solid var(--p-border, #2a2a35)',
-          }} />
+          <CatSprite
+            size={72}
+            fur={agent.fur}
+            cheek={agent.cheek}
+            hat={agent.hat ?? null}
+            pose="sit"
+          />
         </div>
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--p-text, #1a1a2e)' }}>
             {agent.name}
           </div>
-          <div style={{
-            fontSize: 9, letterSpacing: '0.06em', color: 'var(--p-text-muted, #64748b)',
-            marginTop: 2, textTransform: 'uppercase',
-          }}>
+          {/* jp: Japanese role name — design source renders agent.jp */}
+          <div className="rpg-label" style={{ marginTop: 2 }}>
+            {agent.jp}
+          </div>
+          <div className="rpg-label" style={{ marginTop: 2 }}>
             {agent.role} · {agent.breed}
           </div>
+          {/* quote with Japanese quotation marks — design source L50-52 */}
           <div style={{
             fontSize: 10, fontStyle: 'italic',
             color: 'var(--p-text-muted, #64748b)', marginTop: 6,
@@ -154,39 +149,35 @@ export function AgentDetailPanel({
         </div>
       </div>
 
-      {/* Status chips */}
+      {/* Status chips — design source L56-61 */}
       <div style={{ display: 'flex', gap: 6, marginTop: 12, flexWrap: 'wrap' }}>
-        <span style={{ padding: '2px 6px', background: 'var(--p-tint, #e8e0d0)', border: '1px solid var(--p-border, #2a2a35)', fontSize: 9 }}>
-          <span style={{ display: 'inline-block', width: 6, height: 6, borderRadius: '50%', background: 'var(--p-success, #4ade80)', marginRight: 3 }} />
-          {agent.status ?? AGENT_STATUS.BUSY}
+        <span className="chip">
+          <span className={`dot ${agent.status ?? AGENT_STATUS.BUSY}`} />
+          {' '}{agent.status ?? AGENT_STATUS.BUSY}
         </span>
-        <span style={{ padding: '2px 6px', background: 'var(--p-tint, #e8e0d0)', border: '1px solid var(--p-border, #2a2a35)', fontSize: 9 }}>model: sonnet</span>
-        <span style={{ padding: '2px 6px', background: 'var(--p-tint, #e8e0d0)', border: '1px solid var(--p-border, #2a2a35)', fontSize: 9 }}>friendly-mentor</span>
+        <span className="chip">model: sonnet</span>
+        <span className="chip">friendly-mentor</span>
         {isAttention && (
-          <span style={{ padding: '2px 6px', background: 'var(--p-tint, #e8e0d0)', border: '1px solid var(--p-border, #2a2a35)', fontSize: 9 }}>★ 注目</span>
+          <span className="chip">★ 注目</span>
         )}
       </div>
 
-      {/* Token usage */}
+      {/* Token usage — design source L63-71 */}
       <div style={{ marginTop: 14 }}>
-        <div style={{ fontSize: 9, letterSpacing: '0.06em', color: 'var(--p-text-muted, #64748b)', textTransform: 'uppercase', marginBottom: 4 }}>
-          TOKEN — TODAY
-        </div>
-        <div style={{ display: 'flex', gap: 8, fontSize: 10 }}>
+        <div className="rpg-label" style={{ marginBottom: 4 }}>TOKEN — TODAY</div>
+        <div style={{ display: 'flex', gap: 8, fontSize: 10, fontFamily: 'ui-monospace, monospace' }}>
           <div>in <b>32.1k</b></div>
           <div>out <b>9.4k</b></div>
           <div>cache <b>118k</b></div>
         </div>
-        <div style={{ marginTop: 4, height: 6, background: 'var(--p-tint, #e8e0d0)', border: '1px solid var(--p-border, #2a2a35)', position: 'relative' }}>
-          <div style={{ width: '42%', height: '100%', background: 'var(--p-accent, #6366f1)' }} />
+        <div className="exp-bar" style={{ marginTop: 4 }}>
+          <i style={{ width: '42%' }} />
         </div>
       </div>
 
-      {/* Current task */}
+      {/* Current task — design source L73-78 */}
       <div style={{ marginTop: 14 }}>
-        <div style={{ fontSize: 9, letterSpacing: '0.06em', color: 'var(--p-text-muted, #64748b)', textTransform: 'uppercase', marginBottom: 4 }}>
-          NOW
-        </div>
+        <div className="rpg-label" style={{ marginBottom: 4 }}>NOW</div>
         <div style={{
           fontSize: 11, padding: 8,
           background: 'var(--p-tint, #e8e0d0)',
@@ -197,17 +188,15 @@ export function AgentDetailPanel({
         </div>
       </div>
 
-      {/* History */}
+      {/* HISTORY — design source L80-92 */}
       <div style={{ marginTop: 14 }}>
-        <div style={{ fontSize: 9, letterSpacing: '0.06em', color: 'var(--p-text-muted, #64748b)', textTransform: 'uppercase', marginBottom: 4 }}>
-          HISTORY
-        </div>
+        <div className="rpg-label" style={{ marginBottom: 4 }}>HISTORY</div>
         {history.map((h) => (
           <div
             key={h.time}
             style={{
               display: 'flex', gap: 8, fontSize: 10,
-              padding: '3px 0', color: 'var(--p-text, #1a1a2e)',
+              padding: '3px 0', fontFamily: 'ui-monospace, monospace',
             }}
           >
             <span style={{ color: 'var(--p-text-muted, #64748b)' }}>{h.time}</span>
@@ -216,14 +205,9 @@ export function AgentDetailPanel({
         ))}
       </div>
 
-      {/* Dispatch History section — M3.2 t2 */}
+      {/* Dispatch History section — M3.2 t2 keep */}
       <div data-testid="agent-dispatch-history" style={{ marginTop: 14 }}>
-        <div style={{
-          fontSize: 9, letterSpacing: '0.06em',
-          color: 'var(--p-text-muted, #64748b)', textTransform: 'uppercase', marginBottom: 4,
-        }}>
-          DISPATCH HISTORY
-        </div>
+        <div className="rpg-label" style={{ marginBottom: 4 }}>DISPATCH HISTORY</div>
         {(!dispatchHistory || dispatchHistory.length === 0) ? (
           <div style={{ fontSize: 10, color: 'var(--p-text-muted, #64748b)', fontStyle: 'italic' }}>
             No dispatches yet
@@ -234,7 +218,7 @@ export function AgentDetailPanel({
               key={entry.subagentId}
               style={{
                 display: 'flex', gap: 8, fontSize: 10,
-                padding: '3px 0', color: 'var(--p-text, #1a1a2e)',
+                padding: '3px 0', fontFamily: 'ui-monospace, monospace',
                 borderBottom: '1px solid var(--p-tint, #e8e0d0)',
               }}
             >
@@ -257,31 +241,19 @@ export function AgentDetailPanel({
         )}
       </div>
 
-      {/* M3.2 t3 — notes section (separate component) */}
+      {/* M3.2 t3 — notes section (separate component, touch禁止) */}
       <AgentDetailNotes agentId={agent.id} />
 
-      {/* Action buttons */}
+      {/* Action buttons — design source L94-97, attention toggle M3.2 t2 keep */}
       <div style={{ marginTop: 14, display: 'flex', gap: 6 }}>
-        <button style={{
-          flex: 1, padding: '4px 8px', fontSize: 10, cursor: 'pointer',
-          background: 'transparent', border: '2px solid var(--p-border, #2a2a35)',
-          color: 'var(--p-text, #1a1a2e)', fontFamily: 'ui-monospace, monospace',
-        }}>
-          メモ
-        </button>
+        <button className="btn-px ghost" style={{ flex: 1 }}>メモ</button>
         <button
           data-testid="agent-attention-toggle"
           aria-pressed={isAttention}
           data-attention={String(isAttention)}
           onClick={handleAttentionToggle}
-          style={{
-            flex: 1, padding: '4px 8px', fontSize: 10, cursor: 'pointer',
-            background: isAttention ? 'var(--p-accent, #6366f1)' : 'transparent',
-            border: '2px solid var(--p-border, #2a2a35)',
-            color: isAttention ? 'white' : 'var(--p-text, #1a1a2e)',
-            fontFamily: 'ui-monospace, monospace',
-            fontWeight: isAttention ? 700 : 400,
-          }}
+          className={isAttention ? 'btn-px primary' : 'btn-px ghost'}
+          style={{ flex: 1 }}
         >
           ★ 注目
         </button>
