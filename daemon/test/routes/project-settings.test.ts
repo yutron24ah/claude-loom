@@ -15,6 +15,17 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { mkdirSync } from "node:fs";
 import { randomUUID } from "node:crypto";
+import superjson from "superjson";
+
+/** Serialize input for tRPC GET query ?input= param (superjson transformer required). */
+function sjInput(value: unknown): string {
+  return encodeURIComponent(JSON.stringify(superjson.serialize(value)));
+}
+
+/** Serialize payload for tRPC POST mutation body (superjson transformer required). */
+function sjPayload(value: unknown): string {
+  return JSON.stringify(superjson.serialize(value));
+}
 
 let app: FastifyInstance;
 let dbPath: string;
@@ -43,7 +54,7 @@ async function createProject(): Promise<string> {
     method: "POST",
     url: "/trpc/project.upsert",
     headers: { "content-type": "application/json" },
-    payload: JSON.stringify({
+    payload: sjPayload({
       name: "Test Project",
       rootPath,
       specPath: `${rootPath}/SPEC.md`,
@@ -51,7 +62,7 @@ async function createProject(): Promise<string> {
     }),
   });
   const body = JSON.parse(resp.body);
-  return body.result.data.projectId;
+  return body.result.data.json.projectId;
 }
 
 // ---------------------------------------------------------------------------
@@ -77,12 +88,12 @@ describe("projectRouter.getDetail", () => {
 
     const resp = await app.inject({
       method: "GET",
-      url: `/trpc/project.getDetail?input=${encodeURIComponent(JSON.stringify({ projectId }))}`,
+      url: `/trpc/project.getDetail?input=${sjInput({ projectId })}`,
       headers: { "content-type": "application/json" },
     });
 
     expect(resp.statusCode).toBe(200);
-    const data = JSON.parse(resp.body).result.data;
+    const data = JSON.parse(resp.body).result.data.json;
     expect(data).toHaveProperty("projectId", projectId);
     expect(data).toHaveProperty("name");
     expect(data).toHaveProperty("rootPath");
@@ -93,19 +104,19 @@ describe("projectRouter.getDetail", () => {
   it("returns null for non-existent projectId", async () => {
     const resp = await app.inject({
       method: "GET",
-      url: `/trpc/project.getDetail?input=${encodeURIComponent(JSON.stringify({ projectId: "nonexistent-id-xyz" }))}`,
+      url: `/trpc/project.getDetail?input=${sjInput({ projectId: "nonexistent-id-xyz" })}`,
       headers: { "content-type": "application/json" },
     });
 
     expect(resp.statusCode).toBe(200);
-    const data = JSON.parse(resp.body).result.data;
+    const data = JSON.parse(resp.body).result.data.json;
     expect(data).toBeNull();
   });
 
   it("requires projectId in input", async () => {
     const resp = await app.inject({
       method: "GET",
-      url: `/trpc/project.getDetail?input=${encodeURIComponent(JSON.stringify({}))}`,
+      url: `/trpc/project.getDetail?input=${sjInput({})}`,
       headers: { "content-type": "application/json" },
     });
 
@@ -141,14 +152,14 @@ describe("projectRouter.updateSettings", () => {
       method: "POST",
       url: "/trpc/project.updateSettings",
       headers: { "content-type": "application/json" },
-      payload: JSON.stringify({
+      payload: sjPayload({
         projectId,
         name: "Updated Name",
       }),
     });
 
     expect(resp.statusCode).toBe(200);
-    const data = JSON.parse(resp.body).result.data;
+    const data = JSON.parse(resp.body).result.data.json;
     expect(data).toHaveProperty("projectId", projectId);
     expect(data).toHaveProperty("name", "Updated Name");
   });
@@ -160,14 +171,14 @@ describe("projectRouter.updateSettings", () => {
       method: "POST",
       url: "/trpc/project.updateSettings",
       headers: { "content-type": "application/json" },
-      payload: JSON.stringify({
+      payload: sjPayload({
         projectId,
         specPath: "docs/SPEC.md",
       }),
     });
 
     expect(resp.statusCode).toBe(200);
-    const data = JSON.parse(resp.body).result.data;
+    const data = JSON.parse(resp.body).result.data.json;
     expect(data).toHaveProperty("specPath", "docs/SPEC.md");
   });
 
@@ -178,14 +189,14 @@ describe("projectRouter.updateSettings", () => {
       method: "POST",
       url: "/trpc/project.updateSettings",
       headers: { "content-type": "application/json" },
-      payload: JSON.stringify({
+      payload: sjPayload({
         projectId,
         maxDevelopers: 5,
       }),
     });
 
     expect(resp.statusCode).toBe(200);
-    const data = JSON.parse(resp.body).result.data;
+    const data = JSON.parse(resp.body).result.data.json;
     expect(data).toHaveProperty("maxDevelopers", 5);
   });
 
@@ -194,7 +205,7 @@ describe("projectRouter.updateSettings", () => {
       method: "POST",
       url: "/trpc/project.updateSettings",
       headers: { "content-type": "application/json" },
-      payload: JSON.stringify({
+      payload: sjPayload({
         projectId: "nonexistent-project-xyz",
         name: "Should Fail",
       }),
@@ -210,7 +221,7 @@ describe("projectRouter.updateSettings", () => {
       method: "POST",
       url: "/trpc/project.updateSettings",
       headers: { "content-type": "application/json" },
-      payload: JSON.stringify({
+      payload: sjPayload({
         name: "No ID",
       }),
     });
@@ -228,7 +239,7 @@ describe("projectRouter.updateSettings", () => {
       method: "POST",
       url: "/trpc/project.updateSettings",
       headers: { "content-type": "application/json" },
-      payload: JSON.stringify({
+      payload: sjPayload({
         projectId,
         name: "Changed Name",
       }),
@@ -237,11 +248,11 @@ describe("projectRouter.updateSettings", () => {
     // Get detail
     const detailResp = await app.inject({
       method: "GET",
-      url: `/trpc/project.getDetail?input=${encodeURIComponent(JSON.stringify({ projectId }))}`,
+      url: `/trpc/project.getDetail?input=${sjInput({ projectId })}`,
       headers: { "content-type": "application/json" },
     });
 
-    const data = JSON.parse(detailResp.body).result.data;
+    const data = JSON.parse(detailResp.body).result.data.json;
     expect(data).toHaveProperty("name", "Changed Name");
   });
 });

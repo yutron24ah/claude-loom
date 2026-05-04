@@ -27,6 +27,8 @@ const NAV_LINKS = [
   { id: 'guidance',         path: '/guidance',         label: 'Guidance' },
   // M5 t4: token usage meter
   { id: 'tokens',           path: '/tokens',           label: 'Tokens' },
+  // M5 t3: project settings
+  { id: 'project-settings', path: '/project-settings', label: 'Project Settings' },
 ] as const;
 
 export function Sidebar(): JSX.Element {

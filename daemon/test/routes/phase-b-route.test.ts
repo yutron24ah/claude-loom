@@ -11,6 +11,12 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { mkdirSync } from "node:fs";
 import { randomUUID } from "node:crypto";
+import superjson from "superjson";
+
+/** Serialize payload for tRPC POST mutation body (superjson transformer required). */
+function sjPayload(value: unknown): string {
+  return JSON.stringify(superjson.serialize(value));
+}
 
 let app: FastifyInstance;
 let dbPath: string;
@@ -66,20 +72,20 @@ async function createSpecChange(): Promise<{ projectId: string; specChangeId: nu
     method: "POST",
     url: "/trpc/project.upsert",
     headers: { "content-type": "application/json" },
-    payload: JSON.stringify({
+    payload: sjPayload({
       name: "Test Project B",
       rootPath,
       specPath: `${rootPath}/SPEC.md`,
       status: "active",
     }),
   });
-  const { projectId } = JSON.parse(projectResp.body).result.data;
+  const { projectId } = JSON.parse(projectResp.body).result.data.json;
 
   const scResp = await app.inject({
     method: "POST",
     url: "/trpc/consistency.recordSpecChange",
     headers: { "content-type": "application/json" },
-    payload: JSON.stringify({
+    payload: sjPayload({
       projectId,
       specPath: "SPEC.md",
       beforeHash: "h0",
@@ -87,7 +93,7 @@ async function createSpecChange(): Promise<{ projectId: string; specChangeId: nu
       diff: "@@ -1 +1 @@\n-OldTerm removed\n+NewTerm added",
     }),
   });
-  const { id: specChangeId } = JSON.parse(scResp.body).result.data;
+  const { id: specChangeId } = JSON.parse(scResp.body).result.data.json;
 
   return { projectId, specChangeId };
 }
@@ -106,11 +112,11 @@ describe("consistencyRouter.runAnalysis — Phase B integration", () => {
       method: "POST",
       url: "/trpc/consistency.runAnalysis",
       headers: { "content-type": "application/json" },
-      payload: JSON.stringify({ specChangeId }),
+      payload: sjPayload({ specChangeId }),
     });
 
     expect(resp.statusCode).toBe(200);
-    const data = JSON.parse(resp.body).result.data;
+    const data = JSON.parse(resp.body).result.data.json;
     expect(data).toHaveProperty("findingsCreated");
     expect(data).toHaveProperty("phaseBExecuted");
     expect(data.phaseBExecuted).toBe(true);
@@ -124,12 +130,12 @@ describe("consistencyRouter.runAnalysis — Phase B integration", () => {
       method: "POST",
       url: "/trpc/consistency.runAnalysis",
       headers: { "content-type": "application/json" },
-      payload: JSON.stringify({ specChangeId }),
+      payload: sjPayload({ specChangeId }),
     });
 
     // Route should still return 200 (graceful degradation)
     expect(resp.statusCode).toBe(200);
-    const data = JSON.parse(resp.body).result.data;
+    const data = JSON.parse(resp.body).result.data.json;
     expect(data.phaseBExecuted).toBe(false);
     expect(data).toHaveProperty("degradedReason");
     expect(data.degradedReason).toBe("cli_not_found");
@@ -144,11 +150,11 @@ describe("consistencyRouter.runAnalysis — Phase B integration", () => {
       method: "POST",
       url: "/trpc/consistency.runAnalysis",
       headers: { "content-type": "application/json" },
-      payload: JSON.stringify({ specChangeId }),
+      payload: sjPayload({ specChangeId }),
     });
 
     expect(resp.statusCode).toBe(200);
-    const data = JSON.parse(resp.body).result.data;
+    const data = JSON.parse(resp.body).result.data.json;
     expect(typeof data.findingsCreated).toBe("number");
     // findingsCreated includes Phase B count (2 from mock)
     expect(data.findingsCreated).toBeGreaterThanOrEqual(2);
@@ -162,7 +168,7 @@ describe("consistencyRouter.runAnalysis — Phase B integration", () => {
       method: "POST",
       url: "/trpc/consistency.runAnalysis",
       headers: { "content-type": "application/json" },
-      payload: JSON.stringify({ specChangeId }),
+      payload: sjPayload({ specChangeId }),
     });
 
     // Unexpected error should propagate as 5xx or tRPC error

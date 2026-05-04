@@ -109,8 +109,10 @@ describe('AppShell — panel overlay behavior', () => {
 
   it('view-panel contains route content', () => {
     renderAppShell('/plan');
-    expect(screen.getByTestId('view-panel')).toBeInTheDocument();
-    expect(screen.getByText('Plan')).toBeInTheDocument();
+    const panel = screen.getByTestId('view-panel');
+    expect(panel).toBeInTheDocument();
+    // WHY: query within panel — sidebar also has a "Plan" link, so getByText is ambiguous
+    expect(panel).toHaveTextContent('Plan');
   });
 });
 
@@ -175,5 +177,52 @@ describe('AppShell — discipline-header placeholder', () => {
   it('renders discipline-header at /plan route', () => {
     renderAppShell('/plan');
     expect(screen.getByTestId('discipline-header')).toBeInTheDocument();
+  });
+});
+
+/**
+ * Sidebar wire-up assertions — hotfix bug-4
+ * WHY: Sidebar.tsx existed but was not imported/rendered in AppShell,
+ * making /plan, /sessions, /retro etc. unreachable without URL typing.
+ */
+describe('AppShell — Sidebar navigation', () => {
+  it('renders sidebar at root route', () => {
+    renderAppShell('/');
+    expect(screen.getByTestId('sidebar')).toBeInTheDocument();
+  });
+
+  it('renders sidebar at /plan route', () => {
+    renderAppShell('/plan');
+    expect(screen.getByTestId('sidebar')).toBeInTheDocument();
+  });
+
+  it('renders sidebar at /retro route', () => {
+    renderAppShell('/retro');
+    expect(screen.getByTestId('sidebar')).toBeInTheDocument();
+  });
+
+  it('sidebar contains link to /plan', () => {
+    renderAppShell('/');
+    expect(screen.getByTestId('sidebar-link-plan')).toBeInTheDocument();
+  });
+
+  it('sidebar contains link to /retro', () => {
+    renderAppShell('/');
+    expect(screen.getByTestId('sidebar-link-retro')).toBeInTheDocument();
+  });
+
+  it('sidebar contains link to /sessions', () => {
+    renderAppShell('/');
+    expect(screen.getByTestId('sidebar-link-sessions')).toBeInTheDocument();
+  });
+
+  it('sidebar contains link to /tokens', () => {
+    renderAppShell('/');
+    expect(screen.getByTestId('sidebar-link-tokens')).toBeInTheDocument();
+  });
+
+  it('sidebar contains link to /project-settings', () => {
+    renderAppShell('/');
+    expect(screen.getByTestId('sidebar-link-project-settings')).toBeInTheDocument();
   });
 });

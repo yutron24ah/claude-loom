@@ -63,7 +63,7 @@ function nextStatus(current: PlanItem['status']): PlanItem['status'] {
 }
 
 export function PlanView(): JSX.Element {
-  const { todos } = useTodoWrite();
+  const { todos, isLoading: isTodosLoading } = useTodoWrite();
   const { data: planItems, isLoading, error } = usePlanItems();
   const { upsertItem, updateItemStatus } = usePlanMutations();
 
@@ -122,11 +122,29 @@ export function PlanView(): JSX.Element {
         <h2 className="font-bold text-fs-sm tracking-wide text-fg1">
           短期 — TodoWrite (read-only)
         </h2>
-        <p className="text-[9px] text-text-muted font-mono mt-[2px] mb-sp-3">
-          session: pm-2026-05-01-am
-        </p>
 
-        {todos.map((todo, i) => (
+        {/* Loading state — while subscription is connecting */}
+        {isTodosLoading && (
+          <p
+            data-testid="todo-loading"
+            className="text-fs-xs text-text-muted font-mono mt-sp-3"
+          >
+            読み込み中…
+          </p>
+        )}
+
+        {/* Empty state — connected but no todos yet */}
+        {!isTodosLoading && todos.length === 0 && (
+          <p
+            data-testid="todo-empty-state"
+            className="text-fs-xs text-text-muted font-mono mt-sp-3"
+          >
+            TodoWrite なし — session 未接続
+          </p>
+        )}
+
+        {/* Live todos from daemon via useTodoWrite subscription */}
+        {!isTodosLoading && todos.map((todo, i) => (
           <div
             key={i}
             data-testid="todo-item"

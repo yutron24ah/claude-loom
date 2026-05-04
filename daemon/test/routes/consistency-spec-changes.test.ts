@@ -13,6 +13,17 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { mkdirSync } from "node:fs";
 import { randomUUID } from "node:crypto";
+import superjson from "superjson";
+
+/** Serialize payload for tRPC POST mutation body (superjson transformer required). */
+function sjPayload(value: unknown): string {
+  return JSON.stringify(superjson.serialize(value));
+}
+
+/** Serialize input for tRPC GET query ?input= param (superjson transformer required). */
+function sjInput(value: unknown): string {
+  return encodeURIComponent(JSON.stringify(superjson.serialize(value)));
+}
 
 let app: FastifyInstance;
 let dbPath: string;
@@ -38,7 +49,7 @@ async function createProject(rootPath?: string): Promise<string> {
     method: "POST",
     url: "/trpc/project.upsert",
     headers: { "content-type": "application/json" },
-    payload: JSON.stringify({
+    payload: sjPayload({
       name: "Test Project",
       rootPath: path,
       specPath: `${path}/SPEC.md`,
@@ -46,7 +57,7 @@ async function createProject(rootPath?: string): Promise<string> {
     }),
   });
   expect(response.statusCode).toBe(200);
-  return JSON.parse(response.body).result.data.projectId;
+  return JSON.parse(response.body).result.data.json.projectId;
 }
 
 // ---------------------------------------------------------------------------
@@ -108,7 +119,7 @@ describe("consistencyRouter.recordSpecChange", () => {
       method: "POST",
       url: "/trpc/consistency.recordSpecChange",
       headers: { "content-type": "application/json" },
-      payload: JSON.stringify({
+      payload: sjPayload({
         projectId,
         specPath: "/path/to/SPEC.md",
         beforeHash: "aaa111",
@@ -118,7 +129,7 @@ describe("consistencyRouter.recordSpecChange", () => {
     });
 
     expect(response.statusCode).toBe(200);
-    const data = JSON.parse(response.body).result.data;
+    const data = JSON.parse(response.body).result.data.json;
     expect(data).toHaveProperty("id");
     expect(data.projectId).toBe(projectId);
     expect(data.specPath).toBe("/path/to/SPEC.md");
@@ -136,7 +147,7 @@ describe("consistencyRouter.recordSpecChange", () => {
       method: "POST",
       url: "/trpc/consistency.recordSpecChange",
       headers: { "content-type": "application/json" },
-      payload: JSON.stringify({
+      payload: sjPayload({
         projectId,
         specPath: "/SPEC.md",
         beforeHash: "hash1",
@@ -146,7 +157,7 @@ describe("consistencyRouter.recordSpecChange", () => {
     });
 
     expect(response.statusCode).toBe(200);
-    const data = JSON.parse(response.body).result.data;
+    const data = JSON.parse(response.body).result.data.json;
     expect(data.status).toBe("pending");
   });
 });
@@ -157,11 +168,11 @@ describe("consistencyRouter.getLatestSpecChange", () => {
 
     const response = await app.inject({
       method: "GET",
-      url: `/trpc/consistency.getLatestSpecChange?input=${encodeURIComponent(JSON.stringify({ projectId }))}`,
+      url: `/trpc/consistency.getLatestSpecChange?input=${sjInput({ projectId })}`,
     });
 
     expect(response.statusCode).toBe(200);
-    const data = JSON.parse(response.body).result.data;
+    const data = JSON.parse(response.body).result.data.json;
     expect(data).toBeNull();
   });
 
@@ -173,7 +184,7 @@ describe("consistencyRouter.getLatestSpecChange", () => {
       method: "POST",
       url: "/trpc/consistency.recordSpecChange",
       headers: { "content-type": "application/json" },
-      payload: JSON.stringify({
+      payload: sjPayload({
         projectId,
         specPath: "/SPEC.md",
         beforeHash: "hash0",
@@ -187,7 +198,7 @@ describe("consistencyRouter.getLatestSpecChange", () => {
       method: "POST",
       url: "/trpc/consistency.recordSpecChange",
       headers: { "content-type": "application/json" },
-      payload: JSON.stringify({
+      payload: sjPayload({
         projectId,
         specPath: "/SPEC.md",
         beforeHash: "hash1",
@@ -195,16 +206,16 @@ describe("consistencyRouter.getLatestSpecChange", () => {
         diff: "diff2",
       }),
     });
-    const secondId = JSON.parse(secondResp.body).result.data.id;
+    const secondId = JSON.parse(secondResp.body).result.data.json.id;
 
     // Get latest
     const response = await app.inject({
       method: "GET",
-      url: `/trpc/consistency.getLatestSpecChange?input=${encodeURIComponent(JSON.stringify({ projectId }))}`,
+      url: `/trpc/consistency.getLatestSpecChange?input=${sjInput({ projectId })}`,
     });
 
     expect(response.statusCode).toBe(200);
-    const data = JSON.parse(response.body).result.data;
+    const data = JSON.parse(response.body).result.data.json;
     expect(data).not.toBeNull();
     expect(data.id).toBe(secondId);
     expect(data.afterHash).toBe("hash2");
@@ -219,7 +230,7 @@ describe("consistencyRouter.getLatestSpecChange", () => {
       method: "POST",
       url: "/trpc/consistency.recordSpecChange",
       headers: { "content-type": "application/json" },
-      payload: JSON.stringify({
+      payload: sjPayload({
         projectId: projectA,
         specPath: "/SPEC.md",
         beforeHash: "a0",
@@ -231,11 +242,11 @@ describe("consistencyRouter.getLatestSpecChange", () => {
     // Query for project B
     const response = await app.inject({
       method: "GET",
-      url: `/trpc/consistency.getLatestSpecChange?input=${encodeURIComponent(JSON.stringify({ projectId: projectB }))}`,
+      url: `/trpc/consistency.getLatestSpecChange?input=${sjInput({ projectId: projectB })}`,
     });
 
     expect(response.statusCode).toBe(200);
-    const data = JSON.parse(response.body).result.data;
+    const data = JSON.parse(response.body).result.data.json;
     expect(data).toBeNull();
   });
 });
@@ -249,7 +260,7 @@ describe("consistencyRouter.dismissSpecChange", () => {
       method: "POST",
       url: "/trpc/consistency.recordSpecChange",
       headers: { "content-type": "application/json" },
-      payload: JSON.stringify({
+      payload: sjPayload({
         projectId,
         specPath: "/SPEC.md",
         beforeHash: "h1",
@@ -257,7 +268,7 @@ describe("consistencyRouter.dismissSpecChange", () => {
         diff: "some diff",
       }),
     });
-    const created = JSON.parse(createResp.body).result.data;
+    const created = JSON.parse(createResp.body).result.data.json;
     expect(created.status).toBe("pending");
 
     // Dismiss it
@@ -265,11 +276,11 @@ describe("consistencyRouter.dismissSpecChange", () => {
       method: "POST",
       url: "/trpc/consistency.dismissSpecChange",
       headers: { "content-type": "application/json" },
-      payload: JSON.stringify({ specChangeId: created.id }),
+      payload: sjPayload({ specChangeId: created.id }),
     });
 
     expect(dismissResp.statusCode).toBe(200);
-    const updated = JSON.parse(dismissResp.body).result.data;
+    const updated = JSON.parse(dismissResp.body).result.data.json;
     expect(updated.id).toBe(created.id);
     expect(updated.status).toBe("dismissed");
   });
@@ -279,7 +290,7 @@ describe("consistencyRouter.dismissSpecChange", () => {
       method: "POST",
       url: "/trpc/consistency.dismissSpecChange",
       headers: { "content-type": "application/json" },
-      payload: JSON.stringify({ specChangeId: 99999 }),
+      payload: sjPayload({ specChangeId: 99999 }),
     });
 
     // tRPC wraps errors as 200 with error payload or non-200 status

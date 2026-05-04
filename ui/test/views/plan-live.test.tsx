@@ -189,4 +189,29 @@ describe('PlanView (live) — short-term pane via useTodoWrite', () => {
     const todoItems = container.querySelectorAll('[data-testid="todo-item"]');
     expect(todoItems.length).toBe(0);
   });
+
+  it('does NOT show hardcoded session label "session: pm-2026-05-01-am"', () => {
+    // WHY: bug-3 regression guard — the hardcoded mock label must never appear;
+    // session info (if shown) must come from live useTodoWrite data only.
+    mockUseTodoWrite.mockReturnValue({ todos: [], isLoading: false });
+    mockUsePlanItems.mockReturnValue({ data: [], isLoading: false, error: null });
+    render(<PlanView />);
+    expect(screen.queryByText('session: pm-2026-05-01-am')).not.toBeInTheDocument();
+  });
+
+  it('shows loading indicator in short-term pane when useTodoWrite isLoading is true', () => {
+    // WHY: short-term pane should reflect loading state when hook is loading.
+    mockUseTodoWrite.mockReturnValue({ todos: [], isLoading: true });
+    mockUsePlanItems.mockReturnValue({ data: [], isLoading: false, error: null });
+    render(<PlanView />);
+    expect(screen.getByTestId('todo-loading')).toBeInTheDocument();
+  });
+
+  it('shows empty state message in short-term pane when todos is empty and not loading', () => {
+    // WHY: short-term pane empty state should be explicit (not just blank).
+    mockUseTodoWrite.mockReturnValue({ todos: [], isLoading: false });
+    mockUsePlanItems.mockReturnValue({ data: [], isLoading: false, error: null });
+    render(<PlanView />);
+    expect(screen.getByTestId('todo-empty-state')).toBeInTheDocument();
+  });
 });

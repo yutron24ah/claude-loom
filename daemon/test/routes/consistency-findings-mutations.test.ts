@@ -15,6 +15,12 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { buildServer } from "../../src/server.js";
 import type { FastifyInstance } from "fastify";
 import { randomUUID } from "node:crypto";
+import superjson from "superjson";
+
+/** Serialize payload for tRPC POST mutation body (superjson transformer required). */
+function sjPayload(value: unknown): string {
+  return JSON.stringify(superjson.serialize(value));
+}
 
 let app: FastifyInstance;
 
@@ -37,7 +43,7 @@ async function createProject(): Promise<string> {
     method: "POST",
     url: "/trpc/project.upsert",
     headers: { "content-type": "application/json" },
-    payload: JSON.stringify({
+    payload: sjPayload({
       name: "Test Project",
       rootPath: path,
       specPath: `${path}/SPEC.md`,
@@ -45,7 +51,7 @@ async function createProject(): Promise<string> {
     }),
   });
   expect(response.statusCode).toBe(200);
-  return JSON.parse(response.body).result.data.projectId;
+  return JSON.parse(response.body).result.data.json.projectId;
 }
 
 async function createSpecChange(projectId: string): Promise<number> {
@@ -53,7 +59,7 @@ async function createSpecChange(projectId: string): Promise<number> {
     method: "POST",
     url: "/trpc/consistency.recordSpecChange",
     headers: { "content-type": "application/json" },
-    payload: JSON.stringify({
+    payload: sjPayload({
       projectId,
       specPath: "/SPEC.md",
       beforeHash: "aaa",
@@ -62,7 +68,7 @@ async function createSpecChange(projectId: string): Promise<number> {
     }),
   });
   expect(response.statusCode).toBe(200);
-  return JSON.parse(response.body).result.data.id;
+  return JSON.parse(response.body).result.data.json.id;
 }
 
 /**
@@ -114,11 +120,11 @@ describe("consistencyRouter.acknowledge", () => {
       method: "POST",
       url: "/trpc/consistency.acknowledge",
       headers: { "content-type": "application/json" },
-      payload: JSON.stringify({ id: findingId }),
+      payload: sjPayload({ id: findingId }),
     });
 
     expect(response.statusCode).toBe(200);
-    const data = JSON.parse(response.body).result.data;
+    const data = JSON.parse(response.body).result.data.json;
     expect(data.id).toBe(findingId);
     expect(data.status).toBe("acknowledged");
   });
@@ -128,7 +134,7 @@ describe("consistencyRouter.acknowledge", () => {
       method: "POST",
       url: "/trpc/consistency.acknowledge",
       headers: { "content-type": "application/json" },
-      payload: JSON.stringify({ id: 99999999 }),
+      payload: sjPayload({ id: 99999999 }),
     });
 
     const body = JSON.parse(response.body);
@@ -152,11 +158,11 @@ describe("consistencyRouter.markFixed", () => {
       method: "POST",
       url: "/trpc/consistency.markFixed",
       headers: { "content-type": "application/json" },
-      payload: JSON.stringify({ id: findingId }),
+      payload: sjPayload({ id: findingId }),
     });
 
     expect(response.statusCode).toBe(200);
-    const data = JSON.parse(response.body).result.data;
+    const data = JSON.parse(response.body).result.data.json;
     expect(data.id).toBe(findingId);
     expect(data.status).toBe("fixed");
   });
@@ -166,7 +172,7 @@ describe("consistencyRouter.markFixed", () => {
       method: "POST",
       url: "/trpc/consistency.markFixed",
       headers: { "content-type": "application/json" },
-      payload: JSON.stringify({ id: 99999999 }),
+      payload: sjPayload({ id: 99999999 }),
     });
 
     const body = JSON.parse(response.body);
@@ -190,11 +196,11 @@ describe("consistencyRouter.dismiss (finding)", () => {
       method: "POST",
       url: "/trpc/consistency.dismiss",
       headers: { "content-type": "application/json" },
-      payload: JSON.stringify({ id: findingId }),
+      payload: sjPayload({ id: findingId }),
     });
 
     expect(response.statusCode).toBe(200);
-    const data = JSON.parse(response.body).result.data;
+    const data = JSON.parse(response.body).result.data.json;
     expect(data.id).toBe(findingId);
     expect(data.status).toBe("dismissed");
   });
@@ -204,7 +210,7 @@ describe("consistencyRouter.dismiss (finding)", () => {
       method: "POST",
       url: "/trpc/consistency.dismiss",
       headers: { "content-type": "application/json" },
-      payload: JSON.stringify({ id: 99999999 }),
+      payload: sjPayload({ id: 99999999 }),
     });
 
     const body = JSON.parse(response.body);
@@ -229,7 +235,7 @@ describe("consistencyRouter.list with status filter", () => {
       method: "POST",
       url: "/trpc/consistency.acknowledge",
       headers: { "content-type": "application/json" },
-      payload: JSON.stringify({ id: findingId }),
+      payload: sjPayload({ id: findingId }),
     });
 
     // Create a second finding that stays 'open'
@@ -238,11 +244,11 @@ describe("consistencyRouter.list with status filter", () => {
     // Filter for open only — the acknowledged one should NOT appear
     const response = await app.inject({
       method: "GET",
-      url: `/trpc/consistency.list?input=${encodeURIComponent(JSON.stringify({ projectId, status: "open" }))}`,
+      url: `/trpc/consistency.list?input=${encodeURIComponent(JSON.stringify(superjson.serialize({ projectId, status: "open" })))}`,
     });
 
     expect(response.statusCode).toBe(200);
-    const data = JSON.parse(response.body).result.data;
+    const data = JSON.parse(response.body).result.data.json;
     expect(Array.isArray(data)).toBe(true);
     // All returned findings should have status 'open'
     for (const f of data) {
@@ -260,16 +266,16 @@ describe("consistencyRouter.list with status filter", () => {
       method: "POST",
       url: "/trpc/consistency.acknowledge",
       headers: { "content-type": "application/json" },
-      payload: JSON.stringify({ id: findingId }),
+      payload: sjPayload({ id: findingId }),
     });
 
     const response = await app.inject({
       method: "GET",
-      url: `/trpc/consistency.list?input=${encodeURIComponent(JSON.stringify({ projectId, status: "acknowledged" }))}`,
+      url: `/trpc/consistency.list?input=${encodeURIComponent(JSON.stringify(superjson.serialize({ projectId, status: "acknowledged" })))}`,
     });
 
     expect(response.statusCode).toBe(200);
-    const data = JSON.parse(response.body).result.data;
+    const data = JSON.parse(response.body).result.data.json;
     expect(Array.isArray(data)).toBe(true);
     expect(data.length).toBeGreaterThanOrEqual(1);
     for (const f of data) {
@@ -282,7 +288,7 @@ describe("consistencyRouter.list with status filter", () => {
 
     const response = await app.inject({
       method: "GET",
-      url: `/trpc/consistency.list?input=${encodeURIComponent(JSON.stringify({ projectId, status: "not-a-status" }))}`,
+      url: `/trpc/consistency.list?input=${encodeURIComponent(JSON.stringify(superjson.serialize({ projectId, status: "not-a-status" })))}`,
     });
 
     // Should return a validation error (FindingStatusSchema rejects unknown values)
