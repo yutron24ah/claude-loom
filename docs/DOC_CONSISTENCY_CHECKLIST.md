@@ -160,13 +160,14 @@ M0.14 essence cleanup（M2.1 統合実施、M0.14 t6/t7 closure）：
 
 ## M3 UI Architecture 関連 check（M3.0 / M3.1 / M3.2）
 
-SPEC §3.6.9（M3 UI Architecture）/ §12 stack 確定値（Phaser mount / Gantt / PLAN sync）を編集した時：
+SPEC §3.6.9（M3 UI Architecture）/ §12 stack 確定値（Phaser mount / Gantt / PLAN sync / Visual regression）を編集した時：
 
 - [ ] §3.6.9.1（Phaser mount α-1）と §12 確定値表の "Phaser React 内 mount pattern" 行が整合
 - [ ] §3.6.9.2（PLAN sync β-3）と §12 確定値表の "PLAN.md 双方向同期" 行が整合
 - [ ] §3.6.9.3（Gantt γ-3）と §12 確定値表の "Gantt 実装" 行が整合
 - [ ] §3.6.9.4 toast 6 event 表と §6.3 Event payload 仕様（実装後 `daemon/src/events/types.ts`）が整合
-- [ ] §3.6.9.6 M3 分割（M3.0/.1/.2）と `PLAN.md` M3 系列セクション + `tests/REQUIREMENTS.md` REQ-032/033/034 が整合
+- [ ] §3.6.9.6 M3 分割（M3.0/.1/.2）と `PLAN.md` M3 系列セクション + `tests/REQUIREMENTS.md` REQ-032/033/034 が整合（M3.1 task 数 = 5、scope に visual regression infra 含む）
+- [ ] §3.6.9.7（Visual regression check res-001）と §12 確定値表の "Visual regression check" 行が整合（採用 = Playwright e2e、却下案 = canvas polyfill / @vitest/browser）
 
 M3.0（Room View）実装時：
 
@@ -174,12 +175,14 @@ M3.0（Room View）実装時：
 - [ ] tile map JSON + tokens.css `var(--color-bg)` 連携が SPEC §3.6.9.1 + M2 3 theme 仕様と整合
 - [ ] agent sprite 状態アニメ（idle/busy/失敗）が daemon `agent` subscription event schema と整合
 
-M3.1（Plan View + Gantt + sync）実装時：
+M3.1（Plan View + Gantt + sync + visual regression）実装時：
 
 - [ ] PLAN.md 双方向同期実装（debounce + LWW + `plan_conflict_detected` toast + localStorage backup）が SPEC §3.6.9.2 と整合
 - [ ] daemon chokidar + 500ms debounce + conflict resolution が SPEC §3.6.9.2 と整合
 - [ ] Gantt SVG 実装（`<rect>` / `<line>` / `<text>` + tokens.css var 直参照）が SPEC §3.6.9.3 と整合
 - [ ] toast 6 event の `plan_conflict_detected` payload が SPEC §3.6.9.4 + `daemon/src/events/types.ts` と整合
+- [ ] Playwright e2e infra（`ui/e2e/`、`@playwright/test` devDep、`pnpm --filter @claude-loom/ui e2e` script、CI workflow 並列 step）が SPEC §3.6.9.7 と整合
+- [ ] Room View pop theme screenshot baseline 1 件（`expect(page).toHaveScreenshot()`）が SPEC §3.6.9.7 scope 規定と整合
 
 M3.2（Session/Agent/notes）実装時：
 

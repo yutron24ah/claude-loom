@@ -358,10 +358,27 @@ M3 は scope 大（10 task = M2 同等規模 + 新技術 Phaser + 複雑 design 
 | sub-milestone | scope | task 数 | technical risk 軸 |
 |---|---|---|---|
 | **M3.0** Room View | Phaser mount + tile + sprite + 状態アニメ | 3 | 新技術 (Phaser) 投入、独立 milestone で retro 集中 |
-| **M3.1** Plan + Gantt + sync | Plan View 短期/長期 + 双方向同期 + Gantt | 4 | 複雑 design (β-3 hybrid sync)、独立 milestone で edge case finding |
+| **M3.1** Plan + Gantt + sync + visual regression | Plan View 短期/長期 + 双方向同期 + Gantt + Playwright e2e baseline | 5 | 複雑 design (β-3 hybrid sync) + visual regression infra 初導入、独立 milestone で edge case finding |
 | **M3.2** Detail views | Session List + Agent Detail + notes | 3 | CRUD polish、新技術/複雑 design は M3.0/M3.1 で扱い済 |
 
 各 milestone closure 後に retro hook（M0.13 milestone retro 規約）、verdict_evidence (M2.1 整備済) の運用試験 3 回 = proc-003 hook 妥当性も並行検証。詳細 task は PLAN.md M3.0 / M3.1 / M3.2 セクション参照。
+
+#### 3.6.9.7 Visual regression check 機構（M3.1 から、res-001 確定）
+
+M3.0 mock-only test の構造的 hole（Phaser を完全 vi.mock、canvas pixel 描画 / sprite 位置 / アニメ未検証）を sprite 拡張前に塞ぐため、M3.1 で independent e2e infra を導入。retro 2026-05-02-002 res-001 由来、2026-05-02 spec phase で確定。
+
+- **採用**: **Playwright e2e**
+  - independent infra: 既存 vitest unit test に影響ゼロ（M3.0 13 test の green 状態保持）
+  - WebGL 実 render: Phaser 4 の `Phaser.AUTO` → WebGL path を実 browser で検証可能
+  - screenshot baseline built-in: `expect(page).toHaveScreenshot()` で plugin 不要、3 theme (pop/dusk/night) snapshot を 3 ファイルで管理可能
+  - M3.1 双方向同期 e2e との親和性: chokidar + GUI 編集 + 500ms debounce + `plan_conflict_detected` toast の e2e fixture が同 infra で natural に書ける
+  - M5 frontend-design 委譲時の baseline として継続価値: pixel art 確定後の visual regression baseline を Playwright snapshot で固定、frontend-design 後の breaking 検出に使える
+- **却下案**:
+  - `canvas` polyfill (node-canvas via jsdom): native build (cairo/pixman) 追加負債、WebGL 不可で `Phaser.AUTO` → CANVAS fallback 必要、`better-sqlite3` Node 25 workaround の轍（CLAUDE.md daemon note）
+  - `@vitest/browser`: vitest 1.6 時点で experimental、stability risk、Playwright dependency も結局必要、CI 速度低下
+- **M3.1 scope**: Playwright 導入 + Room View pop theme screenshot baseline 1 件確立 + CI workflow 統合のみ。test 大量化（dusk/night 拡張、双方向同期 e2e、Gantt e2e 等）は M3.2 以降に分配
+- **dependency**: `@playwright/test` (`ui/package.json` devDependencies)、`ui/e2e/` dir、`pnpm --filter @claude-loom/ui e2e` script、CI workflow に並列 step 追加（vitest と独立 fail で原因切り分け）
+- **frontend「自前 control」哲学整合**: §3.6.9.5 の library 依存最小化方針に対し、Playwright は「test infra」レイヤで application code には侵入せず、独立 infra として breaking risk を application 本体に伝播させない設計
 
 ### 3.7 プロジェクトライフサイクルと adopt 戦略
 
@@ -1759,6 +1776,7 @@ uninstall.sh の流れ:
 | **Phaser React 内 mount pattern（M3 から）** | 自前 `useEffect` + `useRef`、HMR 用 stable ref + `import.meta.hot.dispose` で `game.destroy()` | library 依存ゼロ、frontend-design 委譲との相性、α-1 確定 / 詳細 §3.6.9.1 |
 | **Gantt 実装（M3 から）** | 自前 SVG（rect/line/text + tokens.css var 直参照、200-400 LoC） | 3 theme 統合 seamless、bundle 増ゼロ、γ-3 確定 / 詳細 §3.6.9.3 |
 | **PLAN.md 双方向同期（M3 から）** | hybrid debounce (500ms-1s) + last-write-wins (mtime) + `plan_conflict_detected` toast + localStorage backup | data 救済 + race window 狭く + bundle 増ゼロ、β-3 確定 / 詳細 §3.6.9.2 |
+| **Visual regression check（M3.1 から）** | Playwright e2e（`@playwright/test` devDep、`ui/e2e/`、`pnpm --filter @claude-loom/ui e2e`） | independent infra で既存 vitest 影響ゼロ + WebGL 実 render + `toHaveScreenshot()` built-in + M3.1 双方向同期 e2e と同 infra、res-001 確定 / 詳細 §3.6.9.7 |
 | Daemon ライフサイクル | Lazy 起動、30 分アイドルで停止 | リソース節約 + シームレス UX |
 | Daemon ポート | 5757（config 変更可） | — |
 | プロジェクト判定 | git root + `.claude-loom/project.json` marker | 自動 + 明示の hybrid |
@@ -1810,3 +1828,4 @@ uninstall.sh の流れ:
 - 2026-04-27: §6.9 commit_prefixes 11 種拡張 + branch_types / commit_language フィールド追加（M0.7）
 - 2026-04-27: §3.9 追加（M0.8 retro 機能、4 lens / 3-stage protocol / 3-file state / hybrid auto-apply / recursive 自己最適化）
 - 2026-04-27: §6.9.1 / §6.9.2 / §6.9.3 追加（M0.8 retro の user-prefs / project-prefs schema + merge 規則）
+- 2026-05-02: §3.6.9.7 追加 + §3.6.9.6 表 M3.1 行更新 (task 4→5、scope に visual regression infra 追記) + §12 確定値表に "Visual regression check (M3.1 から)" 行追加（res-001 確定 = Playwright e2e、retro 2026-05-02-002 由来、M3.1 spec phase 解決）

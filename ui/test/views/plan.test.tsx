@@ -16,13 +16,24 @@ import { describe, it, expect, afterEach, vi, beforeEach } from 'vitest';
 import { render, screen, cleanup } from '@testing-library/react';
 import type { PlanItem } from '@claude-loom/daemon';
 
-// WHY: vi.hoisted ensures the mock fn is available when vi.mock factory runs
-const { mockUsePlanItems } = vi.hoisted(() => ({
+// WHY: vi.hoisted ensures the mock fns are available when vi.mock factory runs
+const { mockUsePlanItems, mockUseTodoWrite, mockUsePlanMutations } = vi.hoisted(() => ({
   mockUsePlanItems: vi.fn(),
+  mockUseTodoWrite: vi.fn(),
+  mockUsePlanMutations: vi.fn(),
 }));
 
 vi.mock('@/live/usePlanItems', () => ({
   usePlanItems: mockUsePlanItems,
+}));
+
+vi.mock('@/live/useTodoWrite', () => ({
+  useTodoWrite: mockUseTodoWrite,
+}));
+
+// WHY: PlanView now calls usePlanMutations (M3.1 t2); mock to avoid tRPC context error
+vi.mock('@/live/usePlanMutations', () => ({
+  usePlanMutations: mockUsePlanMutations,
 }));
 
 import { PlanView } from '../../src/views/plan/PlanView';
@@ -31,10 +42,29 @@ afterEach(() => {
   cleanup();
 });
 
+/** Default mock todos (3 items) for the short-term pane in plan.test.tsx. */
+const DEFAULT_MOCK_TODOS = [
+  { status: 'in_progress' as const, text: 'Task A' },
+  { status: 'pending' as const, text: 'Task B' },
+  { status: 'completed' as const, text: 'Task C' },
+];
+
 beforeEach(() => {
   mockUsePlanItems.mockClear();
-  // Default: connected, no data yet (empty)
+  mockUseTodoWrite.mockClear();
+  mockUsePlanMutations.mockClear();
+  // Default: connected, no data yet (empty plan items)
   mockUsePlanItems.mockReturnValue({ data: [], isLoading: false, error: null });
+  // Default: 3 mock todos for short-term pane
+  mockUseTodoWrite.mockReturnValue({ todos: DEFAULT_MOCK_TODOS, isLoading: false });
+  // Default: no-op mutations (M3.1 t2 — PlanView calls usePlanMutations)
+  mockUsePlanMutations.mockReturnValue({
+    upsertItem: vi.fn(),
+    updateItemStatus: vi.fn(),
+    deleteItem: vi.fn(),
+    isUpsertPending: false,
+    isUpdateStatusPending: false,
+  });
 });
 
 // Helper to create a minimal PlanItem
@@ -74,11 +104,12 @@ describe('PlanView — basic render', () => {
   });
 });
 
-describe('PlanView — short-term todos (mock data: 5 items)', () => {
-  it('renders exactly 5 todo items', () => {
+describe('PlanView — short-term todos (via useTodoWrite mock)', () => {
+  it('renders todo items from useTodoWrite hook', () => {
     const { container } = render(<PlanView />);
     const items = container.querySelectorAll('[data-testid="todo-item"]');
-    expect(items.length).toBe(5);
+    // DEFAULT_MOCK_TODOS has 3 items
+    expect(items.length).toBe(3);
   });
 
   it('renders in_progress todo item', () => {
@@ -94,6 +125,13 @@ describe('PlanView — short-term todos (mock data: 5 items)', () => {
     const items = screen.getAllByTestId('todo-item');
     const completed = items.find(el => el.querySelector('[data-status="completed"]'));
     expect(completed).toBeTruthy();
+  });
+
+  it('renders empty state when useTodoWrite returns no todos', () => {
+    mockUseTodoWrite.mockReturnValue({ todos: [], isLoading: false });
+    const { container } = render(<PlanView />);
+    const items = container.querySelectorAll('[data-testid="todo-item"]');
+    expect(items.length).toBe(0);
   });
 });
 

@@ -11,6 +11,8 @@ import type {
   LearnedGuidanceChangeEvent,
   WorktreeChangeEvent,
   DisciplineMetricUpdateEvent,
+  TodoChangeEvent,
+  PlanConflictEvent,
 } from "../events/types.js";
 
 export const eventsRouter = router({
@@ -114,6 +116,36 @@ export const eventsRouter = router({
         };
         broadcaster.on("discipline_metric.update", handler);
         return () => broadcaster.off("discipline_metric.update", handler);
+      });
+    }),
+
+  // M3.1 t1: TodoWrite mirror — streams current TodoWrite todo list per session
+  onTodoChange: publicProcedure
+    .input(z.object({ sessionId: z.string().optional() }).optional())
+    .subscription(({ input }) => {
+      return observable<TodoChangeEvent>((emit) => {
+        const handler = (event: TodoChangeEvent) => {
+          // Filter by sessionId if caller specifies one
+          if (input?.sessionId && event.payload.sessionId !== input.sessionId) return;
+          emit.next(event);
+        };
+        broadcaster.on("todo.change", handler);
+        return () => broadcaster.off("todo.change", handler);
+      });
+    }),
+
+  // M3.1 t3: PLAN.md conflict detection — emitted when file mtime < DB updatedAt (LWW conflict)
+  // WHY: UI subscribes here to push plan_conflict_detected toast + set planConflict store state
+  onPlanConflict: publicProcedure
+    .input(z.object({ projectId: z.string().optional() }).optional())
+    .subscription(({ input }) => {
+      return observable<PlanConflictEvent>((emit) => {
+        const handler = (event: PlanConflictEvent) => {
+          if (input?.projectId && event.payload.projectId !== input.projectId) return;
+          emit.next(event);
+        };
+        broadcaster.on("plan.conflict", handler);
+        return () => broadcaster.off("plan.conflict", handler);
       });
     }),
 });

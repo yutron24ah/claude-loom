@@ -20,6 +20,11 @@ npm-debug.log*
 .coverage
 coverage/
 
+# Playwright (M3.1 から、ui/e2e baseline は track するが run output は除外)
+test-results/
+playwright-report/
+.last-run.json
+
 # Build output
 dist/
 build/

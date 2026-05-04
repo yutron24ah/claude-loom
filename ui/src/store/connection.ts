@@ -14,9 +14,15 @@
  * Toast emissions (Task 8):
  *   handleClose → emitDaemonDisconnected (warning, persistent)
  *   handleOpen (wasReconnecting) → emitDaemonReconnected (success, 3s)
+ *
+ * M3.1 t3: exports usePlanConflictSubscription — subscribes to plan.conflict events
+ * and wires them to the planConflict store + plan_conflict_detected toast.
  */
 import { create } from 'zustand';
-import { emitDaemonDisconnected, emitDaemonReconnected } from '../notifications/toastBus';
+import { emitDaemonDisconnected, emitDaemonReconnected, emitPlanConflictDetected } from '../notifications/toastBus';
+import { trpc } from '../trpc/client';
+import { usePlanConflictStore } from './planConflict';
+import type { PlanConflictEvent } from '@claude-loom/daemon';
 
 export type Status = 'connecting' | 'connected' | 'reconnecting' | 'disconnected';
 
@@ -63,3 +69,37 @@ export const useConnectionStore = create<ConnectionState>((set, get) => ({
     emitDaemonDisconnected();
   },
 }));
+
+/**
+ * usePlanConflictSubscription — tRPC subscription hook for plan.conflict events.
+ *
+ * WHY: separated from useConnectionStore (the state machine) because React hooks
+ * cannot live inside a zustand create() call. This hook is meant to be mounted
+ * once in the app tree (e.g. AppShell) when the WS connection is active.
+ *
+ * On each plan.conflict event:
+ *   1. calls planConflictStore.setConflict() with the payload
+ *   2. emits plan_conflict_detected toast (persistent warning)
+ *
+ * M3.1 t3: initial implementation — no projectId filter (subscribes to all projects).
+ */
+export function usePlanConflictSubscription(): void {
+  const status = useConnectionStore((s) => s.status);
+  const isConnected = status === 'connected';
+
+  trpc.events.onPlanConflict.useSubscription(undefined, {
+    enabled: isConnected,
+    onData: (event: PlanConflictEvent) => {
+      const { setConflict } = usePlanConflictStore.getState();
+      setConflict({
+        projectId: event.payload.projectId,
+        conflictType: event.payload.conflictType,
+        fileMtime: event.payload.fileMtime,
+        dbMtime: event.payload.dbMtime,
+        affectedItemIds: event.payload.affectedItemIds,
+        detectedAt: event.timestamp,
+      });
+      emitPlanConflictDetected();
+    },
+  });
+}
