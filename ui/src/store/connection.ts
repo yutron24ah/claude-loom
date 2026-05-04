@@ -17,12 +17,23 @@
  *
  * M3.1 t3: exports usePlanConflictSubscription — subscribes to plan.conflict events
  * and wires them to the planConflict store + plan_conflict_detected toast.
+ *
+ * M4 t7: exports useConsistencyFindingSubscription — subscribes to finding.new events
+ * and emits consistency_finding_new toast.
+ * M4 t7: exports useSpecChangeSubscription — subscribes to spec_change_detected events
+ * and emits spec_change_detected toast (SPEC §7.5 Step 3 badge).
  */
 import { create } from 'zustand';
-import { emitDaemonDisconnected, emitDaemonReconnected, emitPlanConflictDetected } from '../notifications/toastBus';
+import {
+  emitDaemonDisconnected,
+  emitDaemonReconnected,
+  emitPlanConflictDetected,
+  emitConsistencyFindingNew,
+  emitSpecChangeDetected,
+} from '../notifications/toastBus';
 import { trpc } from '../trpc/client';
 import { usePlanConflictStore } from './planConflict';
-import type { PlanConflictEvent } from '@claude-loom/daemon';
+import type { PlanConflictEvent, FindingNewEvent, SpecChangeDetectedEvent } from '@claude-loom/daemon';
 
 export type Status = 'connecting' | 'connected' | 'reconnecting' | 'disconnected';
 
@@ -100,6 +111,44 @@ export function usePlanConflictSubscription(): void {
         detectedAt: event.timestamp,
       });
       emitPlanConflictDetected();
+    },
+  });
+}
+
+/**
+ * useConsistencyFindingSubscription — tRPC subscription hook for finding.new events.
+ *
+ * WHY: M4 t7 SPEC §7.5 Step 5 — after Phase A analysis emits findings via broadcaster,
+ * the UI needs to display them. Mounted once in the app tree when WS is active.
+ * Emits consistency_finding_new toast so user is notified of new findings.
+ */
+export function useConsistencyFindingSubscription(): void {
+  const status = useConnectionStore((s) => s.status);
+  const isConnected = status === 'connected';
+
+  trpc.events.onFindingNew.useSubscription(undefined, {
+    enabled: isConnected,
+    onData: (_event: FindingNewEvent) => {
+      emitConsistencyFindingNew();
+    },
+  });
+}
+
+/**
+ * useSpecChangeSubscription — tRPC subscription hook for spec_change_detected events.
+ *
+ * WHY: M4 t7 SPEC §7.5 Step 3 badge — emitted immediately after spec_changes INSERT
+ * in ingest.ts. The hook delivers the WS push to the frontend badge display.
+ * Persistent toast because user must acknowledge the spec change.
+ */
+export function useSpecChangeSubscription(): void {
+  const status = useConnectionStore((s) => s.status);
+  const isConnected = status === 'connected';
+
+  trpc.consistency.subscribeSpecChanges.useSubscription(undefined, {
+    enabled: isConnected,
+    onData: (_event: SpecChangeDetectedEvent) => {
+      emitSpecChangeDetected();
     },
   });
 }

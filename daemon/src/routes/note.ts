@@ -3,6 +3,7 @@
  * SPEC §6.2 — notes table operations
  * M1 Task 8 Subset C
  * M3.2 t3 — NOTE_ATTACHED_TYPE constants added (SPEC §3.6.10 — no string literals)
+ * M5 t2 — NOTE_ATTACHED_TYPE moved to constants/note.ts (browser-safe, no Node.js deps)
  */
 import { z } from "zod";
 import { eq, and } from "drizzle-orm";
@@ -10,22 +11,11 @@ import { router, publicProcedure } from "../trpc.js";
 import { createDBClient } from "../db/client.js";
 import { notes } from "../db/schema.js";
 import type { Note, NewNote } from "../db/schema.js";
+import { NOTE_ATTACHED_TYPE } from "../constants/note.js";
 
-/**
- * WHY: SPEC §3.6.10 — all note category/type values must be accessed via enum/constant,
- * never via raw string literals in callsites. This prevents typo bugs and makes
- * refactoring safe.
- */
-export const NOTE_ATTACHED_TYPE = {
-  PROJECT: "project",
-  SESSION: "session",
-  SUBAGENT: "subagent",
-  TASK: "task",
-  POOL_SLOT: "pool_slot",
-  PLAN_ITEM: "plan_item",
-} as const;
-
-export type NoteAttachedType = typeof NOTE_ATTACHED_TYPE[keyof typeof NOTE_ATTACHED_TYPE];
+// Re-export for consumers that import NOTE_ATTACHED_TYPE from routes/note.ts (backward compat)
+export { NOTE_ATTACHED_TYPE } from "../constants/note.js";
+export type { NoteAttachedType } from "../constants/note.js";
 
 /**
  * WHY: derived from NOTE_ATTACHED_TYPE to keep enum values in sync with the constant.

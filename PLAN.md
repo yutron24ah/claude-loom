@@ -592,21 +592,21 @@ retro 2026-05-02-002 由来で M3.1 で扱う残 design 分岐:
 
 詳細: 未作成（M3 完了後 writing-plans で詳細化）
 
-- [ ] PostToolUse(Edit|Write) hook で SPEC 編集検知 <!-- id: m4-t1 status: todo -->
-- [ ] spec_changes / consistency_findings テーブル + diff 計算 <!-- id: m4-t2 status: todo -->
-- [ ] Phase A: 語彙抽出 + grep スクリーニング <!-- id: m4-t3 status: todo -->
-- [ ] Phase B: claude -p subprocess による意味解析 <!-- id: m4-t4 status: todo -->
-- [ ] Consistency Findings UI（severity 別、4 アクション） <!-- id: m4-t5 status: todo -->
-- [ ] Acknowledge → plan_items 自動追加 <!-- id: m4-t6 status: todo -->
-- [ ] バッジ通知 + WebSocket push <!-- id: m4-t7 status: todo -->
+- [x] PostToolUse(Edit|Write) hook で SPEC 編集検知 <!-- id: m4-t1 status: done -->
+- [x] spec_changes / consistency_findings テーブル + diff 計算 <!-- id: m4-t2 status: done -->
+- [x] Phase A: 語彙抽出 + grep スクリーニング <!-- id: m4-t3 status: done -->
+- [x] Phase B: claude -p subprocess による意味解析 <!-- id: m4-t4 status: done -->
+- [x] Consistency Findings UI（severity 別、4 アクション） <!-- id: m4-t5 status: done -->
+- [x] Acknowledge → plan_items 自動追加 <!-- id: m4-t6 status: done -->
+- [x] バッジ通知 + WebSocket push <!-- id: m4-t7 status: done -->
 
 ## マイルストーン M5: Integration + Polish
 
 詳細: 未作成（M4 完了後 writing-plans で詳細化）
 
-- [ ] frontend-design に渡してピクセルアート確定 <!-- id: m5-t1 status: todo -->
-- [ ] エンドツーエンド体験チェック <!-- id: m5-t2 status: todo -->
-- [ ] Project Settings 画面 <!-- id: m5-t3 status: todo -->
-- [ ] トークン使用量 polling + メーター <!-- id: m5-t4 status: todo -->
-- [ ] uninstall.sh + ドキュメント完成 <!-- id: m5-t5 status: todo -->
-- [ ] README + リリース準備 <!-- id: m5-t6 status: todo -->
+- [x] frontend-design に渡してピクセルアート確定 <!-- id: m5-t1 status: done -->
+- [x] エンドツーエンド体験チェック <!-- id: m5-t2 status: done -->
+- [x] Project Settings 画面 <!-- id: m5-t3 status: done -->
+- [x] トークン使用量 polling + メーター <!-- id: m5-t4 status: done -->
+- [x] uninstall.sh + ドキュメント完成 <!-- id: m5-t5 status: done -->
+- [x] README + リリース準備 <!-- id: m5-t6 status: done -->

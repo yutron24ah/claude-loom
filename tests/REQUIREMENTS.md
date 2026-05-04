@@ -85,6 +85,26 @@
 
 - **REQ-034**: Session List で filter (project/role) + sort (started_at) 動作、daemon `session` subscription で live 更新。Agent Detail で dispatch 履歴表示 + 注目フラグ書込（daemon `agent.markAttention` mutation）動作。notes 書込（daemon `note.create` mutation）で plan_items にひも付き、Agent Detail から添付可能。`pnpm --filter @claude-loom/ui test` 全 PASS、`pnpm --filter @claude-loom/daemon test` 全 PASS。`tag m3.2-complete` 設置、`m0`〜`m3.1-complete` 全保持、これで M3 系列 closure（Phase 1 MVP の core experience 完成）。
 
+## M5: Integration + Polish (uninstall)
+
+- **REQ-036**: `uninstall.sh --dry-run --yes` 実行では symlink は削除されない（変更なし）
+- **REQ-037**: `install.sh` 実行後に `uninstall.sh --yes` を実行すると agents / commands / skills の全 loom-* symlink が削除される（install → uninstall round-trip）
+- **REQ-038**: `uninstall.sh --yes` のデフォルト動作では `.claude-loom/` local state は保持される
+- **REQ-039**: `uninstall.sh --yes --purge-state` 実行で `.claude-loom/` ディレクトリが削除される
+- **REQ-040**: `uninstall.sh --yes` は exit code 0 で完了する
+
 ## M0.11.1: Lifecycle Tracking Architecture
 
 - **REQ-035**: SPEC §3.9.11（Lifecycle Tracking Architecture）+ §6.9.6（pending.json schema v2、`applied_in` + `apply_history` field）+ §6.9.7（applied_summary.json schema、retro-pm Stage 0 lazy build 5 step）+ §6.9.4.5（learned_guidance auto-prune rule、`ttl_sessions` main + `last_used_in` audit hybrid）に整合する形で実装。`agents/loom-retro-pm.md` Stage 0 で過去全 retro session の pending.json scan + applied_findings 集約 → `<project>/.claude-loom/retro/<retro_id>/applied_summary.json` write 動作。4 lens（pj-judge / process-judge / meta-judge / researcher）の dispatch prompt prefix に `applied_summary_path: <path>` 注入、lens は `Read` tool で参照、stale check を Stage 1 内で自前実行。`agents/loom-retro-counter-arguer.md` の stale finding detection section（M3.0 retro proc-NEW-1 由来）を **物理削除**（SPEC §3.9.x P4 理想形「symptomatic patch 構造的解決後の rollback」初例として archive）。`agents/loom-retro-aggregator.md` に learned_guidance auto-prune logic（ttl_sessions auto-deactivate + last_used_in update）追加。既存 4 retro session（2026-04-29-001 / 2026-05-02-001 / 2026-05-02-002 + 古い 1 件確認）の pending.json に `applied_in` + `apply_history` field 後付け migration script 完了 + schema_version 1 → 2 migrate。`templates/{user,project}-prefs.json.template` に `last_used_in` field example 追加。`tests/{prefs,retro,agents}_test.sh` で `applied_in` schema + `applied_summary` build + auto-prune assertion + counter-arguer stale check section 不在 assertion 追加。dry-run test で applied_summary mechanism 動作確認（rollback 前安全網）。`./tests/run_tests.sh` で **13 PASS** 維持（既存 12 + 新規 `dry_run_applied_summary_test.sh` = 13）。`tag m0.11.1-complete` 設置、`m0`〜`m3.0-complete` 全保持。
+
+## M5 t1: Frontend Design Handoff
+
+- **REQ-041**: `docs/PIXEL_ART_HANDOFF.md` が存在 + 非空 + 4 section 以上含む。Vision section（SPEC §12 ビジュアル方向性）、placeholder state section（13 agent sprite identifier + tile map + 3 theme color token）、制作 option section（Option A/B/C/D）、post-MVP migration plan section を含む。`tests/docs_pixel_art_test.sh` でカバー。
+
+## M5 t6: README + リリース準備
+
+- **REQ-042**: `README.md` に `## ライセンス` section 存在（placeholder 許容）、`Phase 1 MVP` 完成記述あり、`M5` milestone 言及あり、`Phase 2 以降` section 存在。`CHANGELOG.md` に `[0.1.0]` entry 存在かつ `### Added` section 非空。root `package.json` / `daemon/package.json` / `ui/package.json` に `version` field（文字列型）存在。`tests/docs_release_test.sh` でカバー。
+
+## M5 t2: End-to-end Verification
+
+- **REQ-043**: `docs/M5_E2E_REPORT.md` が存在・非空・5 section（Executive summary / 7 verification / follow-up / Phase 2 / 結論）含む。`tests/m5_e2e_test.sh` が 7-stage aggregate harness として動作（route integrity 静的 check + install/uninstall round-trip check + deliverables check）。`bash tests/run_tests.sh` で **17 PASS** 達成（m5_e2e_test.sh 追加）。`pnpm --filter @claude-loom/daemon test` / `pnpm --filter @claude-loom/ui test` / `pnpm --filter @claude-loom/ui e2e` / `pnpm --filter @claude-loom/daemon build` + `pnpm --filter @claude-loom/ui build` が全て pass（UI build blockers — NOTE_ATTACHED_TYPE browser-safe 化 + process.env → import.meta.env 修正を含む）。Phase 1 MVP closure 認定。`tests/m5_e2e_test.sh` でカバー。
