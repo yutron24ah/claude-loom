@@ -294,9 +294,32 @@ doc 5 file 以上の更新が必要な場合、複数 subagent 並列 dispatch�
 
 retro session 開始時、`loom-retro-pm` agent が **直前 milestone の reviewer dispatch evidence を独立 file `<project>/.claude-loom/retro/<retro_id>/verdict_evidence.json` に lazy build + write**。「review skip」と「指摘ゼロ pass」の判別を可能化。詳細規約は §3.9.10 + §6.9.5（zod 完全 schema、M2.1 から）参照。M0.13 で codify された旧設計（`pending.json` 内 field）は M2.1 で refactor、独立 file + zod schema 化に移行済。
 
-#### 3.6.8.6 TDD red commit 時系列 enforcement
+#### 3.6.8.6 TDD red commit 履歴 enforcement（2026-05-04 retro F-pj-002 で default inversion）
 
-dev は milestone 内で test 拡張 commit が feat 実装 commit より時系列で **前** にあることを保証。実装直前に `git log` で確認、無ければ「process-tdd-violation」self-finding 生成。
+**M0.13 codification (legacy)**: dev は milestone 内で test 拡張 commit が feat 実装 commit より時系列で **前** にあることを保証。実装直前に `git log` で確認、無ければ「process-tdd-violation」self-finding 生成。
+
+**Strategy b (PM 統合 commit) 採用時の commit 分割規約 (M3.1 retro 2026-05-03-001 proc-001 由来 → 2026-05-04-001 retro F-pj-002 で default inversion)**：
+
+retro 2026-05-03-001 で「2-commit 分割 (RED 単独 → GREEN) を default 推奨、annotation path は例外」と codify されたが、M3.2 / M4 Stage 2 / M4 Stage 3 / M5 Stage 1 / M5 Stage 2 の **5 連続 unified annotation 採用** で実用が逆転。M5 closure 時点で **default を inversion**：
+
+- **default = unified-with-annotation**: PM は 1 task = 1 統合 commit、commit message に `[RED+GREEN unified]` annotation 必須付与（git log で grep 検出可能化）。file overlap が常態化する parallel batch / Strategy b で実用的
+- **2-commit 分割 = strict mode**: file が完全 disjoint (test/* と src/* が衝突なし、かつ複数 task 間で file 共有なし) な場合のみ採用可能。RED + GREEN を 2 commit に分割、git history で RED 単独 commit 存在を verify 可能化
+- **TDD audit 性の維持**: dev は test-first で書き final report に `tdd_red_confirmed: true` + RED test fail output 抜粋を明記、reviewer は test/* と src/* の diff を時系列逆並びで cross-check 可能 (Strategy a と同等の audit 性)
+
+#### 3.6.8.7 Reviewer dispatch dual path → triple path（2026-05-04 retro F-proc-001 由来）
+
+dev が reviewer dispatch を実施する Step 9 に **3 つの path** を 1st-class option として定義：
+
+- **path A — same-session iterate (default)**: fix scope clear AND context budget 余裕あり → 同 session 内で fix → re-run tests → re-submit
+- **path B — PM follow-up handoff**: fix scope unclear OR context budget tight OR Task tool deferred で reviewer dispatch 不可 → final report に `handoff_required: true + reasoning + recommended next step + 残 findings 全文` 明記
+- **path C — self-review with explicit safety checklist (new)**: Task tool deferred (degraded mode) かつ scope 単純で path B handoff せず dev 自身が safety checklist 経由 self-review する場合の formal protocol：
+  1. final report に `self_review: true` + `task_tool_deferred: true` 明示
+  2. 4 観点 self-checklist 必須記載 (code 観点 / security 観点 / test 観点 / SPEC §3.6.10 SSoT cross-check 観点)
+  3. 各観点で 3 行以上の reasoning + 該当 file:line 参照
+  4. PM が follow-up loom-reviewer dispatch を後で実施する option を残す (path C completion ≠ formal review、interim safety net)
+  5. **silent self-review 禁止**: path A/B/C のいずれかを final report で必ず宣言
+
+詳細実装: `agents/loom-developer.md` Step 9、`agents/loom-pm.md` 受領規律。
 
 ### 3.6.9 M3 UI Architecture（M3 から）
 
