@@ -577,9 +577,9 @@ retro 2026-05-02-002 由来で M3.1 で扱う残 design 分岐:
 
 技術 risk 軸: **CRUD polish、低 risk、parallel dispatch で開発速度優先**。
 
-- [ ] Session List（list view、filter project/role + sort started_at、daemon `session` subscription） <!-- id: m3.2-t1 status: todo -->
-- [ ] Agent Detail（dispatch 履歴 + 注目フラグ書込、daemon `agent.markAttention` mutation） <!-- id: m3.2-t2 status: todo -->
-- [ ] notes 書き込み API + UI（daemon `note.create` mutation + Agent Detail から添付可能） <!-- id: m3.2-t3 status: todo -->
+- [x] Session List（list view、filter project/role + sort started_at、daemon `session` subscription） <!-- id: m3.2-t1 status: done -->
+- [x] Agent Detail（dispatch 履歴 + 注目フラグ書込、daemon `agent.markAttention` mutation） <!-- id: m3.2-t2 status: done -->
+- [x] notes 書き込み API + UI（daemon `note.create` mutation + Agent Detail から添付可能） <!-- id: m3.2-t3 status: done -->
 
 **M3.2 完成基準**：
 - Session List で filter (project/role) + sort (started_at) 動作、`session` subscription で live 更新

@@ -1,9 +1,12 @@
 // daemon/src/routes/session.ts
 import { z } from "zod";
 import { eq, desc, lt, and } from "drizzle-orm";
+import { observable } from "@trpc/server/observable";
 import { router, publicProcedure } from "../trpc.js";
 import { createDBClient } from "../db/client.js";
 import { sessions, events } from "../db/schema.js";
+import { broadcaster } from "../events/broadcaster.js";
+import type { SessionChangeEvent } from "../events/types.js";
 
 const db = createDBClient();
 
@@ -63,5 +66,24 @@ export const sessionRouter = router({
         return await query.limit(input.limit);
       }
       return await query;
+    }),
+
+  // M3.2 t1: session change subscription — broadcasts when sessions are
+  // started, ended, or updated. UI subscribes to trigger list refetch.
+  // WHY: pushes changes to all connected clients without polling.
+  subscribe: publicProcedure
+    .input(z.object({ projectId: z.string().optional() }).optional())
+    .subscription(({ input }) => {
+      return observable<SessionChangeEvent>((emit) => {
+        const handler = (event: SessionChangeEvent) => {
+          // Filter by projectId when caller specifies one
+          if (input?.projectId && event.payload.projectId !== input.projectId) return;
+          emit.next(event);
+        };
+        broadcaster.on("session.change", handler);
+        return () => {
+          broadcaster.off("session.change", handler);
+        };
+      });
     }),
 });

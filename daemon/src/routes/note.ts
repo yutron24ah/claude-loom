@@ -2,6 +2,7 @@
  * tRPC sub-router: note
  * SPEC §6.2 — notes table operations
  * M1 Task 8 Subset C
+ * M3.2 t3 — NOTE_ATTACHED_TYPE constants added (SPEC §3.6.10 — no string literals)
  */
 import { z } from "zod";
 import { eq, and } from "drizzle-orm";
@@ -9,6 +10,36 @@ import { router, publicProcedure } from "../trpc.js";
 import { createDBClient } from "../db/client.js";
 import { notes } from "../db/schema.js";
 import type { Note, NewNote } from "../db/schema.js";
+
+/**
+ * WHY: SPEC §3.6.10 — all note category/type values must be accessed via enum/constant,
+ * never via raw string literals in callsites. This prevents typo bugs and makes
+ * refactoring safe.
+ */
+export const NOTE_ATTACHED_TYPE = {
+  PROJECT: "project",
+  SESSION: "session",
+  SUBAGENT: "subagent",
+  TASK: "task",
+  POOL_SLOT: "pool_slot",
+  PLAN_ITEM: "plan_item",
+} as const;
+
+export type NoteAttachedType = typeof NOTE_ATTACHED_TYPE[keyof typeof NOTE_ATTACHED_TYPE];
+
+/**
+ * WHY: derived from NOTE_ATTACHED_TYPE to keep enum values in sync with the constant.
+ * z.nativeEnum rejects any string not present in the object, preventing typo bugs.
+ * SPEC §3.6.10 — enum constraint for note attachedType.
+ */
+const attachedTypeEnum = z.enum([
+  NOTE_ATTACHED_TYPE.PROJECT,
+  NOTE_ATTACHED_TYPE.SESSION,
+  NOTE_ATTACHED_TYPE.SUBAGENT,
+  NOTE_ATTACHED_TYPE.TASK,
+  NOTE_ATTACHED_TYPE.POOL_SLOT,
+  NOTE_ATTACHED_TYPE.PLAN_ITEM,
+]);
 
 const db = createDBClient();
 
@@ -22,7 +53,8 @@ export const noteRouter = router({
     .input(
       z.object({
         projectId: z.string(),
-        attachedType: z.string().optional(),
+        // WHY: enum constraint prevents unknown attachedType values (SPEC §3.6.10)
+        attachedType: attachedTypeEnum.optional(),
         attachedId: z.string().optional(),
       }),
     )
@@ -56,9 +88,11 @@ export const noteRouter = router({
   create: publicProcedure
     .input(
       z.object({
-        attachedType: z.string(),
+        // WHY: enum constraint prevents unknown attachedType values (SPEC §3.6.10)
+        attachedType: attachedTypeEnum,
         attachedId: z.string(),
-        content: z.string(),
+        // WHY: 10000 char max prevents DoS via oversized note payloads
+        content: z.string().max(10000),
       }),
     )
     .mutation(async ({ input }): Promise<Note> => {
@@ -77,7 +111,8 @@ export const noteRouter = router({
     .input(
       z.object({
         id: z.number(),
-        content: z.string(),
+        // WHY: 10000 char max prevents DoS via oversized note payloads (consistent with create)
+        content: z.string().max(10000),
       }),
     )
     .mutation(async ({ input }): Promise<Note> => {

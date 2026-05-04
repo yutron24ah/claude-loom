@@ -144,6 +144,25 @@ export const planConflictEventSchema = z.object({
 });
 export type PlanConflictEvent = z.infer<typeof planConflictEventSchema>;
 
+// Session change event (M3.2 t1)
+// WHY: SPEC §3.6.10 — action values are enum (not raw string literals)
+// to prevent typos and make illegal states unrepresentable.
+export const SESSION_CHANGE_ACTIONS = ["started", "ended", "updated"] as const;
+export type SessionChangeAction = typeof SESSION_CHANGE_ACTIONS[number];
+
+export const sessionChangeEventSchema = z.object({
+  type: z.literal("session.change"),
+  timestamp: z.number(),
+  payload: z.object({
+    sessionId: z.string(),
+    action: z.enum(SESSION_CHANGE_ACTIONS),
+    projectId: z.string().optional(),
+    role: z.string().optional(),
+    status: z.string().optional(),
+  }),
+});
+export type SessionChangeEvent = z.infer<typeof sessionChangeEventSchema>;
+
 // Discriminated union for all event types
 export const loomEventSchema = z.discriminatedUnion("type", [
   agentChangeEventSchema,
@@ -156,5 +175,6 @@ export const loomEventSchema = z.discriminatedUnion("type", [
   disciplineMetricUpdateEventSchema,
   todoChangeEventSchema,
   planConflictEventSchema,
+  sessionChangeEventSchema,
 ]);
 export type LoomEvent = z.infer<typeof loomEventSchema>;

@@ -1,6 +1,6 @@
 /**
  * Route definitions for claude-loom UI.
- * WHY: Centralise all 9 routes in one place — AppShell wraps them all
+ * WHY: Centralise all routes in one place — AppShell wraps them all
  * via nested Routes pattern. Room is the index (default) route.
  *
  * Route map:
@@ -12,6 +12,7 @@
  *   /consistency      → ConsistencyView panel
  *   /customization    → CustomizationView panel
  *   /guidance         → LearnedGuidanceView panel
+ *   /sessions         → SessionListView panel (M3.2 t1)
  *   /agents/:id       → AgentDetailPanel
  */
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
@@ -23,6 +24,7 @@ import { WorktreeView } from '../views/worktree/WorktreeView';
 import { ConsistencyView } from '../views/consistency/ConsistencyView';
 import { CustomizationView } from '../views/customization/CustomizationView';
 import { LearnedGuidanceView } from '../views/guidance/LearnedGuidanceView';
+import { SessionListView } from '../views/session-list/SessionListView';
 import { AgentDetailPanel } from '../views/room/AgentDetailPanel';
 
 export function AppRouter(): JSX.Element {
@@ -40,6 +42,8 @@ export function AppRouter(): JSX.Element {
           <Route path="consistency" element={<ConsistencyView />} />
           <Route path="customization" element={<CustomizationView />} />
           <Route path="guidance" element={<LearnedGuidanceView />} />
+          {/* M3.2 t1: Session list view */}
+          <Route path="sessions" element={<SessionListView />} />
           <Route path="agents/:id" element={<AgentDetailPanel />} />
         </Route>
       </Routes>
