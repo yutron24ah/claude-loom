@@ -365,13 +365,13 @@ M0.11.3 で `loom-ui-smoke` skill 完成 + Phase 1 functional MVP 検証完了�
 - [ ] ui/src/views/room/RoomView.tsx 全面書直し (M3.0 Phaser → DOM/SVG orchestration、t4-t11 統合) <!-- id: m0.11.4-t12 status: todo -->
 
 #### Phase C: Other views (parallel)
-- [ ] PlanView.tsx (M3.1 → screens-b PlanView port) + GanttView.tsx (M3.1 → screens-a Gantt port) <!-- id: m0.11.4-t13 status: todo -->
-- [ ] ConsistencyView.tsx (M4 → screens-c port) + RetroView.tsx (screens-b port) <!-- id: m0.11.4-t14 status: todo -->
-- [ ] CharSheet.tsx + ThemeShowcase.tsx (char-sheet.jsx port) + WorktreeView.tsx + CustomizationView.tsx + LearnedGuidanceView.tsx (screens-c port) <!-- id: m0.11.4-t15 status: todo -->
-- [ ] 新 view RPG style 化 (Sessions / Tokens / ProjectSettings、design source 不在ゆえ design 言語で 新規設計) + Sidebar.tsx RPG style update + DisciplineHeader.tsx RPG style update <!-- id: m0.11.4-t16 status: todo -->
+- [x] PlanView.tsx (M3.1 → screens-b PlanView port) + GanttView.tsx (M3.1 → screens-a Gantt port) <!-- id: m0.11.4-t13 status: done -->
+- [x] ConsistencyView.tsx (M4 → screens-c port) + RetroView.tsx (screens-b port) <!-- id: m0.11.4-t14 status: done -->
+- [x] CharSheet.tsx + ThemeShowcase.tsx (char-sheet.jsx port) + WorktreeView.tsx + CustomizationView.tsx + LearnedGuidanceView.tsx (screens-c port) <!-- id: m0.11.4-t15 status: done -->
+- [x] 新 view RPG style 化 (Sessions / Tokens / ProjectSettings、design source 不在ゆえ design 言語で 新規設計) + Sidebar.tsx RPG style update + DisciplineHeader.tsx RPG style update <!-- id: m0.11.4-t16 status: done -->
 
 #### Phase D: cleanup + verify
-- [ ] Phaser dependency 物理削除 (ui/package.json から phaser remove + PhaserCanvas.tsx + scenes/RoomScene.ts + agentSpriteSync.ts 削除) + 関連 test 整理 <!-- id: m0.11.4-t17 status: todo -->
+- [x] Phaser dependency 物理削除 (ui/package.json から phaser remove + PhaserCanvas.tsx + scenes/RoomScene.ts + agentSpriteSync.ts 削除) + 関連 test 整理 <!-- id: m0.11.4-t17 status: done -->
 - [ ] Playwright e2e baseline (room-pop.png) 再生成 + 3 theme baseline 追加 (room-dusk.png + room-night.png) <!-- id: m0.11.4-t18 status: todo -->
 - [ ] loom-ui-smoke skill execute (full scope)、aesthetic verify、`docs/smoke-tests/2026-05-XX-m0.11.4-aesthetic-verify/` 生成 <!-- id: m0.11.4-t19 status: todo -->
 - [ ] tag m0.11.4-complete + README "Phase 1 MVP completed" 完全達成 marker update <!-- id: m0.11.4-t20 status: todo -->

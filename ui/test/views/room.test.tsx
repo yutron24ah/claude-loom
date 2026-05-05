@@ -1,11 +1,9 @@
 /**
- * RoomView TDD tests — M3.0 Phaser hybrid
- * WHY: verify the Phaser hybrid RoomView renders correctly.
- * DOM assertions are limited to the container and overlay (not sprite rendering,
- * which is Phaser-internal and cannot be verified in jsdom).
- * Phaser is mocked globally in setup.ts.
+ * RoomView TDD tests — M0.11.4 DOM/SVG rewrite
+ * WHY: verify the DOM/SVG RoomView renders correctly.
+ * Phaser has been fully removed (M0.11.4 t17). RoomView is now DOM/SVG-only.
  * WHY mock AgentDetailNotes: M3.2 t3 added notes sub-component which uses tRPC hooks.
- * RoomView tests focus on Phaser canvas and panel visibility, not notes behavior.
+ * RoomView tests focus on the room container and panel visibility, not notes behavior.
  */
 import { describe, it, expect, afterEach, vi } from 'vitest';
 
@@ -33,13 +31,12 @@ describe('RoomView — basic render', () => {
   });
 });
 
-describe('RoomView — Phaser canvas mount', () => {
-  it('renders the Phaser canvas container inside room-canvas', () => {
+describe('RoomView — DOM/SVG canvas content', () => {
+  it('renders children inside room-canvas', () => {
     const { container } = render(<RoomView />);
-    // PhaserCanvas renders a div with style.width
+    // WHY: room-canvas wrapper has DOM/SVG children (RoomBackground + decor layers)
     const canvas = container.querySelector('[data-testid="room-canvas"]');
     expect(canvas).toBeInTheDocument();
-    // PhaserCanvas inner div should be present
     expect(canvas?.firstChild).toBeTruthy();
   });
 

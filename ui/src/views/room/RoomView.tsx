@@ -4,8 +4,8 @@
  * WHY rewrite (SPEC §3.6.9.1 α-2):
  * M3.0 used Phaser canvas as the primary rendering layer. M0.11.4 t12 replaces
  * the Phaser canvas with DOM/SVG components (Phase B Stage B1 + B2) and
- * orchestrates them in this single component. Phaser-related files remain but
- * are no longer imported here; Phase D t17 will physically delete them.
+ * orchestrates them in this single component. Phaser-related source files
+ * were physically deleted in Phase D t17 (M0.11.4).
  *
  * Phase B components orchestrated here:
  * - Stage B1: RoomBackground, RoomWallDecor, GanttPoster, PlanPoster,
