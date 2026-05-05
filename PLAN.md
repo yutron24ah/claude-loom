@@ -373,7 +373,7 @@ M0.11.3 で `loom-ui-smoke` skill 完成 + Phase 1 functional MVP 検証完了�
 #### Phase D: cleanup + verify
 - [x] Phaser dependency 物理削除 (ui/package.json から phaser remove + PhaserCanvas.tsx + scenes/RoomScene.ts + agentSpriteSync.ts 削除) + 関連 test 整理 <!-- id: m0.11.4-t17 status: done -->
 - [x] Playwright e2e baseline (room-pop.png) 再生成 + 3 theme baseline 追加 (room-dusk.png + room-night.png) <!-- id: m0.11.4-t18 status: done -->
-- [ ] loom-ui-smoke skill execute (full scope)、aesthetic verify、`docs/smoke-tests/2026-05-XX-m0.11.4-aesthetic-verify/` 生成 <!-- id: m0.11.4-t19 status: todo -->
+- [x] loom-ui-smoke skill execute (full scope)、aesthetic verify、`docs/smoke-tests/2026-05-XX-m0.11.4-aesthetic-verify/` 生成 <!-- id: m0.11.4-t19 status: done -->
 - [ ] tag m0.11.4-complete + README "Phase 1 MVP completed" 完全達成 marker update <!-- id: m0.11.4-t20 status: todo -->
 
 **M0.11.4 着手タイミング**: M0.11.3 直後 (Phase 1 → Phase 2 boundary milestone、aesthetic MVP completion priority 高)。dispatch 戦略：t3 sequential → t4-t12 parallel batch (4-5 dev) → t13-t16 parallel batch (4 dev) → t17-t20 sequential closure。推定 12-15 dev dispatch。

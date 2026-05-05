@@ -1,0 +1,58 @@
+{
+  "schema_version": 1,
+  "smoke_id": "2026-05-05-m0.11.4-aesthetic-verify",
+  "scope": "full",
+  "started_at": 1777965251000,
+  "completed_at": 1777965251000,
+  "stats": {
+    "routes_tested": 11,
+    "routes_passed": 10,
+    "routes_failed": 1,
+    "console_errors": 0,
+    "console_warnings": 2
+  },
+  "findings": [
+    {
+      "id": "F-001",
+      "route": "/project-settings",
+      "severity": "medium",
+      "category": "rendering",
+      "description": "ProjectSettingsView の 3 dropdown が label/option をレンダーしておらず、空の chevron のみ表示。rpg-frame と Save/Reset btn-px は適用済みだが setting 名 (Auto-retro on milestone tag / Coexistence mode / Default review mode 等) が選択肢として render されとらん。",
+      "screenshot_ref": "screenshots/10-project-settings.png",
+      "expected": "各 setting 行に rpg-label の項目名 + 選択肢付き dropdown",
+      "actual": "label 不在、option text 不在、chevron icon のみの空 dropdown 3 個",
+      "req_refs": [
+        "REQ-040"
+      ],
+      "recommended_action": "ProjectSettingsView.tsx を読み、setting metadata (id/label/options) の data binding を確認。M0.11.4 t16 で RPG style 化した時に label rendering が落ちた可能性。loom-developer dispatch (PM 経由) で fix 推奨"
+    },
+    {
+      "id": "F-002",
+      "route": "/tokens",
+      "severity": "info",
+      "category": "rendering",
+      "description": "TokenMeterView の 3 exp-bar (INPUT/OUTPUT/CACHE) が token usage = 0 の empty state で fill 0% となり、bar の background のみ薄く可視 (active fill 不在)。値 0 では正しい表示だが UX 的に「機能未起動」か「fill 描画 bug」か区別しづらい。",
+      "screenshot_ref": "screenshots/11-tokens.png",
+      "expected": "0% fill でも bar 枠が明示的、もしくは 'no data' indicator",
+      "actual": "薄灰の thin bar のみ、active token 不在で識別困難",
+      "req_refs": [
+        "REQ-041"
+      ],
+      "recommended_action": "empty state visual を強化 (border outline 強化 or '— no recent tokens' caption) を retro carryover に積む"
+    },
+    {
+      "id": "F-003",
+      "route": "/guidance",
+      "severity": "low",
+      "category": "navigation",
+      "description": "/guidance 一発目の navigate で Page URL は /guidance に到達したが render 内容が直前の /gantt のままに見えた (transient race と思われる、再 navigate で正常表示)。再現性は低く、modal overlay の mount race と推測。",
+      "screenshot_ref": "screenshots/08-guidance.png",
+      "expected": "/guidance navigate 1 回で LearnedGuidanceView の rpg-frame が即時 render",
+      "actual": "1 度目: /gantt content が残った状態で screenshot される、2 度目で正常",
+      "req_refs": [
+        "REQ-038"
+      ],
+      "recommended_action": "AppShell の modal overlay key/mount 戦略を確認、または Playwright headless 環境固有の race の可能性 → 監視継続、再発時に finding 化"
+    }
+  ]
+}
