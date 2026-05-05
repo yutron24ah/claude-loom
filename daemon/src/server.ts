@@ -1,5 +1,6 @@
 import Fastify from "fastify";
 import websocket from "@fastify/websocket";
+import fastifyStatic from "@fastify/static";
 import {
   fastifyTRPCPlugin,
   type FastifyTRPCPluginOptions,
@@ -9,6 +10,26 @@ import { createContext } from "./trpc.js";
 import { registerIngestRoute } from "./hooks/ingest.js";
 import { startIdleShutdown } from "./lifecycle/idle-shutdown.js";
 import { scheduleEventCleanup } from "./lifecycle/event-cleanup.js";
+import { existsSync } from "node:fs";
+import { resolve, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
+
+// WHY: resolve ui/dist relative to this file's location (daemon/src/server.ts),
+// going up two levels to the repo root, then into ui/dist.
+// LOOM_UI_DIST env var allows test override without touching filesystem structure.
+function resolveUiDistPath(): string {
+  if (process.env.LOOM_UI_DIST) {
+    return process.env.LOOM_UI_DIST;
+  }
+  const __filename = fileURLToPath(import.meta.url);
+  const __dirname = dirname(__filename);
+  // daemon/src → daemon → repo root → ui/dist
+  return resolve(__dirname, "..", "..", "ui", "dist");
+}
+
+function isProductionMode(): boolean {
+  return process.env.NODE_ENV === "production";
+}
 
 export async function buildServer() {
   const app = Fastify({
@@ -18,6 +39,30 @@ export async function buildServer() {
   });
 
   await app.register(websocket);
+
+  // WHY: Register static serving BEFORE API routes so Fastify's route specificity
+  // rules still prefer explicit API paths (/health, /trpc/*) over the wildcard static.
+  // Only register in production mode AND when ui/dist actually exists — dev mode uses
+  // Vite dev server on :5173 separately (SPEC §3.2, dev mode separation).
+  if (isProductionMode()) {
+    const uiDistPath = resolveUiDistPath();
+    if (existsSync(uiDistPath)) {
+      await app.register(fastifyStatic, {
+        root: uiDistPath,
+        // WHY: wildcard=false prevents @fastify/static from consuming unknown paths
+        // with a 404 that blocks our own 404 handling. SPA routes that don't match
+        // real files will fall through to Fastify's default 404 handler.
+        wildcard: false,
+        // Serve index.html at root
+        index: "index.html",
+      });
+      app.log.info(`static: serving ui/dist from ${uiDistPath}`);
+    } else {
+      // WHY: fallback = skip silently rather than crash (SPEC §3.2 fallback requirement).
+      // Operator must build UI separately before starting in production mode.
+      app.log.warn(`static: ui/dist not found at ${uiDistPath} — static serving skipped`);
+    }
+  }
 
   await app.register(fastifyTRPCPlugin, {
     prefix: "/trpc",
