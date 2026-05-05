@@ -87,6 +87,48 @@ prompt 冒頭の `[loom-customization]` block の **直後** に dispatcher が�
 
 ## Workflow
 
+### Session Start Hook: PM Auto-Spec Entry（M0.11.6 から、SPEC §3.6.8.9 SSoT）
+
+セッション開始時（`/loom-pm` 起動直後）に context を評価し、spec phase への自動 entry を判断する。本 section の動作仕様は **SPEC §3.6.8.9 が SSoT**。agents/loom-pm.md は SSoT を実装する agent 動作 codify、動作仕様の追加・変更は SPEC を先に変えてから本 section を合わせる原則。
+
+#### context 評価手順（Bash tool で probe）
+
+1. **軸 1 — 直近 user message scan**: 直前の user message に spec 系 intent keyword が含まれるか判定する。具体 keyword list は **t4 で確定**（placeholder: 「実装したい」「機能追加」「bug」「fix」「PLAN」「SPEC」「task」「設計」「要件」「新機能」「不具合」「改善したい」等を想定）。impl 系（「commit」「PR」「deploy」等）は除外。
+
+2. **軸 2 — cwd state probe（Bash tool）**: 以下のコマンドで現在の project context を評価する：
+   ```bash
+   ls SPEC.md 2>/dev/null && echo "spec_exists"
+   grep -c "status: todo" PLAN.md 2>/dev/null || echo "0"
+   git log --oneline -5 2>/dev/null
+   ```
+   `SPEC.md` 存在 + `PLAN.md` に `status: todo` task 残存 → 既存 PJ context あり。
+
+3. **AND 条件**: 高信頼判定は **両軸が揃う** ことを必須とする（OR 条件は false-positive 増加で禁止）。
+
+#### 3 信頼レベルと動作分岐
+
+- **高信頼（intent + state 両方揃い）**: 「○○ の spec phase 入りますで、ええか？」1 問確認 → yes なら即 spec phase 突入（`/loom-spec` と同等の処理を invoke）。
+  - 確認 prompt template: **t5 で詳細化**（placeholder: 「直前の message と PLAN.md 状態から spec phase への entry を検出しました。spec phase に入りますか？」）
+
+- **中信頼（いずれか片方のみ）**: 「新規 PJ spec / 既存 plan レビュー / status 確認」3 択分岐質問で user に選択を促す。
+  - 分岐 prompt template: **t6 で詳細化**（placeholder: 「どういった作業をご希望ですか？①新規 spec 作成 ②既存 plan レビュー ③現状 status 確認」）
+
+- **低信頼（intent も state も無し）**: 従来通り idle PM として user 入力待ち。無用な質問を発しない。
+
+#### `/loom-spec` override 動作
+
+user が明示的に `/loom-spec` を invoke した場合は **context 評価を skip し、即 spec phase 突入**する。`/loom-spec` slash command は明示 override / re-entry path として存続し、deprecated 化しない。用途：context 圧縮後の復帰、誤判定時の override、low-confidence PM での明示的な spec phase 開始（詳細: SPEC §3.6.8.9 `/loom-spec` 位置付け）。
+
+#### degraded mode 整合（§3.9.13 との連携）
+
+Task tool 不在時（degraded mode）も上記 Bash tool probe（`ls`、`grep`、`git log`）で context 評価が可能。本機構は degraded mode でも機能する設計（SPEC §3.6.8.9 参照）。degraded mode での spec entry は sequential self-review（SPEC §3.6.8.7 path C）と組み合わせて運用。
+
+#### 誤爆抑制
+
+1. 高信頼判定は AND 条件（OR 禁止）
+2. 中信頼以下では必ず 1 問確認を挟む（silent 突入禁止）
+3. false-positive rate は retro process-axis lens で継続観察（閾値超過で keyword list 見直し）
+
 ### Project lifecycle: init / adopt / maintain (per SPEC §3.7)
 
 When entering a project for the first time (no `.claude-loom/project.json`), determine the lifecycle stage:
