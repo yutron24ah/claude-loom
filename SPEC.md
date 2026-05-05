@@ -108,12 +108,19 @@ claude-loom は **Claude Code 上で agile 開発チームを丸ごと再現す�
 
 ### 3.2 Lazy Daemon ライフサイクル
 
-1. ユーザーが任意のディレクトリで `/loom` を実行
-2. スラッシュコマンドが `localhost:5757/health` を叩く
-3. 無応答なら daemon を `nohup node ~/.claude-loom/daemon.js &` で起動、PID ファイル記録
-4. 応答あり or 起動完了したら `open http://localhost:5757` でブラウザを開く
-5. daemon は 30 分イベント無しでセルフシャットダウン
-6. 明示停止は `/loom-stop`、状態確認は `/loom-status`
+`/loom`（help/entry）と `/loom-stop`（shutdown）以外の 7 種 slash command（`/loom-pm`, `/loom-spec`, `/loom-go`, `/loom-retro`, `/loom-status`, `/loom-worktree`, `/loom-mode`）が trigger となる。
+
+1. user が trigger 対象の slash command を任意のディレクトリで実行
+2. command が `localhost:5757/health` を叩く
+3. 無応答なら daemon を `nohup node ~/.claude-loom/daemon.js &` で起動（cold start）、PID ファイル記録
+4. **cold start 時のみ** `open http://localhost:5757` でブラウザを開く（既起動時は health-check のみで browser open せず、`xdg-open` 系のタブ氾濫を回避）
+5. **headless 環境では browser open を skip し URL を terminal に出力**。検出条件: `$SSH_CONNECTION` セット / Linux で `$DISPLAY` 空 / `open`・`xdg-open`・`start` のいずれも不在。`LOOM_NO_UI=1` 環境変数で強制 skip 可能
+6. daemon は 30 分イベント無しでセルフシャットダウン
+7. 明示停止は `/loom-stop`、状態確認は `/loom-status`
+
+**`/loom` の役割**: daemon URL 表示 + clipboard コピー（user が「もう 1 タブ欲しい」時の救済路、cold-start-only open ポリシーを補完する dual path）。
+
+**永続 opt-out**: `<project>/.claude-loom/project-prefs.json` の `ui.auto_launch: false` で PJ 単位で auto-launch 無効化。`LOOM_NO_UI=1` は session 単位の緊急上書き。
 
 ### 3.3 中央指令室モデル
 
