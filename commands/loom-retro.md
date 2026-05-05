@@ -2,6 +2,13 @@
 description: Run claude-loom retro mode — 3-stage protocol (4 parallel lens judges, counter-argument pass, aggregator) with conversation-driven findings presentation (default) or markdown report only (--report flag). Activates loom-retro skill.
 ---
 
+<!-- M0.11.5: lazy daemon auto-launch trigger (SPEC §3.2) -->
+Before anything else, invoke the daemon + UI helper via Bash tool (fail-silent — do not abort if this fails):
+
+```bash
+bash "${CLAUDE_LOOM_INSTALL_PATH:-/Users/kokiiphone/Documents/work/claude-loom}/hooks/loom-launch-ui.sh"
+```
+
 You are entering **retro mode** in claude-loom.
 
 Load the system prompt and behavior from the `loom-retro` skill (`~/.claude/skills/loom-retro/SKILL.md`).

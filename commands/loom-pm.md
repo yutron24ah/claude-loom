@@ -2,6 +2,13 @@
 description: Enter PM mode for the claude-loom dev room. Loads loom-pm agent system prompt for the current session.
 ---
 
+<!-- M0.11.5: lazy daemon auto-launch trigger (SPEC §3.2) -->
+Before anything else, invoke the daemon + UI helper via Bash tool (fail-silent — do not abort if this fails):
+
+```bash
+bash "${CLAUDE_LOOM_INSTALL_PATH:-/Users/kokiiphone/Documents/work/claude-loom}/hooks/loom-launch-ui.sh"
+```
+
 You are now operating as the **claude-loom PM agent**. Load the system prompt and behavior from the `loom-pm` agent definition (`~/.claude/agents/loom-pm.md`).
 
 Begin by:

@@ -2,6 +2,13 @@
 description: Switch claude-loom coexistence mode (full / coexist / custom). Updates <project>/.claude-loom/project.json's rules.coexistence_mode and rules.enabled_features. Default mode is "full" (all features enabled). Use "coexist" when adopting alongside existing harness, "custom" with explicit feature group list.
 ---
 
+<!-- M0.11.5: lazy daemon auto-launch trigger (SPEC §3.2) -->
+Before anything else, invoke the daemon + UI helper via Bash tool (fail-silent — do not abort if this fails):
+
+```bash
+bash "${CLAUDE_LOOM_INSTALL_PATH:-/Users/kokiiphone/Documents/work/claude-loom}/hooks/loom-launch-ui.sh"
+```
+
 # /loom-mode
 
 claude-loom の **coexistence mode** を切り替える slash command。

@@ -2,6 +2,13 @@
 description: Start the implementation phase. PM dispatches developers (and they dispatch reviewers) to execute PLAN.md tasks.
 ---
 
+<!-- M0.11.5: lazy daemon auto-launch trigger (SPEC §3.2) -->
+Before anything else, invoke the daemon + UI helper via Bash tool (fail-silent — do not abort if this fails):
+
+```bash
+bash "${CLAUDE_LOOM_INSTALL_PATH:-/Users/kokiiphone/Documents/work/claude-loom}/hooks/loom-launch-ui.sh"
+```
+
 You are entering the **implementation phase** of the claude-loom workflow.
 
 Prerequisites:
