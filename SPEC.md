@@ -404,6 +404,51 @@ PM auto-spec entry の context 評価は Bash tool で `git log --oneline -5`, `
 
 **SSoT 宣言**: 本章（§3.6.8.9）が PM Auto-Spec Entry 機能の SSoT。`agents/loom-pm.md`（t3 担当）+ `commands/loom-pm.md` は本章を参照し実装。他 doc（CLAUDE.md / PLAN.md）からの参照は本章 section 番号を引用。
 
+#### 3.6.8.10 PM Auto-Go Entry（M0.11.7 から）
+
+**方針**: ハイブリッド検知（C 案）— spec phase 完了後、user の直近 message に impl intent を検出した場合、1 問確認後 impl phase（`/loom-go` 相当）に自動突入。曖昧なら短い分岐質問、低信頼なら従来 PM idle。§3.6.8.9 PM Auto-Spec Entry の**論理的延長**として、spec → impl の 2 段階 auto flow を完成させる。
+
+**trinity 完成**: §3.2（M0.11.5、UI auto-launch）→ §3.6.8.9（M0.11.6、spec phase auto-entry）→ **本章 §3.6.8.10（M0.11.7、impl phase auto-entry）**の 3 本柱で「context から intent 読めるなら ceremony 強制せえ」哲学の ceremony reduction trinity が SSoT として整う。
+
+**検知ロジック 3 軸（AND 条件で高信頼判定）**:
+
+- **軸 1 — PLAN.md state 変化**: 直近 N session で PLAN に新規 task 追加 または 既存 task に `status: todo` が残存 → impl 作業が残っている証拠（Bash probe: `grep -c "status: todo" PLAN.md`）
+- **軸 2 — spec phase 完了 marker**: SPEC.md 編集 commit + PLAN.md 編集 commit が直近 git log に存在 → spec が終わって impl 待ちの状態（Bash probe: `git log --oneline -10 | grep -E "SPEC|PLAN|spec|docs"`）
+- **軸 3 — user message intent**: 「実装」「進めて」「go」「dispatch」「task 振って」「開発して」「コーディング」「始めて」等の impl intent keyword を直近 user message が含む（§3.6.8.9 の spec keyword list と分離、具体 list は t4 で確定）
+
+**AND 条件採用 rationale**: 3 軸全 AND は §3.6.8.9 の 2 軸 AND より厳しい条件。「PLAN 残あり + user が雑談してるだけ」の誤発火を spec phase 完了 marker（軸 2）が防ぐ。OR 条件や 2 軸 AND では false-positive が増加し user が望まない impl 突入が多発するため採用しない。
+
+**3 信頼レベルと動作**:
+
+- **① 高信頼（3 軸全部揃い）**: 「○○ task の impl phase 入りますで、ええか？」1 問確認 → yes なら即 impl phase 突入（`/loom-go` と同等の処理を invoke）
+- **② 中信頼（2 軸揃い）**: 「impl 開始 / spec 修正 / status 確認」3 択分岐質問 → user の選択に応じて処理
+- **③ 低信頼（1 軸以下）**: 従来通り PM idle として user 入力待ち。無用な質問も発しない。
+
+**`/loom-go` の位置付け（残置 + override path）**:
+
+`/loom-go` slash command は **明示 override / re-entry path として存続**する。削除・deprecated 化しない。用途：
+- context 圧縮後の復帰（PM が auto-entry を見送った場合の手動 trigger）
+- 別案件の impl やり直し（auto-entry が誤判定した場合の override）
+- 低信頼 PM で明示的に impl phase を開始したい場合
+- M0.11.5 SPEC §3.2 の `/loom-go` trigger list にも残置
+
+**§3.6.8.9 との関係（sibling chapter / 検知ロジックパターン共有）**:
+
+本章は §3.6.8.9 PM Auto-Spec Entry の sibling chapter。検知ロジックパターン（3 信頼レベル / AND 条件 / override 残置 / false-positive 抑制）は §3.6.8.9 と同形式を採用し重複記述を避ける。ロジック実装は agent prompt 層（t3）で §3.6.8.9 の Session Start Hook を拡張統合する形で実現。
+
+**誤爆抑制策まとめ**:
+
+1. 高信頼判定は 3 軸全 AND（§3.6.8.9 の 2 軸より厳格）
+2. 中信頼以下では **必ず 1 問確認**を挟む（silent 突入禁止）
+3. retro process-axis lens で false-positive rate を継続観察、閾値超過で keyword list / 軸定義見直し
+4. user が意図していない impl entry と気づいた場合 `/loom-go` で明示 re-entry 可能
+
+**degraded mode との整合（§3.9.13 probe との連携）**:
+
+PM auto-go entry の context 評価は Bash tool で `grep -c "status: todo" PLAN.md`, `git log --oneline -10` 等を probe する形で実現。Task tool 不在時（degraded mode）も Bash tool 単体で代替評価可能、**本機構は degraded mode でも機能する設計**とする。
+
+**SSoT 宣言**: 本章（§3.6.8.10）が PM Auto-Go Entry 機能の SSoT。`agents/loom-pm.md`（t3 担当）は本章を参照し実装。他 doc（CLAUDE.md / PLAN.md）からの参照は本章 section 番号を引用。
+
 ### 3.6.9 M3 UI Architecture（M3 から）
 
 M3 milestone の核となる frontend 設計判断を SSoT として集約。spec phase 2026-05-02 で確定（design 分岐 α/β/γ + M3 分割判断の 4 件）。
