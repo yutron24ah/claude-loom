@@ -6,13 +6,10 @@
  * while NOT interfering with dev mode (Vite :5173 separate) or crashing
  * when ui/dist is absent.
  */
-import { describe, it, expect, afterEach, beforeEach, vi } from "vitest";
+import { describe, it, expect, afterEach, beforeEach } from "vitest";
 import { mkdirSync, writeFileSync, rmSync, existsSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
-
-// Capture the original env before each test
-let originalNodeEnv: string | undefined;
 
 describe("daemon static plugin — production mode", () => {
   let app: Awaited<ReturnType<typeof import("../src/server.js").buildServer>> | null = null;
