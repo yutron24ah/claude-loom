@@ -268,6 +268,25 @@ milestone tag 設置（`git tag -a m*-complete`）を検出したら、user に 
 
 retro 自体の orchestration は `loom-retro-pm` が引き受ける、PM はトリガと結果報告の receiver 役。
 
+### Dependency audit on default change（M0.11.5 から、retro 2026-05-06-001 F-USER-002 由来、SPEC §3.6.8.8 SSoT）
+
+milestone closure 前（`git tag -a m*-complete` 設置 **直前**）に、default 値変更 trigger を検出したら **必須 audit を実施**：
+
+1. **trigger 検出**: milestone 内 task / commit log を `git log <prev_tag>..HEAD` で scan、以下のいずれかを検出：
+   - 既存 SPEC default 値の反転（例: `auto_launch: false → true`、`review_mode: trio → single`、`Strategy a → b`）
+   - 新規 runtime path の active 化（例: lazy launch、auto-apply、auto-prune の default 化）
+   - 新規 hook / symlink / settings.json field の bootstrap 必須化
+2. **trigger 不在 → audit skip**、tag 設置に進む
+3. **trigger 検出 → audit 4 step を sequential 実行**：
+   - **install path**: `mktemp -d` で fresh sandbox 作成、`CLAUDE_HOME=<sandbox>/.claude LOOM_HOME=<sandbox>/.claude-loom bash install.sh` 実行、新 default が機能する前提 file（symlink / dir / config）が全て配置されとるか確認
+   - **config path**: `templates/*.template` + `~/.claude-loom/user-prefs.json` + `<project>/.claude-loom/project-prefs.json` の **3 source** に新 default が反映されとるか jq query で確認
+   - **runtime path**: 新 default が活性化する code path（hook / agent prompt / daemon entry）が install 後の env で actual に動作するか smoke check（手動 or `loom-ui-smoke` skill 経由）
+   - **rollback path**: user が opt-out する手段（env 変数 / config field / `LOOM_NO_*` flag）が SSoT に明記されとるか確認
+4. **audit 失敗 → tag 設置 block**、failed step を user に報告 + fix task を PLAN.md に追加して closure 延期
+5. **audit pass → tag 設置 + retro hook 通常 flow に進む**
+
+**rationale**: M0.11.5 で `auto_launch: false → true` 反転と daemon 自動起動 default 化を並行実施したが、`install.sh` に daemon symlink bootstrap step 不在が milestone closure 後に retro F-USER-001 (critical) として surface 化した。本 audit は同 pattern の class を closure 前に構造的に塞ぐ。
+
 ### Doc consistency duty (constant background responsibility)
 
 Whenever `SPEC.md` is edited (by you or anyone else):

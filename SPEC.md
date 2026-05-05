@@ -328,6 +328,25 @@ dev が reviewer dispatch を実施する Step 9 に **3 つの path** を 1st-c
 
 詳細実装: `agents/loom-developer.md` Step 9、`agents/loom-pm.md` 受領規律。
 
+#### 3.6.8.8 Dependency audit on default change（2026-05-06 retro F-USER-002 由来）
+
+milestone scope に「**default 値変更**」（auto_launch default true 化、review_mode default 反転、Strategy a/b default 反転 等）を含む場合、PM は milestone closure 前に **依存 install / config / runtime pipeline 全 step verify** を必須 check として実施。
+
+**Trigger**: 以下のいずれかが milestone 内 task に含まれる：
+- 既存 SPEC default 値の反転（`auto_launch: false → true`、`review_mode: trio → single` 等）
+- 新規 runtime path の active 化（lazy launch、auto-apply、auto-prune 等）
+- 新規 hook / symlink / settings.json field の bootstrap 必須化
+
+**Audit checklist** (closure 前に PM が機械的に走らせる)：
+1. **install path**: `bash install.sh` を fresh sandbox で実行、新 default が機能する前提 file（symlink / dir / config）が全て配置されるか確認
+2. **config path**: `templates/*.template` + `~/.claude-loom/user-prefs.json` + `<project>/.claude-loom/project-prefs.json` の **3 source** に新 default が反映されとるか jq query で確認
+3. **runtime path**: 新 default が活性化する code path（hook / agent prompt / daemon entry）が install 後の env で actual に動作するか smoke check（手動 or `loom-ui-smoke` skill 経由）
+4. **rollback path**: user が opt-out する手段（env 変数 / config field / `LOOM_NO_*` flag）が SSoT に明記されとるか確認
+
+**rationale**: M0.11.5 で `auto_launch: false → true` 反転と並行して `hooks/loom-launch-ui.sh` 経由 daemon 自動起動を default 化したが、`install.sh` に daemon symlink bootstrap step 不在が milestone closure 後に retro F-USER-001 として critical surface 化した（2026-05-06-001）。default 変更は前提 pipeline 全 step が揃って初めて成立、step の partial implementation は user 環境で silent failure を生む構造的 risk。本 audit は M0.11.5 と同 pattern の class を構造的に塞ぐ。
+
+**実装**: `agents/loom-pm.md` の milestone closure workflow に audit step として組込、F-USER-002 codify。
+
 ### 3.6.9 M3 UI Architecture（M3 から）
 
 M3 milestone の核となる frontend 設計判断を SSoT として集約。spec phase 2026-05-02 で確定（design 分岐 α/β/γ + M3 分割判断の 4 件）。

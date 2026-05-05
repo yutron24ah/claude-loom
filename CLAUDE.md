@@ -34,6 +34,15 @@ Phase 1 MVP closure 時に「4 branch chain × 32+ commits ahead of main、PR �
 - **Phase boundary では必ず flush**: Phase 1 → Phase 2 等の phase boundary で全 stacked branch を main へ取り込む。Phase boundary 越えでの branch chain は禁止
 - **rationale**: dogfood phase の single-developer 運用ゆえ実害は低いが、Phase 2 multi-contributor 時に PR review を起動する hygiene の前段階として codify
 
+### Dependency audit 規律（retro 2026-05-06-001 F-USER-002 由来、SPEC §3.6.8.8 SSoT）
+
+**default 値変更を含む milestone は、closure 前に依存 install / config / runtime pipeline 全 step verify を必須 check**:
+
+- **trigger**: 既存 default 反転 / 新 runtime path active 化 / 新 hook・symlink・settings.json field の bootstrap 必須化のいずれかが milestone task に含まれる時
+- **audit 4 step**: (1) `bash install.sh` fresh sandbox 実行で前提 file 配置確認 (2) templates / user-prefs / project-prefs の **3 source** で default 値整合確認 (3) 新 default 活性 code path の actual 動作 smoke check (4) opt-out 手段（env / config / `LOOM_NO_*`）の SSoT 明記確認
+- **rationale**: M0.11.5 で `auto_launch: false → true` 反転と daemon 自動起動 default 化を並行実施したが、`install.sh` daemon symlink bootstrap 不在が closure 後に critical issue 化した（retro F-USER-001）。default 変更は前提 pipeline 全 step が揃わな成立せず、partial implementation は silent failure を生む
+- **詳細**: SPEC §3.6.8.8 + agents/loom-pm.md milestone closure workflow を参照
+
 ## コミット粒度（Conventional Commits）
 
 - 1 commit = 1 論理変更（atomic、revert 単位）、build & test pass 状態を維持
