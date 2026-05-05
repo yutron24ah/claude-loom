@@ -1,36 +1,47 @@
 /**
- * room-baseline.spec.ts — Room View pop theme screenshot baseline.
+ * room-baseline.spec.ts — Room View screenshot baselines for 3 theme palettes.
  *
- * WHY: SPEC §3.6.9.7 (res-001) requires a Playwright e2e visual regression
- * baseline to catch screenshot-level regressions (e.g. Phaser canvas layout
- * breaks, theme token drift) that vitest/jsdom cannot detect.
+ * WHY: SPEC §3.6.9.7 (res-001) + §3.6.9.1 改訂 (DOM/SVG α-2、3 theme palette)
+ * requires Playwright e2e visual regression baselines for each theme so that
+ * theme token drift, RPG primitive layout regressions, or CSS-variable wiring
+ * breakage are caught at the screenshot level (jsdom/vitest cannot detect).
  *
- * Scope (M3.1): pop theme baseline only. dusk/night are M3.2+.
- *
- * First run generates the baseline image (--update-snapshots).
- * Subsequent runs compare against the stored baseline.
+ * Scope (M0.11.4 t18): 3 theme baselines — pop (default) / dusk / night.
+ * Theme is switched by setting [data-theme="..."] on <html>, propagating new
+ * --p-* / --pal-* CSS variables to all RPG primitives (rpg-frame / rpg-title
+ * / chip / dot / exp-bar / btn-px) defined in tokens.css.
  */
 import { test, expect } from '@playwright/test';
 
-test.describe('Room View — pop theme baseline', () => {
-  test('matches pop theme screenshot baseline', async ({ page }) => {
-    // Navigate to root route which renders AppShell + RoomView
-    await page.goto('/');
+const THEMES = [
+  { id: 'pop', label: 'pop (default)' },
+  { id: 'dusk', label: 'dusk' },
+  { id: 'night', label: 'night' },
+] as const;
 
-    // Verify data-theme="pop" is active (default theme, no override)
-    // WHY: tokens.css :root defaults = pop theme; no data-theme attr means pop
-    const htmlTheme = await page.locator('html').getAttribute('data-theme');
-    // pop theme is the default (no attribute needed), but if set explicitly, verify it
-    const isPop = htmlTheme === null || htmlTheme === 'pop';
-    expect(isPop).toBe(true);
+test.describe('Room View — 3 theme screenshot baselines', () => {
+  for (const theme of THEMES) {
+    test(`matches ${theme.label} theme baseline`, async ({ page }) => {
+      await page.goto('/');
 
-    // Wait for room-canvas testid to be present (RoomView mounted)
-    await page.waitForSelector('[data-testid="room-canvas"]');
+      // Apply theme via data-theme attribute on <html> root.
+      // pop is the default (no attribute), but we still set it explicitly for symmetry.
+      await page.evaluate((id) => {
+        if (id === 'pop') {
+          document.documentElement.removeAttribute('data-theme');
+        } else {
+          document.documentElement.setAttribute('data-theme', id);
+        }
+      }, theme.id);
 
-    // Visual regression: viewport screenshot against stored baseline.
-    // maxDiffPixelRatio is set globally in playwright.config.ts (0.2) — no per-test override needed.
-    await expect(page).toHaveScreenshot('room-pop.png', {
-      fullPage: false,
+      // Wait for RoomView to mount.
+      await page.waitForSelector('[data-testid="room-canvas"]');
+
+      // Visual regression: viewport screenshot vs stored baseline.
+      // maxDiffPixelRatio is set globally in playwright.config.ts (0.2).
+      await expect(page).toHaveScreenshot(`room-${theme.id}.png`, {
+        fullPage: false,
+      });
     });
-  });
+  }
 });
