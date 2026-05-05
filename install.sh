@@ -2,7 +2,7 @@
 # install.sh — claude-loom harness installer
 #
 # 役割：agents/ / commands/ のファイル + skills/ のディレクトリを ~/.claude/<type>/ にシンボリックリンク
-# M1 以降で daemon ビルド配置 + settings.json 書き換えを追加予定
+# M1 で hooks/ 配線 + settings.json 書換、M0.11.5 hotfix で daemon.js symlink bootstrap 追加
 
 set -euo pipefail
 
@@ -12,6 +12,7 @@ if [ -z "${HOME:-}" ] && [ -z "${CLAUDE_HOME:-}" ]; then
   exit 1
 fi
 CLAUDE_HOME="${CLAUDE_HOME:-$HOME/.claude}"
+LOOM_HOME="${LOOM_HOME:-$HOME/.claude-loom}"
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # 前提チェック
@@ -135,6 +136,28 @@ if command -v jq >/dev/null 2>&1; then
   echo "  hooks 配線 settings.json に追加"
 else
   echo "  WARNING: jq 不在、settings.json への hooks 配線 skip。手動で hooks 設定してください"
+fi
+
+# daemon.js symlink (M0.11.5 hotfix REQ-046、retro 2026-05-06-001 F-USER-001)
+# loom-launch-ui.sh の DAEMON_BIN=$LOOM_HOME/daemon.js 参照を満たす bootstrap
+DAEMON_DIST="$ROOT_DIR/daemon/dist/index.js"
+DAEMON_LINK="$LOOM_HOME/daemon.js"
+mkdir -p "$LOOM_HOME"
+
+if [ -f "$DAEMON_DIST" ]; then
+  if [ -e "$DAEMON_LINK" ] && [ ! -L "$DAEMON_LINK" ]; then
+    echo "ERROR: $DAEMON_LINK exists as a regular file (not a symlink). Remove or rename it, then re-run install.sh." >&2
+    exit 1
+  fi
+  if [ -L "$DAEMON_LINK" ]; then
+    echo "  replacing existing symlink: $DAEMON_LINK"
+    rm "$DAEMON_LINK"
+  fi
+  ln -s "$DAEMON_DIST" "$DAEMON_LINK"
+  echo "  linked: $DAEMON_LINK -> $DAEMON_DIST"
+else
+  echo "  WARNING: $DAEMON_DIST not found — daemon symlink skipped."
+  echo "  Run 'pnpm --filter @claude-loom/daemon build' then re-run install.sh to enable lazy daemon auto-launch."
 fi
 
 echo ""
