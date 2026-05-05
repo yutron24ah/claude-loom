@@ -93,7 +93,13 @@ prompt 冒頭の `[loom-customization]` block の **直後** に dispatcher が�
 
 #### context 評価手順（Bash tool で probe）
 
-1. **軸 1 — 直近 user message scan**: 直前の user message に spec 系 intent keyword が含まれるか判定する。具体 keyword list は **t4 で確定**（placeholder: 「実装したい」「機能追加」「bug」「fix」「PLAN」「SPEC」「task」「設計」「要件」「新機能」「不具合」「改善したい」等を想定）。impl 系（「commit」「PR」「deploy」等）は除外。
+1. **軸 1 — 直近 user message scan**: 直前の user message に spec 系 intent keyword が含まれるか判定する。以下 keyword list のいずれかにマッチしたら intent あり判定（AND 条件の半分）。impl 系（「commit」「PR」「deploy」「merge」「push」「release」等）は除外。
+
+   **spec 系 intent keyword list（日本語 + 英語、合計 22 個）**:
+   - 日本語: 「実装したい」「機能追加」「追加したい」「作りたい」「バグ」「不具合」「修正」「改修」「改善したい」「設計」「仕様」「要件」「新機能」「進めたい」
+   - 英語: `implement` / `feature` / `bug` / `fix` / `SPEC` / `PLAN` / `task` / `design` / `build`
+
+   判定は case-insensitive substring match（例: user message 中に「bug を直したい」→ 「バグ」マッチで intent あり）。
 
 2. **軸 2 — cwd state probe（Bash tool）**: 以下のコマンドで現在の project context を評価する：
    ```bash
@@ -108,10 +114,32 @@ prompt 冒頭の `[loom-customization]` block の **直後** に dispatcher が�
 #### 3 信頼レベルと動作分岐
 
 - **高信頼（intent + state 両方揃い）**: 「○○ の spec phase 入りますで、ええか？」1 問確認 → yes なら即 spec phase 突入（`/loom-spec` と同等の処理を invoke）。
-  - 確認 prompt template: **t5 で詳細化**（placeholder: 「直前の message と PLAN.md 状態から spec phase への entry を検出しました。spec phase に入りますか？」）
+  - 確認 prompt template（高信頼用）:
+    ```
+    直前の message と PLAN.md の状態から、spec phase への entry を検出しました。
+
+    「<検出した作業内容の要約>」の spec phase に入りますで、ええか？
+
+    → yes / ok → 即 spec phase 突入（/loom-spec 相当）
+    → no / skip → spec phase entry キャンセル。/loom-status で現状確認したい場合はその旨どうぞ。
+    ```
+    `<検出した作業内容の要約>` は軸 1 で検出した keyword 周辺の user message から 1 フレーズ抽出して埋める（例: 「バグ修正」「新機能追加」「PLAN.md の次 task 実装」）。
 
 - **中信頼（いずれか片方のみ）**: 「新規 PJ spec / 既存 plan レビュー / status 確認」3 択分岐質問で user に選択を促す。
-  - 分岐 prompt template: **t6 で詳細化**（placeholder: 「どういった作業をご希望ですか？①新規 spec 作成 ②既存 plan レビュー ③現状 status 確認」）
+  - 分岐 prompt template（中信頼用、3 択型）:
+    ```
+    どういった作業をご希望ですか？
+
+    ① 新規 PJ 立ち上げ — 新しい SPEC.md / PLAN.md を作成して spec phase から開始
+    ② 既存 plan レビュー — 現在の PLAN.md を確認して次のタスクを検討
+    ③ status 確認 — /loom-status で現状のブランチ・テスト・進捗をスナップショット
+
+    番号または内容でご回答ください。
+    ```
+    各択肢の後続動作:
+    - ① → spec phase 突入（`/loom-spec` 相当）
+    - ② → `PLAN.md` を Read して残 task + next action を提示
+    - ③ → `/loom-status` 相当の probe を実行して snapshot 報告
 
 - **低信頼（intent も state も無し）**: 従来通り idle PM として user 入力待ち。無用な質問を発しない。
 
