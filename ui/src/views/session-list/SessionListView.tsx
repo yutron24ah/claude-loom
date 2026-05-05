@@ -7,6 +7,9 @@
  * Delegates query/subscription/state to useSessionList hook.
  * This component is a pure render layer (SPEC §3.6 SRP principle).
  *
+ * M0.11.4 Phase C t16: RPG style — rpg-frame wrapping, chip for metadata,
+ * dot for status, rpg-title + rpg-label for headers.
+ *
  * data-testid map:
  *   session-list             → outer container
  *   session-filter-project   → project filter <select>
@@ -33,6 +36,13 @@ const SESSION_ROLE_OPTIONS = [
   { value: 'dev_parent', label: 'Developer' },
 ] as const;
 
+// WHY: typed map avoids raw string comparisons for dot variant (SPEC §3.6.10)
+const STATUS_DOT_CLASS: Record<string, string> = {
+  active: 'dot busy',
+  idle:   'dot idle',
+  ended:  'dot fail',
+};
+
 // ---------------------------------------------------------------------------
 // Sub-components
 // ---------------------------------------------------------------------------
@@ -46,39 +56,33 @@ function SessionRow({ session }: SessionRowProps): JSX.Element {
     ? session.startedAt.toLocaleString()
     : new Date(Number(session.startedAt)).toLocaleString();
 
-  const statusColor: Record<string, string> = {
-    active: 'text-success',
-    idle: 'text-fg2',
-    ended: 'text-text-muted',
-  };
+  const dotClass = STATUS_DOT_CLASS[session.status] ?? 'dot idle';
 
   return (
     <div
       data-testid="session-row"
-      className="bg-bg1 border border-border p-sp-2 flex gap-sp-3 items-center font-mono text-fs-xs"
+      className="rpg-frame flex gap-sp-3 items-center"
     >
+      {/* Status dot */}
+      <span className={dotClass} title={session.status} />
+
       {/* Session ID */}
-      <span className="text-fg1 truncate flex-1 min-w-0" title={session.sessionId}>
+      <span className="rpg-label truncate flex-1 min-w-0" title={session.sessionId}>
         {session.sessionId}
       </span>
 
-      {/* Project */}
-      <span className="text-fg2 w-32 truncate" title={session.projectId ?? '—'}>
-        {session.projectId ?? '—'}
-      </span>
+      {/* Project chip */}
+      {session.projectId && (
+        <span className="chip">{session.projectId}</span>
+      )}
 
-      {/* Role */}
-      <span className="text-fg2 w-24">
-        {session.role ?? '—'}
-      </span>
-
-      {/* Status */}
-      <span className={`w-16 ${statusColor[session.status] ?? 'text-fg2'}`}>
-        {session.status}
-      </span>
+      {/* Role chip */}
+      {session.role && (
+        <span className="chip">{session.role}</span>
+      )}
 
       {/* Started at */}
-      <span className="text-text-muted w-40 text-right">
+      <span className="rpg-label text-right" style={{ minWidth: '10ch' }}>
         {startedAt}
       </span>
     </div>
@@ -113,15 +117,13 @@ export function SessionListView(): JSX.Element {
   return (
     <div
       data-testid="session-list"
-      className="bg-bg2 rounded-card p-sp-4 flex flex-col gap-sp-3 w-full max-w-3xl"
+      className="rpg-frame flex flex-col gap-sp-3 w-full max-w-3xl"
       onClick={(e) => e.stopPropagation()}
     >
       {/* Header */}
       <div className="flex items-center gap-sp-2 flex-wrap">
-        <span className="text-fs-md font-bold text-fg1">Sessions</span>
-        <span className="ml-auto text-fs-xs text-text-muted font-mono">
-          live
-        </span>
+        <span className="rpg-title">Sessions</span>
+        <span className="rpg-label ml-auto">live</span>
       </div>
 
       {/* Controls: filter + sort */}
@@ -155,7 +157,7 @@ export function SessionListView(): JSX.Element {
         <button
           data-testid="session-sort-toggle"
           onClick={toggleSortOrder}
-          className="bg-bg1 border border-border text-fg1 text-fs-xs px-sp-2 py-sp-1 hover:bg-bg3"
+          className="btn-px"
         >
           started_at {sortOrder}
         </button>
@@ -163,7 +165,7 @@ export function SessionListView(): JSX.Element {
 
       {/* Loading state */}
       {isLoading && (
-        <div data-testid="session-list-loading" className="text-fg2 text-fs-sm py-sp-3">
+        <div data-testid="session-list-loading" className="rpg-label py-sp-3">
           読み込み中…
         </div>
       )}
@@ -177,21 +179,20 @@ export function SessionListView(): JSX.Element {
 
       {/* Empty state */}
       {!isLoading && !error && sessions.length === 0 && (
-        <div data-testid="session-list-empty" className="text-text-muted text-fs-sm py-sp-3">
+        <div data-testid="session-list-empty" className="rpg-label py-sp-3">
           セッションがありません
         </div>
       )}
 
       {/* Session rows */}
       {!isLoading && !error && sessions.length > 0 && (
-        <div className="flex flex-col gap-sp-1">
+        <div className="flex flex-col gap-sp-2">
           {/* Column header */}
-          <div className="flex gap-sp-3 items-center font-mono text-fs-xs text-text-muted px-sp-2 pb-sp-1 border-b border-border">
-            <span className="flex-1">session_id</span>
-            <span className="w-32">project</span>
-            <span className="w-24">role</span>
-            <span className="w-16">status</span>
-            <span className="w-40 text-right">started_at</span>
+          <div className="flex gap-sp-3 items-center px-sp-2 pb-sp-1 border-b border-border">
+            <span className="rpg-label flex-1">session_id</span>
+            <span className="rpg-label">project</span>
+            <span className="rpg-label">role</span>
+            <span className="rpg-label">started_at</span>
           </div>
           {sessions.map((s) => (
             <SessionRow key={s.sessionId} session={s} />

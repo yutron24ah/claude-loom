@@ -117,11 +117,12 @@ export function PlanView(): JSX.Element {
       {/* ---- Left pane: short-term todos ---- */}
       <div
         data-testid="plan-short-term"
-        className="bg-bg2 border border-border rounded-card p-sp-4"
+        className="rpg-frame"
+        style={{ padding: 16 }}
       >
-        <h2 className="font-bold text-fs-sm tracking-wide text-fg1">
+        <div className="rpg-title">
           短期 — TodoWrite (read-only)
-        </h2>
+        </div>
 
         {/* Loading state — while subscription is connecting */}
         {isTodosLoading && (
@@ -174,17 +175,18 @@ export function PlanView(): JSX.Element {
       {/* ---- Right pane: long-term plan tree (live tRPC, editable) ---- */}
       <div
         data-testid="plan-long-term"
-        className="bg-bg2 border border-border rounded-card p-sp-4"
+        className="rpg-frame"
+        style={{ padding: 16 }}
       >
         <div className="flex justify-between items-center">
-          <h2 className="font-bold text-fs-sm tracking-wide text-fg1">
+          <div className="rpg-title">
             長期 — plan_items ツリー
-          </h2>
+          </div>
           {/* + add button — fires upsert mutation (M3.1 t2) */}
           <button
             type="button"
             onClick={handleAddItem}
-            className="px-sp-2 py-[2px] text-[9px] bg-accent text-bg2 border border-border rounded-ctrl font-bold"
+            className="btn-px primary"
           >
             + 追加
           </button>

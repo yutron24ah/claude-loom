@@ -338,3 +338,78 @@ describe('SessionListView — live update via subscription', () => {
     expect(screen.getAllByTestId('session-row')).toHaveLength(1);
   });
 });
+
+// ---------------------------------------------------------------------------
+// RPG style assertions (M0.11.4 Phase C t16)
+// ---------------------------------------------------------------------------
+
+describe('SessionListView — RPG style', () => {
+  it('wraps outer container in rpg-frame', () => {
+    const { container } = render(<SessionListView />);
+    const frame = container.querySelector('.rpg-frame');
+    expect(frame).toBeInTheDocument();
+  });
+
+  it('renders title with rpg-title class', () => {
+    const { container } = render(<SessionListView />);
+    const title = container.querySelector('.rpg-title');
+    expect(title).toBeInTheDocument();
+  });
+
+  it('renders session rows with rpg-frame class when sessions are present', () => {
+    mockUseSessionList.mockReturnValue({
+      sessions: [makeSession({ sessionId: 'rpg-sess' })],
+      isLoading: false,
+      error: null,
+      projectFilter: null,
+      roleFilter: null,
+      sortOrder: 'desc',
+      setProjectFilter: vi.fn(),
+      setRoleFilter: vi.fn(),
+      toggleSortOrder: vi.fn(),
+    });
+    const { container } = render(<SessionListView />);
+    const frames = container.querySelectorAll('.rpg-frame');
+    expect(frames.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('renders status dot elements with dot class for each session', () => {
+    mockUseSessionList.mockReturnValue({
+      sessions: [makeSession({ status: 'active' }), makeSession({ sessionId: 'sess-002', status: 'idle' })],
+      isLoading: false,
+      error: null,
+      projectFilter: null,
+      roleFilter: null,
+      sortOrder: 'desc',
+      setProjectFilter: vi.fn(),
+      setRoleFilter: vi.fn(),
+      toggleSortOrder: vi.fn(),
+    });
+    const { container } = render(<SessionListView />);
+    const dots = container.querySelectorAll('.dot');
+    expect(dots.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('renders session metadata with chip class', () => {
+    mockUseSessionList.mockReturnValue({
+      sessions: [makeSession({ role: 'pm', projectId: 'claude-loom' })],
+      isLoading: false,
+      error: null,
+      projectFilter: null,
+      roleFilter: null,
+      sortOrder: 'desc',
+      setProjectFilter: vi.fn(),
+      setRoleFilter: vi.fn(),
+      toggleSortOrder: vi.fn(),
+    });
+    const { container } = render(<SessionListView />);
+    const chips = container.querySelectorAll('.chip');
+    expect(chips.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('renders rpg-label elements for column headers or metadata', () => {
+    const { container } = render(<SessionListView />);
+    const labels = container.querySelectorAll('.rpg-label');
+    expect(labels.length).toBeGreaterThanOrEqual(1);
+  });
+});

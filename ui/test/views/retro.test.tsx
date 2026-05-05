@@ -95,3 +95,42 @@ describe('RetroView — lens summary detail', () => {
     expect(countBadges.length).toBe(4);
   });
 });
+
+// M0.11.4 t14 — RPG design structure assertions
+describe('RetroView — RPG design structure (M0.11.4 t14)', () => {
+  it('wraps view in rpg-frame element', () => {
+    const { container } = render(<RetroView />);
+    const rpgFrame = container.querySelector('.rpg-frame');
+    expect(rpgFrame).toBeInTheDocument();
+  });
+
+  it('renders session title with rpg-title class', () => {
+    const { container } = render(<RetroView />);
+    const rpgTitle = container.querySelector('.rpg-title');
+    expect(rpgTitle).toBeInTheDocument();
+  });
+
+  it('renders action buttons with btn-px class', () => {
+    const { container } = render(<RetroView />);
+    const btnPxButtons = container.querySelectorAll('button.btn-px');
+    expect(btnPxButtons.length).toBeGreaterThanOrEqual(4);
+  });
+
+  it('renders status chip indicators with chip class', () => {
+    const { container } = render(<RetroView />);
+    const chips = container.querySelectorAll('.chip');
+    expect(chips.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('renders dot status indicators with dot class', () => {
+    const { container } = render(<RetroView />);
+    const dots = container.querySelectorAll('.dot');
+    expect(dots.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('renders rpg-label for section header', () => {
+    const { container } = render(<RetroView />);
+    const labels = container.querySelectorAll('.rpg-label');
+    expect(labels.length).toBeGreaterThanOrEqual(1);
+  });
+});

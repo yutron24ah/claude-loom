@@ -24,6 +24,8 @@ export interface CatSpriteProps {
   scroll?: boolean;
   sleep?: boolean;
   facing?: 'front' | 'back';
+  /** WHY: allows callers (CharSheet, ThemeShowcase) to set data-testid on the SVG */
+  'data-testid'?: string;
 }
 
 // Helper type for rect element props — used inline for brevity
@@ -46,6 +48,7 @@ export function CatSprite({
   sleep = false,
   // facing is reserved for future back-view pose; currently only 'front' is rendered
   facing: _facing = 'front',
+  'data-testid': dataTestId,
 }: CatSpriteProps) {
   return (
     <svg
@@ -53,6 +56,7 @@ export function CatSprite({
       width={size}
       height={size}
       style={{ imageRendering: 'pixelated', display: 'block' }}
+      data-testid={dataTestId}
     >
       {/* === HEAD with attached ears === */}
       {/* ear triangles */}

@@ -8,6 +8,10 @@
  * SRP: this component is a pure render layer. All state + mutations are
  * delegated to useProjectSettings hook.
  *
+ * M0.11.4 Phase C t16: RPG style — rpg-frame for outer container and sections,
+ * rpg-title for section headers, rpg-label for field labels,
+ * btn-px for save/reset buttons.
+ *
  * SPEC §3.6.10 compliance: dropdown values come from typed constants/enums,
  * never raw string literals in comparisons.
  *
@@ -68,10 +72,8 @@ interface ReadOnlyFieldProps {
 function ReadOnlyField({ label, value }: ReadOnlyFieldProps): JSX.Element {
   return (
     <div className="flex flex-col gap-0.5">
-      <span className="text-fs-xs text-text-muted uppercase tracking-widest">{label}</span>
-      <span className="text-fs-sm font-mono text-fg1 bg-bg3 border border-border px-sp-2 py-sp-1">
-        {value ?? '—'}
-      </span>
+      <span className="rpg-label">{label}</span>
+      <span className="chip">{value ?? '—'}</span>
     </div>
   );
 }
@@ -140,8 +142,8 @@ function SettingsForm({
   return (
     <div className="flex flex-col gap-sp-4">
       {/* Read-only section */}
-      <section className="flex flex-col gap-sp-2">
-        <h2 className="text-fs-xs text-text-muted uppercase tracking-widest border-b border-border pb-sp-1">
+      <section className="rpg-frame flex flex-col gap-sp-2">
+        <h2 className="rpg-title border-b border-border pb-sp-1">
           Project Info (read-only)
         </h2>
         <div className="grid grid-cols-2 gap-sp-2">
@@ -161,14 +163,14 @@ function SettingsForm({
       </section>
 
       {/* Editable rules section */}
-      <section className="flex flex-col gap-sp-2">
-        <h2 className="text-fs-xs text-text-muted uppercase tracking-widest border-b border-border pb-sp-1">
+      <section className="rpg-frame flex flex-col gap-sp-2">
+        <h2 className="rpg-title border-b border-border pb-sp-1">
           Rules (editable)
         </h2>
 
         {/* review_mode */}
         <div className="flex flex-col gap-0.5">
-          <label htmlFor="setting-review_mode" className="text-fs-xs text-text-muted uppercase tracking-widest">
+          <label htmlFor="setting-review_mode" className="rpg-label">
             review_mode
           </label>
           <select
@@ -188,7 +190,7 @@ function SettingsForm({
 
         {/* coexistence_mode */}
         <div className="flex flex-col gap-0.5">
-          <label htmlFor="setting-coexistence_mode" className="text-fs-xs text-text-muted uppercase tracking-widest">
+          <label htmlFor="setting-coexistence_mode" className="rpg-label">
             coexistence_mode
           </label>
           <select
@@ -208,9 +210,7 @@ function SettingsForm({
 
         {/* enabled_features */}
         <div className="flex flex-col gap-0.5">
-          <span className="text-fs-xs text-text-muted uppercase tracking-widest">
-            enabled_features
-          </span>
+          <span className="rpg-label">enabled_features</span>
           <EnabledFeaturesControl
             value={draft.enabledFeatures}
             onChange={(features) => setDraft({ enabledFeatures: features })}
@@ -219,7 +219,7 @@ function SettingsForm({
 
         {/* commit_language */}
         <div className="flex flex-col gap-0.5">
-          <label htmlFor="setting-commit_language" className="text-fs-xs text-text-muted uppercase tracking-widest">
+          <label htmlFor="setting-commit_language" className="rpg-label">
             commit_language
           </label>
           <select
@@ -244,18 +244,14 @@ function SettingsForm({
           data-testid="setting-save-button"
           onClick={save}
           disabled={!isDirty}
-          className={`text-fs-xs px-sp-3 py-sp-1 border font-bold ${
-            isDirty
-              ? 'bg-accent text-white border-accent hover:opacity-90'
-              : 'bg-bg3 text-text-muted border-border cursor-not-allowed'
-          }`}
+          className={`btn-px ${isDirty ? 'primary' : 'ghost'}`}
         >
           Save
         </button>
         <button
           data-testid="setting-reset-button"
           onClick={reset}
-          className="text-fs-xs px-sp-3 py-sp-1 border border-border bg-bg2 text-fg1 hover:bg-bg3"
+          className="btn-px ghost"
         >
           Reset
         </button>
@@ -276,10 +272,10 @@ export function ProjectSettingsView(): JSX.Element {
     return (
       <div
         data-testid="project-settings-view"
-        className="bg-bg2 rounded-card p-sp-4 flex flex-col gap-sp-3 w-full max-w-2xl"
+        className="rpg-frame flex flex-col gap-sp-3 w-full max-w-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <div data-testid="project-settings-loading" className="text-fg2 text-fs-sm py-sp-3">
+        <div data-testid="project-settings-loading" className="rpg-label py-sp-3">
           読み込み中…
         </div>
       </div>
@@ -290,7 +286,7 @@ export function ProjectSettingsView(): JSX.Element {
     return (
       <div
         data-testid="project-settings-view"
-        className="bg-bg2 rounded-card p-sp-4 flex flex-col gap-sp-3 w-full max-w-2xl"
+        className="rpg-frame flex flex-col gap-sp-3 w-full max-w-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div data-testid="project-settings-error" className="text-error text-fs-sm py-sp-3">
@@ -303,16 +299,14 @@ export function ProjectSettingsView(): JSX.Element {
   return (
     <div
       data-testid="project-settings-view"
-      className="bg-bg2 rounded-card p-sp-4 flex flex-col gap-sp-3 w-full max-w-2xl"
+      className="rpg-frame flex flex-col gap-sp-3 w-full max-w-2xl"
       onClick={(e) => e.stopPropagation()}
     >
       {/* Header */}
       <div className="flex items-center gap-sp-2">
-        <span className="text-fs-md font-bold text-fg1">Project Settings</span>
+        <span className="rpg-title">Project Settings</span>
         {isDirty && (
-          <span className="text-fs-xs px-sp-2 py-0.5 bg-bg3 border border-border text-text-muted">
-            unsaved changes
-          </span>
+          <span className="chip">unsaved changes</span>
         )}
       </div>
 
@@ -333,8 +327,8 @@ export function ProjectSettingsView(): JSX.Element {
           <select data-testid="setting-coexistence_mode" disabled className="bg-bg1 border border-border text-fg1 text-fs-xs px-sp-2 py-sp-1 w-fit" />
           <div data-testid="setting-enabled_features" />
           <select data-testid="setting-commit_language" disabled className="bg-bg1 border border-border text-fg1 text-fs-xs px-sp-2 py-sp-1 w-fit" />
-          <button data-testid="setting-save-button" disabled className="bg-bg3 text-text-muted border-border text-fs-xs px-sp-3 py-sp-1 border cursor-not-allowed">Save</button>
-          <button data-testid="setting-reset-button" disabled className="bg-bg2 text-fg1 border-border text-fs-xs px-sp-3 py-sp-1 border">Reset</button>
+          <button data-testid="setting-save-button" disabled className="btn-px ghost cursor-not-allowed">Save</button>
+          <button data-testid="setting-reset-button" disabled className="btn-px ghost">Reset</button>
         </div>
       )}
     </div>

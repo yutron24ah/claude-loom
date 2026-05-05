@@ -3,10 +3,12 @@
  * WHY: Enables audit and pruning of learned_guidance entries injected into agent prompts.
  * SCREEN_REQUIREMENTS §3.10 / §4.9
  * Ported from ui/prototype/screens-c.jsx LearnedGuidanceView.
+ * M0.11.4 t15: rewritten to use rpg-frame / rpg-title / chip / dot (Phase A SSoT).
  * Toggle and delete buttons are noop in this milestone; real mutations wired in M3+
  * via prefsRouter.learnedGuidance.toggle / .delete.
  * Types aligned with daemon LearnedGuidanceEntry (routes/prefs.ts).
  */
+import { CatSprite } from '../../components/CatSprite';
 import { ROSTER, type RosterEntry } from '../room/roster';
 
 // -------------------------------------------------------------------------
@@ -119,20 +121,18 @@ const MOCK_GUIDANCE: MockGuidanceItem[] = [
 ];
 
 // -------------------------------------------------------------------------
-// Helpers
+// Helpers — typed map avoids string literal scatter (Principle: avoid string literals)
 // -------------------------------------------------------------------------
 
-function categoryColorClass(cat: GuidanceCategory): string {
-  const map: Record<GuidanceCategory, string> = {
-    tdd:      'bg-accent text-white',
-    review:   'bg-accent text-white',
-    security: 'bg-error text-white',
-    test:     'bg-success text-white',
-    process:  'bg-bg3 text-fg2',
-    other:    'bg-bg3 text-fg2',
-  };
-  return map[cat] ?? 'bg-bg3 text-fg2';
-}
+/** WHY typed constant: category → dot class mapping, avoids repeat switch */
+const CATEGORY_DOT_CLASS: Record<GuidanceCategory, string> = {
+  tdd:      'dot tdd',
+  review:   'dot review',
+  security: 'dot fail',
+  test:     'dot busy',
+  process:  'dot idle',
+  other:    'dot idle',
+};
 
 // -------------------------------------------------------------------------
 // Sub-components
@@ -148,7 +148,15 @@ function GuidanceItemCard({ item, agent }: GuidanceItemCardProps): JSX.Element {
     <div
       data-testid="guidance-item"
       data-active={item.active}
-      className={`bg-bg1 border-2 border-border p-sp-3 flex gap-sp-3 items-start ${!item.active ? 'opacity-50' : ''}`}
+      style={{
+        background: 'var(--p-paper)',
+        border: '2px solid var(--p-border)',
+        padding: '10px 12px',
+        display: 'flex',
+        gap: 12,
+        alignItems: 'flex-start',
+        opacity: item.active ? 1 : 0.5,
+      }}
     >
       {/* Active state marker (hidden visual indicator for tests) */}
       {item.active
@@ -156,68 +164,95 @@ function GuidanceItemCard({ item, agent }: GuidanceItemCardProps): JSX.Element {
         : <span data-testid="guidance-inactive" className="sr-only">inactive</span>
       }
 
+      {/* Agent sprite with scroll icon when active */}
+      <div style={{ position: 'relative', flexShrink: 0 }}>
+        <CatSprite
+          size={36}
+          fur={agent?.fur ?? '#aaa'}
+          cheek={agent?.cheek ?? '#fda'}
+          hat={agent?.hat ?? null}
+          pose="sit"
+          scroll={item.active}
+        />
+      </div>
+
       {/* Body */}
-      <div className="flex-1 min-w-0">
+      <div style={{ flex: 1, minWidth: 0 }}>
         {/* Agent + category + source + scope */}
-        <div className="flex gap-sp-2 items-center flex-wrap mb-sp-1">
+        <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 4, flexWrap: 'wrap' }}>
           <span
             data-testid="guidance-agent-name"
-            className="text-fs-sm font-bold text-fg1"
+            style={{ fontSize: 12, fontWeight: 700 }}
           >
             {item.agentName}
           </span>
           {agent && (
-            <span className="text-fs-xs text-text-muted">{agent.role}</span>
+            <span className="rpg-label">{agent.role}</span>
           )}
           <span
             data-testid="guidance-category"
-            className={`text-fs-xs font-bold px-sp-1 py-0.5 border border-border uppercase tracking-wider ${categoryColorClass(item.category)}`}
+            style={{ display: 'flex', alignItems: 'center', gap: 4 }}
           >
-            {item.category}
+            <span className={CATEGORY_DOT_CLASS[item.category]} />
+            <span className="rpg-label">{item.category}</span>
           </span>
-          <span className="font-mono text-fs-xs text-text-muted">
+          <span style={{ fontSize: 9, fontFamily: 'ui-monospace, monospace', color: 'var(--p-text-muted)' }}>
             from: {item.fromSource}
           </span>
           <span
-            className={`text-fs-xs px-sp-1 py-0.5 border border-border ${
-              item.scope === 'project'
-                ? 'bg-accent text-white border-accent'
-                : 'bg-transparent text-fg2'
-            }`}
+            className="chip"
+            style={item.scope === 'project'
+              ? { background: 'var(--p-warn)', color: 'white', borderColor: 'var(--p-warn)' }
+              : undefined}
           >
             {item.scope}
           </span>
           {!item.active && (
-            <span className="text-fs-xs text-text-muted px-sp-1 py-0.5 border border-border">
-              inactive
-            </span>
+            <span className="chip" style={{ color: 'var(--p-text-muted)' }}>inactive</span>
           )}
         </div>
 
         {/* Guidance text */}
         <div
           data-testid="guidance-text"
-          className="text-fs-xs text-fg1 leading-relaxed px-sp-2 py-sp-1 bg-bg3 border-l-2 border-accent mb-sp-1"
+          style={{
+            fontSize: 11,
+            lineHeight: 1.5,
+            color: 'var(--p-text)',
+            padding: '6px 8px',
+            background: 'var(--p-tint)',
+            borderLeft: '3px solid var(--p-accent)',
+          }}
         >
           {item.text}
         </div>
 
         {/* Meta row */}
-        <div className="flex gap-sp-3 text-fs-xs text-text-muted font-mono items-center flex-wrap">
+        <div style={{
+          display: 'flex',
+          gap: 12,
+          marginTop: 6,
+          fontSize: 9,
+          color: 'var(--p-text-muted)',
+          fontFamily: 'ui-monospace, monospace',
+          alignItems: 'center',
+        }}>
           <span>added: {item.addedAt}</span>
           <span>use_count: {item.useCount}</span>
           <span>ttl: {item.ttl}</span>
-          <div className="ml-auto flex gap-sp-1">
+          <div style={{ marginLeft: 'auto', display: 'flex', gap: 4 }}>
             <button
               data-testid="guidance-toggle"
-              className="px-sp-2 py-0.5 border border-border bg-bg2 text-fg1 text-fs-xs hover:bg-bg3"
+              className="btn-px ghost"
+              style={{ fontSize: 9, padding: '2px 6px' }}
               onClick={() => undefined}
             >
               {item.active ? 'deactivate' : 'activate'}
             </button>
             <button
               data-testid="guidance-delete"
-              className="px-sp-2 py-0.5 border border-border bg-bg2 text-error text-fs-xs hover:bg-bg3"
+              className="btn-px ghost"
+              style={{ fontSize: 9, padding: '2px 6px', color: 'var(--p-error)' }}
               onClick={() => undefined}
             >
               削除
@@ -235,33 +270,33 @@ function GuidanceItemCard({ item, agent }: GuidanceItemCardProps): JSX.Element {
 
 export function LearnedGuidanceView(): JSX.Element {
   const rosterById = Object.fromEntries(ROSTER.map((r) => [r.id, r]));
-
   const activeCount = MOCK_GUIDANCE.filter((g) => g.active).length;
   const totalCount = MOCK_GUIDANCE.length;
 
   return (
     <div
       data-testid="guidance-view"
-      className="bg-bg2 rounded-card p-sp-4 flex flex-col gap-sp-3"
+      className="rpg-frame pixel"
+      style={{ padding: 18 }}
     >
       {/* Header */}
-      <div className="flex items-center gap-sp-3 flex-wrap">
-        <span
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
+        <div
           data-testid="guidance-title"
-          className="text-fs-md font-bold text-fg1"
+          className="rpg-title"
         >
           Learned Guidance — agent に注入された学習
+        </div>
+        <span className="chip">
+          active <b style={{ marginLeft: 4 }}>{activeCount}</b> / total {totalCount}
         </span>
-        <span className="text-fs-xs px-sp-2 py-0.5 border border-border bg-bg3 text-fg2">
-          active <strong>{activeCount}</strong> / total {totalCount}
-        </span>
-        <span className="ml-auto text-fs-xs text-text-muted">
+        <span style={{ marginLeft: 'auto', fontSize: 10, color: 'var(--p-text-muted)' }}>
           retro / finding 由来は監査履歴あり
         </span>
       </div>
 
       {/* Guidance list */}
-      <div className="flex flex-col gap-sp-2">
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         {MOCK_GUIDANCE.map((item) => (
           <GuidanceItemCard
             key={item.id}
@@ -272,7 +307,15 @@ export function LearnedGuidanceView(): JSX.Element {
       </div>
 
       {/* Footer hint */}
-      <div className="text-fs-xs text-text-muted bg-bg3 border-2 border-dashed border-border p-sp-2 leading-relaxed">
+      <div style={{
+        marginTop: 12,
+        fontSize: 10,
+        color: 'var(--p-text-muted)',
+        padding: '8px 12px',
+        background: 'var(--p-tint)',
+        border: '2px dashed var(--p-border)',
+        lineHeight: 1.5,
+      }}>
         guidance は agent の system prompt に append される。
         重複や矛盾は次 retro でレビュー候補としてマークされる（Phase 2）
       </div>

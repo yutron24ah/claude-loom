@@ -188,3 +188,34 @@ describe('TokenMeterView — sparkline', () => {
     expect(sparkline).toBeInTheDocument();
   });
 });
+
+// ---------------------------------------------------------------------------
+// RPG style assertions (M0.11.4 Phase C t16)
+// ---------------------------------------------------------------------------
+
+describe('TokenMeterView — RPG style', () => {
+  it('wraps outer container in rpg-frame', () => {
+    const { container } = render(<TokenMeterView />);
+    const frame = container.querySelector('.rpg-frame');
+    expect(frame).toBeInTheDocument();
+  });
+
+  it('renders title with rpg-title class', () => {
+    const { container } = render(<TokenMeterView />);
+    const title = container.querySelector('.rpg-title');
+    expect(title).toBeInTheDocument();
+  });
+
+  it('renders exp-bar for token usage visualization', () => {
+    mockUseTokenUsage.mockReturnValue(makeDefaultState({ inputTokens: 5000, outputTokens: 1000, cacheTokens: 500 }));
+    const { container } = render(<TokenMeterView />);
+    const expBar = container.querySelector('.exp-bar');
+    expect(expBar).toBeInTheDocument();
+  });
+
+  it('renders rpg-label elements for token type labels', () => {
+    const { container } = render(<TokenMeterView />);
+    const labels = container.querySelectorAll('.rpg-label');
+    expect(labels.length).toBeGreaterThanOrEqual(1);
+  });
+});

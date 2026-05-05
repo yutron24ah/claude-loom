@@ -5,6 +5,9 @@
  * without typing paths directly. Uses React Router NavLink for
  * active state styling.
  *
+ * M0.11.4 Phase C t16: RPG style — rpg-frame wrapping, dot for active/inactive
+ * state, rpg-label for nav entry text.
+ *
  * NAV_LINKS is the SSoT for navigation entries — add new routes here.
  * SPEC §3.6.10: no raw string literal paths scattered in components.
  *
@@ -35,7 +38,7 @@ export function Sidebar(): JSX.Element {
   return (
     <nav
       data-testid="sidebar"
-      className="flex flex-col gap-sp-1 p-sp-2 bg-bg2 border-r border-border h-full"
+      className="rpg-frame flex flex-col gap-sp-1 h-full"
     >
       {NAV_LINKS.map((link) => (
         <NavLink
@@ -43,14 +46,20 @@ export function Sidebar(): JSX.Element {
           to={link.path}
           data-testid={`sidebar-link-${link.id}`}
           className={({ isActive }) =>
-            `px-sp-2 py-sp-1 text-fs-xs font-mono rounded-sm transition-colors ${
+            `flex items-center gap-sp-2 px-sp-2 py-sp-1 transition-colors ${
               isActive
-                ? 'bg-accent text-bg1 font-bold'
-                : 'text-fg2 hover:text-fg1 hover:bg-bg3'
+                ? 'bg-accent'
+                : 'hover:bg-bg3'
             }`
           }
         >
-          {link.label}
+          {({ isActive }) => (
+            <>
+              {/* WHY: dot class for active/inactive state per RPG design language */}
+              <span className={isActive ? 'dot busy' : 'dot idle'} />
+              <span className="rpg-label">{link.label}</span>
+            </>
+          )}
         </NavLink>
       ))}
     </nav>
