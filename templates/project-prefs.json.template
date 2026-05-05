@@ -48,5 +48,10 @@
     "base_path": "<parent>/<repo>-{branch}",
     "auto_cleanup": false,
     "max_concurrent": 5
+  },
+
+  "ui": {
+    "_comment": "M0.11.5 から有効。auto_launch: false で PJ 単位の lazy daemon auto-launch 無効化 (SPEC §3.2 永続 opt-out)。precedence: project-prefs > user-prefs > default true",
+    "auto_launch": true
   }
 }

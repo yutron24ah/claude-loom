@@ -2,6 +2,13 @@
 description: Invoke git worktree management. Loads loom-worktree skill for safe worktree create/list/remove/prune operations. Use sub-commands: /loom-worktree create <branch> [path], /loom-worktree list, /loom-worktree remove <path>, /loom-worktree prune.
 ---
 
+<!-- M0.11.5: lazy daemon auto-launch trigger (SPEC §3.2) -->
+Before anything else, invoke the daemon + UI helper via Bash tool (fail-silent — do not abort if this fails):
+
+```bash
+bash "${CLAUDE_LOOM_INSTALL_PATH:-/Users/kokiiphone/Documents/work/claude-loom}/hooks/loom-launch-ui.sh"
+```
+
 You are entering **worktree management mode** in claude-loom.
 
 Load the behavior and safe patterns from the `loom-worktree` skill (`~/.claude/skills/loom-worktree/SKILL.md`).

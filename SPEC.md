@@ -1398,6 +1398,7 @@ retro が auto-update する PJ 固有学習状態。`project.json`（human spec
 | `last_retro.completed_at` | — | 0 | UNIX timestamp |
 | `learned_patterns.common_blockers` | — | `[]` | この PJ で繰り返し検出された blocker パターン |
 | `learned_patterns.frequent_finding_categories` | — | `[]` | この PJ で頻出する finding category |
+| `ui.auto_launch` | — | `true` | `false` で SPEC §3.2 lazy daemon auto-launch flow (step 2-5) を skip。PJ 単位の永続 opt-out。precedence: project-prefs > user-prefs > default `true`（M0.11.5 から） |
 
 ### 6.9.3 Effective config 計算規則
 

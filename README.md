@@ -79,16 +79,28 @@ Full slash command reference is in [CLAUDE.md](CLAUDE.md).
 
 ## Launching the GUI
 
-Phase 1 MVP runs the daemon and UI as separate dev servers:
+Running any trigger slash command — `/loom-pm`, `/loom-spec`, `/loom-go`, `/loom-retro`, `/loom-status`, `/loom-worktree`, or `/loom-mode` — **automatically starts the daemon on cold-start and opens the central command room** in your browser at `http://127.0.0.1:5757`. If the daemon is already running (warm-start), the browser is not opened again.
+
+### Opt-out
+
+| scope | method |
+|---|---|
+| session | set `LOOM_NO_UI=1` environment variable |
+| project (persistent) | set `ui.auto_launch: false` in `<project>/.claude-loom/project-prefs.json` |
+| headless auto-detect | SSH / no DISPLAY / no browser command → browser open skipped, URL printed to terminal |
+
+### `/loom` (URL helper)
+
+Running `/loom` prints the daemon URL and copies it to the clipboard (cross-platform). Use it when you want to open another tab or share the URL.
+
+### Development workflow
+
+For hot-reload during UI development, run the daemon and UI as separate dev servers:
 
 ```bash
-pnpm --filter @claude-loom/daemon dev   # daemon on http://127.0.0.1:5757
-pnpm --filter @claude-loom/ui dev       # UI on http://localhost:5173
+pnpm --filter @claude-loom/daemon dev   # daemon: http://127.0.0.1:5757
+pnpm --filter @claude-loom/ui dev       # UI:    http://localhost:5173
 ```
-
-Open `http://localhost:5173` to see the central command room.
-
-> Auto-launch on slash command (the canonical SPEC §3.2 flow — `/loom-pm` etc. start the daemon and open the room automatically) is tracked as **M0.11.5** (Phase 1 closure cleanup) in [PLAN.md](PLAN.md).
 
 ## Customization
 
