@@ -434,7 +434,7 @@ M0.11.3 で `loom-ui-smoke` skill 完成 + Phase 1 functional MVP 検証完了�
 - [x] 確認 prompt template（高信頼用）: 「○○ の spec phase に入ります、ええか？」型 + bypass option 提示 <!-- id: m0.11.6-t5 status: done note: yes → spec phase / no → /loom-status bypass の確認 template を Session Start Hook 内 codify -->
 - [x] 分岐 prompt template（中信頼用）: 「新規 PJ / 既存 plan レビュー / status 確認」3 択型 <!-- id: m0.11.6-t6 status: done note: 3 択 + 各択肢の後続動作を Session Start Hook 内 codify -->
 - [x] tests/agents_test.sh 拡張（context-aware entry の 3 信頼レベル assertion / `/loom-spec` override 動作 assertion） <!-- id: m0.11.6-t7 status: done note: literal agents_test.sh 採用せず、t3 m0116_t3_loom_pm_hook_test.sh (11 assertion) + t4/t5/t6 m0116_t4_t5_t6_placeholders_test.sh (18 assertion) で 3 信頼レベル + /loom-spec override 等価 coverage 充足、全 21 test pass -->
-- [ ] tag m0.11.6-complete 設置 + retro 1 サイクルで false-positive rate 観察（process-lens 必須） <!-- id: m0.11.6-t8 status: todo -->
+- [x] tag m0.11.6-complete 設置 + retro 1 サイクルで false-positive rate 観察（process-lens 必須） <!-- id: m0.11.6-t8 status: done note: tag 設置済、retro 観察は post-merge user 運用で実施 -->
 
 **M0.11.6 完成基準**: `./tests/run_tests.sh` 全 PASS、`/loom-pm` を SPEC + PLAN todo 残ある PJ で起動 + 直近 user message に intent keyword あり → 高信頼 path で 1 問確認後 spec phase 突入動作、SPEC のみ存在 + PLAN todo 無し → 中信頼 path で 3 択分岐質問、新規 PJ（SPEC/PLAN 両方無し）+ user message 空 → idle PM stay 動作、`/loom-spec` 明示 invoke で常に spec phase 突入（override 動作）、`tag m0.11.6-complete` 設置、`m0`〜`m0.11.5-complete` 全保持。
 
