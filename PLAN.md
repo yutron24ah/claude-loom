@@ -473,6 +473,26 @@ M0.11.3 で `loom-ui-smoke` skill 完成 + Phase 1 functional MVP 検証完了�
 
 **M0.11.7 着手タイミング**: M0.11.6 完了後（agent prompt 層で連続改修、M0.11.6 の検知ロジック実装パターンを再利用してコスト削減）。M0.11.5 とは parallel 可（M0.11.5 = infra 層、M0.11.7 = agent prompt 層）、ただし M0.11.6 → M0.11.7 は **sequential 必須**（同 agent prompt file = `agents/loom-pm.md` 編集発生）。M0.X cleanup 系列、推定 5-7 task 規模、dispatch 戦略は t2/t3 sequential → t4/t5 parallel → t6/t7 sequential closure。
 
+## マイルストーン M0.X-test-debt-cleanup (carryover escalation、retro 2026-05-06-001 F-proc-004 由来)
+
+起源: 2026-05-06 retro F-proc-004 で codify された SPEC §3.9.14 carryover escalation rule の **適用第 1 例**。pre-existing test failures 3 件 (`docs_release_test.sh` / `dry_run_applied_summary_test.sh` / `m1_docs_test.sh`) が M0.X 系列で 3 retro 連続 deferred state 残置、`./tests/run_tests.sh` で 18 PASS / 3 FAIL の常態化。専用 fix milestone として PLAN.md insertion 必須化（SPEC §3.9.14 mandatory）。
+
+### 設計合意（retro 2026-05-06-001 F-proc-004 SSoT）
+
+- **scope 限定**: 3 件 carryover failures の **fix のみ**、SPEC / agent prompt 改変なし
+- **task 内容（推定）**:
+  - [ ] `tests/docs_release_test.sh` failures fix (README ライセンス section + Phase 2 section + M5 言及の actual 状態確認、test 期待 or README どちら fix か判定) <!-- id: m0.x-debt-t1 status: todo -->
+  - [ ] `tests/dry_run_applied_summary_test.sh` failures fix (applied_summary build dry-run の現状動作 vs test 期待 reconcile、M0.11.5 schema_version v2 統一の影響調査込) <!-- id: m0.x-debt-t2 status: todo -->
+  - [ ] `tests/m1_docs_test.sh` failures fix (M1 doc consistency 1 violation の actual issue 特定 + fix) <!-- id: m0.x-debt-t3 status: todo -->
+  - [ ] `./tests/run_tests.sh` で **21 PASS / 0 FAIL** 達成、carryover state 解消 <!-- id: m0.x-debt-t4 status: todo -->
+  - [ ] tag `m0.x-test-debt-cleanup-complete` 設置（M0 系列継続の cleanup marker） <!-- id: m0.x-debt-t5 status: todo -->
+- **着手タイミング**: M0.11.7 完了後 / Phase 2 entry 前。Phase 2 spec phase の cleanup 前提として完走必要
+- **rationale**: 3 retro 連続 carryover の SPEC §3.9.14 escalation 適用例。専用 milestone scope 化により、各 dev session で「scope 外」と注記される carryover の意味を回復、user 環境での silent failure 減らす
+
+### M0.X-test-debt-cleanup 完成基準
+
+`./tests/run_tests.sh` 全 PASS（既存 18 PASS + 3 carryover fix = 21 PASS / 0 FAIL）、`m0.11.5-complete`〜`m0.11.7-complete` 全保持、Phase 2 entry checklist の test debt clear 項目 reset。
+
 ## Phase 2 entry criteria + carryover (retro 2026-05-05-001 由来)
 
 Phase 1 MVP の 3 段階 closure marker 全達成 (m5 = functional / m0.11.3 = verification / m0.11.4 = aesthetic) の後、Phase 2 entry 前に解決 / 整理すべき carryover を retro 2026-05-05-001 の 14 finding から集約。F-meta-003 (Phase 2 entry criteria 整備 gap) の structural action として本 section を新設。

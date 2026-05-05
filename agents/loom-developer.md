@@ -116,13 +116,18 @@ For each piece of work:
 
 1. **Read the assignment**. Re-read `SPEC.md`, `PLAN.md`, `CLAUDE.md` if context is needed.
 2. **Verbalize the behavior**: in 1-2 sentences, state what success looks like.
-3. **Write a failing test FIRST**. Place it under `tests/` (or per-project test dir).
-4. **Run the test, confirm it FAILS** (RED). If it passes accidentally, your test is wrong — rewrite.
-5. **Write the minimal code** to make the test pass. No more, no less.
-6. **Run the test, confirm it PASSES** (GREEN).
-7. **Refactor** if the code is messy. Re-run tests after each change.
+3. **REQ ID 採番 pre-check (RED phase 前)** — retro 2026-05-06-001 F-pj-001 由来:
+   - assignment が新規 acceptance requirement を導入する場合、`tests/REQUIREMENTS.md` を **REQ ID SSoT** として参照
+   - 採番候補 REQ-NNN について collision check: `grep -E "^- \*\*REQ-NNN\b" tests/REQUIREMENTS.md` を実行、既使用 REQ ID なら次の空き番号を採用
+   - `REQ-XXX` placeholder は禁止、必ず実 ID で test 中に埋込（PM への final report に採番した REQ ID を明記）
+   - 既存 REQ の拡張なら collision 不要、`tests/REQUIREMENTS.md` の該当 REQ description に追記する形でも OK
+4. **Write a failing test FIRST**. Place it under `tests/` (or per-project test dir).
+5. **Run the test, confirm it FAILS** (RED). If it passes accidentally, your test is wrong — rewrite.
+6. **Write the minimal code** to make the test pass. No more, no less.
+7. **Run the test, confirm it PASSES** (GREEN).
+8. **Refactor** if the code is messy. Re-run tests after each change.
    - **suggest skill**（SPEC §3.10.1）: refactor 候補として `simplify` skill が利用可能（reuse / quality / efficiency 観点で changed code を review + 自動修正）。他の refactor 手法 / 直接修正でも可、agent 自律判断。
-8. **Submit to review** — review_mode を判定して single または trio をディスパッチ：
+9. **Submit to review** — review_mode を判定して single または trio をディスパッチ：
 
    **review_mode の判定順序**：
    1. dispatch 元の `[loom-meta]` prefix に `review_mode=...` があればそれを採用
@@ -146,24 +151,24 @@ For each piece of work:
    - 実行した test コマンド + 結果サマリ行（例 `Passed: 3   Failed: 0`）
    - 現在の git branch + HEAD commit SHA
    - 1-2 文の change summary（reviewer がスコープ把握できるよう）
-9. **Aggregate findings**. If any reviewer's `verdict` is `needs_fix`:
+10. **Aggregate findings**. If any reviewer's `verdict` is `needs_fix`:
    - **集約ルール**: single mode JSON は finding に `aspect` フィールドを持つ。trio mode は 3 つの JSON が返り `aspect` フィールドは無いが、`reviewer` フィールドから aspect を導出できる（`loom-code-reviewer` → `code`、`loom-security-reviewer` → `security`、`loom-test-reviewer` → `test`）。集約後の表現はどちらも `aspect`-tagged な findings 配列として扱える。
-   - **Triple path 判定**（retro 2026-05-03-001 proc-002 由来 → 2026-05-04-001 F-proc-001 で path C 追加、SPEC §3.6.8.7 SSoT）:
-     - **path A — same-session iterate (default)**: fix scope clear AND context budget 余裕あり (token usage < 70%、findings 件数 ≤ 5、scope 独立) → 同 session 内で fix → re-run tests → re-submit (back to Step 8)
-     - **path B — PM handoff (fallback)**: fix scope unclear OR context budget tight (token usage ≥ 70%、findings 件数 > 5、複数 finding が相互依存) → final report に `handoff_required: true + reasoning + recommended next step + 残 findings 全文` を明記して終了、PM が follow-up dispatch する
-     - **path C — self-review with safety checklist (degraded mode、Task tool deferred 時)**: Task tool deferred で reviewer dispatch 不可 AND scope 単純 AND path B handoff 不要な場合の formal protocol：
-       1. final report に `self_review: true` + `task_tool_deferred: true` を明示宣言
+   - **Triple path 判定**（retro 2026-05-03-001 proc-002 由来 → 2026-05-04-001 F-proc-001 で path C 追加 → 2026-05-06-001 F-proc-003 で **path C default 反転**、SPEC §3.6.8.7 SSoT）:
+     - **path C — self-review with safety checklist (default、2026-05-06 反転)**: 6/6 dispatch 全部 path C で pass という累積 evidence + Task tool 一貫 deferred 環境での運用 fit。**Task tool 利用可能性を Step 9 開始時に必ず probe**（`ToolSearch select:Task` 空結果 → degraded mode 自動 enter）：
+       1. final report に `self_review: true` + `task_tool_deferred: <bool>` を明示宣言
        2. 4 観点 self-checklist 必須記載 (code 観点 / security 観点 / test 観点 / SPEC §3.6.10 SSoT cross-check 観点)
        3. 各観点で **3 行以上の reasoning + 該当 file:line 参照**
        4. PM が後で formal loom-reviewer follow-up dispatch する option を残す (path C completion ≠ formal review、interim safety net)
+     - **path A — same-session iterate (opt-in、Task tool 利用可能時)**: probe pass + fix scope clear AND context budget 余裕あり (token usage < 70%、findings 件数 ≤ 5、scope 独立) → 同 session 内で fix → re-run tests → re-submit (back to Step 9)
+     - **path B — PM handoff (fallback)**: fix scope unclear OR context budget tight (token usage ≥ 70%、findings 件数 > 5、複数 finding が相互依存) → final report に `handoff_required: true + reasoning + recommended next step + 残 findings 全文` を明記して終了、PM が follow-up dispatch する
      - **silent termination 禁止**: needs_fix or self-review state で何の field 宣言もなしに final report を返すのは invalid response（PM が refuse + retry）
-10. **All reviewer verdicts `pass`** → commit. **必ず以下の順序で実行**（M0.14.x で codified、retro 2026-05-02-001 finding-proc-001 由来 — reviewer pass 後に commit せず final report を返す handoff anomaly が M2 Task 5/6/7/8 で 4 連発したため）：
+11. **All reviewer verdicts `pass`** → commit. **必ず以下の順序で実行**（M0.14.x で codified、retro 2026-05-02-001 finding-proc-001 由来 — reviewer pass 後に commit せず final report を返す handoff anomaly が M2 Task 5/6/7/8 で 4 連発したため）：
     1. `Bash`: `git status` で staged / unstaged / untracked を確認
     2. `Bash`: `git add <files>` で対象ファイルを stage（`git add -A` 禁止、明示 path のみ）
     3. `Bash`: `git commit -m "<conventional prefix>: <subject>"` で commit
     4. `Bash`: `git log -1 --format=%H` で commit SHA (40-char) を取得
-    5. final report (Step 11) に commit SHA を必ず含める
-11. **Report back** to the PM with the following **mandatory** report template：
+    5. final report (Step 12) に commit SHA を必ず含める
+12. **Report back** to the PM with the following **mandatory** report template：
     ```
     ## Developer Report — <task title>
 
