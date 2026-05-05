@@ -165,6 +165,62 @@ check_last_used_in_type() {
 check_last_used_in_type "templates/user-prefs.json.template"
 check_last_used_in_type "templates/project-prefs.json.template"
 
+# REQ-037: M0.11.5 — project-prefs.json.template に ui.auto_launch field が存在する
+check_ui_auto_launch_field() {
+    local fname="templates/project-prefs.json.template"
+    if jq -e 'has("ui")' "$fname" >/dev/null 2>&1; then
+        echo "PASS [prefs]: $fname has ui group (M0.11.5)"
+        ((passes++))
+    else
+        echo "FAIL [prefs]: $fname missing ui group (M0.11.5)"
+        ((fails++))
+    fi
+}
+
+# REQ-037: ui.auto_launch field は boolean 型
+check_ui_auto_launch_type() {
+    local fname="templates/project-prefs.json.template"
+    local val
+    val=$(jq -r '.ui.auto_launch // "MISSING"' "$fname" 2>/dev/null)
+    if [ "$val" = "true" ] || [ "$val" = "false" ]; then
+        echo "PASS [prefs]: $fname ui.auto_launch is boolean (value='$val') (M0.11.5)"
+        ((passes++))
+    else
+        echo "FAIL [prefs]: $fname ui.auto_launch missing or not boolean (got '$val') (M0.11.5)"
+        ((fails++))
+    fi
+}
+
+# REQ-037: ui.auto_launch default は true (lazy daemon flow が default)
+check_ui_auto_launch_default() {
+    local fname="templates/project-prefs.json.template"
+    local val
+    val=$(jq -r '.ui.auto_launch // "MISSING"' "$fname" 2>/dev/null)
+    if [ "$val" = "true" ]; then
+        echo "PASS [prefs]: $fname ui.auto_launch default is true (M0.11.5)"
+        ((passes++))
+    else
+        echo "FAIL [prefs]: $fname ui.auto_launch default should be true, got '$val' (M0.11.5)"
+        ((fails++))
+    fi
+}
+
+# REQ-037: SPEC §6.9 に ui.auto_launch の記述がある
+check_spec_ui_auto_launch() {
+    if grep -q "ui\.auto_launch" "SPEC.md"; then
+        echo "PASS [prefs]: SPEC.md §6.9 contains ui.auto_launch (M0.11.5)"
+        ((passes++))
+    else
+        echo "FAIL [prefs]: SPEC.md missing ui.auto_launch documentation (M0.11.5)"
+        ((fails++))
+    fi
+}
+
+check_ui_auto_launch_field
+check_ui_auto_launch_type
+check_ui_auto_launch_default
+check_spec_ui_auto_launch
+
 echo ""
 echo "prefs_test summary: $passes PASS / $fails FAIL"
 exit $fails
