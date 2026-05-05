@@ -364,6 +364,46 @@ milestone scope に「**default 値変更**」（auto_launch default true 化、
 
 **実装**: `agents/loom-pm.md` の milestone closure workflow に audit step として組込、F-USER-002 codify。
 
+#### 3.6.8.9 PM Auto-Spec Entry（M0.11.6 から）
+
+**方針**: ハイブリッド検知（C 案）— PM 起動時に context を評価し、高信頼なら 1 問確認後 spec phase 自動突入、中信頼なら短い分岐質問、低信頼なら従来の idle PM 動作。`/loom-pm` 起動のたびに ceremony を強制せず、context から intent が読める場合は自動 entry する。
+
+**trinity 位置付け**: M0.11.5（`/loom-pm` 起動時 UI auto-launch、§3.2）→ **本章 M0.11.6**（spec phase auto-entry）→ M0.11.7（`/loom-go` impl phase auto-entry）の 3 本柱で「context から intent 読めるなら ceremony 強制せえ」哲学を段階的に実装。
+
+**検知ロジック 2 軸（AND 条件で高信頼判定）**:
+
+- **軸 1 — 直近 user message scan**: spec 系 keyword を検出。impl 系（「commit」「PR」「deploy」等）ではなく spec 系（「実装したい」「機能追加」「bug」「fix」「PLAN」「SPEC」「task」「設計」「要件」「新機能」「不具合」「改善したい」等、具体リストは t4 で確定）を含む message が直前に存在するか判定。
+- **軸 2 — cwd state**: `SPEC.md` 存在 + `PLAN.md` 内に `status: todo` の task が残存 → 既存 PJ context あり。どちらの軸も Bash tool（`ls`, `grep`, `git log --oneline -5` 等）で probe 可能。
+
+**AND 条件採用 rationale**: OR 条件にすると誤爆（false-positive）が増加し、user が望まない spec 突入が多発する。高信頼判定は **両軸が揃う** ことを必須とする。
+
+**3 信頼レベルと動作**:
+
+- **① 高信頼（intent + state 両方揃い）**: 「○○ の spec phase 入りますで、ええか？」1 問確認 → yes なら即 spec phase 突入（`/loom-spec` と同等の処理を invoke）
+- **② 中信頼（いずれか片方のみ）**: 「新規 PJ spec / 既存 plan レビュー / status 確認」3 択分岐質問 → user の選択に応じて処理
+- **③ 低信頼（intent も state も無し）**: 従来通り idle PM として user 入力待ち。無用な質問も発しない。
+
+**`/loom-spec` の位置付け（残置 + override path）**:
+
+`/loom-spec` slash command は **明示 override / re-entry path として存続**する。削除・deprecated 化しない。用途：
+- context 圧縮後の復帰（PM が auto-entry を見送った場合の手動 trigger）
+- 別案件の spec し直し（auto-entry が誤判定した場合の override）
+- low-confidence PM で明示的に spec phase を開始したい場合
+- M0.11.5 SPEC §3.2 の `/loom-spec` trigger list も残置
+
+**誤爆抑制策まとめ**:
+
+1. 高信頼判定は AND 条件（OR 禁止）
+2. 中信頼以下では **必ず 1 問確認**を挟む（silent 突入禁止）
+3. retro process-axis lens で false-positive rate を継続観察、閾値超過で keyword list 見直し
+4. user が意図していない spec entry と気づいた場合 `/loom-spec` で明示 re-entry 可能
+
+**degraded mode との整合（§3.9.13 probe との連携）**:
+
+PM auto-spec entry の context 評価は Bash tool で `git log --oneline -5`, `grep -c "status: todo" PLAN.md`, `ls SPEC.md` 等を probe する形で実現。Task tool 不在時（degraded mode）も Bash tool で代替評価可能、**本機構は degraded mode でも機能する設計**とする。degraded mode での spec entry は sequential self-review（§3.6.8.7 path C）と組み合わせて運用。
+
+**SSoT 宣言**: 本章（§3.6.8.9）が PM Auto-Spec Entry 機能の SSoT。`agents/loom-pm.md`（t3 担当）+ `commands/loom-pm.md` は本章を参照し実装。他 doc（CLAUDE.md / PLAN.md）からの参照は本章 section 番号を引用。
+
 ### 3.6.9 M3 UI Architecture（M3 から）
 
 M3 milestone の核となる frontend 設計判断を SSoT として集約。spec phase 2026-05-02 で確定（design 分岐 α/β/γ + M3 分割判断の 4 件）。
