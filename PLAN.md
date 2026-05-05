@@ -396,7 +396,7 @@ M0.11.3 で `loom-ui-smoke` skill 完成 + Phase 1 functional MVP 検証完了�
 - [x] PLAN.md M0.11.5 マイルストーン挿入（本タスク） <!-- id: m0.11.5-t1 status: done -->
 - [x] SPEC.md §3.2 lazy daemon flow 更新（trigger 範囲 / cold-start-only open / headless 検出 / `/loom` 役割拡張 / opt-out 永続化）<!-- id: m0.11.5-t2 status: done -->
 - [x] daemon: production mode で `ui/dist` を `:5757` で serve（Fastify static plugin、build 後）<!-- id: m0.11.5-t3 status: done -->
-- [ ] hooks/loom-launch-ui.sh 新設: health-check + headless 検出 + cross-platform browser open helper（`open` / `xdg-open` / `start`）<!-- id: m0.11.5-t4 status: todo -->
+- [x] hooks/loom-launch-ui.sh 新設: health-check + headless 検出 + cross-platform browser open helper（`open` / `xdg-open` / `start`）<!-- id: m0.11.5-t4 status: done -->
 - [ ] commands/loom-{pm,spec,go,retro,status,worktree,mode}.md 7 種に lazy daemon trigger 配線（hooks/loom-launch-ui.sh invoke）<!-- id: m0.11.5-t5 status: todo -->
 - [ ] commands/loom.md 役割拡張: URL 表示 + clipboard コピー（macOS `pbcopy` / Linux `xclip` or `wl-copy` / Windows `clip`）<!-- id: m0.11.5-t6 status: todo -->
 - [ ] prefs schema: `<project>/.claude-loom/project-prefs.json` に `ui.auto_launch: boolean` field 追加（templates 含む、SPEC §6.9 schema 拡張）<!-- id: m0.11.5-t7 status: todo -->
