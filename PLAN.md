@@ -440,6 +440,39 @@ M0.11.3 で `loom-ui-smoke` skill 完成 + Phase 1 functional MVP 検証完了�
 
 **M0.11.6 着手タイミング**: M0.11.5 と **parallel 可能**（M0.11.5 は infra 層 = `hooks/` + `daemon/`、M0.11.6 は agent prompt 層 = `agents/loom-pm.md` + `SPEC.md`、変更 file 重ならず）。Phase 2 entry sequence では M0.11.5 と束ねて連続実施推奨。M0.X cleanup 系列、推定 6-8 task 規模、dispatch 戦略は t2/t3 sequential（spec → agent prompt の依存）→ t4/t5/t6 parallel → t7/t8 sequential closure。
 
+## マイルストーン M0.11.7: /loom-go Auto-Entry（ceremony reduction trinity completion）
+
+起源: 2026-05-06 user との UX refinement 対話、M0.11.5/M0.11.6 sibling pair の論理的延長。spec phase 完了後、user が「実装」「進めて」「go」等の intent keyword を発した瞬間、明示的に `/loom-go` を打たんと impl phase に入らん 2-step ceremony が、M0.11.5（auto-launch UI）+ M0.11.6（PM auto-spec entry）と同じ「context から intent 読めるなら ceremony 強制せえ」UX 哲学の **trinity 3rd milestone** として ceremony 削減対象。
+
+### 設計合意（2026-05-06 spec phase 対話、SPEC §3.6 PM agent 章拡張継続）
+
+- **方針**: M0.11.6 と同じハイブリッド検知（C 案）— spec phase 完了後 + user 直近 message に impl intent → 1 問確認後 impl phase auto-entry、曖昧なら短く分岐質問、低信頼なら従来 idle
+- **検知ロジック 3 軸**:
+  - **PLAN.md state 変化**: 直近 N session で PLAN に新規 task 追加 / 既存 task の `status: todo` 残あり
+  - **spec phase 完了 marker**: SPEC.md 編集 commit + PLAN.md 編集 commit が直近にある
+  - **user message intent**: 「実装」「進めて」「go」「dispatch」「task 振って」等の impl intent keyword
+- **3 信頼レベル + 動作**:
+  - **① 高信頼（3 軸全部揃い）**: 「○○ task の impl phase 入りますで、ええか？」一文確認 → 即突入
+  - **② 中信頼（2 軸揃い）**: 「impl 開始 / spec 修正 / status 確認」3 択分岐質問
+  - **③ 低信頼（1 軸以下）**: 従来通り PM idle、user 入力待ち
+- **`/loom-go` の位置付け**: 明示 override / re-entry path として **存続**（M0.11.6 の `/loom-spec` と同パターン、compaction 後復帰、誤判定上書き等用）
+- **誤爆抑制策**: 高信頼判定は AND 条件、中信頼以下は必ず確認、retro process-axis lens で false-positive rate 観察（M0.11.6 と同じ枠組み流用）
+- **scope 外（YAGNI）**: 後続 trinity の auto-trigger（`/loom-retro` auto-entry on milestone tag、`/loom-stop` 等）は別 milestone 候補
+
+### Task （推定 7 task）
+
+- [x] PLAN.md M0.11.7 マイルストーン挿入（本タスク） <!-- id: m0.11.7-t1 status: done -->
+- [ ] SPEC.md §3.6.x PM Auto-Go Entry 章新設（M0.11.6 chapter の sibling、検知ロジック / 3 信頼レベル / `/loom-go` 位置付け codify） <!-- id: m0.11.7-t2 status: todo -->
+- [ ] agents/loom-pm.md spec phase 完了 hook 拡張（M0.11.6 改修と統合、context 評価ロジック + 3 信頼レベル分岐 + 確認 prompt template） <!-- id: m0.11.7-t3 status: todo -->
+- [ ] 検知ロジック codify: impl intent keyword list 確定（M0.11.6 keyword list と分離、impl 系語彙 10-15 個程度） <!-- id: m0.11.7-t4 status: todo -->
+- [ ] 確認 prompt template（高信頼 + 中信頼 3 択用、M0.11.6 template の流用設計） <!-- id: m0.11.7-t5 status: todo -->
+- [ ] tests/agents_test.sh 拡張（auto-go entry の 3 信頼レベル assertion / `/loom-go` override 動作 assertion） <!-- id: m0.11.7-t6 status: todo -->
+- [ ] tag m0.11.7-complete 設置 + retro 1 サイクルで false-positive rate 観察（process-lens 必須） <!-- id: m0.11.7-t7 status: todo -->
+
+**M0.11.7 完成基準**: `./tests/run_tests.sh` 全 PASS、spec phase 完了直後 + user impl intent → 1 問確認後 impl phase 突入動作、PLAN todo 残のみ + intent keyword 無し → 中信頼 path で 3 択分岐質問、新規 PJ + intent 無し → idle PM stay 動作、`/loom-go` 明示 invoke で常に impl phase 突入（override 動作）、`tag m0.11.7-complete` 設置、`m0`〜`m0.11.6-complete` 全保持。
+
+**M0.11.7 着手タイミング**: M0.11.6 完了後（agent prompt 層で連続改修、M0.11.6 の検知ロジック実装パターンを再利用してコスト削減）。M0.11.5 とは parallel 可（M0.11.5 = infra 層、M0.11.7 = agent prompt 層）、ただし M0.11.6 → M0.11.7 は **sequential 必須**（同 agent prompt file = `agents/loom-pm.md` 編集発生）。M0.X cleanup 系列、推定 5-7 task 規模、dispatch 戦略は t2/t3 sequential → t4/t5 parallel → t6/t7 sequential closure。
+
 ## Phase 2 entry criteria + carryover (retro 2026-05-05-001 由来)
 
 Phase 1 MVP の 3 段階 closure marker 全達成 (m5 = functional / m0.11.3 = verification / m0.11.4 = aesthetic) の後、Phase 2 entry 前に解決 / 整理すべき carryover を retro 2026-05-05-001 の 14 finding から集約。F-meta-003 (Phase 2 entry criteria 整備 gap) の structural action として本 section を新設。
@@ -470,11 +503,52 @@ Phase 1 MVP の 3 段階 closure marker 全達成 (m5 = functional / m0.11.3 = v
 ### Phase 2 entry sequence (推奨)
 
 1. Task tool 復旧確認 (F-proc-002 + F-meta-002 の (a) 判断) → 復旧不能なら (b) で SPEC 改訂 spec phase 起動
-2. **M0.11.5 Lazy Daemon Auto-Launch Implementation** + **M0.11.6 PM Auto-Spec Entry** を **parallel 完走** (ceremony reduction sibling pair、SPEC §3.2 + §3.6 整合性回復、Phase 1 closure cleanup の本丸)
+2. **Ceremony reduction trinity 完走**: M0.11.5 (Lazy Daemon Auto-Launch) + M0.11.6 (PM Auto-Spec Entry) を **parallel 完走** → M0.11.7 (`/loom-go` Auto-Entry) sequential 後続 (M0.11.6 と同 agent prompt file 編集のため)。SPEC §3.2 + §3.6 整合性回復、Phase 1 closure cleanup の本丸
 3. F-001 structural fix (F-pj-001) を Phase 2 1st impl task として dispatch
 4. PLAN.md / SPEC §3 に formal "Phase 2 entry checklist" 新設 (F-meta-003 の structural completion)
 5. REQ-045 smoke skill bind 明文化 (F-pj-002)
-6. Phase 2 milestone (M0.12 系列以降) entry
+6. Phase 2 milestone (M0.12 系列以降) entry — **Phase 2 candidate pool** (下記) を spec phase で優先順位再判定
+
+## Phase 2 candidate pool: UX refinement series (notebook、未 spec)
+
+「GUI + ハーネス が claude-loom の売り」のポジショニング強化を軸に、Phase 1 closure trinity (M0.11.5 / M0.11.6 / M0.11.7) の続きとして次層を notebook 形式で書き留め。**形式 spec 未着手、Phase 2 spec phase で優先順位再判定 + formal milestone 化判断**。Phase 1 closure を遅延させぬよう、本 pool は trinity 完走後の Phase 2 spec phase に持ち越し。
+
+### 候補リスト (★ priority)
+
+- **M0.11.8 候補: GUI からの dispatch trigger**（★★★、GUI 1st-class 化）
+  - **現状**: GUI は read-only viewer。すべての action は Claude Code chat 経由
+  - **改善**: Plan view → task 横「dispatch dev」button、milestone tag 検出時 toast「retro 起動？」+ button、Sessions view → 「status check」button、Retro view → finding accept/reject button (M0.11.12 と統合可)
+  - **仕組み**: GUI が daemon に POST → daemon が hooks 経由で Claude Code session に signal、または daemon が `claude -p` 直接 invoke
+  - **インパクト**: 「GUI + ハーネス売り」の中核を埋める。観測専用 GUI なら ceremony 削減効果半減
+  - **Phase 2 entry 1st task 候補に格上げ推奨**（Phase 2 全体テーマ立て直し効果）
+
+- **M0.11.9 候補: Plan View で task の inline 作成 / 編集 / 並び替え**（★、M3.1 自然拡張）
+  - **現状**: M3.1 で PLAN.md ↔ Plan View 双方向同期あり、view は read-mostly
+  - **改善**: GUI 上で task add / status toggle / drag-drop reorder / note 添付、ファイル即書き戻し
+  - **インパクト**: GUI が「作業面」になる、PM session で markdown 直編集と GUI の二重管理消える
+
+- **M0.11.10 候補: Live agent dispatch animation**（★★、claude-loom らしさ最大化）
+  - **現状**: dispatch 中の dev は静止 sprite、状態遷移は token meter 等のテキストのみ
+  - **改善**: dev dispatch → 部屋に入る → working motion → reviewer 招集 → 退室、を sprite アニメで表現
+  - **インパクト**: 「中央指令室」メタファーの臨場感、長時間 session の視覚 feedback、「動くのが見える」体験の本丸
+
+- **M0.11.11 候補: First-run onboarding wizard**（★★、公開後 adoption 直結）
+  - **現状**: install.sh + 手動 /loom-pm + lifecycle 検出 + 手動 mode 選択、初見 user は CLAUDE.md 読まな分からん
+  - **改善**: install.sh 完了時 GUI 自動起動 → wizard で「project はどこ？」「greenfield / 既存 adopt？」「coexistence mode？」→ project.json + project-prefs.json 自動生成
+  - **インパクト**: 公開後の adoption rate 直結、「touch しにくい」を構造的に潰す
+
+- **M0.11.12 候補: GUI 上で retro 結果可視化 + accept/reject button**（★、retro 体験改善）
+  - **現状**: retro outcome は markdown report、user は chat で 14 finding を 1 件ずつ承認
+  - **改善**: GUI Retro view で finding 一覧 → checkbox accept/reject → 一括 apply ボタン
+  - **インパクト**: retro が「面倒な確認 ceremony」から「視覚的に整理された決定 surface」に化ける
+  - **note**: M0.11.8 (GUI dispatch trigger) と統合実装可、優先順位再判定時に bundling 検討
+
+### 注意 / 判定軸
+
+- **罠**: 全候補を一気に走らすと Phase 1 closure が永遠に来ん → trinity (M0.11.5-7) で Phase 1 closure 確定、これら候補は **Phase 2 spec phase で再判定**
+- **暫定推奨優先順位**: ★★★ M0.11.8 → ★★ M0.11.10 / M0.11.11 → ★ M0.11.9 / M0.11.12
+- **判定軸**: 「GUI + ハーネス売り」テーマ強化貢献度 / 公開後の adoption 影響度 / 既存 milestone との overlap 度
+- **再評価タイミング**: Phase 2 spec phase 1st task として本 pool レビュー、formal milestone 番号付与判断
 
 ## マイルストーン M0.12: Coexistence Mode（既存 PJ 検出 + 機能 opt-in/opt-out）
 
