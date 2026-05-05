@@ -428,7 +428,7 @@ M0.11.3 で `loom-ui-smoke` skill 完成 + Phase 1 functional MVP 検証完了�
 ### Task （推定 8 task）
 
 - [x] PLAN.md M0.11.6 マイルストーン挿入（本タスク） <!-- id: m0.11.6-t1 status: done -->
-- [ ] SPEC.md §3.6.x PM Auto-Spec Entry 章新設（検知ロジック / 3 信頼レベル / `/loom-spec` 位置付け codify） <!-- id: m0.11.6-t2 status: todo -->
+- [x] SPEC.md §3.6.x PM Auto-Spec Entry 章新設（検知ロジック / 3 信頼レベル / `/loom-spec` 位置付け codify） <!-- id: m0.11.6-t2 status: done note: §3.6.8.9 として配置、15 assertion test 全 pass -->
 - [ ] agents/loom-pm.md session start hook 拡張（context 評価ロジック + 3 信頼レベル分岐 + 確認 prompt template） <!-- id: m0.11.6-t3 status: todo -->
 - [ ] 検知ロジック codify: intent keyword list 確定（15-25 個程度、保守的目安、AND 条件で高信頼判定） <!-- id: m0.11.6-t4 status: todo -->
 - [ ] 確認 prompt template（高信頼用）: 「○○ の spec phase に入ります、ええか？」型 + bypass option 提示 <!-- id: m0.11.6-t5 status: todo -->
