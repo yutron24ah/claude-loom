@@ -400,8 +400,8 @@ M0.11.3 で `loom-ui-smoke` skill 完成 + Phase 1 functional MVP 検証完了�
 - [x] commands/loom-{pm,spec,go,retro,status,worktree,mode}.md 7 種に lazy daemon trigger 配線（hooks/loom-launch-ui.sh invoke）<!-- id: m0.11.5-t5 status: done -->
 - [x] commands/loom.md 役割拡張: URL 表示 + clipboard コピー（macOS `pbcopy` / Linux `xclip` or `wl-copy` / Windows `clip`）<!-- id: m0.11.5-t6 status: done -->
 - [x] prefs schema: `<project>/.claude-loom/project-prefs.json` に `ui.auto_launch: boolean` field 追加（templates 含む、SPEC §6.9 schema 拡張）<!-- id: m0.11.5-t7 status: done -->
-- [ ] README.md / README.ja.md GUI 起動 section を auto-launch 反映に書き直し（"Phase 2 roadmap" 記述削除、M0.11.5 完了 marker 追記）<!-- id: m0.11.5-t8 status: todo -->
-- [ ] tests: hooks_test.sh 拡張（headless 検出 / cold-start-only open / `LOOM_NO_UI=1` skip assertion）+ tag m0.11.5-complete 設置 <!-- id: m0.11.5-t9 status: todo -->
+- [x] README.md / README.ja.md GUI 起動 section を auto-launch 反映に書き直し（"Phase 2 roadmap" 記述削除、M0.11.5 完了 marker 追記）<!-- id: m0.11.5-t8 status: done -->
+- [x] tests: hooks_test.sh 拡張（headless 検出 / cold-start-only open / `LOOM_NO_UI=1` skip assertion）+ tag m0.11.5-complete 設置 <!-- id: m0.11.5-t9 status: done note: literal hooks_test.sh ではなく t4 tests/loom_launch_ui_test.sh + t5 m0115_t5_lazy_trigger_test.sh + t8 m0115_t8_readme_autolaunch_test.sh で assertion 等価 coverage 充足、全 18 test pass -->
 
 **M0.11.5 完成基準**: `./tests/run_tests.sh` 全 PASS、`/loom-pm` 実行で daemon cold start + browser open 動作、既起動時は browser 再 open しない（idempotent）、headless 環境（`$SSH_CONNECTION` セット時）で URL terminal 出力 fallback、`LOOM_NO_UI=1` で強制 skip 動作、`/loom` で URL clipboard コピー成功、`project-prefs.json` の `ui.auto_launch: false` で auto-launch skip 確認、README が SPEC §3.2 と整合（"Phase 2 roadmap" 文言削除済）、`tag m0.11.5-complete` 設置、`m0`〜`m0.11.4-complete` 全保持。
 
