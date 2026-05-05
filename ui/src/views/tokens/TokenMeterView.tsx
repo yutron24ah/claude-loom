@@ -7,6 +7,9 @@
  * Delegates query/polling/state to useTokenUsage hook.
  * This component is a pure render layer (SPEC §3.6 SRP principle).
  *
+ * M0.11.4 Phase C t16: RPG style — rpg-frame wrapping, exp-bar for token
+ * usage visualization, rpg-title + rpg-label for header/labels.
+ *
  * Sparkline: self-contained SVG <rect> bars (GanttView SVG pattern reuse,
  * SPEC §3.6.9.3). Each bar height proportional to total tokens in that bucket.
  *
@@ -97,16 +100,25 @@ interface TokenCountProps {
   label: string;
   value: number;
   testId: string;
+  /** Total for exp-bar proportion calculation — token limit approximation. */
+  maxValue: number;
 }
 
-/** Single token count row (label + formatted number). */
-function TokenCount({ label, value, testId }: TokenCountProps): JSX.Element {
+/** Single token count row (label + formatted number + exp-bar). */
+function TokenCount({ label, value, testId, maxValue }: TokenCountProps): JSX.Element {
+  const pct = maxValue > 0 ? Math.min(100, (value / maxValue) * 100) : 0;
   return (
-    <div className="flex justify-between items-center font-mono text-fs-xs">
-      <span className="text-text-muted">{label}</span>
-      <span data-testid={testId} className="text-fg1 font-bold tabular-nums">
-        {value.toLocaleString()}
-      </span>
+    <div className="flex flex-col gap-[3px]">
+      <div className="flex justify-between items-center">
+        <span className="rpg-label">{label}</span>
+        <span data-testid={testId} className="rpg-label font-bold tabular-nums">
+          {value.toLocaleString()}
+        </span>
+      </div>
+      {/* exp-bar for visual proportion */}
+      <div className="exp-bar">
+        <i style={{ width: `${pct}%` }} />
+      </div>
     </div>
   );
 }
@@ -119,23 +131,24 @@ export function TokenMeterView(): JSX.Element {
   const { inputTokens, outputTokens, cacheTokens, series, isLoading, error } =
     useTokenUsage();
 
+  // WHY: max across all counts to scale exp-bars proportionally
+  const maxTokens = Math.max(1, inputTokens, outputTokens, cacheTokens);
+
   return (
     <div
       data-testid="token-meter-view"
-      className="bg-bg2 rounded-card p-sp-4 flex flex-col gap-sp-3 w-full max-w-sm"
+      className="rpg-frame flex flex-col gap-sp-3 w-full max-w-sm"
       onClick={(e) => e.stopPropagation()}
     >
       {/* Header */}
       <div className="flex items-center gap-sp-2">
-        <span className="text-fs-md font-bold text-fg1">Token Usage</span>
-        <span className="ml-auto text-fs-xs text-text-muted font-mono">
-          30 s
-        </span>
+        <span className="rpg-title">Token Usage</span>
+        <span className="rpg-label ml-auto">30 s</span>
       </div>
 
       {/* Loading state */}
       {isLoading && (
-        <div data-testid="token-meter-loading" className="text-fg2 text-fs-sm py-sp-2">
+        <div data-testid="token-meter-loading" className="rpg-label py-sp-2">
           読み込み中…
         </div>
       )}
@@ -148,22 +161,25 @@ export function TokenMeterView(): JSX.Element {
       )}
 
       {/* Token counts — shown regardless of loading/error so layout is stable */}
-      <div className="flex flex-col gap-sp-1">
+      <div className="flex flex-col gap-sp-2">
         {/* SPEC §3.6.10: labels reference TOKEN_TYPE constants */}
         <TokenCount
           label={TOKEN_TYPE.INPUT}
           value={inputTokens}
           testId="token-meter-input"
+          maxValue={maxTokens}
         />
         <TokenCount
           label={TOKEN_TYPE.OUTPUT}
           value={outputTokens}
           testId="token-meter-output"
+          maxValue={maxTokens}
         />
         <TokenCount
           label={TOKEN_TYPE.CACHE}
           value={cacheTokens}
           testId="token-meter-cache"
+          maxValue={maxTokens}
         />
       </div>
 

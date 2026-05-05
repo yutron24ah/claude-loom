@@ -83,3 +83,43 @@ describe('ConsistencyView — action buttons', () => {
     expect(buttons.length).toBeGreaterThanOrEqual(1);
   });
 });
+
+// M0.11.4 t14 — RPG design structure assertions
+describe('ConsistencyView — RPG design structure (M0.11.4 t14)', () => {
+  it('wraps view in rpg-frame element', () => {
+    const { container } = render(<ConsistencyView />);
+    const rpgFrame = container.querySelector('.rpg-frame');
+    expect(rpgFrame).toBeInTheDocument();
+  });
+
+  it('renders action buttons with btn-px class', () => {
+    const { container } = render(<ConsistencyView />);
+    const btnPxButtons = container.querySelectorAll('button.btn-px');
+    expect(btnPxButtons.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('renders severity chip elements with chip class', () => {
+    const { container } = render(<ConsistencyView />);
+    const chips = container.querySelectorAll('.chip');
+    expect(chips.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('renders status dot elements with dot class', () => {
+    const { container } = render(<ConsistencyView />);
+    const dots = container.querySelectorAll('.dot');
+    expect(dots.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('renders at least one element with rpg-label class', () => {
+    const { container } = render(<ConsistencyView />);
+    const labels = container.querySelectorAll('.rpg-label');
+    expect(labels.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('renders Acknowledge action button with btn-px class', () => {
+    const { container } = render(<ConsistencyView />);
+    const ackButton = container.querySelector('[data-testid="action-acknowledge"]');
+    expect(ackButton).not.toBeNull();
+    expect(ackButton?.className).toContain('btn-px');
+  });
+});

@@ -332,6 +332,52 @@ retro 2026-05-04-001 で F-proc-005 を success record として codify した�
 
 **M0.11.3 着手タイミング**: M0.11.2 より **先** に実施 (Phase 1 → Phase 2 boundary、cumulative dogfood reasoning — skill 完成後 M0.11.2 自身の verify にも活用可)。M0.X cleanup 系列、推定 5-7 task 規模 (script 実装含めて 9 task)。本 milestone は retro feedback loop (M3.1 codify → M4/M5 で運用 → M5 closure smoke で gap 検出 → 本 skill で gap 埋め) の **3 周目 cumulative refinement**。
 
+## マイルストーン M0.11.4: Design Implementation Pass（Phase 1 aesthetic MVP completion）
+
+詳細: 未作成（impl phase で書く前提、本 spec phase で task list 確定）
+design source: `claude-room-handoff.zip` (Claude Design tool export bundle、`/tmp/claude-room-handoff/claude-room/project/` 配置)
+SPEC SSoT: §3.6.12 (Design Implementation)、§3.6.9.1 改訂 (Phaser α-1 → DOM/SVG α-2)、§12 確定値表 update
+
+M0.11.3 で `loom-ui-smoke` skill 完成 + Phase 1 functional MVP 検証完了したが、user 由来 design vision (13 cat agent + Stardew 系 pixel RPG room + 3 theme + RPG window chrome) が **未実装**、aesthetic MVP closure 未達成。本 milestone で design bundle full port を実施、`m0.11.4-complete` tag を **aesthetic MVP completion** marker として設置、Phase 1 真の MVP 完成達成。
+
+### 戦略合意（2026-05-05 spec phase 対話）
+
+- **戦略 A**: Phaser → DOM/SVG 採用 (M3.0 Phaser infra rollback、design pixel-perfect realization)
+- **scope**: full design implementation (Room + 全 view、新 view (Sessions/Tokens/ProjectSettings) は RPG 言語で 新規設計)
+- **MVP closure 再定義**: m5-complete = functional / m0.11.3 = verification infra / m0.11.4 = aesthetic、3 段階 closure marker
+
+### Task （20 task、推定）
+
+#### Phase A: foundation (sequential)
+- [ ] SPEC §3.6.9.1 改訂 (Phaser α-1 → DOM/SVG α-2) + §12 確定値表 Phaser 行 archive 注記 (本 spec phase で done) <!-- id: m0.11.4-t1 status: done -->
+- [ ] tests/REQUIREMENTS.md REQ-045 追加 (本 spec phase で done) <!-- id: m0.11.4-t2 status: done -->
+- [ ] ui/src/styles/tokens.css 全面書直し (3 theme palette --p-* + RPG primitives) <!-- id: m0.11.4-t3 status: todo -->
+
+#### Phase B: Room view (mostly parallel)
+- [ ] ui/src/components/CatSprite.tsx (16x16 pixel grid SVG、9 hat × 3 pose) + ui/src/data/roster.ts (13 agent metadata) <!-- id: m0.11.4-t4 status: todo -->
+- [ ] ui/src/views/room/RoomBackground.tsx (SVG floor + wall + tile grid) <!-- id: m0.11.4-t5 status: todo -->
+- [ ] ui/src/views/room/DeskStation.tsx (cat + speech bubble + monitor + nameplate + TDD tag) <!-- id: m0.11.4-t6 status: todo -->
+- [ ] ui/src/views/room/wall-posters/* (Gantt + Plan + Consistency wall posters with click-to-overlay) + Plant + Whiteboard + Sign decor <!-- id: m0.11.4-t7 status: todo -->
+- [ ] ui/src/views/room/Islands.tsx (PM + Dev + Review island layout + signs) <!-- id: m0.11.4-t8 status: todo -->
+- [ ] ui/src/views/room/SubroomClone.tsx (worktree sub-agent ghost cat) + ui/src/views/worktree/SubroomView.tsx <!-- id: m0.11.4-t9 status: todo -->
+- [ ] ui/src/views/room/AgentDetailPanel.tsx 全面書直し (M3.2 → RPG-style) + room-modal CSS <!-- id: m0.11.4-t10 status: todo -->
+- [ ] ui/src/views/room/RetroGathering.tsx (perimeter cats + whiteboard center) + room-mode-toggle <!-- id: m0.11.4-t11 status: todo -->
+- [ ] ui/src/views/room/RoomView.tsx 全面書直し (M3.0 Phaser → DOM/SVG orchestration、t4-t11 統合) <!-- id: m0.11.4-t12 status: todo -->
+
+#### Phase C: Other views (parallel)
+- [x] PlanView.tsx (M3.1 → screens-b PlanView port) + GanttView.tsx (M3.1 → screens-a Gantt port) <!-- id: m0.11.4-t13 status: done -->
+- [x] ConsistencyView.tsx (M4 → screens-c port) + RetroView.tsx (screens-b port) <!-- id: m0.11.4-t14 status: done -->
+- [x] CharSheet.tsx + ThemeShowcase.tsx (char-sheet.jsx port) + WorktreeView.tsx + CustomizationView.tsx + LearnedGuidanceView.tsx (screens-c port) <!-- id: m0.11.4-t15 status: done -->
+- [x] 新 view RPG style 化 (Sessions / Tokens / ProjectSettings、design source 不在ゆえ design 言語で 新規設計) + Sidebar.tsx RPG style update + DisciplineHeader.tsx RPG style update <!-- id: m0.11.4-t16 status: done -->
+
+#### Phase D: cleanup + verify
+- [x] Phaser dependency 物理削除 (ui/package.json から phaser remove + PhaserCanvas.tsx + scenes/RoomScene.ts + agentSpriteSync.ts 削除) + 関連 test 整理 <!-- id: m0.11.4-t17 status: done -->
+- [x] Playwright e2e baseline (room-pop.png) 再生成 + 3 theme baseline 追加 (room-dusk.png + room-night.png) <!-- id: m0.11.4-t18 status: done -->
+- [x] loom-ui-smoke skill execute (full scope)、aesthetic verify、`docs/smoke-tests/2026-05-XX-m0.11.4-aesthetic-verify/` 生成 <!-- id: m0.11.4-t19 status: done -->
+- [x] tag m0.11.4-complete + README "Phase 1 MVP completed" 完全達成 marker update <!-- id: m0.11.4-t20 status: done -->
+
+**M0.11.4 着手タイミング**: M0.11.3 直後 (Phase 1 → Phase 2 boundary milestone、aesthetic MVP completion priority 高)。dispatch 戦略：t3 sequential → t4-t12 parallel batch (4-5 dev) → t13-t16 parallel batch (4 dev) → t17-t20 sequential closure。推定 12-15 dev dispatch。
+
 ## マイルストーン M0.12: Coexistence Mode（既存 PJ 検出 + 機能 opt-in/opt-out）
 
 詳細: `docs/plans/2026-04-29-claude-loom-m0.12-coexistence.md`

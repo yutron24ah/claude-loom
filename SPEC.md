@@ -528,6 +528,80 @@ UI 関連 task / milestone closure verification の候補として `loom-ui-smok
 他 verification approach (Playwright e2e baseline / 手動 browser test) も agent 自律判断で可。
 ```
 
+### 3.6.12 Design Implementation（M0.11.4 から、Phase 1 aesthetic MVP completion）
+
+#### 3.6.12.1 背景
+
+M0.11.3 で `loom-ui-smoke` skill 完成 + Phase 1 functional MVP 検証完了したが、実機 smoke で「automated test green ≠ design vision 達成」を user が指摘：13 cat agent + Stardew 系 pixel RPG room + 3 theme + RPG window chrome の design intent (PIXEL_ART_HANDOFF.md / SPEC §12 visual 方向性) が **placeholder 円 dot のまま** で aesthetic MVP closure 未達成。
+
+design source: `claude-room-handoff.zip` (Claude Design tool export bundle、`/tmp/claude-room-handoff/claude-room/project/` 配置、index.html + 7 jsx component file + tokens.css + styles.css + 6 PNG asset)。本 milestone (M0.11.4) で full design implementation pass を実施、aesthetic MVP completion を達成。
+
+#### 3.6.12.2 戦略 A 確定: Phaser → DOM/SVG 採用
+
+design は **all SVG + DOM + CSS** で構築 (Phaser 不使用)。M3.0 の Phaser 4 React mount infrastructure (§3.6.9.1 α-1) は **本 milestone で rollback**:
+
+- **理由**: design CatSprite は `<svg viewBox="0 0 16 16">` + 32 個 `<rect>` で pixel grid 構築、Phaser WebGL 描画では design pixel-perfect 実現困難
+- **trade-off**: M3.0 投資 (3 task = Phaser mount + tile + sprite state animation) は learning として archive、production code から Phaser 依存削除
+- **Phase 2 evolution**: 将来 sprite 動的 animation 必要時に **要素単位** で Phaser 再導入余地、ただし Room view 全体じゃなく特定 component (例: 歩く猫 bar) のみ対象
+
+#### 3.6.12.3 SPEC §3.6.9.1 改訂 (Phaser α-1 → DOM/SVG α-2)
+
+旧: 「Phaser 4 React 内 mount = 自前 `useEffect` + `useRef`」
+新: 「**DOM/SVG pixel-perfect rendering = `<svg viewBox>` + `<rect shapeRendering="crispEdges">` + `image-rendering: pixelated` CSS**、library 依存ゼロ、design pixel-perfect、HMR 単純」
+
+§12 確定値表の Phaser 行は **「M3.0 で Phaser 4 試行 → M0.11.4 で DOM/SVG 採用 (rollback)」** と注記、archive value として履歴保存。
+
+#### 3.6.12.4 Component port matrix (15 view + 共通 components)
+
+| design source | port target | scope |
+|---|---|---|
+| `cat.jsx` CatSprite | `ui/src/components/CatSprite.tsx` | 16x16 pixel grid SVG、9 hat × 3 pose × 13 agent パターン |
+| `cat.jsx` ROSTER | `ui/src/data/roster.ts` | 13 agent metadata (id / role / jp / name / breed / quote / hat / fur / cheek / group) |
+| `room.jsx` RoomView | `ui/src/views/room/RoomView.tsx` (M3.0 → 全面書直し) | RoomBackground + DeskStation + posters + islands + retro mode |
+| `room.jsx` SubroomClone | `ui/src/views/room/SubroomClone.tsx` | worktree sub-agent ghost cat |
+| `screens-a.jsx` DisciplineHeader | `ui/src/components/DisciplineHeader.tsx` (拡張) | RPG-style header |
+| `screens-a.jsx` AgentDetailPanel | `ui/src/views/room/AgentDetailPanel.tsx` (M3.2 → 全面書直し) | RPG-style overlay |
+| `screens-a.jsx` Gantt | `ui/src/views/gantt/GanttView.tsx` (M3.1 → 全面書直し) | 歩く猫 bar の Gantt |
+| `screens-b.jsx` PlanView | `ui/src/views/plan/PlanView.tsx` (M3.1 → 全面書直し) | RPG-style plan board |
+| `screens-b.jsx` RetroView | `ui/src/views/retro/RetroView.tsx` (M2 → 全面書直し) | 4 lens findings + action plan |
+| `screens-b.jsx` WorktreeView | `ui/src/views/worktree/WorktreeView.tsx` | worktree list RPG-style |
+| `screens-c.jsx` ConsistencyView | `ui/src/views/consistency/ConsistencyView.tsx` (M4 → 全面書直し) | finding × 4 アクション |
+| `screens-c.jsx` CustomizationView | `ui/src/views/customization/CustomizationView.tsx` | model + personality 設定 RPG-style |
+| `screens-c.jsx` LearnedGuidanceView | `ui/src/views/guidance/LearnedGuidanceView.tsx` | guidance 監査 RPG-style |
+| `char-sheet.jsx` CharSheet | `ui/src/views/char-sheet/CharSheet.tsx` | 13 agent character sheet |
+| `char-sheet.jsx` ThemeShowcase | `ui/src/views/char-sheet/ThemeShowcase.tsx` | 3 theme palette 紹介 |
+| `subroom.jsx` SubroomView | `ui/src/views/worktree/SubroomView.tsx` | sub-agent 詳細 modal |
+
+新 view (M3.2 t1 / M5 t3 / M5 t4 由来、design source 不在) は本 milestone で **RPG style 言語に合わせて 新規設計**:
+
+- `ui/src/views/session-list/SessionListView.tsx` (M3.2 t1) — RPG-style session list
+- `ui/src/views/tokens/TokenMeterView.tsx` (M5 t4) — RPG-style token meter
+- `ui/src/views/project-settings/ProjectSettingsView.tsx` (M5 t3) — RPG-style settings
+
+#### 3.6.12.5 Token + style primitives port
+
+`ui/src/styles/tokens.css` を **design tokens.css + styles.css** の primitives で書き直し:
+
+- 3 theme palette: `:root` (default = pop / cozy noon) + `.theme-dusk` + `.theme-night`、各 theme 約 25 個 `--p-*` variable (bg-sky / bg-floor / wall / wood / cat-base / cat-line / cat-cheek / screen / screen-glow / paper / tint / accent / success / error / warn / shadow / 等)
+- RPG primitives: `.rpg-frame`, `.rpg-frame-tight`, `.rpg-title`, `.rpg-label`, `.dot`, `.chip`, `.exp-bar`, `.btn-px` (5 variant)
+- Room primitives: `.room`, `.room__bg`, `.room-window`, `.room-sign` (5 variant), `.room-poster` (3 variant + sub-elements), `.room-island` (3 variant), `.room-floor-cushion`, `.room-mode-toggle`, `.room-modal`
+- Subroom primitives: `.subroom-clone` + sub-elements, `.subroom-portal`
+- 既存 Tailwind 設定 (`tailwind.config.ts`) は keep、新 RPG style primitive は **CSS variable 直参照** で coexist
+
+#### 3.6.12.6 MVP closure 再定義
+
+| tag | 意味 | 状態 |
+|---|---|---|
+| `m5-complete` | **functional MVP completion** (機能完成) | 設置済 (2026-05-04) |
+| `m0.11.3-complete` | **verification infra completion** (UI smoke skill 整備) | 設置済 (2026-05-05) |
+| `m0.11.4-complete` (新) | **aesthetic MVP completion** (design vision 達成、Phase 1 真の MVP 完成) | M0.11.4 closure 時 |
+
+`README.md` 「Phase 1 MVP completed」記述は m0.11.4 完成時に **完全達成** marker として update、aesthetic + functional の両輪 closure を user に明示。
+
+#### 3.6.12.7 Phaser dependency removal
+
+`ui/package.json` から `phaser` (^4.1.0) dependency 削除、関連 file (`ui/src/views/room/PhaserCanvas.tsx`、`ui/src/views/room/scenes/RoomScene.ts`、`ui/src/views/room/agentSpriteSync.ts`) を **物理削除** (SPEC §3.9.x P4 理想形「symptomatic patch 構造解決後の rollback」と同 pattern、Phaser infra rollback)。Playwright e2e baseline (`ui/e2e/__screenshots__/room-baseline.spec.ts-snapshots/room-pop.png`) は新 design 実装後に再生成。
+
 ### 3.7 プロジェクトライフサイクルと adopt 戦略
 
 claude-loom は **新規プロジェクトの立ち上げ** にも **既存プロジェクトの取り込み（adopt）** にも対応する。両者は明確に区別され、PM が異なるフローで処理する。
@@ -2020,3 +2094,4 @@ UI 開発時の test 戦略を **2 層化**：
 - 2026-05-02: §3.6.9.7 追加 + §3.6.9.6 表 M3.1 行更新 (task 4→5、scope に visual regression infra 追記) + §12 確定値表に "Visual regression check (M3.1 から)" 行追加（res-001 確定 = Playwright e2e、retro 2026-05-02-002 由来、M3.1 spec phase 解決）
 - 2026-05-03: §3.6.10 新設「SSoT cross-check rule」+ Coding 原則「文字列リテラル回避、enum/定数経由比較」codify（retro 2026-05-03-001 pj-002 由来、M3.1 t3 で偶然発見した SSoT enum drift bug を構造 pattern として spec 化、user feedback memory 「avoid string literals, prefer typed constants/enums」を SSoT 昇格）
 - 2026-05-05: §3.6.11 新設「UI Smoke Test Skill」+ §10.4 新設「Browser-interactive verification layer」（retro 2026-05-04-001 F-proc-005 拡張、Phase 1 MVP main 統合直後 4 件 critical bug 発覚を構造的に塞ぐ skill 設計、user feedback memory「UI smoke test capability」を SSoT 昇格、M0.11.3 milestone で実装）
+- 2026-05-05: §3.6.12 新設「Design Implementation」+ §3.6.9.1 改訂 (Phaser α-1 → DOM/SVG α-2 strategy A 採用、claude-room-handoff.zip design bundle 受領、Phase 1 aesthetic MVP completion を M0.11.4 milestone で実装、Phaser dependency rollback)

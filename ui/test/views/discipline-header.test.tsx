@@ -89,3 +89,33 @@ describe('DisciplineHeader — mock metric values', () => {
     expect(header.querySelector('[data-testid="metric-verdict"]')).toBeInTheDocument();
   });
 });
+
+// ---------------------------------------------------------------------------
+// RPG style assertions (M0.11.4 Phase C t16)
+// ---------------------------------------------------------------------------
+
+describe('DisciplineHeader — RPG style', () => {
+  it('renders header wrapped in rpg-frame class', () => {
+    const { container } = render(<DisciplineHeader />);
+    const frame = container.querySelector('.rpg-frame');
+    expect(frame).toBeInTheDocument();
+  });
+
+  it('renders brand title with rpg-title class', () => {
+    const { container } = render(<DisciplineHeader />);
+    const title = container.querySelector('.rpg-title');
+    expect(title).toBeInTheDocument();
+  });
+
+  it('renders discipline label chips with chip class', () => {
+    const { container } = render(<DisciplineHeader />);
+    const chips = container.querySelectorAll('.chip');
+    expect(chips.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('renders exp-bar elements for metric gauges', () => {
+    const { container } = render(<DisciplineHeader />);
+    const bars = container.querySelectorAll('.exp-bar');
+    expect(bars.length).toBeGreaterThanOrEqual(1);
+  });
+});

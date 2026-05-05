@@ -78,3 +78,23 @@ describe('LearnedGuidanceView — agent identity', () => {
     expect(catBadges.length).toBeGreaterThanOrEqual(5);
   });
 });
+
+describe('LearnedGuidanceView — RPG design tokens (M0.11.4 t15)', () => {
+  it('wraps outer container in rpg-frame class', () => {
+    render(<LearnedGuidanceView />);
+    const frame = document.querySelector('.rpg-frame');
+    expect(frame).toBeTruthy();
+  });
+
+  it('renders guidance title with rpg-title class', () => {
+    render(<LearnedGuidanceView />);
+    const title = document.querySelector('.rpg-title');
+    expect(title).toBeTruthy();
+  });
+
+  it('renders chip elements for active count and scope display', () => {
+    render(<LearnedGuidanceView />);
+    const chips = document.querySelectorAll('.chip');
+    expect(chips.length).toBeGreaterThanOrEqual(1);
+  });
+});

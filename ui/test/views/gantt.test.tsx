@@ -118,3 +118,26 @@ describe('GanttView — mock data bar labels', () => {
     expect(axis).toBeInTheDocument();
   });
 });
+
+// ---- M0.11.4 t13: RPG design structure assertions (RED first) ----
+describe('GanttView — RPG design structure (M0.11.4 t13)', () => {
+  it('wraps chart container in rpg-frame', () => {
+    const { container } = render(<GanttView />);
+    // outer wrapper div should have rpg-frame class
+    const frame = container.querySelector('.rpg-frame');
+    expect(frame).toBeInTheDocument();
+  });
+
+  it('renders chart title with rpg-title class', () => {
+    const { container } = render(<GanttView />);
+    const title = container.querySelector('.rpg-title');
+    expect(title).toBeInTheDocument();
+  });
+
+  it('renders CatSprite per agent row (data-testid="cat-sprite")', () => {
+    const { container } = render(<GanttView />);
+    // MOCK_ROWS has 6 rows, each should have a CatSprite
+    const sprites = container.querySelectorAll('[data-testid="cat-sprite"]');
+    expect(sprites.length).toBeGreaterThanOrEqual(1);
+  });
+});

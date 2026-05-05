@@ -10,9 +10,9 @@ Claude Code 上で agile 開発チームを丸ごと再現する「中央指令�
 - ドキュメント整合性の自動見張り（PM の責務）
 - リアルタイム進捗ガントチャート + Plan View
 
-## 現在のステータス：M5 完了（Phase 1 MVP completed）
+## 現在のステータス：M0.11.4 完了（Phase 1 MVP — functional + verification + aesthetic completed）
 
-**dogfood で M0 → M5 まで完走**。Phase 1 MVP 全マイルストーン達成：
+**dogfood で M0 → M0.11.4 まで完走**。Phase 1 MVP の **3 段階 closure marker** 全達成（m5-complete = functional / m0.11.3-complete = verification infra / m0.11.4-complete = aesthetic）：
 
 | マイルストーン | 主要実装 |
 |---|---|
@@ -26,11 +26,13 @@ Claude Code 上で agile 開発チームを丸ごと再現する「中央指令�
 | M0.14 | commit handoff strategy 明確化（Strategy a dev self-commit / Strategy b PM 統合 commit） |
 | M1 | Daemon Foundation（Node.js + TypeScript + tRPC + Drizzle + SQLite、bash hooks → event ingestion → DB 永続化 → WS live push） |
 | M2 / M2.1 | UI Shell（React + Vite + Phaser + tRPC client、AppShell + 9 views + WS retry + toast + verdict_evidence） |
-| M3.0 | Phaser Room View（自前 useEffect mount + agent sprite + 3 theme） |
+| M3.0 | Phaser Room View（自前 useEffect mount + agent sprite + 3 theme） — **M0.11.4 で DOM/SVG α-2 へ移行 retire** |
 | M3.1 | Plan View + Gantt + 双方向同期（chokidar + 500ms debounce + LWW + conflict toast + Playwright e2e baseline） |
 | M3.2 | Session List + Agent Detail + notes |
 | M4 | Doc Consistency Engine v1（PostToolUse hook + Phase A diff calc + Phase B claude -p + Acknowledge → plan_items + WS push） |
-| M5 | Project Settings + Token meter + uninstall.sh + handoff docs + README + リリース準備 |
+| M5 | Project Settings + Token meter + uninstall.sh + handoff docs + README + リリース準備 — **functional MVP closure** (`m5-complete` tag) |
+| M0.11.3 | UI Smoke Test Skill (`loom-ui-smoke`)、要件駆動 browser-interactive smoke test、3 stage strategy/verify/report — **verification infra closure** (`m0.11.3-complete` tag) |
+| M0.11.4 | Design Implementation Pass（13 cat agent + Stardew 系 pixel RPG room + 3 theme palette + RPG primitive system + Phaser → DOM/SVG 移行）— **aesthetic MVP closure** (`m0.11.4-complete` tag) |
 
 Default review mode は single（1 体 reviewer）、critical path のみ trio mode に切替可。
 

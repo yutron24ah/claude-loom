@@ -1,6 +1,7 @@
 /**
- * CharSheet TDD tests — Red phase (Task 9 Subagent A)
- * WHY: verify character sheet renders all 13 agents with names.
+ * CharSheet TDD tests — Red phase (Task 9 Subagent A) + M0.11.4 t15 RPG style
+ * WHY: verify character sheet renders all 13 agents with names,
+ * and that RPG design tokens (rpg-frame, rpg-title, chip) are applied.
  */
 import { describe, it, expect, afterEach } from 'vitest';
 import { render, screen, cleanup } from '@testing-library/react';
@@ -42,5 +43,26 @@ describe('CharSheet — 13 agents visible', () => {
     expect(screen.getByText('CORE')).toBeInTheDocument();
     expect(screen.getByText('REVIEWERS')).toBeInTheDocument();
     expect(screen.getByText('RETRO BOARD')).toBeInTheDocument();
+  });
+});
+
+describe('CharSheet — RPG design tokens (M0.11.4 t15)', () => {
+  it('wraps the outer container in rpg-frame class', () => {
+    render(<CharSheet />);
+    const frame = document.querySelector('.rpg-frame');
+    expect(frame).toBeTruthy();
+  });
+
+  it('renders the sheet title with rpg-title class', () => {
+    render(<CharSheet />);
+    const title = document.querySelector('.rpg-title');
+    expect(title).toBeTruthy();
+    expect(title?.textContent).toMatch(/13 agent/);
+  });
+
+  it('renders CatSprite for each agent card (data-testid=cat-sprite)', () => {
+    render(<CharSheet />);
+    const sprites = screen.getAllByTestId('cat-sprite');
+    expect(sprites.length).toBeGreaterThanOrEqual(13);
   });
 });

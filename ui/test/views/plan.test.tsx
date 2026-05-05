@@ -104,6 +104,42 @@ describe('PlanView — basic render', () => {
   });
 });
 
+// ---- M0.11.4 t13: design structure assertions (RED first) ----
+describe('PlanView — RPG design structure (M0.11.4 t13)', () => {
+  it('wraps short-term pane in rpg-frame', () => {
+    render(<PlanView />);
+    const section = screen.getByTestId('plan-short-term');
+    expect(section.classList.contains('rpg-frame')).toBe(true);
+  });
+
+  it('wraps long-term pane in rpg-frame', () => {
+    render(<PlanView />);
+    const section = screen.getByTestId('plan-long-term');
+    expect(section.classList.contains('rpg-frame')).toBe(true);
+  });
+
+  it('renders short-term title with rpg-title class', () => {
+    const { container } = render(<PlanView />);
+    const shortTermSection = container.querySelector('[data-testid="plan-short-term"]');
+    const title = shortTermSection?.querySelector('.rpg-title');
+    expect(title).toBeInTheDocument();
+  });
+
+  it('renders long-term title with rpg-title class', () => {
+    const { container } = render(<PlanView />);
+    const longTermSection = container.querySelector('[data-testid="plan-long-term"]');
+    const title = longTermSection?.querySelector('.rpg-title');
+    expect(title).toBeInTheDocument();
+  });
+
+  it('renders "+ 追加" button with btn-px class', () => {
+    const { container } = render(<PlanView />);
+    const btn = container.querySelector('button.btn-px');
+    expect(btn).toBeInTheDocument();
+    expect(btn?.textContent).toContain('+ 追加');
+  });
+});
+
 describe('PlanView — short-term todos (via useTodoWrite mock)', () => {
   it('renders todo items from useTodoWrite hook', () => {
     const { container } = render(<PlanView />);

@@ -51,3 +51,23 @@ describe('WorktreeView — status display', () => {
     expect(lockedBadges.length).toBeGreaterThanOrEqual(1);
   });
 });
+
+describe('WorktreeView — RPG design tokens (M0.11.4 t15)', () => {
+  it('wraps outer container in rpg-frame class', () => {
+    render(<WorktreeView />);
+    const frame = document.querySelector('.rpg-frame');
+    expect(frame).toBeTruthy();
+  });
+
+  it('renders worktree title with rpg-title class', () => {
+    render(<WorktreeView />);
+    const title = document.querySelector('.rpg-title');
+    expect(title).toBeTruthy();
+  });
+
+  it('renders chip elements for agent/status display', () => {
+    render(<WorktreeView />);
+    const chips = document.querySelectorAll('.chip');
+    expect(chips.length).toBeGreaterThanOrEqual(1);
+  });
+});

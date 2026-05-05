@@ -19,6 +19,7 @@
 import { useNavigate } from 'react-router-dom';
 import { useGanttData } from '../../live/useGanttData';
 import type { GanttRow, GanttBar } from '../../live/useGanttData';
+import { CatSprite } from '../../components/CatSprite';
 
 // ---------------------------------------------------------------------------
 // Layout constants
@@ -253,7 +254,8 @@ export function GanttView(): JSX.Element {
     return (
       <div
         data-testid="gantt-loading"
-        className="bg-bg2 border border-border rounded-card p-sp-4 text-fg2 text-fs-sm"
+        className="rpg-frame pixel text-fg2 text-fs-sm"
+        style={{ padding: 16 }}
       >
         読み込み中…
       </div>
@@ -265,8 +267,8 @@ export function GanttView(): JSX.Element {
     return (
       <div
         data-testid="gantt-error"
-        className="bg-bg2 border border-border rounded-card p-sp-4 text-fs-sm"
-        style={{ color: 'rgb(var(--error))' }}
+        className="rpg-frame pixel text-fs-sm"
+        style={{ padding: 16, color: 'var(--p-error)' }}
       >
         接続エラー
       </div>
@@ -281,14 +283,29 @@ export function GanttView(): JSX.Element {
   const SVG_H = HEADER_H + rows.length * ROW_HEIGHT + 4;
 
   return (
-    <div className="bg-bg2 border border-border rounded-card p-sp-4 font-sans">
-      {/* Chart title */}
-      <h2
-        className="font-bold text-fs-sm tracking-wide mb-sp-2"
-        style={{ color: 'rgb(var(--fg1))' }}
-      >
-        進捗ガント — 直近 1 時間
-      </h2>
+    <div className="rpg-frame pixel" style={{ padding: 16 }}>
+      {/* Chart title + zoom chips */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+        <h2 className="rpg-title">
+          進捗ガント — 直近 1 時間
+        </h2>
+        <div style={{ display: 'flex', gap: 4 }}>
+          {(['30m', '1h', '4h', 'all'] as const).map((z, i) => (
+            <span
+              key={z}
+              className="chip"
+              style={{ background: i === 1 ? 'var(--p-accent)' : undefined, color: i === 1 ? 'white' : undefined }}
+            >
+              {z}
+            </span>
+          ))}
+        </div>
+      </div>
+
+      {/* Cat sprite strip — one per agent row (RPG design source §screens-a.jsx) */}
+      <div style={{ display: 'flex', paddingLeft: LABEL_WIDTH, gap: 0, marginBottom: 2 }}>
+        {/* spacer row — cats are positioned in the rows below */}
+      </div>
 
       {/* SVG chart */}
       <svg
@@ -304,7 +321,7 @@ export function GanttView(): JSX.Element {
         {/* Time axis header */}
         <TimeAxis trackW={TRACK_W} y={0} />
 
-        {/* Agent rows */}
+        {/* Agent rows — each row includes cat sprite via foreignObject */}
         {rows.map((row, idx) => (
           <AgentRow
             key={row.agentId}
@@ -325,6 +342,45 @@ export function GanttView(): JSX.Element {
           strokeWidth={2}
         />
       </svg>
+
+      {/* CatSprite legend — per-row cat visible in label column
+          WHY: CatSprites use DOM SVG (not foreignObject) for reliable rendering.
+          Positioned as a separate overlaid strip aligned with SVG rows. */}
+      <div
+        style={{
+          position: 'relative',
+          marginTop: -(SVG_H),
+          height: SVG_H,
+          pointerEvents: 'none',
+        }}
+      >
+        {rows.map((row, idx) => {
+          const rowY = HEADER_H + idx * ROW_HEIGHT;
+          return (
+            <div
+              key={row.agentId}
+              data-testid="cat-sprite"
+              style={{
+                position: 'absolute',
+                top: rowY + (ROW_HEIGHT - 28) / 2,
+                left: 4,
+                width: 28,
+                height: 28,
+              }}
+            >
+              <CatSprite size={28} pose="sit" />
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Status legend */}
+      <div style={{ marginTop: 10, display: 'flex', gap: 10, fontSize: 9, color: 'var(--p-text-muted)' }}>
+        <span><span className="dot busy" /> busy</span>
+        <span><span className="dot review" /> review</span>
+        <span><span className="dot tdd" /> TDD red</span>
+        <span><span className="dot fail" /> failed</span>
+      </div>
     </div>
   );
 }

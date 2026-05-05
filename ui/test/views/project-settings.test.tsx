@@ -318,3 +318,33 @@ describe('ProjectSettingsView — enabled_features', () => {
     }
   });
 });
+
+// ---------------------------------------------------------------------------
+// RPG style assertions (M0.11.4 Phase C t16)
+// ---------------------------------------------------------------------------
+
+describe('ProjectSettingsView — RPG style', () => {
+  it('wraps outer container in rpg-frame', () => {
+    const { container } = render(<ProjectSettingsView />);
+    const frame = container.querySelector('.rpg-frame');
+    expect(frame).toBeInTheDocument();
+  });
+
+  it('renders section titles with rpg-title class', () => {
+    const { container } = render(<ProjectSettingsView />);
+    const titles = container.querySelectorAll('.rpg-title');
+    expect(titles.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('renders save and reset buttons with btn-px class', () => {
+    const { container } = render(<ProjectSettingsView />);
+    const buttons = container.querySelectorAll('.btn-px');
+    expect(buttons.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('renders field labels with rpg-label class', () => {
+    const { container } = render(<ProjectSettingsView />);
+    const labels = container.querySelectorAll('.rpg-label');
+    expect(labels.length).toBeGreaterThanOrEqual(1);
+  });
+});
