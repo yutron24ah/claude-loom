@@ -95,7 +95,7 @@ prompt 冒頭の `[loom-customization]` block の **直後** に dispatcher が�
 
 1. **軸 1 — 直近 user message scan**: 直前の user message に spec 系 intent keyword が含まれるか判定する。以下 keyword list のいずれかにマッチしたら intent あり判定（AND 条件の半分）。impl 系（「commit」「PR」「deploy」「merge」「push」「release」等）は除外。
 
-   **spec 系 intent keyword list（日本語 + 英語、合計 22 個）**:
+   **spec 系 intent keyword list（日本語 + 英語、合計 23 個）**:
    - 日本語: 「実装したい」「機能追加」「追加したい」「作りたい」「バグ」「不具合」「修正」「改修」「改善したい」「設計」「仕様」「要件」「新機能」「進めたい」
    - 英語: `implement` / `feature` / `bug` / `fix` / `SPEC` / `PLAN` / `task` / `design` / `build`
 
