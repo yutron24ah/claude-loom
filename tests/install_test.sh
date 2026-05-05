@@ -119,4 +119,34 @@ if command -v jq >/dev/null 2>&1; then
   fi
 fi
 
+# ----- REQ-046: daemon.js symlink bootstrap (M0.11.5 hotfix) -----
+# install.sh は <project>/daemon/dist/index.js を ~/.claude-loom/daemon.js に symlink すべき
+# (loom-launch-ui.sh の DAEMON_BIN=$HOME/.claude-loom/daemon.js 参照を満たす)
+# fresh sandbox + LOOM_HOME 上書きで test 独立性確保
+fresh_sandbox3=$(mktemp -d)
+fresh_loom_home=$(mktemp -d)
+trap 'rm -rf "$SANDBOX" "$fresh_sandbox" "$fresh_sandbox2" "$fresh_sandbox3" "$fresh_loom_home"' EXIT
+
+# daemon/dist/index.js 存在前提 (実 repo 状態に依存、build 済み環境想定)
+if [ ! -f "$ROOT_DIR/daemon/dist/index.js" ]; then
+  echo "SKIP: REQ-046: daemon/dist/index.js が build 未完了のため symlink test skip"
+else
+  CLAUDE_HOME="$fresh_sandbox3/.claude" LOOM_HOME="$fresh_loom_home/.claude-loom" \
+    bash "$ROOT_DIR/install.sh" >/dev/null
+
+  if [ -L "$fresh_loom_home/.claude-loom/daemon.js" ]; then
+    daemon_target=$(readlink "$fresh_loom_home/.claude-loom/daemon.js")
+    if [ "$daemon_target" = "$ROOT_DIR/daemon/dist/index.js" ] || \
+       [ "$(cd "$(dirname "$daemon_target")" 2>/dev/null && pwd)/$(basename "$daemon_target")" = "$ROOT_DIR/daemon/dist/index.js" ]; then
+      echo "PASS: REQ-046: daemon.js symlink configured ($fresh_loom_home/.claude-loom/daemon.js -> $daemon_target)"
+    else
+      echo "FAIL: REQ-046: daemon.js symlink target mismatch (expected $ROOT_DIR/daemon/dist/index.js, got $daemon_target)"
+      exit 1
+    fi
+  else
+    echo "FAIL: REQ-046: daemon.js symlink not configured at $fresh_loom_home/.claude-loom/daemon.js"
+    exit 1
+  fi
+fi
+
 echo "All install_test checks passed"
