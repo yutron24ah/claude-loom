@@ -397,9 +397,9 @@ M0.11.3 で `loom-ui-smoke` skill 完成 + Phase 1 functional MVP 検証完了�
 - [x] SPEC.md §3.2 lazy daemon flow 更新（trigger 範囲 / cold-start-only open / headless 検出 / `/loom` 役割拡張 / opt-out 永続化）<!-- id: m0.11.5-t2 status: done -->
 - [x] daemon: production mode で `ui/dist` を `:5757` で serve（Fastify static plugin、build 後）<!-- id: m0.11.5-t3 status: done -->
 - [x] hooks/loom-launch-ui.sh 新設: health-check + headless 検出 + cross-platform browser open helper（`open` / `xdg-open` / `start`）<!-- id: m0.11.5-t4 status: done -->
-- [ ] commands/loom-{pm,spec,go,retro,status,worktree,mode}.md 7 種に lazy daemon trigger 配線（hooks/loom-launch-ui.sh invoke）<!-- id: m0.11.5-t5 status: todo -->
-- [ ] commands/loom.md 役割拡張: URL 表示 + clipboard コピー（macOS `pbcopy` / Linux `xclip` or `wl-copy` / Windows `clip`）<!-- id: m0.11.5-t6 status: todo -->
-- [ ] prefs schema: `<project>/.claude-loom/project-prefs.json` に `ui.auto_launch: boolean` field 追加（templates 含む、SPEC §6.9 schema 拡張）<!-- id: m0.11.5-t7 status: todo -->
+- [x] commands/loom-{pm,spec,go,retro,status,worktree,mode}.md 7 種に lazy daemon trigger 配線（hooks/loom-launch-ui.sh invoke）<!-- id: m0.11.5-t5 status: done -->
+- [x] commands/loom.md 役割拡張: URL 表示 + clipboard コピー（macOS `pbcopy` / Linux `xclip` or `wl-copy` / Windows `clip`）<!-- id: m0.11.5-t6 status: done -->
+- [x] prefs schema: `<project>/.claude-loom/project-prefs.json` に `ui.auto_launch: boolean` field 追加（templates 含む、SPEC §6.9 schema 拡張）<!-- id: m0.11.5-t7 status: done -->
 - [ ] README.md / README.ja.md GUI 起動 section を auto-launch 反映に書き直し（"Phase 2 roadmap" 記述削除、M0.11.5 完了 marker 追記）<!-- id: m0.11.5-t8 status: todo -->
 - [ ] tests: hooks_test.sh 拡張（headless 検出 / cold-start-only open / `LOOM_NO_UI=1` skip assertion）+ tag m0.11.5-complete 設置 <!-- id: m0.11.5-t9 status: todo -->
 
