@@ -79,16 +79,28 @@ slash command 一覧の詳細は [CLAUDE.md](CLAUDE.md) を参照。
 
 ## GUI の起動
 
-Phase 1 MVP では daemon と UI を別 dev server で起動する：
+`/loom-pm`・`/loom-spec`・`/loom-go`・`/loom-retro`・`/loom-status`・`/loom-worktree`・`/loom-mode` のいずれかを実行すると、**cold-start 時に daemon が自動起動し、ブラウザで中央指令室が開く**（`http://127.0.0.1:5757`）。daemon がすでに稼働中（warm-start）の場合はブラウザを再度開かない。
+
+### Opt-out
+
+| スコープ | 方法 |
+|---|---|
+| session 単位 | `LOOM_NO_UI=1` 環境変数を設定 |
+| PJ 単位（永続） | `<project>/.claude-loom/project-prefs.json` に `ui.auto_launch: false` を設定 |
+| headless 自動検知 | SSH / DISPLAY なし / ブラウザコマンドなし → ブラウザ起動を skip し URL を terminal に出力 |
+
+### `/loom`（URL ヘルパー）
+
+`/loom` を実行すると daemon URL を表示してクリップボードにコピーする（cross-platform）。別タブを開きたいときや URL を共有したいときに使う。
+
+### Development workflow
+
+UI 開発中の hot-reload 用途では daemon と UI を別 dev server で起動する：
 
 ```bash
 pnpm --filter @claude-loom/daemon dev   # daemon: http://127.0.0.1:5757
 pnpm --filter @claude-loom/ui dev       # UI:    http://localhost:5173
 ```
-
-ブラウザで `http://localhost:5173` を開くと中央指令室が表示される。
-
-> slash command から自動で daemon 起動 → 指令室が開く lazy-daemon フロー（SPEC §3.2 の正規動線）は **M0.11.5**（Phase 1 closure cleanup）として [PLAN.md](PLAN.md) に track 中。
 
 ## カスタマイズ
 
