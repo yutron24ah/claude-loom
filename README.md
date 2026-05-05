@@ -1,375 +1,158 @@
 # claude-loom
 
-Claude Code 上で agile 開発チームを丸ごと再現する「中央指令室」プラグイン。
+> Read this in: **English** | [日本語](README.ja.md)
 
-## 何ができるか（Phase 1 完成時）
+**A central command room plugin for Claude Code** — drop in a full agile dev team (PM, Developer, Reviewers) backed by a real-time GUI that lets you actually watch them work.
 
-- ピクセル RPG 風 GUI で開発室を可視化
-- agile デフォルト team（PM / Developer / Code/Security/Test Reviewer）が即座に使える
-- マルチプロジェクト対応（中央指令室から全 PJ 横断管理）
-- ドキュメント整合性の自動見張り（PM の責務）
-- リアルタイム進捗ガントチャート + Plan View
+![status: Phase 1 MVP complete](https://img.shields.io/badge/status-Phase%201%20MVP-brightgreen) ![license: MIT](https://img.shields.io/badge/license-MIT-blue) ![Claude Code plugin](https://img.shields.io/badge/Claude%20Code-plugin-orange)
 
-## 現在のステータス：M0.11.4 完了（Phase 1 MVP — functional + verification + aesthetic completed）
+---
 
-**dogfood で M0 → M0.11.4 まで完走**。Phase 1 MVP の **3 段階 closure marker** 全達成（m5-complete = functional / m0.11.3-complete = verification infra / m0.11.4-complete = aesthetic）：
+## What is claude-loom?
 
-| マイルストーン | 主要実装 |
+claude-loom is a Claude Code plugin built on **two pillars**:
+
+1. **Agent harness** — a pre-wired agile team (PM / Developer / Code · Security · Test Reviewers) with TDD discipline, retrospective protocol, and document-consistency watching baked in.
+2. **Visualization GUI** — a pixel-RPG-style "command room" that shows what every agent is doing right now, with a Plan view, Gantt chart, session list, and per-agent detail panel.
+
+Together they turn Claude Code from a single-window chat into a **multi-agent dev studio you can actually see**.
+
+## How does it change your dev experience?
+
+| Vanilla Claude Code | With claude-loom |
 |---|---|
-| M0 / M0.5 / M0.6 / M0.7 | harness bootstrap（PM / Developer / Reviewer agents、slash commands、skills、Conventional Commits + GitHub Flow） |
-| M0.8 | retro architecture（4-lens / 3-stage protocol / user-prefs / project-prefs、milestone 完了時に振り返り → 改善提案 → 承認 → 反映ループ） |
-| M0.9 | Customization Layer（model + personality preset per agent） |
-| M0.10 | git worktree 統合（並列 dev / hotfix 隔離 / 実験ブランチ） |
-| M0.11 / M0.11.1 | retro → agent prompt feedback loop + Lifecycle Tracking Architecture（applied finding の永続状態管理） |
-| M0.12 | Coexistence Mode（full / coexist / custom の 3 mode で既存 PJ への段階的 adoption） |
-| M0.13 | Retro Discipline & Process Hardening（parallel dispatch / TDD red 順序 / Task tool fallback 強制） |
-| M0.14 | commit handoff strategy 明確化（Strategy a dev self-commit / Strategy b PM 統合 commit） |
-| M1 | Daemon Foundation（Node.js + TypeScript + tRPC + Drizzle + SQLite、bash hooks → event ingestion → DB 永続化 → WS live push） |
-| M2 / M2.1 | UI Shell（React + Vite + Phaser + tRPC client、AppShell + 9 views + WS retry + toast + verdict_evidence） |
-| M3.0 | Phaser Room View（自前 useEffect mount + agent sprite + 3 theme） — **M0.11.4 で DOM/SVG α-2 へ移行 retire** |
-| M3.1 | Plan View + Gantt + 双方向同期（chokidar + 500ms debounce + LWW + conflict toast + Playwright e2e baseline） |
-| M3.2 | Session List + Agent Detail + notes |
-| M4 | Doc Consistency Engine v1（PostToolUse hook + Phase A diff calc + Phase B claude -p + Acknowledge → plan_items + WS push） |
-| M5 | Project Settings + Token meter + uninstall.sh + handoff docs + README + リリース準備 — **functional MVP closure** (`m5-complete` tag) |
-| M0.11.3 | UI Smoke Test Skill (`loom-ui-smoke`)、要件駆動 browser-interactive smoke test、3 stage strategy/verify/report — **verification infra closure** (`m0.11.3-complete` tag) |
-| M0.11.4 | Design Implementation Pass（13 cat agent + Stardew 系 pixel RPG room + 3 theme palette + RPG primitive system + Phaser → DOM/SVG 移行）— **aesthetic MVP closure** (`m0.11.4-complete` tag) |
+| One agent, one terminal | A full agile team running in parallel as subagents |
+| You hand-roll workflow each project | `spec → plan → TDD → review → retro` is standard |
+| Multi-agent activity is invisible (read terminal logs) | Real-time GUI shows each agent as a sprite in a room |
+| `PLAN.md` and code drift apart silently | Bi-directional sync between PLAN view and the file |
+| You forget to update README/SPEC after changes | The PM agent flags doc-consistency violations automatically |
+| Manual context switch between projects | Multi-project central command room |
 
-Default review mode は single（1 体 reviewer）、critical path のみ trio mode に切替可。
+## Features
 
-> **M0.11.4 carryover note**: aesthetic MVP closure 時、smoke verify (`docs/smoke-tests/2026-05-05-m0.11.4-aesthetic-verify/`) で **F-001 (medium、`/project-settings` dropdown data binding regression)** を捕捉。aesthetic MVP completion 自体は block せず carryover 処理 (10/11 route で RPG style 適用済)、Phase 2 entry の 1 件目 task として優先 fix 予定。詳細: `PLAN.md` の "Phase 2 entry criteria + carryover" section。
+- **13 specialized subagents** — PM, Developer, single-mode Reviewer (default), Code/Security/Test reviewer trio (opt-in), 4 retro lens judges + counter-arguer + aggregator + retro PM
+- **9 skills** — `loom-tdd-cycle`, `loom-review`, `loom-review-trio`, `loom-retro`, `loom-test`, `loom-status`, `loom-worktree`, `loom-write-plan`, `loom-debug`
+- **9 slash commands** — `/loom-pm`, `/loom-spec`, `/loom-go`, `/loom-retro`, `/loom-status`, `/loom-worktree`, `/loom-mode`, `/loom-stop`, `/loom`
+- **Real-time GUI** — pixel-RPG room view, Plan + Gantt with bi-directional file sync, Session list, Agent Detail (React + Phaser/SVG)
+- **Local daemon** — Node.js + Fastify + tRPC + Drizzle + SQLite, binds to `127.0.0.1` only, auto-shuts after 30 min idle
+- **Retro protocol** — 4-lens × 3-stage (parallel critique → counter-argument → aggregation) for echo-chamber-resistant self-improvement
+- **Customization layer** — per-agent model + personality preset (4 included: `default`, `friendly-mentor`, `strict-drill`, `detective`)
+- **Coexistence mode** — `full` / `coexist` / `custom` for staged adoption into existing projects
+- **Worktree integration** — parallel dev / safe experiments / hotfix isolation in isolated git worktrees
 
-## インストール
+## Requirements
+
+- [Claude Code](https://claude.com/claude-code) (latest)
+- Node.js LTS (20 or 22 recommended)
+- pnpm
+
+## Installation
 
 ```bash
 git clone https://github.com/yutron24ah/claude-loom.git
 cd claude-loom
 ./install.sh
+pnpm install
 ```
 
-`~/.claude/agents/` および `~/.claude/commands/` にシンボリックリンクが設置される。
+`install.sh` symlinks agents, slash commands, and skills under `~/.claude/` and wires the loom hooks into `~/.claude/settings.json`. `pnpm install` brings in daemon + UI dependencies.
 
-Claude Code の設定ディレクトリが標準位置にない場合は環境変数で上書きできる：
+If your Claude Code config lives somewhere non-standard:
 
 ```bash
 CLAUDE_HOME=/path/to/your/claude-config ./install.sh
 ```
 
-## アンインストール
+## Quick start
+
+In any project directory, launch Claude Code and run:
+
+```
+/loom-pm       # enter PM mode (this session becomes the PM)
+/loom-spec     # spec phase — reads SPEC.md, confirms task with you
+/loom-go       # implementation phase — PM dispatches developers
+/loom-retro    # retrospective after a milestone (4-lens / 3-stage protocol)
+/loom-status   # snapshot of harness + repo state
+```
+
+Full slash command reference is in [CLAUDE.md](CLAUDE.md).
+
+## Launching the GUI
+
+Phase 1 MVP runs the daemon and UI as separate dev servers:
 
 ```bash
-./uninstall.sh        # 確認 prompt あり
-./uninstall.sh --yes  # 確認 prompt なし
+pnpm --filter @claude-loom/daemon dev   # daemon on http://127.0.0.1:5757
+pnpm --filter @claude-loom/ui dev       # UI on http://localhost:5173
 ```
 
-アンインストール時の動作：
+Open `http://localhost:5173` to see the central command room.
 
-- `~/.claude/agents/loom-*.md`、`~/.claude/commands/loom-*.md`、`~/.claude/skills/loom-*/`、`~/.claude/hooks/` の loom-* symlink を削除
-- `~/.claude/settings.json` の loom hooks 配線を除去（それ以外の user 設定は保持）
-- `.claude-loom/` の local state（prefs / retro 履歴等）は **デフォルトで保持**
+> Auto-launch on slash command (the canonical SPEC §3.2 flow — `/loom-pm` etc. start the daemon and open the room automatically) is tracked as **M0.11.5** (Phase 1 closure cleanup) in [PLAN.md](PLAN.md).
 
-### オプション
+## Customization
 
-| オプション | 動作 |
-|---|---|
-| `--yes` | confirm prompt をスキップ |
-| `--dry-run` | 実行内容を表示するだけ（変更しない） |
-| `--purge-state` | `.claude-loom/` local state も削除 |
-
-### local state について
-
-`.claude-loom/` には retro 学習状態 (learned_guidance)、personality prefs 等が保存されている。
-再インストール後もこれらの設定を引き継ぐため、デフォルトでは削除しない。
-完全クリーンアップが必要な場合のみ `--purge-state` を使用する。
-
-```bash
-./uninstall.sh --yes --purge-state  # local state も含めて完全削除
-```
-
-## 使い方
-
-Claude Code を起動して：
+Tune each agent's model and personality via prefs files:
 
 ```
-/loom-pm       # PM mode に入る
-/loom-spec     # spec フェーズ開始
-/loom-go       # 実装フェーズ開始（PM が developer を dispatch）
-/loom-retro    # milestone 完了後の振り返り（4-lens / 3-stage protocol）
-/loom-status   # harness + repo 状態スナップショット
-/loom-worktree # 並列 dev / hotfix 隔離 / 実験ブランチ管理
-/loom-mode     # Coexistence Mode 切替（full / coexist / custom）
-/loom-stop     # agent セッション停止
+~/.claude-loom/user-prefs.json              # cross-project defaults
+<project>/.claude-loom/project-prefs.json   # project-specific overrides
 ```
-
-詳細は `CLAUDE.md` を参照。
-
-## スラッシュコマンド一覧
-
-`./install.sh` 実行で `~/.claude/commands/` に配置される：
-
-| コマンド | 説明 |
-|---|---|
-| `/loom-pm` | PM mode に入る |
-| `/loom-spec` | spec フェーズ開始 |
-| `/loom-go` | 実装フェーズ開始（PM が developer を dispatch） |
-| `/loom-retro` | milestone 完了後の振り返り |
-| `/loom-status` | harness + repo 状態スナップショット |
-| `/loom-worktree` | worktree 管理（create / list / remove） |
-| `/loom-mode` | Coexistence Mode 切替 |
-| `/loom-stop` | agent セッション停止 |
-| `/loom` | エントリポイント（ヘルプ表示） |
-
-## 利用可能な skill
-
-`./install.sh` 実行で以下の skill が `~/.claude/skills/` に配置される：
-
-| skill | 説明 | 種別 |
-|---|---|---|
-| **loom-tdd-cycle** | TDD 規律ガイド（Red→Green→Refactor→Review cycle） | mandate |
-| **loom-review** | 1 体 reviewer dispatch（**default** single mode） | mandate |
-| **loom-review-trio** | 3 reviewer 並列 dispatch（opt-in deep mode、critical path 用） | mandate |
-| **loom-retro** | 4-lens 振り返り + 3-stage protocol で改善提案、user 承認で適用 | mandate |
-| **loom-test** | ハーネステスト一括実行 + 構造化サマリ（bundled bash script） | mandate |
-| **loom-status** | repo + harness 状態スナップショット（bundled bash script） | mandate |
-| **loom-worktree** | worktree 管理（5 用途: 並列 dev / 安全実験 / branch 比較 / hotfix 隔離 / 一時 review） | suggest |
-| **loom-write-plan** | milestone 詳細プラン作成（`docs/plans/` 保存） | suggest |
-| **loom-debug** | 系統的 debug（symptom → root cause → fix の 3 step） | suggest |
-
-bundled script はインストール後 `templates/settings.json.template` を参考に各プロジェクトの `.claude/settings.json` allowlist に追加することで、承認プロンプトなしで利用可能。`PLACEHOLDER_CLAUDE_LOOM_INSTALL_PATH` は claude-loom の clone 先パス（例 `/Users/you/work/claude-loom`）に手動で置換する。
-
-## Customization Layer (M0.9 から)
-
-各 agent の **モデル**と**人格 (personality)** をユーザー側でチューニングできる。
-
-### prefs files
-
-```
-~/.claude-loom/user-prefs.json          # user 横断、複数 PJ で共通
-<project>/.claude-loom/project-prefs.json  # PJ 固有、user-prefs を override
-```
-
-### Schema 例
 
 ```json
 {
   "agents": {
-    "loom-pm":           { "model": "opus",   "personality": "detective" },
-    "loom-developer":    { "model": "sonnet", "personality": "friendly-mentor" },
-    "loom-retro-pj-judge": { "model": "haiku" }
+    "loom-pm":        { "model": "opus",   "personality": "detective" },
+    "loom-developer": { "model": "sonnet", "personality": "friendly-mentor" }
   }
 }
 ```
 
-### 同梱 personality preset (4 本)
+Coding principles, TDD discipline, and SPEC consistency are **invariant** — only delivery style is tunable. See [SPEC.md](SPEC.md) §3.6.5 / §6.9.4.
 
-| preset | キャラ | 用途 |
+## Coexistence with existing projects
+
+Three modes let you adopt claude-loom incrementally:
+
+| mode | enabled features | use case |
 |---|---|---|
-| `default` | 中立・専門的 | 既存挙動 |
-| `friendly-mentor` | 優しい講師 | コーディング初心者向けチューニング |
-| `strict-drill` | クールなコーディングプロ | 上級者の高速反復 |
-| `detective` | 迷宮なしの名探偵（関西弁） | 遊び心、長時間セッション疲労軽減 |
+| `full` (default) | all | greenfield / claude-loom is the main harness |
+| `coexist` | core only | minimal install on top of an existing setup |
+| `custom` | user-specified | fine-grained per-feature toggle |
 
-ユーザー独自 preset：`prompts/personalities/<name>.md` に Markdown を置いて prefs に preset 名を指定。
+Switch with `/loom-mode <mode>` after install.
 
-### 不変条件
-
-- personality は **「伝え方」のみ可変**
-- `docs/CODING_PRINCIPLES.md` 13 原則 / TDD 規律 / SPEC 整合性は **不変**
-- 違反検出と review verdict 基準は personality によらず同一
-
-詳細は `SPEC.md §3.6.5 / §6.9.4` を参照。
-
-## Worktree 統合 (M0.10 から)
-
-並列 dev / 安全実験 / branch 比較 / hotfix 隔離 / 一時 review の 5 用途を `loom-worktree` skill で扱える。
-
-明示 invoke: `/loom-worktree create feat/<branch>` で sibling dir に worktree 作成。
-自律発動: PM / dev / retro-pm が必要と判断した時に skill 経由で invoke（user 確認あり）。
-設定: `<project>/.claude-loom/project-prefs.json` の `worktree.base_path` で配置場所をカスタム可。
-
-詳細: `skills/loom-worktree/SKILL.md` Decision tree。
-
-## Retro feedback loop (M0.11 から)
-
-retro が承認した finding は `agents.<name>.learned_guidance[]` (project-prefs / user-prefs) に蓄積され、agent dispatch 時に `[loom-learned-guidance]` block として prompt に自動注入される。
-
-**仕組み**:
-- retro lens が finding に `target_artifact: "agent-prompt"` + `target_agent: ["loom-developer"]` + `guidance_proposal` を tag
-- counter-arguer が verdict を通した tag を preserve
-- aggregator が user 承認後 `learned_guidance[]` に書き込み（default project-prefs、user 昇格 opt-in）
-- 13 agent の Customization Layer が active entries を読んで注入
-
-**user-facing 操作**:
-- 普段は read-only、user は触らんで OK
-- 不要な guidance は prefs json で `active: false` に手動 deactivate（v1 では自動 prune なし）
-- review reminder: 次 retro session 開始時に「現在の learned_guidance を review しよか？」プロンプト
-
-詳細: `SPEC.md §3.6.5.4 / §3.9.x / §6.9.4`、`docs/RETRO_GUIDE.md` lens tagging convention。
-
-## Coexistence Mode (M0.12 から)
-
-claude-loom は **既存 PJ への段階的 adoption** をサポート。3 mode で機能 ON/OFF を制御：
-
-| mode | enabled_features | 用途 |
-|---|---|---|
-| `full` (default) | `["all"]` 全機能 | greenfield / claude-loom メイン |
-| `coexist` | `["core"]` のみ | 既存 setup 尊重、最小限 install |
-| `custom` | user 明示指定 | 細かく制御（feature group 単位） |
-
-### 5 feature groups
-
-- `core`: base agents/skills/commands（常時 ON）
-- `retro`: /loom-retro + lens + learned_guidance
-- `customization`: personality preset + 注入機構
-- `worktree`: /loom-worktree + autonomous decision
-- `native-skills`: loom-write-plan + loom-debug
-
-### 切替方法
-
-- 初回 /loom-pm: PM が他 plugin / 既存 setup を検出して提示、user が mode 選択
-- 後から: `/loom-mode <mode> [features...]` で切替
-- 手動: `<project>/.claude-loom/project.json` の `rules.coexistence_mode` + `rules.enabled_features` を直編集
-
-詳細: `SPEC §3.6.7`, `agents/loom-pm.md` Runtime Gate section。
-
-## Retro Discipline & Process Hardening (M0.13 から)
-
-retro architecture を **「自己改善 + PJ 改善 + user 参加 + action plan 化」** の SSoT に upgrade。PM/dev workflow に discipline を注入し、parallel dispatch / TDD red 順序 / Task tool fallback / spec flow / doc 並列 / reviewer verdict の 5 項目を強制。
-
-### 基本方針 (RETRO_GUIDE SSoT)
-
-- **P1**: retro = 自己改善 + PJ 改善 両輪
-- **P2**: user は retro 参加者（external lens じゃない）
-- **P3**: findings は action plan 化、user と着手項目決定
-
-### Freeform improvement (4 lens 共通)
-
-通常 category 検出に加え、`freeform-improvement` category で抽象 PJ 改善視点を 1-3 候補生成可。generic 禁止、`<file>:<line>` 必須。
-
-### Process Discipline (PM/dev)
-
-- **Parallel dispatch self-verify**: 同 message 内 複数 Agent invocation 必須
-- **Task tool fallback**: 利用不能時 degraded mode 明示宣言
-- **Inline spec edit**: brainstorm 中に spec inline 編集
-- **Doc batch parallelism**: 5+ doc は並列 dispatch
-- **Reviewer verdict 保存**: milestone tag 時 verdict 証拠保存
-- **TDD red commit 順序**: test commit が feat commit より時系列で前必須
-
-詳細: `SPEC.md §3.9.x / §3.6.8`、`docs/RETRO_GUIDE.md`。
-
-## Daemon Foundation (M1 から)
-
-claude-loom は M1 で **Node.js + TypeScript + tRPC + Drizzle + SQLite** ベースの daemon を実装。bash hooks からの event ingestion → DB 永続化 → tRPC subscriptions で frontend (M2) に live push する一気通貫 backend。
-
-### 起動
+## Uninstall
 
 ```bash
-pnpm install                                      # 初回のみ
-pnpm --filter @claude-loom/daemon dev             # 127.0.0.1:5757 で起動
-curl http://127.0.0.1:5757/health                 # health check
+./uninstall.sh        # confirms before removing
+./uninstall.sh --yes  # skip confirmation
+./uninstall.sh --yes --purge-state   # also remove .claude-loom/ local state
 ```
 
-### Frontend 渡し（M2 で UI 作成時）
+By default `.claude-loom/` (retro learned guidance, personality prefs) is preserved so re-installs keep your settings.
 
-> **NOTE**：以下の sample code は **Phase 2 production 接続例** (M5 polish 完了後の最終形)。**M2 dev mode の現実装は React + React Query 統合 pattern (`createTRPCReact` + `wsLink` のみ、`httpBatchLink` と `x-loom-token` headers は M5 polish へ defer)** を採用しとる。実 M2 実装の最新形は [`ui/src/trpc/client.ts`](ui/src/trpc/client.ts) を参照。
+## Architecture
 
-**M2 実装 (現在):**
-
-```typescript
-// ui/src/trpc/client.ts (excerpt)
-import type { AppRouter } from "@claude-loom/daemon";
-import { createTRPCReact } from "@trpc/react-query";
-import { wsLink, createWSClient } from "@trpc/client";
-import { useConnectionStore } from "@/store/connection";
-
-const wsClient = createWSClient({
-  url: "ws://localhost:5757/trpc",
-  retryDelayMs: (attempt) => Math.min(1000 * 2 ** attempt, 30000),
-  onOpen: () => useConnectionStore.getState().handleOpen(),
-  onClose: () => useConnectionStore.getState().handleClose(),
-  onError: (e) => useConnectionStore.getState().handleError(e),
-});
-
-export const trpc = createTRPCReact<AppRouter>();
-// 利用側: `const { data } = trpc.plan.list.useQuery({ projectId });`
+```
+Claude Code session  →  bash hooks  →  daemon (tRPC + SQLite)  →  React + Phaser UI
+        (Layer 1)         (Layer 2)            (Layer 3)               (Layer 4)
 ```
 
-**Phase 2 production 接続例 (M5 polish 後):**
+Daemon binds to `127.0.0.1` only, auth via nanoid token in `~/.claude-loom/daemon-token` (chmod 600). Full architecture in [SPEC.md](SPEC.md) §3.
 
-```typescript
-// ui/src/api.ts (M5 完了後の最終形)
-import type { AppRouter } from "@claude-loom/daemon";
-import type { Project, Session, PlanItem } from "@claude-loom/daemon/db";
-import { createTRPCClient, httpBatchLink, wsLink, createWSClient } from "@trpc/client";
+## Documentation
 
-const wsClient = createWSClient({ url: "ws://127.0.0.1:5757/trpc" });
+- **[SPEC.md](SPEC.md)** — product specification (Single Source of Truth)
+- **[PLAN.md](PLAN.md)** — milestone roadmap
+- **[CLAUDE.md](CLAUDE.md)** — agent working guide (read by Claude Code itself)
+- **[docs/SCREEN_REQUIREMENTS.md](docs/SCREEN_REQUIREMENTS.md)** — UI requirements
+- **[docs/COMMIT_GUIDE.md](docs/COMMIT_GUIDE.md)** — commit & branch conventions
 
-export const trpc = createTRPCClient<AppRouter>({
-  links: [
-    wsLink({ client: wsClient }),
-    httpBatchLink({
-      url: "http://127.0.0.1:5757/trpc",
-      headers: () => ({ "x-loom-token": loadToken() }),
-    }),
-  ],
-});
+## Status
 
-// 型完全共有：daemon の AppRouter type を直接 import、frontend 側で同じ
-// procedure / Drizzle schema type を使える。型ズレ不可能。
-```
+Phase 1 MVP complete (functional + verification + aesthetic). Phase 2 in planning — see [PLAN.md](PLAN.md).
 
-### Architecture
+## License
 
-- **runtime**: Node.js LTS（>= 20）+ TypeScript（strict）
-- **monorepo**: pnpm workspaces (root + `daemon/` + `ui/`、M2 で `ui/` 追加済、M3.1 で `ui/e2e/` Playwright infra 追加)
-- **HTTP/WS**: Fastify + `@fastify/websocket`
-- **API**: tRPC + zod (HTTP RPC + WS subscriptions)
-- **ORM**: Drizzle + better-sqlite3 (11 tables、SPEC §6.1)
-- **ID**: nanoid (21 chars)、Timestamp: integer ms (epoch)
-- **Auth**: token in `~/.claude-loom/daemon-token` (chmod 600)
-- **Bind**: `127.0.0.1` only（localhost、外部公開禁止）
-- **Lifecycle**: 30 分 idle で auto-shutdown、events table 30 日 OR 200MB rolling delete
-
-### bash hooks → daemon ingestion
-
-Claude Code の hook 5 種 (`session_start` / `pre_tool` / `post_tool` / `stop` / `SubagentStop`) が `curl POST /event` で daemon に event 送信。daemon 不在時 fail-silent（Claude Code 動作妨げない）。
-
-詳細：`SPEC §6.2 / §6.3 / §6.4 / §12`、`docs/plans/2026-04-29-claude-loom-m1-daemon-foundation.md`。
-
-## 開発規約
-
-claude-loom は **Conventional Commits + GitHub Flow** を採用：
-
-- **コミット**: `<type>(<optional scope>): <subject>`、type 11 種（`feat` / `fix` / `docs` / `style` / `refactor` / `perf` / `test` / `build` / `ci` / `chore` / `revert`）、atomic commit 原則
-- **ブランチ**: `<type>/<short-kebab-name>`、main 直 commit 禁止、短命 feature ブランチ + PR 経由
-- **言語**: `.claude-loom/project.json` の `rules.commit_language` で project ごとに英語/日本語/自由を選択（default `"any"`）
-
-詳細ルール + good/bad 例は **`docs/COMMIT_GUIDE.md`** を参照。
-
-## ドキュメント
-
-- `SPEC.md` — 製品仕様（Single Source of Truth）
-- `PLAN.md` — マスター実装計画
-- `docs/SCREEN_REQUIREMENTS.md` — UI 要件
-- `docs/plans/` — 各マイルストーン詳細プラン
-- `CLAUDE.md` — Claude Code 向け作業ガイド
-
-## Phase 2 以降
-
-Phase 1 MVP 完成後のロードマップ（候補）：
-
-- **M0.11.2**: Lifecycle Tracking 拡張（ttl_sessions / use_count 自動更新）
-- **pixel art**: ピクセルアート正式 asset 制作（UI 世界観確定）
-- **Doc Consistency Engine v2**: 自動修正提案・CI integration
-- **Phase 2**: M6 以降、Phase 1 で確立した基盤の上に production 機能を追加
-
-詳細候補は `PLAN.md` の Phase 2 section を参照。
-
-## ライセンス
-
-<!-- TODO M5: license 確認 — MIT または同等のライセンスを設定予定。リリース前に確定する。 -->
-
-未定（リリース前に設定）
-
-## 開発フロー
-
-このリポジトリ自体が dogfood で開発される。詳細は `CLAUDE.md`。
+[MIT](LICENSE) © 2026 Koki Mogi

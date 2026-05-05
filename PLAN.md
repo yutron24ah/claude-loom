@@ -378,6 +378,68 @@ M0.11.3 で `loom-ui-smoke` skill 完成 + Phase 1 functional MVP 検証完了�
 
 **M0.11.4 着手タイミング**: M0.11.3 直後 (Phase 1 → Phase 2 boundary milestone、aesthetic MVP completion priority 高)。dispatch 戦略：t3 sequential → t4-t12 parallel batch (4-5 dev) → t13-t16 parallel batch (4 dev) → t17-t20 sequential closure。推定 12-15 dev dispatch。
 
+## マイルストーン M0.11.5: Lazy Daemon Auto-Launch Implementation（SPEC §3.2 整合化）
+
+起源: 2026-05-06 user との README 公開準備対話。SPEC §3.2 が当初から「slash command → daemon health-check → cold start なら browser open」の lazy daemon flow を SSoT として定義しとるが、Phase 1 MVP 実装は **daemon と UI を別 dev server で手動起動** する暫定形のまま MVP closure（README にも "Phase 2 roadmap" と書かれて SPEC drift 状態）。本 milestone で SPEC §3.2 と実装の整合性を回復し、Phase 1 closure cleanup を完成させる。
+
+### 設計合意（2026-05-06 spec phase 対話、SPEC §3.2 SSoT）
+
+- **Trigger 範囲**: `/loom`（help）と `/loom-stop`（shutdown）以外の 7 slash command が trigger（`/loom-pm`, `/loom-spec`, `/loom-go`, `/loom-retro`, `/loom-status`, `/loom-worktree`, `/loom-mode`）
+- **Browser open 戦略**: daemon cold start 時のみ open。既起動時は health-check のみで browser open しない（タブ氾濫回避、Linux `xdg-open` の重複 open 抑制、cross-platform 整合性確保）
+- **「もう 1 タブ欲しい」救済路**: `/loom` の役割を help から「URL 表示 + clipboard コピー」に拡張、cold-start-only open ポリシーを補完する dual path
+- **永続 opt-out**: `<project>/.claude-loom/project-prefs.json` の `ui.auto_launch: false` で PJ 単位無効化
+- **Headless 検出**: `$SSH_CONNECTION` セット / Linux で `$DISPLAY` 空 / `open`・`xdg-open`・`start` 全部不在 → browser open skip、URL を terminal に出力。`LOOM_NO_UI=1` 環境変数で強制 skip 可（CI / Docker / 手動制御用）
+- **Daemon production serve**: daemon が built UI bundle を `:5757` で serve（Fastify static plugin、`ui/dist`）。dev mode は Vite `:5173` と daemon `:5757` の二段起動を継続維持
+
+### Task （推定 9 task）
+
+- [x] PLAN.md M0.11.5 マイルストーン挿入（本タスク） <!-- id: m0.11.5-t1 status: done -->
+- [x] SPEC.md §3.2 lazy daemon flow 更新（trigger 範囲 / cold-start-only open / headless 検出 / `/loom` 役割拡張 / opt-out 永続化）<!-- id: m0.11.5-t2 status: done -->
+- [ ] daemon: production mode で `ui/dist` を `:5757` で serve（Fastify static plugin、build 後）<!-- id: m0.11.5-t3 status: todo -->
+- [ ] hooks/loom-launch-ui.sh 新設: health-check + headless 検出 + cross-platform browser open helper（`open` / `xdg-open` / `start`）<!-- id: m0.11.5-t4 status: todo -->
+- [ ] commands/loom-{pm,spec,go,retro,status,worktree,mode}.md 7 種に lazy daemon trigger 配線（hooks/loom-launch-ui.sh invoke）<!-- id: m0.11.5-t5 status: todo -->
+- [ ] commands/loom.md 役割拡張: URL 表示 + clipboard コピー（macOS `pbcopy` / Linux `xclip` or `wl-copy` / Windows `clip`）<!-- id: m0.11.5-t6 status: todo -->
+- [ ] prefs schema: `<project>/.claude-loom/project-prefs.json` に `ui.auto_launch: boolean` field 追加（templates 含む、SPEC §6.9 schema 拡張）<!-- id: m0.11.5-t7 status: todo -->
+- [ ] README.md / README.ja.md GUI 起動 section を auto-launch 反映に書き直し（"Phase 2 roadmap" 記述削除、M0.11.5 完了 marker 追記）<!-- id: m0.11.5-t8 status: todo -->
+- [ ] tests: hooks_test.sh 拡張（headless 検出 / cold-start-only open / `LOOM_NO_UI=1` skip assertion）+ tag m0.11.5-complete 設置 <!-- id: m0.11.5-t9 status: todo -->
+
+**M0.11.5 完成基準**: `./tests/run_tests.sh` 全 PASS、`/loom-pm` 実行で daemon cold start + browser open 動作、既起動時は browser 再 open しない（idempotent）、headless 環境（`$SSH_CONNECTION` セット時）で URL terminal 出力 fallback、`LOOM_NO_UI=1` で強制 skip 動作、`/loom` で URL clipboard コピー成功、`project-prefs.json` の `ui.auto_launch: false` で auto-launch skip 確認、README が SPEC §3.2 と整合（"Phase 2 roadmap" 文言削除済）、`tag m0.11.5-complete` 設置、`m0`〜`m0.11.4-complete` 全保持。
+
+**M0.11.5 着手タイミング**: Phase 1 closure 後始末として **Phase 2 entry sequence (推奨) の F-pj-001 fix より前** に挿入。SPEC §3.2 SSoT との整合性回復が Phase 2 milestone 群（M0.12 以降）の前提条件となる可能性が高いため優先。M0.X cleanup 系列、推定 7-9 task 規模、dispatch 戦略は t3 (daemon serve) → t4 (launch helper) sequential、t5/t6/t7 parallel、t8/t9 sequential closure。
+
+## マイルストーン M0.11.6: PM Auto-Spec Entry（ceremony reduction、SPEC §3.6 拡張）
+
+起源: 2026-05-06 user との UX refinement 対話。`/loom-pm` 起動後 user が既存 plan / 実装したい機能を会話してる状態でも、明示的に `/loom-spec` を打たんと spec phase に入らん 2-step ceremony が冗長。M0.11.5「auto-launch UI」と同じ「context から intent 読めるなら ceremony 強制せえ」UX 哲学の **sibling milestone** として、`/loom-pm` を context-aware にして spec phase 自動突入を実現する。
+
+### 設計合意（2026-05-06 spec phase 対話、SPEC §3.6 PM agent 章拡張）
+
+- **方針**: ハイブリッド検知（C 案）— PM 起動時 context 評価 → 高信頼なら 1 問確認後 spec auto-entry、中信頼なら短く分岐質問、低信頼なら従来通り idle PM
+- **検知ロジック 2 軸**:
+  - **直近 user message scan**: 「実装」「機能」「追加」「bug」「fix」「PLAN」「SPEC」「task」等の intent keyword 検出
+  - **cwd state**: `SPEC.md` 存在 + `PLAN.md` の `status: todo` 残あり → 既存 PJ context あり
+- **3 信頼レベル + 動作**:
+  - **① 高信頼（intent + state 両方）**: 「○○ の spec phase 入りますで、ええか？」一文確認 → 即突入
+  - **② 中信頼（片方のみ）**: 「新規 PJ / 既存 plan レビュー / status 確認」を短く 3 択分岐質問
+  - **③ 低信頼（intent も state も無し）**: 従来通り idle PM、user 入力待ち
+- **`/loom-spec` の位置付け**: 明示 override / re-entry path として **存続**（compaction 後復帰、別案件 spec し直し、誤判定上書き等）。M0.11.5 trigger list にも残置
+- **誤爆抑制策**: 中信頼以下では 1 問確認を必ず挟む、高信頼判定は intent + state の **AND 条件**（OR にすると誤爆増）、retro process-axis lens で false-positive rate 観察
+- **scope 外（YAGNI）**: `/loom-go` の auto-entry（spec 完了 → impl phase 自動突入）は **別 milestone 候補**、本 M0.11.6 では未対応
+
+### Task （推定 8 task）
+
+- [x] PLAN.md M0.11.6 マイルストーン挿入（本タスク） <!-- id: m0.11.6-t1 status: done -->
+- [ ] SPEC.md §3.6.x PM Auto-Spec Entry 章新設（検知ロジック / 3 信頼レベル / `/loom-spec` 位置付け codify） <!-- id: m0.11.6-t2 status: todo -->
+- [ ] agents/loom-pm.md session start hook 拡張（context 評価ロジック + 3 信頼レベル分岐 + 確認 prompt template） <!-- id: m0.11.6-t3 status: todo -->
+- [ ] 検知ロジック codify: intent keyword list 確定（15-25 個程度、保守的目安、AND 条件で高信頼判定） <!-- id: m0.11.6-t4 status: todo -->
+- [ ] 確認 prompt template（高信頼用）: 「○○ の spec phase に入ります、ええか？」型 + bypass option 提示 <!-- id: m0.11.6-t5 status: todo -->
+- [ ] 分岐 prompt template（中信頼用）: 「新規 PJ / 既存 plan レビュー / status 確認」3 択型 <!-- id: m0.11.6-t6 status: todo -->
+- [ ] tests/agents_test.sh 拡張（context-aware entry の 3 信頼レベル assertion / `/loom-spec` override 動作 assertion） <!-- id: m0.11.6-t7 status: todo -->
+- [ ] tag m0.11.6-complete 設置 + retro 1 サイクルで false-positive rate 観察（process-lens 必須） <!-- id: m0.11.6-t8 status: todo -->
+
+**M0.11.6 完成基準**: `./tests/run_tests.sh` 全 PASS、`/loom-pm` を SPEC + PLAN todo 残ある PJ で起動 + 直近 user message に intent keyword あり → 高信頼 path で 1 問確認後 spec phase 突入動作、SPEC のみ存在 + PLAN todo 無し → 中信頼 path で 3 択分岐質問、新規 PJ（SPEC/PLAN 両方無し）+ user message 空 → idle PM stay 動作、`/loom-spec` 明示 invoke で常に spec phase 突入（override 動作）、`tag m0.11.6-complete` 設置、`m0`〜`m0.11.5-complete` 全保持。
+
+**M0.11.6 着手タイミング**: M0.11.5 と **parallel 可能**（M0.11.5 は infra 層 = `hooks/` + `daemon/`、M0.11.6 は agent prompt 層 = `agents/loom-pm.md` + `SPEC.md`、変更 file 重ならず）。Phase 2 entry sequence では M0.11.5 と束ねて連続実施推奨。M0.X cleanup 系列、推定 6-8 task 規模、dispatch 戦略は t2/t3 sequential（spec → agent prompt の依存）→ t4/t5/t6 parallel → t7/t8 sequential closure。
+
 ## Phase 2 entry criteria + carryover (retro 2026-05-05-001 由来)
 
 Phase 1 MVP の 3 段階 closure marker 全達成 (m5 = functional / m0.11.3 = verification / m0.11.4 = aesthetic) の後、Phase 2 entry 前に解決 / 整理すべき carryover を retro 2026-05-05-001 の 14 finding から集約。F-meta-003 (Phase 2 entry criteria 整備 gap) の structural action として本 section を新設。
@@ -408,10 +470,11 @@ Phase 1 MVP の 3 段階 closure marker 全達成 (m5 = functional / m0.11.3 = v
 ### Phase 2 entry sequence (推奨)
 
 1. Task tool 復旧確認 (F-proc-002 + F-meta-002 の (a) 判断) → 復旧不能なら (b) で SPEC 改訂 spec phase 起動
-2. F-001 structural fix (F-pj-001) を Phase 2 1st impl task として dispatch
-3. PLAN.md / SPEC §3 に formal "Phase 2 entry checklist" 新設 (F-meta-003 の structural completion)
-4. REQ-045 smoke skill bind 明文化 (F-pj-002)
-5. Phase 2 milestone (M0.12 系列以降) entry
+2. **M0.11.5 Lazy Daemon Auto-Launch Implementation** + **M0.11.6 PM Auto-Spec Entry** を **parallel 完走** (ceremony reduction sibling pair、SPEC §3.2 + §3.6 整合性回復、Phase 1 closure cleanup の本丸)
+3. F-001 structural fix (F-pj-001) を Phase 2 1st impl task として dispatch
+4. PLAN.md / SPEC §3 に formal "Phase 2 entry checklist" 新設 (F-meta-003 の structural completion)
+5. REQ-045 smoke skill bind 明文化 (F-pj-002)
+6. Phase 2 milestone (M0.12 系列以降) entry
 
 ## マイルストーン M0.12: Coexistence Mode（既存 PJ 検出 + 機能 opt-in/opt-out）
 
