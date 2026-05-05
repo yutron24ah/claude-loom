@@ -313,6 +313,21 @@ retro 2026-05-03-001 で「2-commit 分割 (RED 単独 → GREEN) を default �
 - **2-commit 分割 = strict mode**: file が完全 disjoint (test/* と src/* が衝突なし、かつ複数 task 間で file 共有なし) な場合のみ採用可能。RED + GREEN を 2 commit に分割、git history で RED 単独 commit 存在を verify 可能化
 - **TDD audit 性の維持**: dev は test-first で書き final report に `tdd_red_confirmed: true` + RED test fail output 抜粋を明記、reviewer は test/* と src/* の diff を時系列逆並びで cross-check 可能 (Strategy a と同等の audit 性)
 
+**Strategy a sub-variant: 2-commit RED→GREEN+REFACTOR**（2026-05-06 retro F-proc-002 由来）：
+
+Strategy a (dev 自身 commit) で 3-commit (RED → GREEN → REFACTOR) が strict default だが、以下の場合の **2-commit 統合 (RED → GREEN+REFACTOR)** も acceptable とする：
+
+- **REFACTOR 規模が trivial**: 数行の rename / dead code 削除 / lint fix 等、独立 commit 化で git log を逆に汚すレベル
+- **REFACTOR が GREEN と論理的同一 unit**: GREEN 実装直後の minor cleanup で、独立 commit value が低い (revert 単位として分離する必要なし)
+- **TDD audit 性は維持**: RED commit は単独で存在、GREEN+REFACTOR commit message に `[GREEN+REFACTOR squashed]` annotation 必須付与 (git log で grep 検出可能化、reviewer cross-check 可能)
+
+**3-commit strict mode** は以下の場合に必須：
+- REFACTOR が大規模 (50+ 行 / 複数 file 触る / SSoT cross-check rule 違反検出 等)
+- revert 単位として REFACTOR を独立確保したい case
+- reviewer が「RED → GREEN → REFACTOR の各段階を独立 commit で audit したい」と指定
+
+**rationale**: M0.11.5 t4 dev (commit 8087071) で GREEN+REFACTOR 1 commit 統合が偶発的に発生、TDD red 順序遵守は維持されとるが SPEC 上 acceptable / strict 不明確だった点を本 sub-variant で codify。実害ゼロ + 軽微 REFACTOR で 3-commit chain を強要しない柔軟性確保。
+
 #### 3.6.8.7 Reviewer dispatch triple path（2026-05-04 retro F-proc-001 由来 → 2026-05-06 retro F-proc-003 で **path C default 反転**）
 
 dev が reviewer dispatch を実施する Step 9 に **3 つの path** を 1st-class option として定義。**default = path C** (2026-05-06 反転、累積 evidence: M0.11.5 6/6 dispatch 全部 path C で pass、Task tool 一貫 deferred 環境での運用 fit)：
