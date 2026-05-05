@@ -133,6 +133,19 @@ docs/smoke-tests/<YYYY-MM-DD>-<scope>/strategy.md
 
 `<scope>` は invocation parameter から取得（`full` / `route:<name>` / `smoke-only`）。
 
+### Phase 2 carryover (retro 2026-05-06-001 F-res-001 由来)
+
+M0.11.5 lazy daemon auto-launch + 7 種 slash command 拡張 (`/loom-pm` / `/loom-spec` / `/loom-go` / `/loom-retro` / `/loom-status` / `/loom-mode` / `/loom-worktree`) で daemon trigger + browser open + WebSocket event 流通 の e2e UX が Phase 2 検証スコープに入る。本 SKILL.md scope を Phase 2 entry 時に下記項目で拡張：
+
+- **daemon auto-launch trigger**: cold-start (daemon 不在状態) で slash command 発火 → `hooks/loom-launch-ui.sh` 経由で daemon 起動 + browser open 動作
+- **headless detection**: `SSH_CONNECTION` / `DISPLAY` 不在環境で browser open skip + URL stdout 出力動作
+- **LOOM_NO_UI override**: `LOOM_NO_UI=1` 環境変数で browser open skip + URL print 動作
+- **clipboard copy** (option): URL stdout を pipe で `pbcopy` / `xclip` に流す UX 動作
+- **warm-start path**: daemon 既起動状態で同 slash command 再発火 → health-check のみで browser 再 open しない動作
+- **install.sh dependency audit pair**: REQ-046 (daemon.js symlink bootstrap、retro F-USER-001 hotfix) と pair で「`bash install.sh` 後に slash command auto-launch 動作」を browser smoke で verify
+
+実装は Phase 2 entry milestone (推定 M0.11.x or Phase 2 1st task) で本 SKILL.md scope に組込、checklist 追加。
+
 ---
 
 ## Stage 2: 実機 verify
