@@ -313,20 +313,56 @@ retro 2026-05-03-001 で「2-commit 分割 (RED 単独 → GREEN) を default �
 - **2-commit 分割 = strict mode**: file が完全 disjoint (test/* と src/* が衝突なし、かつ複数 task 間で file 共有なし) な場合のみ採用可能。RED + GREEN を 2 commit に分割、git history で RED 単独 commit 存在を verify 可能化
 - **TDD audit 性の維持**: dev は test-first で書き final report に `tdd_red_confirmed: true` + RED test fail output 抜粋を明記、reviewer は test/* と src/* の diff を時系列逆並びで cross-check 可能 (Strategy a と同等の audit 性)
 
-#### 3.6.8.7 Reviewer dispatch dual path → triple path（2026-05-04 retro F-proc-001 由来）
+**Strategy a sub-variant: 2-commit RED→GREEN+REFACTOR**（2026-05-06 retro F-proc-002 由来）：
 
-dev が reviewer dispatch を実施する Step 9 に **3 つの path** を 1st-class option として定義：
+Strategy a (dev 自身 commit) で 3-commit (RED → GREEN → REFACTOR) が strict default だが、以下の場合の **2-commit 統合 (RED → GREEN+REFACTOR)** も acceptable とする：
 
-- **path A — same-session iterate (default)**: fix scope clear AND context budget 余裕あり → 同 session 内で fix → re-run tests → re-submit
-- **path B — PM follow-up handoff**: fix scope unclear OR context budget tight OR Task tool deferred で reviewer dispatch 不可 → final report に `handoff_required: true + reasoning + recommended next step + 残 findings 全文` 明記
-- **path C — self-review with explicit safety checklist (new)**: Task tool deferred (degraded mode) かつ scope 単純で path B handoff せず dev 自身が safety checklist 経由 self-review する場合の formal protocol：
-  1. final report に `self_review: true` + `task_tool_deferred: true` 明示
+- **REFACTOR 規模が trivial**: 数行の rename / dead code 削除 / lint fix 等、独立 commit 化で git log を逆に汚すレベル
+- **REFACTOR が GREEN と論理的同一 unit**: GREEN 実装直後の minor cleanup で、独立 commit value が低い (revert 単位として分離する必要なし)
+- **TDD audit 性は維持**: RED commit は単独で存在、GREEN+REFACTOR commit message に `[GREEN+REFACTOR squashed]` annotation 必須付与 (git log で grep 検出可能化、reviewer cross-check 可能)
+
+**3-commit strict mode** は以下の場合に必須：
+- REFACTOR が大規模 (50+ 行 / 複数 file 触る / SSoT cross-check rule 違反検出 等)
+- revert 単位として REFACTOR を独立確保したい case
+- reviewer が「RED → GREEN → REFACTOR の各段階を独立 commit で audit したい」と指定
+
+**rationale**: M0.11.5 t4 dev (commit 8087071) で GREEN+REFACTOR 1 commit 統合が偶発的に発生、TDD red 順序遵守は維持されとるが SPEC 上 acceptable / strict 不明確だった点を本 sub-variant で codify。実害ゼロ + 軽微 REFACTOR で 3-commit chain を強要しない柔軟性確保。
+
+#### 3.6.8.7 Reviewer dispatch triple path（2026-05-04 retro F-proc-001 由来 → 2026-05-06 retro F-proc-003 で **path C default 反転**）
+
+dev が reviewer dispatch を実施する Step 9 に **3 つの path** を 1st-class option として定義。**default = path C** (2026-05-06 反転、累積 evidence: M0.11.5 6/6 dispatch 全部 path C で pass、Task tool 一貫 deferred 環境での運用 fit)：
+
+- **path C — self-review with explicit safety checklist (default、2026-05-06 反転)**: dev が Step 9 開始時に **必ず Task tool 利用可能性 probe**（`ToolSearch select:Task` 空結果 → degraded mode 自動 enter、Strategy b unified annotation default 反転と同 pattern）。Task tool deferred 環境での safety checklist 経由 self-review が default：
+  1. final report に `self_review: true` + `task_tool_deferred: <bool>` 明示
   2. 4 観点 self-checklist 必須記載 (code 観点 / security 観点 / test 観点 / SPEC §3.6.10 SSoT cross-check 観点)
   3. 各観点で 3 行以上の reasoning + 該当 file:line 参照
   4. PM が follow-up loom-reviewer dispatch を後で実施する option を残す (path C completion ≠ formal review、interim safety net)
-  5. **silent self-review 禁止**: path A/B/C のいずれかを final report で必ず宣言
+- **path A — same-session iterate (opt-in、Task tool 利用可能時)**: probe pass + fix scope clear AND context budget 余裕あり → 同 session 内で fix → re-run tests → re-submit
+- **path B — PM follow-up handoff**: fix scope unclear OR context budget tight → final report に `handoff_required: true + reasoning + recommended next step + 残 findings 全文` 明記
+- **silent self-review 禁止**: path A/B/C のいずれかを final report で必ず宣言
 
 詳細実装: `agents/loom-developer.md` Step 9、`agents/loom-pm.md` 受領規律。
+
+**反転 rationale (2026-05-06 retro F-proc-003)**: 旧 default = path A (Task tool dispatch) は Task tool 利用可能性を前提とするが、本 environment (Claude Agent SDK) は Task tool 一貫 deferred 状態が constant condition、agent prompt と現実が乖離した状態で毎回 path C を verbal で fallback 宣言する運用負荷が累積。M0.11.5 で 6/6 dispatch 全部 path C で pass という evidence + 2 retro 連続 degraded mode persistence (2026-05-05 + 2026-05-06) の累積で default 反転条件成立 (M0.14 Strategy b 反転と同 pattern)。
+
+#### 3.6.8.8 Dependency audit on default change（2026-05-06 retro F-USER-002 由来）
+
+milestone scope に「**default 値変更**」（auto_launch default true 化、review_mode default 反転、Strategy a/b default 反転 等）を含む場合、PM は milestone closure 前に **依存 install / config / runtime pipeline 全 step verify** を必須 check として実施。
+
+**Trigger**: 以下のいずれかが milestone 内 task に含まれる：
+- 既存 SPEC default 値の反転（`auto_launch: false → true`、`review_mode: trio → single` 等）
+- 新規 runtime path の active 化（lazy launch、auto-apply、auto-prune 等）
+- 新規 hook / symlink / settings.json field の bootstrap 必須化
+
+**Audit checklist** (closure 前に PM が機械的に走らせる)：
+1. **install path**: `bash install.sh` を fresh sandbox で実行、新 default が機能する前提 file（symlink / dir / config）が全て配置されるか確認
+2. **config path**: `templates/*.template` + `~/.claude-loom/user-prefs.json` + `<project>/.claude-loom/project-prefs.json` の **3 source** に新 default が反映されとるか jq query で確認
+3. **runtime path**: 新 default が活性化する code path（hook / agent prompt / daemon entry）が install 後の env で actual に動作するか smoke check（手動 or `loom-ui-smoke` skill 経由）
+4. **rollback path**: user が opt-out する手段（env 変数 / config field / `LOOM_NO_*` flag）が SSoT に明記されとるか確認
+
+**rationale**: M0.11.5 で `auto_launch: false → true` 反転と並行して `hooks/loom-launch-ui.sh` 経由 daemon 自動起動を default 化したが、`install.sh` に daemon symlink bootstrap step 不在が milestone closure 後に retro F-USER-001 として critical surface 化した（2026-05-06-001）。default 変更は前提 pipeline 全 step が揃って初めて成立、step の partial implementation は user 環境で silent failure を生む構造的 risk。本 audit は M0.11.5 と同 pattern の class を構造的に塞ぐ。
+
+**実装**: `agents/loom-pm.md` の milestone closure workflow に audit step として組込、F-USER-002 codify。
 
 ### 3.6.9 M3 UI Architecture（M3 から）
 
@@ -813,6 +849,17 @@ retro 機能の **finding lifecycle + guidance lifecycle** を構造的に追跡
 - **読込主体**: 4 lens（Stage 1）、特に「過去 retro で applied 済 finding を re-up しない」stale prevention に使用。lens は agent prompt prefix で渡された `applied_summary_path` を `Read` tool で参照、必要時のみ load（C2 design 確定）。
 - **rollback discipline**: M3.0 retro proc-NEW-1（counter-arguer stale check）は本 architecture 完成時 **rollback 必須**（M0.11.1 task list 内 mandatory）、SPEC §3.9.x P4「symptomatic patch 構造解決後の消滅」理想形 archive 例。
 
+**apply commit 時の back-fill 責務**（2026-05-06 retro F-pj-002 + F-meta-003 由来 SSoT）:
+
+`<project>/.claude-loom/retro/<retro_id>/pending.json` の `applied_in` + `apply_history` field は **apply 実行主体が書込責任**を持つ：
+
+- **path 1 (in-session apply)**: `loom-retro-pm` が会話 mode で finding 1 件ずつ user 承認 → 即時 apply する場合、retro-pm が apply commit 直後に該当 finding の `applied_in` (commit_sha + apply_type + applied_at) と `apply_history[]` (entry append) を update。`loom-retro-pm` 自身が write 主体
+- **path 2 (out-of-session apply)**: archive markdown のみ生成 (report mode) → 後日 apply commit する場合、apply 実行主体（typically `loom-pm` or 直接の dev session）が apply 完了後に該当 retro_id の pending.json を Read + 更新 + Write で back-fill。Phase 2 で `/loom-retro-apply` 実装予定だが、**v1 では apply 実行主体の手動 back-fill 責務**として SSoT 化
+- **schema_version v2 必須**: back-fill 時 `schema_version: 2` field を維持、`applied_in: null` → `{commit_sha, apply_type, applied_at}` に更新、`apply_history: []` に entry append
+- **back-fill 検証**: 次回 retro session の Stage 0 で `applied_summary.json` lazy build 時、`applied_in: null` のまま `status: "approved"` の finding を検出 → WARN log + applied_summary build は continue（mechanical SSoT drift detection）
+
+**未 back-fill 時の影響**: `applied_summary.json` 機械的 build 時に approved+applied 済 finding が漏れ、4 lens が同 finding を re-up する echo-chamber risk。本 SSoT は M0.11.5 retro 2026-05-05-001 の 14 finding 全採用 (commit ffd3848) で発生した **back-fill missing drift** を構造的に塞ぐ。
+
 **schema**:
 - `pending.json` 完全 schema: §6.9.6（schema_version 1 → 2 で `applied_in` + `apply_history` field 追加）
 - `applied_summary.json` 完全 schema: §6.9.7
@@ -830,19 +877,33 @@ retro 機能の **finding lifecycle + guidance lifecycle** を構造的に追跡
 - **retro-pm Stage 0 fallback**: applied_summary build 時 pending.json 不在なら graceful skip + WARN 出力、archive markdown scan による applied/recorded status 抽出は **M0.11.2 milestone で導入候補** (本 SPEC では durability boundary を define するのみ、reconstruction logic は別 milestone)
 - **uninstall.sh との関係**: `--purge-state` flag で `.claude-loom/` 削除しても archive markdown は残存、retro 履歴の git-tracked SSoT を user に保証
 
-#### 3.9.13 Degraded synthesis protocol（2026-05-04 retro F-meta-005 由来）
+#### 3.9.13 Degraded synthesis protocol（2026-05-04 retro F-meta-005 由来 + 2026-05-06 F-meta-001 で probe 強制化 + persistence escalation）
 
 Task tool unavailable 時 (degraded mode) に retro-pm が 4 lens dispatch 不能、自前で synthesis する flow が ad-hoc。下記 protocol を SPEC SSoT 化：
 
+- **degraded mode probe 強制化** (2026-05-06 F-meta-001): retro-pm Stage 0 開始時に **必ず `ToolSearch select:Task` を走らせる**、空結果 → degraded mode 自動 enter（手動 verbal fallback 宣言を不要化）。本 protocol は agent definition (`agents/loom-retro-pm.md`) の Stage 0 hook として codified
 - **degraded mode 検出**: retro-pm session 開始時 Task tool 利用可否 check、不可 → degraded mode 突入を user に明示宣言
 - **synthesis 自前実施**: retro-pm が 4 lens (pj-axis / process-axis / meta-axis / researcher) の責務を sequential 実行、各 lens の prompt 規約 (RETRO_GUIDE.md §1) を self-apply
 - **echo-chamber risk acknowledge**: 通常 protocol の 4 並列 lens + counter-arguer 別 agent による echo-chamber 抑制が degraded mode では適用されず、findings は **retro-pm 単一視点の synthesis**。confidence は通常 retro より低めに評価
 - **findings tag 必須**: degraded mode 由来 findings は全て `degraded_mode_synthesis: true` field を含む、user に透明化
 - **archive markdown disclosure**: archive markdown 末尾に "degraded-mode-synthesis disclosure" section を必須記載、findings の confidence について user に明示
-- **schema_version 出力規律**: retro-pm が pending.json を新規 write する時 `schema_version: 2` 必須 (§6.9.6 v2)、`schema_version: 1.0.0` 等の semver 形式 / v1 形式 出力は invalid (本 retro session で発生した bug の codify)
+- **schema_version 出力規律**: retro-pm が pending.json を新規 write する時 `schema_version: 2` 必須 (§6.9.6 v2、§6.9.6.1 SSoT 統一表組参照)、`schema_version: 1.0.0` 等の semver 形式 / v1 形式 出力は invalid (本 retro session で発生した bug の codify)
+- **persistence escalation rule** (2026-05-06 F-meta-001): degraded mode が **3 retro 連続持続** したら本 §3.9.13 の review 必須。Task tool 復旧条件 (Claude Agent SDK env 制約 / harness 起動 mode 制約) を user + meta lens で再評価、agent definition update or workaround codify を進める
 
 **guidance lifecycle 統合**:
 `learned_guidance` の auto-prune rule（§6.9.4 末尾拡張参照）: `ttl_sessions` main（`null` = infinite default、`> 0` = N retro 後 auto-deactivate） + `last_used_in` audit（retro 参照時 aggregator update、N session 連続未使用 → meta lens stale guidance finding）。責務分離: auto-deactivate = 決定論的（ttl）、user 承認 prune = dynamic（last_used_in 経由 meta lens proposal）。
+
+#### 3.9.14 Carryover escalation rule（2026-05-06 retro F-proc-004 由来）
+
+retro carryover findings (前 retro で defer された pre-existing test failures や architectural debt) が無期限残置されると carryover の意味が薄れ、**累積負債が milestone 進行を silent に阻害**する構造的 risk。下記 escalation rule を SPEC SSoT 化：
+
+- **carryover 検出**: retro-pm Stage 0 で `applied_summary.json` build 時、`status: "deferred"` の finding を origin_retro_id 別に集計
+- **連続未解決 count**: 同 finding が **3 retro 連続 deferred** state で残置されとる場合（applied_summary 内の `applied_in: null` + `status: "deferred"` が 3 retro 連続）、retro-pm Stage 1 dispatch 前に PM agent に escalation event を発火
+- **escalation 必須 action**: 発火時、PM agent は user に「以下 N 件 carryover finding が 3 retro 連続未解決、専用 fix milestone (M0.X-debt-cleanup 仮称) を PLAN.md に insert すべき」と提案し、user 承認後 PLAN.md insertion を必須化
+- **専用 fix milestone scope 例**: `M0.X-test-debt-cleanup` (pre-existing test failures cluster fix)、`M0.Y-spec-drift-cleanup` (累積 SPEC drift 一括 reconcile)、`M0.Z-doc-consistency-cleanup` (DOC_CONSISTENCY_CHECKLIST 自動化前段の手動 sweep)
+- **目的**: carryover の意味回復 (defer ≠ 無視)、累積負債を milestone scope に格上げして可視化、Phase 2 移行前の cleanup loop 起動
+
+**M0.11.5 retro 適用 case**: pre-existing test failures 3 件 (`docs_release_test.sh` / `dry_run_applied_summary_test.sh` / `m1_docs_test.sh`) は M0.X 系列で 3 retro 連続 carryover、本 retro F-proc-004 で escalation rule が適用された初例。専用 fix milestone は本 retro 後の PLAN.md insertion で対応。
 
 ### 3.10 superpowers Independence（M0.9 から）
 
@@ -1644,13 +1705,33 @@ export type PendingFinding = z.infer<typeof pendingFindingSchema>;
 
 **migration**: 既存 4 retro session（2026-04-29-001 / 2026-05-02-001 / 2026-05-02-002 + 古い 1 件確認）の `pending.json` に `applied_in` + `apply_history` field 後付け書き込み（M0.11.1 task `m0.11.1-t7` で migration script、apply commit を git log + commit message 解析で推定）。schema_version `1 → 2` migrate flag。
 
-### 6.9.7 `<project>/.claude-loom/retro/<retro_id>/applied_summary.json` 完全スキーマ（M0.11.1 から）
+#### 6.9.6.1 schema_version SSoT 統一表組（2026-05-06 retro F-pj-004 + F-meta-002 由来）
+
+retro 系 + prefs 系 file 間で schema_version の format / 値 drift を防ぐため、以下 SSoT 表組を確立：
+
+| file | current schema_version | format | 過去 file 移行 policy |
+|---|---|---|---|
+| `~/.claude-loom/user-prefs.json` | `1` | integer | leave-as-is、新規 write 時のみ v1 維持 |
+| `<project>/.claude-loom/project-prefs.json` | `1` | integer | leave-as-is、新規 write 時のみ v1 維持 |
+| `<project>/.claude-loom/retro/<retro_id>/pending.json` | `2` | integer | M0.11.1 task t7 で migration 完了 (1 → 2)、新規 write は必ず v2 |
+| `<project>/.claude-loom/retro/<retro_id>/applied_summary.json` | `2` | integer | 過去 v1.0.0 文字列形式 file は **leave-as-is** (rebuild 時に v2 上書き)、新規 write は必ず v2 |
+| `<project>/.claude-loom/retro/<retro_id>/verdict_evidence.json` | `2` | integer | M2.1 から v2 が initial、leave-as-is なし |
+
+**format 規律 (degraded mode bug 由来)**:
+
+- ❌ invalid: `"schema_version": "1.0.0"` (semver 文字列形式)
+- ❌ invalid: `"schema_version": 1` を v2 schema 期待 file に書く (v2 移行後 deprecated)
+- ✅ valid: `"schema_version": 2` (integer、現行 v2)
+
+**新規 write 時の規律**: retro-pm / aggregator が pending.json or applied_summary.json or verdict_evidence.json を新規 write する時は **必ず integer 形式で current schema_version**。過去 file (v1.0.0 文字列) は触らずそのまま、retro-pm Stage 0 lazy rebuild で v2 上書きされるまで共存。
+
+### 6.9.7 `<project>/.claude-loom/retro/<retro_id>/applied_summary.json` 完全スキーマ（M0.11.1 から、M0.11.5 で v2 統一）
 
 retro session 開始時に `loom-retro-pm` が **過去全 retro session の pending.json を scan + 集約** した file。4 lens が Stage 1 で `Read` tool で参照、stale finding re-up を構造的に防ぐ。M2.1 §6.9.5 verdict_evidence.json と同 pattern（lazy build family）。
 
 ```ts
 export const appliedSummarySchema = z.object({
-  schema_version: z.literal(1),
+  schema_version: z.literal(2),                      // M0.11.1 v1 → M0.11.5 v2 (F-pj-004 SSoT 統一、§6.9.6.1)
   retro_id: z.string(),                              // 本 retro session の id (生成元)
   generated_at: z.number().int(),
   total_retro_sessions: z.number().int(),            // scan 対象 retro session 数
