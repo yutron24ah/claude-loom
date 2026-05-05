@@ -36,6 +36,8 @@ Claude Code 上で agile 開発チームを丸ごと再現する「中央指令�
 
 Default review mode は single（1 体 reviewer）、critical path のみ trio mode に切替可。
 
+> **M0.11.4 carryover note**: aesthetic MVP closure 時、smoke verify (`docs/smoke-tests/2026-05-05-m0.11.4-aesthetic-verify/`) で **F-001 (medium、`/project-settings` dropdown data binding regression)** を捕捉。aesthetic MVP completion 自体は block せず carryover 処理 (10/11 route で RPG style 適用済)、Phase 2 entry の 1 件目 task として優先 fix 予定。詳細: `PLAN.md` の "Phase 2 entry criteria + carryover" section。
+
 ## インストール
 
 ```bash

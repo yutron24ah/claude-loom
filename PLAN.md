@@ -378,6 +378,41 @@ M0.11.3 で `loom-ui-smoke` skill 完成 + Phase 1 functional MVP 検証完了�
 
 **M0.11.4 着手タイミング**: M0.11.3 直後 (Phase 1 → Phase 2 boundary milestone、aesthetic MVP completion priority 高)。dispatch 戦略：t3 sequential → t4-t12 parallel batch (4-5 dev) → t13-t16 parallel batch (4 dev) → t17-t20 sequential closure。推定 12-15 dev dispatch。
 
+## Phase 2 entry criteria + carryover (retro 2026-05-05-001 由来)
+
+Phase 1 MVP の 3 段階 closure marker 全達成 (m5 = functional / m0.11.3 = verification / m0.11.4 = aesthetic) の後、Phase 2 entry 前に解決 / 整理すべき carryover を retro 2026-05-05-001 の 14 finding から集約。F-meta-003 (Phase 2 entry criteria 整備 gap) の structural action として本 section を新設。
+
+### Entry blocker (HIGH structural、Phase 2 着手前に解決)
+
+- **F-proc-002 + F-meta-002 (HIGH × 2、Task tool degraded mode 永続化)**: 2 milestone 連続で全 impl commit が path C self-review、retro 自身も degraded-mode-synthesis (4 lens 並列 dispatch 不能)。Phase 2 entry condition として user 判断必要：
+  - **(a)** Task tool 復旧を Phase 2 entry の HARD blocker に格上げ (復旧してから次 milestone)
+  - **(b)** path C を **default mode** に昇格、SPEC §3.6.8 (dev workflow) + §3.9.x (retro workflow) の 2 文脈で 1st-class option として正式化、独立 lens の echo-chamber 抑制効果は失われるが現実運用との整合性確保
+  - default 判断: (a) を default、復旧不能なら (b) に倒す。Phase 2 spec phase で再評価
+
+### Entry 前 cleanup (MEDIUM structural)
+
+- **F-pj-001 (MED、project-settings dropdown data binding regression)**: t19 smoke で捕捉、t20 で aesthetic MVP block せず carryover 処理。Phase 2 entry の **1 件目 task** として優先 fix。root cause 候補: t16 で 5 view を unified batch で書直した際の cognitive load + ProjectSettings の dropdown spec 厚み + assertion 弱さ
+- **F-meta-003 (MED、Phase 2 entry criteria 整備)**: 本 section 自身の新設で部分応答済。SPEC §3 preamble or PLAN.md preamble に formal "Phase 2 entry checklist" 化は Phase 2 spec phase 1st task として実施
+
+### Entry 前 cleanup (LOW structural、Phase 2 spec phase で組み込み可)
+
+- **F-pj-002 (LOW、REQ-045 verification gate)**: REQ-045 (aesthetic MVP completion verification) の machine-checkable assertion 不在。「smoke skill が full scope で `routes_failed === 0` で完了 = REQ-045 PASS」と明文化、もしくは smoke skill 実行を aesthetic milestone closure 必須 gate として codify
+- **F-pj-003 (LOW、Phaser rollback retroactive note)**: PLAN.md M3.0 section 末尾に「M0.11.4 t17 で Phaser dependency rollback、§3.6.9.1 archive 値化」note 追加 candidate (retroactive 整合性記録)
+- **F-proc-003 (LOW、SSoT freeze stage pattern note)**: PLAN.md or SPEC §3.6.8 に「依存階層を持つ大規模 batch は SSoT freeze stage を仕切ると 4 dev parallel が成立する」を retro outcome として note (Phase 2 milestone 設計時の参考)
+- **F-res-003 (LOW、Token meter empty state UX)**: TokenMeterView の empty state visual 強化 (border outline 強化 or 'no recent tokens' caption)。current 状態で機能阻害なし、structural fix 不要
+
+### Record-only (本 retro archive で記録済、follow-up 不要)
+
+- F-proc-001 (commit_handoff=pm 9 連続成功)、F-proc-004 (milestone tag → main flush hygiene 1st validation)、F-meta-001 (loom-ui-smoke skill 1st milestone closure validation)、F-meta-004 (applied_summary build state stable)、F-res-001 (DOM/SVG 移行知見の external 還元 candidate)、F-res-002 (claude-room-handoff design bundle full port pattern external 還元 candidate)
+
+### Phase 2 entry sequence (推奨)
+
+1. Task tool 復旧確認 (F-proc-002 + F-meta-002 の (a) 判断) → 復旧不能なら (b) で SPEC 改訂 spec phase 起動
+2. F-001 structural fix (F-pj-001) を Phase 2 1st impl task として dispatch
+3. PLAN.md / SPEC §3 に formal "Phase 2 entry checklist" 新設 (F-meta-003 の structural completion)
+4. REQ-045 smoke skill bind 明文化 (F-pj-002)
+5. Phase 2 milestone (M0.12 系列以降) entry
+
 ## マイルストーン M0.12: Coexistence Mode（既存 PJ 検出 + 機能 opt-in/opt-out）
 
 詳細: `docs/plans/2026-04-29-claude-loom-m0.12-coexistence.md`
