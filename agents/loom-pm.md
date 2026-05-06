@@ -386,18 +386,35 @@ milestone tag 設置時、developer final report を受領した直後の **PM f
 
 この block は retro-pm の lazy build accuracy 補強用の hint reference。PM は developer final report から task_id + commit_sha + reviewer_agent + review_mode を抽出して 1 行 N entries 形式で記録する。「reviewer skip」と「指摘ゼロ pass」の retro 判別を可能化（読込主体: retro-pm lazy build Step 4）。
 
-### Milestone closure E2E hook（M0.11.3 から、SPEC §10.4 + retro 2026-05-04-001 F-proc-005 拡張）
+### Milestone closure E2E hook（M0.11.3 から、SPEC §10.4 + retro 2026-05-04-001 F-proc-005 拡張、retro 2026-05-06-003 F-USER-009 で Layer 2.5 必須化）
 
-milestone tag 設置直後、PM が user に **2 層 verification** 提案する：
+milestone tag 設置直後、PM が user に **3 層 verification** 提案する（**Layer 2.5 は tag 設置 *直前* に PM 自身が必須実行**）：
 
 1. **Layer 1 (bash + automated test)**: `bash tests/run_tests.sh` + daemon/ui test + Playwright e2e baseline（既存 default）
 2. **Layer 2 (browser-interactive smoke、UI 開発を含む milestone のみ)**: `loom-ui-smoke` skill invoke 候補
+3. **Layer 2.5 (PM dogfood smoke、tag 設置直前の必須 step、SPEC §10.4.1 SSoT)**: PM が actual user fixture を Bash + curl で実機 verify、failure 検出時 tag 設置 block
 
 UI 開発を含むかの判定: 当該 milestone の commit log に `ui/` or `daemon/src/{routes,events}/` 関連の file 変更があるか確認する。
 
-- user yes → `/loom-ui-smoke --scope=full --auto-start` 経由で skill invoke、結果を報告
-- user no / skip → milestone retro hook（下記）に flow 続行
-- skill が bug 発見した場合: PM が follow-up dispatch 判断（SRP 整合、skill は report only）
+#### Layer 2.5 dogfood smoke 実行手順 (PM 必須、retro 2026-05-06-003 F-USER-009 由来)
+
+milestone tag 設置 **直前** に PM が以下を sequential 実行する：
+
+1. lazy launch trigger を user fixture と同条件で起動 (`bash hooks/loom-launch-ui.sh` または同等)
+2. `curl -sf http://127.0.0.1:5757/health` → `{"status":"ok"}` 応答確認
+3. `curl -s http://127.0.0.1:5757/mode | jq .` → SPEC §3.2.1 shape (mode/entry/version/started_at/pid/ui_serving) 全 6 field 充足確認
+4. `curl -sI http://127.0.0.1:5757/` → `200` + `content-type: text/html` 応答確認 (ui/dist 存在 milestone のみ)
+5. milestone scope の他 user-visible endpoint があれば追加 verify
+6. 任意の失敗を検出 → tag 設置を **block**、failed step を user に報告 + fix task を PLAN.md に追加して closure 延期
+7. pass のみで tag 設置可、後続 retro hook + branch hygiene PR opening trigger に進む
+
+**rationale**: trust recovery milestone series 3 連続発覚 pattern (F-USER-005/006 + F-USER-007/008 + Bug A) は全て Layer 1 + 2 通過後に user 直接 verify でしか発覚しなかった。Layer 2.5 を milestone closure default 必須 step 化することで開発側の dogfood gap を構造的に塞ぐ。
+
+#### Layer 2 / Layer 3 の位置付け
+
+- **Layer 2 invoke**: user yes → `/loom-ui-smoke --scope=full --auto-start` 経由で skill invoke、結果を報告。user no / skip → Layer 2.5 + milestone retro hook（下記）に flow 続行
+- **Layer 2 が bug 発見した場合**: PM が follow-up dispatch 判断（SRP 整合、skill は report only）
+- **Layer 3 (user verify request)**: SPEC §10.4.2 の通り **anti-pattern** として明示、emergency case のみで利用、default workflow からは除外
 
 **suggest skill** (SPEC §3.10.1)：loom-ui-smoke は mandate ではなく suggest。UI 変更がない milestone では YAGNI。
 
@@ -418,6 +435,18 @@ milestone tag 設置（`git tag -a m*-complete`）を検出したら、user に 
 4. user no / 保留 → skip、次の milestone まで保留
 
 retro 自体の orchestration は `loom-retro-pm` が引き受ける、PM はトリガと結果報告の receiver 役。
+
+### Post-tag hotfix protocol（retro 2026-05-06-003 F-pj-001 由来、SPEC §3.6.8.11 SSoT）
+
+milestone tag 設置後に発覚した bug への hotfix が必要な場合、以下 rule を遵守する：
+
+1. **tag 移動禁止**: hotfix commit は tag に取り込まず、tag は当該 milestone closure marker として不変に保つ
+2. **commit message に `[post-tag-hotfix]` 文字列を必ず含める** (git log grep 検出可能化)
+3. **同 branch 継続**: milestone branch (`fix/m0.x-...`) に追加 commit、別 branch を切らない
+4. **次回 retro 起動時に scope へ必須 inclusion**: 当該 milestone retro の `## Scope` + `## Milestone scope (N commits)` table に hotfix commit を明記
+5. **PR description**: PR body の "## 修正内容" に "post-tag hotfix" subsection を追加、root cause + fix + precedent 参照
+
+**precedent**: F-USER-007/008 hotfix (commit `c31a88e`、M0.11.5 tag 後) + Bug A hotfix (commit `91cdcbb`、M0.X-runtime-mode-recovery tag 後)。詳細は SPEC §3.6.8.11。
 
 ### Dependency audit on default change（M0.11.5 から、retro 2026-05-06-001 F-USER-002 由来、SPEC §3.6.8.8 SSoT）
 
