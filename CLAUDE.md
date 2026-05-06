@@ -137,6 +137,29 @@ Phase 1 MVP closure 時に「4 branch chain × 32+ commits ahead of main、PR �
 
 claude-loom 内で daemon (TypeScript / Fastify / tRPC) を開発する際の追加規約：
 
+### dev mode と prod mode の使い分け（SPEC §3.2.2）
+
+| | **dev mode** | **prod mode** |
+|---|---|---|
+| 起動コマンド | `pnpm --filter @claude-loom/daemon dev` | 自動（SessionStart hook 経由 lazy launch） |
+| env 注入 | `LOOM_DEV_MODE=1 LOOM_ENTRY=pnpm-dev`（auto-inject） | `LOOM_ENTRY=lazy-launch`（env なし = prod default） |
+| access URL | UI: `http://127.0.0.1:5173`（Vite）、API: `http://127.0.0.1:5757` | `http://127.0.0.1:5757`（daemon が UI + API を serve） |
+| static serving | **skip**（ui/dist があっても無視、Vite が UI を担う） | **serve**（ui/dist 存在時のみ `@fastify/static` register） |
+| 用途 | claude-loom 自身の UI 開発（hot-reload 付き） | end-user による消費、lazy daemon auto-launch |
+
+**mode 判定 SSoT**: `GET /mode` endpoint。daemon process が起動時に `LOOM_DEV_MODE` の有無で固定、以後は `/mode` 応答が canonical source（PID ファイルを decision logic に使ってはいけない）。
+
+**競合 detection**:
+- `pnpm dev` 起動前に pre-flight script が `/health` + `/mode` を probe → prod daemon 検出時は ERROR + PID を出力して exit 1（tsx watch を起動させない）
+- lazy launch path は `/mode` probe で dev daemon 検出 → Vite (:5173) に redirect
+
+**opt-out**:
+- `LOOM_DEV_MODE=1` を手動 set で dev mode 強制（`pnpm dev` の auto-inject が標準 path）
+- `LOOM_NO_UI=1` で browser open skip（session 単位の緊急上書き）
+- `LOOM_NO_AUTO_UI=1` で SessionStart hook 経由の auto-launch のみ無効化（slash command 経由は許可）
+
+詳細: `SPEC.md §3.2.1` + `§3.2.2`。
+
 ### Node.js 環境
 
 - **Node LTS（20 or 22）推奨**。Node 25 (current) では `better-sqlite3` の native build に CXXFLAGS workaround が必要な場合あり、LTS 環境を強く推奨
