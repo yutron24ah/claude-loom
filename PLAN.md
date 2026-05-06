@@ -557,18 +557,18 @@ F-USER-007/008 (symlink CLI guard + hooks SDK 仕様準拠) と同 class の **p
       <!-- id: m0.x-runtime-mode-t2 status: done planned_files: daemon/src/server.ts commit: f43006a note: t3 と bundle (TDD cycle 統合)、unified annotation、507/507 daemon test pass、path C self-review 完了 -->
 - [x] daemon: `test/server-static.test.ts` を `LOOM_DEV_MODE` mutation ベースに書換、`/mode` endpoint test 追加
       <!-- id: m0.x-runtime-mode-t3 status: done planned_files: daemon/test/server-static.test.ts, daemon/test/server-mode-endpoint.test.ts commit: f43006a note: t2 と bundle、新 endpoint test 13 件 + migration test 11 件 全 PASS -->
-- [ ] hooks/loom-launch-ui.sh: `/mode` probe + dev daemon 検出時の Vite (:5173) redirect logic 追加
-      <!-- id: m0.x-runtime-mode-t4 status: todo planned_files: hooks/loom-launch-ui.sh -->
-- [ ] daemon/package.json: `dev` script に `LOOM_DEV_MODE=1 LOOM_ENTRY=pnpm-dev` auto-inject
-      <!-- id: m0.x-runtime-mode-t5 status: todo planned_files: daemon/package.json -->
-- [ ] daemon: pre-flight script 新設 (`scripts/pnpm-dev-preflight.sh` 等、`/health` + `/mode` で prod daemon 検出時に diagnostic 出して exit)、`pnpm dev` script から invoke
-      <!-- id: m0.x-runtime-mode-t6 status: todo planned_files: daemon/scripts/pnpm-dev-preflight.sh, daemon/package.json -->
-- [ ] commands/loom-stop.md + hooks/loom-stop.sh: `/loom-stop --all` semantics 拡張 (全 daemon プロセス kill + tsx watch 残骸 cleanup)
-      <!-- id: m0.x-runtime-mode-t7 status: todo planned_files: commands/loom-stop.md, hooks/loom-stop.sh -->
-- [ ] install.sh: post-install で stale tsx watch detection + warning メッセージ追加
-      <!-- id: m0.x-runtime-mode-t8 status: todo planned_files: install.sh -->
-- [ ] tests/REQUIREMENTS.md: REQ for 競合 diagnostic + dev/prod 切替の access URL pattern 追加 (REQ-049 = /mode endpoint shape は t2/t3 で commit f43006a で先行追加済、scope 縮小)
-      <!-- id: m0.x-runtime-mode-t9 status: todo planned_files: tests/REQUIREMENTS.md note: REQ-049 既設置、本 task は competition diagnostic + dev/prod URL routing の REQ 追加に scope 縮小 -->
+- [x] hooks/loom-launch-ui.sh: `/mode` probe + dev daemon 検出時の Vite (:5173) redirect logic 追加
+      <!-- id: m0.x-runtime-mode-t4 status: done planned_files: hooks/loom-launch-ui.sh commit: 1ce1b11 note: REQ-050 追加、loom_launch_ui_mode_probe_test 9 件 PASS、regression 0、path C self-review 完了 -->
+- [x] daemon/package.json: `dev` script に `LOOM_DEV_MODE=1 LOOM_ENTRY=pnpm-dev` auto-inject
+      <!-- id: m0.x-runtime-mode-t5 status: done planned_files: daemon/package.json commit: d3aa805 note: t6 と bundle (file overlap on package.json)、unified annotation -->
+- [x] daemon: pre-flight script 新設 (`scripts/pnpm-dev-preflight.sh` 等、`/health` + `/mode` で prod daemon 検出時に diagnostic 出して exit)、`pnpm dev` script から invoke
+      <!-- id: m0.x-runtime-mode-t6 status: done planned_files: daemon/scripts/pnpm-dev-preflight.sh, daemon/package.json commit: d3aa805 note: t5 と bundle、REQ-053 追加、m0x_t5_t6_preflight_test 13 件 PASS -->
+- [x] commands/loom-stop.md + hooks/loom-stop.sh: `/loom-stop --all` semantics 拡張 (全 daemon プロセス kill + tsx watch 残骸 cleanup)
+      <!-- id: m0.x-runtime-mode-t7 status: done planned_files: commands/loom-stop.md, hooks/loom-stop.sh commit: 6e09df5 note: REQ-052 追加、loom_stop_all_test 12 件 PASS、no-arg regression 0 -->
+- [x] install.sh: post-install で stale tsx watch detection + warning メッセージ追加
+      <!-- id: m0.x-runtime-mode-t8 status: done planned_files: install.sh commit: 3a24688 note: REQ-051 追加、install_post_check_test 7 件 PASS (3 scenario)、auto-kill なし read-only check -->
+- [x] tests/REQUIREMENTS.md: REQ for 競合 diagnostic + dev/prod 切替の access URL pattern 追加
+      <!-- id: m0.x-runtime-mode-t9 status: done planned_files: tests/REQUIREMENTS.md note: scope absorbed — t2-t8 個別 dev による REQ-049/050/051/052/053 追加で本 task scope 全カバー、separate dispatch 不要 -->
 - [ ] CLAUDE.md + README.md cascade update (dev/prod mode 役割分担 + access URL 違いを user 視点で明記)
       <!-- id: m0.x-runtime-mode-t10 status: todo planned_files: CLAUDE.md, README.md -->
 - [ ] e2e smoke test (`tests/daemon_runtime_mode_test.sh`) 新設 + tag `m0.x-runtime-mode-recovery-complete` 設置
