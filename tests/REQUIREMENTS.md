@@ -143,3 +143,7 @@
 ## M0.X-runtime-mode-recovery t7: /loom-stop --all zombie cleanup
 
 - **REQ-052**: `hooks/loom-stop.sh` が `--all` flag に対応する。引数なしは既存挙動（graceful shutdown 1 daemon、fail-silent）を維持。`--all` では (1) POST /shutdown 試行、(2) daemon.pid stale kill、(3) `pgrep -f "tsx.*server\.ts"` zombie kill、(4) `pgrep -f "node.*\.claude-loom/daemon\.js"` manual launch kill、(5) killed/not-found report を stdout 出力、(6) best-effort exit 0。`commands/loom-stop.md` が `--all` flag description を含む。テスト専用 `LOOM_TEST_ZOMBIE_PIDS` env var で mock PID 直接指定可能。`tests/loom_stop_all_test.sh` でカバー。
+
+## M0.X-runtime-mode-recovery t5/t6: pnpm dev preflight + LOOM_DEV_MODE auto-inject
+
+- **REQ-053**: `daemon/package.json` の `dev` script が `LOOM_DEV_MODE=1 LOOM_ENTRY=pnpm-dev` を auto-inject + `bash scripts/pnpm-dev-preflight.sh` を tsx watch 起動前に invoke。`daemon/scripts/pnpm-dev-preflight.sh` が SPEC §3.2.2 prod daemon 検出時挙動を実装: `/health` + `/mode` probe で `mode=prod` 検出 → ERROR + PID + entry を stderr に出力して exit 1 (tsx watch 起動ブロック)、dev daemon / daemon 不在 / probe fail は exit 0 (graceful)。`tests/m0x_t5_t6_preflight_test.sh` でカバー (13 scenario)。
