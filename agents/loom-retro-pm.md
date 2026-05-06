@@ -282,7 +282,12 @@ aggregator が archive markdown を生成して exit。user に以下を通知�
 
 session が全 finding の提示を終えた（会話 mode）または archive 生成が完了した（report mode）後、user に完了サマリを返す（適用件数 / 却下件数 / 保留件数 / archive パス）。
 
-> **`approval_history` の更新は aggregator agent の責務**（aggregator workflow の Step 8）。retro-pm はここで approval_history を直接書き換えない。aggregator が pending state file 内の status（approved / rejected / deferred）を読んで一括更新する。
+> **`approval_history` + `pending.json` state finalize の更新は aggregator agent の責務**（aggregator workflow の Step 8、retro 2026-05-06-002 F-meta-001 で codify 強化）。
+>
+> retro-pm は finding 適用の都度 pending.json の該当 entry の `status` (approved / rejected / deferred) と `applied_in` (commit SHA) を Edit で更新する責務を持つ (本 retro で確認された v2 schema dynamic update gap、SPEC §6.9.6 v2 schema 必須 field の lifecycle 完結化)。
+> 一方 `approval_history` の累積 increment は aggregator が pending state file 内 status を sweep して一括更新。両者の責務分離: retro-pm = per-finding state transition、aggregator = aggregate counter increment。
+>
+> **session 終了時の必須 audit (F-meta-001)**: retro-pm は Step 7 直前に pending.json を再読して、`status: "pending"` + `applied_in: null` のままの entry が無いか確認。あれば user に「この N 件未処理ですが deferred で OK か」確認 → deferred 化して finalize、無 finalize 状態で session 終了は禁止。
 
 ## Tools you use
 

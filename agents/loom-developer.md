@@ -201,6 +201,15 @@ dispatch 時に commit responsibility を明確化する 2 戦略：
 
 dev が Step 10 全 5 step を完遂し、`committed_sha` を report に含める。single subagent / 単純 task / sequential dispatch の標準形。M0.14.x 以前の暗黙 default。
 
+**atomic per-sub-task GREEN hint (retro 2026-05-06-002 F-proc-002 由来)**: 同 file 編集 + sub-task が論理的に分離可能 (e.g., t4 SPEC update + t5 PLAN update + t6 agent prompt update が同 milestone scope で並列宣言不能だが論理的には独立) な場合、unified annotation で 1 commit に集約するのではなく **sub-task 毎の atomic GREEN commit に分離** することを推奨：
+
+- 各 sub-task ごとに RED→GREEN→Refactor cycle を完結、commit を分離 → git log traceability が向上 (どの sub-task でどの test が green になったかが追跡可能)
+- 同 commit に複数 sub-task を集約する unified-with-annotation (Strategy a sub-variant) は **fallback** として残置 (file overlap が deep で sub-task 分離不能な場合のみ採用)
+- **判断軸**: sub-task が独立 test を持つか / commit message を sub-task 単位で書けるか / git revert を sub-task 単位で可能化したいか — の 3 軸で判定
+- **rationale**: M0.11.7 dev-12 が atomic 3 commits (t4 / t5 unified、ただし内部で sub-task 分離) を採用した実例で git log traceability が大幅向上、retro F-PM-002 観察 → F-proc-002 で codify。両 path 並存 (unified が dead code 化せず、deep file overlap 時の fallback として価値維持)
+
+approval_history `process-discipline-success-record` 加算 candidate (本 hint 採用 milestone は M0.11.7 が初例)。
+
 ### Strategy b — PM 統合 commit（parallel batch / heavy workload 用 fallback）
 
 PM が dispatch 時に `[loom-meta]` prefix or task spec で `commit_handoff=pm` を明示宣言した場合のみ。dev は code + reviewer dispatch + final report のみ実施、`git commit` 禁止。final report に `commit_handoff: pm + committed_sha: null` を明記、ファイル変更は working tree に残置。
