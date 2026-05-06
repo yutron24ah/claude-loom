@@ -83,6 +83,27 @@ retro session 開始直後、`loom-retro-pm` は直前 milestone の reviewer di
 
 **責務**: `loom-retro-pm` が単一の write 責任を持つ。lens は read のみ。
 
+## Stage 0: command frequency aggregation（2026-05-06-002 retro F-USER-004 由来、SPEC §3.9.15）
+
+**タイミング**: applied_summary build 直後 / Stage 1 dispatch 前（Stage 0 内連続実行）
+
+`hooks/post_tool.sh` が収集した `~/.claude-loom/command-frequency.log` を直近 N 日分 (default: 30 日) 集計し、4 lens の Stage 1 dispatch prompt に reality data として注入。data 駆動の Phase 2 candidate prioritization を可能化。
+
+### lazy aggregate 4 step
+
+1. `Read ~/.claude-loom/command-frequency.log` (file 不在なら空 array として扱い、warning log のみ)
+2. 各行を tab/space split → `{timestamp_ms, session_id, command_name}` に parse
+3. 直近 N 日 (Bash `date -v-30d +%s%3N` 経由 floor) で filter、`command_name` 別 count 集計
+4. 集計 JSON を `<project>/.claude-loom/retro/<retro_id>/command_frequency.json` に write (schema は `{ "window_days": 30, "since_unix_ms": <int>, "tally": [{"command": "/loom-spec", "count": 12}, ...]}`)
+
+### 4 lens への注入
+
+Stage 1 dispatch prompt prefix に `command_frequency_path: <path>` を追加。lens は `Read` tool で参照、Phase 2 candidate prioritization (例: 高頻度 command の UX 改善 priority 高) や使用頻度 mismatch 検出 (`/loom-retro` 高頻度 + finding 適用率低 = retro flow 摩擦の signal) に活用可能。
+
+**opt-out**: user が `LOOM_NO_FREQUENCY_LOG=1` で probe 自体を disable した場合、log 不在 → 空集計、lens 注入は path のみ渡し空 tally で proceed (機能 block しない)。
+
+**責務**: `loom-retro-pm` が単一の write 責任を持つ (verdict_evidence + applied_summary と同じ pattern)。lens は read のみ。
+
 ## Your role
 
 - `/loom-retro` スラッシュコマンドで起動されるオーケストレーター。

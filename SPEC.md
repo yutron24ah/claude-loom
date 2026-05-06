@@ -1007,6 +1007,17 @@ retro carryover findings (前 retro で defer された pre-existing test failur
 
 **M0.11.5 retro 適用 case**: pre-existing test failures 3 件 (`docs_release_test.sh` / `dry_run_applied_summary_test.sh` / `m1_docs_test.sh`) は M0.X 系列で 3 retro 連続 carryover、本 retro F-proc-004 で escalation rule が適用された初例。専用 fix milestone は本 retro 後の PLAN.md insertion で対応。
 
+#### 3.9.15 Command frequency probe (data-driven retro context)（2026-05-06-002 retro F-USER-004 由来）
+
+retro architecture を data 駆動化し、Phase 2 candidate prioritization に reality data を提供するための probe 機構。
+
+- **collection**: `hooks/post_tool.sh` 内で `tool_name == "SlashCommand"` を check、command name を `~/.claude-loom/command-frequency.log` に append。format `<unix_ms> <session_id> <command_name>` の 1 line / event
+- **opt-out**: `LOOM_NO_FREQUENCY_LOG=1` env 経由で session 単位 disable (privacy concern 用)、`LOOM_FREQUENCY_LOG=<path>` で log path override 可能
+- **lifecycle**: log は append-only、size cap / rotation は M4 doc consistency engine の collateral として後続 codify (本節時点では simple text log)
+- **retro Stage 0 拡張**: `loom-retro-pm` が verdict_evidence + applied_summary build に続き、command-frequency.log を直近 N 日分集計 → 4 lens の Stage 1 dispatch prompt に context 注入。lens 側は invocation pattern (e.g., `/loom-spec` 高頻度 + `/loom-go` 低頻度 = spec phase ceremony 過剰の signal) を Phase 2 candidate prioritization 軸として活用
+- **責務分離**: probe 自体は post_tool hook の bash 内で完結 (daemon 経由不要、daemon 停止時も収集継続可能)。集計・lens 注入は retro-pm Stage 0 の Read tool 経由
+- **目的**: Phase 1 までの retro は code state + git log を主 evidence としていたが、user 行動 (どの slash command を何回使うか) という reality data の欠落で「使用頻度が低い command を rich 化」のような誤った prioritization を生むリスクがあった。frequency log 導入で reality data 駆動の prioritization を可能化
+
 ### 3.10 superpowers Independence（M0.9 から）
 
 claude-loom は **superpowers plugin に依存せずに完結する** ことを設計目標とする。
