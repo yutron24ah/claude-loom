@@ -169,18 +169,42 @@ remove_hooks_settings() {
     return 0
   fi
 
-  # .hooks 内の値が loom-*/ を含むエントリを削除
-  # install.sh が書き込む hooks は session_start / pre_tool / post_tool / stop / SubagentStop
-  # それらの値が CLAUDE_HOME/hooks/ を含む場合に除去する
+  # .hooks 内の loom hook entry を削除
+  # 構造: PascalCase event 名 (SessionStart 等) → [{matcher, hooks: [{type, command}]}] 配列
+  # 各 event 配列から「commands に loom_hooks_path を prefix に持つ entry」を filter out
+  # entry 内 hooks が空になったら matcher entry 自体を削除
+  # event 配列が空になったら event key 自体を削除
+  # 他 plugin の matcher entry (Stop に blog-journal.sh 等) は preserve
+  # legacy snake_case keys (session_start 等) も同時に cleanup
   local loom_hooks_path="${CLAUDE_HOME}/hooks"
   local tmp
   tmp="$(mktemp)"
 
-  # jq: .hooks オブジェクトの中から値が loom_hooks_path を含むキーを除去
-  # .hooks が null/存在しない場合も safe に処理
-  jq --arg hooks_path "$loom_hooks_path" \
-    'if .hooks then .hooks |= with_entries(select(.value | contains($hooks_path) | not)) else . end' \
-    "$SETTINGS_FILE" > "$tmp"
+  jq --arg hooks_path "$loom_hooks_path" '
+    def is_loom_cmd: . | startswith($hooks_path);
+    def filter_loom_from_matcher:
+      .hooks |= map(select((.command // "") | is_loom_cmd | not))
+      | select((.hooks // []) | length > 0);
+    def filter_event:
+      map(filter_loom_from_matcher) | select(length > 0);
+    if .hooks then
+      .hooks |= (
+        # legacy snake_case keys (string values from older installs) を cleanup
+        del(.session_start, .pre_tool, .post_tool, .stop)
+        # PascalCase keys を array filter
+        | with_entries(
+            if (.value | type) == "array"
+            then .value |= filter_event
+            else .
+            end
+          )
+        # filter_event が empty 配列 (length=0) を返した場合は select で消えとる、
+        # ただし null になった key を with_entries 出力から除外
+        | with_entries(select(.value != null))
+      )
+      | if (.hooks | length) == 0 then del(.hooks) else . end
+    else . end
+  ' "$SETTINGS_FILE" > "$tmp"
 
   if "$OPT_DRY_RUN"; then
     echo "  [dry-run] settings.json から loom hooks エントリを削除"

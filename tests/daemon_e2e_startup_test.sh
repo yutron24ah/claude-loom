@@ -56,32 +56,78 @@ if [ ! -f "$JOURNAL_FILE" ]; then
   exit 1
 fi
 
-echo "[3/4] start daemon in production mode..."
+echo "[3/6] start daemon via direct path (dev mode invocation)..."
 node "$DAEMON_DIST" > "$LOG_FILE" 2>&1 &
 DAEMON_PID=$!
 sleep 3
 
 if ! kill -0 "$DAEMON_PID" 2>/dev/null; then
-  echo "FAIL: daemon process exited prematurely"
+  echo "FAIL: daemon process (direct path) exited prematurely"
   echo "--- LOG ---"
   cat "$LOG_FILE"
   exit 1
 fi
 
-echo "[4/4] curl /health verify..."
+echo "[4/6] curl /health verify (direct path)..."
 HEALTH_BODY=$(curl -s -o /tmp/daemon-e2e-health.json -w "%{http_code}" "http://127.0.0.1:$TEST_PORT/health" || echo "000")
 if [ "$HEALTH_BODY" != "200" ]; then
-  echo "FAIL: /health returned HTTP $HEALTH_BODY (expected 200)"
+  echo "FAIL: /health returned HTTP $HEALTH_BODY (expected 200, direct path)"
   echo "--- LOG ---"
   cat "$LOG_FILE"
   exit 1
 fi
 
 if ! grep -q '"status":"ok"' /tmp/daemon-e2e-health.json; then
-  echo "FAIL: /health body missing status:ok"
+  echo "FAIL: /health body missing status:ok (direct path)"
   cat /tmp/daemon-e2e-health.json
   exit 1
 fi
 
-echo "PASS: daemon production startup E2E (HTTP 200 + status:ok)"
+# Cleanup direct-path daemon before symlink test (port :5757 is single-instance).
+kill "$DAEMON_PID" 2>/dev/null || true
+DAEMON_PID=""
+sleep 1
+
+echo "[5/6] start daemon via symlink (production lazy-launch flow)..."
+# 由来: retro 2026-05-06-003 F-USER-007 — server.ts CLI entry guard が symlink
+# invocation で startServer() を呼ばず silent exit する regression を E2E で
+# guard。loom-launch-ui.sh は ~/.claude-loom/daemon.js (symlink) 経由で
+# `node $DAEMON_BIN` を実行するため、direct-path test だけでは check 不能。
+SYMLINK_PATH="$(mktemp -u)"
+ln -sf "$DAEMON_DIST" "$SYMLINK_PATH"
+SYMLINK_LOG="${LOG_FILE}.symlink"
+node "$SYMLINK_PATH" > "$SYMLINK_LOG" 2>&1 &
+DAEMON_PID=$!
+sleep 3
+
+if ! kill -0 "$DAEMON_PID" 2>/dev/null; then
+  echo "FAIL: daemon process (symlink invocation) exited prematurely"
+  echo "  This is the F-USER-007 regression: CLI entry guard fails under symlink."
+  echo "  Fix: server.ts must use realpathSync(process.argv[1]) for argv comparison."
+  echo "--- LOG ---"
+  cat "$SYMLINK_LOG"
+  rm -f "$SYMLINK_PATH"
+  exit 1
+fi
+
+echo "[6/6] curl /health verify (symlink invocation)..."
+HEALTH_BODY=$(curl -s -o /tmp/daemon-e2e-health-symlink.json -w "%{http_code}" "http://127.0.0.1:$TEST_PORT/health" || echo "000")
+if [ "$HEALTH_BODY" != "200" ]; then
+  echo "FAIL: /health returned HTTP $HEALTH_BODY (expected 200, symlink invocation)"
+  echo "--- LOG ---"
+  cat "$SYMLINK_LOG"
+  rm -f "$SYMLINK_PATH"
+  exit 1
+fi
+
+if ! grep -q '"status":"ok"' /tmp/daemon-e2e-health-symlink.json; then
+  echo "FAIL: /health body missing status:ok (symlink invocation)"
+  cat /tmp/daemon-e2e-health-symlink.json
+  rm -f "$SYMLINK_PATH"
+  exit 1
+fi
+
+rm -f "$SYMLINK_PATH"
+
+echo "PASS: daemon production startup E2E (direct path + symlink invocation)"
 exit 0

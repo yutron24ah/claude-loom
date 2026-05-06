@@ -10,7 +10,7 @@ import { createContext } from "./trpc.js";
 import { registerIngestRoute } from "./hooks/ingest.js";
 import { startIdleShutdown } from "./lifecycle/idle-shutdown.js";
 import { scheduleEventCleanup } from "./lifecycle/event-cleanup.js";
-import { existsSync } from "node:fs";
+import { existsSync, realpathSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -98,8 +98,14 @@ export async function startServer(port = 5757, host = "127.0.0.1") {
   return app;
 }
 
-// CLI entry
-if (import.meta.url === `file://${process.argv[1]}`) {
+// CLI entry — realpath comparison handles symlink invocation (e.g. `node
+// ~/.claude-loom/daemon.js` where daemon.js → daemon/dist/server.js). Naive
+// `process.argv[1]` string compare fails because import.meta.url resolves to
+// the real path while argv[1] retains the symlink path. retro 2026-05-06-003
+// F-USER-007 — lazy daemon flow regression evidence.
+const argvPath = process.argv[1] ? realpathSync(process.argv[1]) : "";
+const importPath = fileURLToPath(import.meta.url);
+if (argvPath === importPath) {
   startServer().catch((err) => {
     console.error("Failed to start daemon:", err);
     process.exit(1);

@@ -111,36 +111,50 @@ else
 fi
 
 if command -v jq >/dev/null 2>&1; then
-  if [ -f "$fresh_sandbox2/.claude/settings.json" ] && jq -e '.hooks.session_start' "$fresh_sandbox2/.claude/settings.json" >/dev/null 2>&1; then
-    echo "PASS: REQ-028: settings.json hooks 配線 (M1)"
+  # retro 2026-05-06-003 F-USER-008: PascalCase + matcher 配列構造を verify
+  # 旧 snake_case key (`.hooks.session_start`) は SDK 仕様非整合で削除済
+  # 新構造: .hooks.SessionStart[N].hooks[N].command が session_start.sh を含む
+  settings_file="$fresh_sandbox2/.claude/settings.json"
+  if [ -f "$settings_file" ] && \
+     jq -e '
+       .hooks.SessionStart and
+       (.hooks.SessionStart | type) == "array" and
+       (.hooks.SessionStart | map(.hooks // []) | flatten | map(.command) | any(test("session_start.sh$")))
+     ' "$settings_file" >/dev/null 2>&1; then
+    echo "PASS: REQ-028: settings.json hooks 配線 (M1, PascalCase + matcher 配列、SDK 仕様準拠)"
   else
-    echo "FAIL: REQ-028: settings.json missing hooks"
+    echo "FAIL: REQ-028: settings.json hooks 配線 not in PascalCase + matcher 配列構造"
+    jq '.hooks' "$settings_file" 2>&1 | head -10
     exit 1
   fi
 fi
 
-# ----- REQ-046: daemon.js symlink bootstrap (M0.11.5 hotfix) -----
-# install.sh は <project>/daemon/dist/index.js を ~/.claude-loom/daemon.js に symlink すべき
-# (loom-launch-ui.sh の DAEMON_BIN=$HOME/.claude-loom/daemon.js 参照を満たす)
+# ----- REQ-046: daemon.js symlink bootstrap (M0.11.5 hotfix → retro 2026-05-06-002 F-USER-006 → retro 2026-05-06-003 F-USER-007) -----
+# install.sh は <project>/daemon/dist/server.js を ~/.claude-loom/daemon.js に symlink すべき
+# (loom-launch-ui.sh の DAEMON_BIN=$HOME/.claude-loom/daemon.js 参照を満たす + lazy daemon 起動)
+# 履歴:
+#   - retro 2026-05-06-001 F-USER-001 hotfix: install.sh に symlink bootstrap step 追加
+#   - retro 2026-05-06-002 F-USER-006 hotfix: target を index.js → server.js に修正
+#   - retro 2026-05-06-003 F-USER-007 hotfix: server.js CLI guard を symlink invocation 対応 (本 test の expected target は server.js のまま、CLI guard side fix が server.ts に入る)
 # fresh sandbox + LOOM_HOME 上書きで test 独立性確保
 fresh_sandbox3=$(mktemp -d)
 fresh_loom_home=$(mktemp -d)
 trap 'rm -rf "$SANDBOX" "$fresh_sandbox" "$fresh_sandbox2" "$fresh_sandbox3" "$fresh_loom_home"' EXIT
 
-# daemon/dist/index.js 存在前提 (実 repo 状態に依存、build 済み環境想定)
-if [ ! -f "$ROOT_DIR/daemon/dist/index.js" ]; then
-  echo "SKIP: REQ-046: daemon/dist/index.js が build 未完了のため symlink test skip"
+# daemon/dist/server.js 存在前提 (実 repo 状態に依存、build 済み環境想定)
+if [ ! -f "$ROOT_DIR/daemon/dist/server.js" ]; then
+  echo "SKIP: REQ-046: daemon/dist/server.js が build 未完了のため symlink test skip"
 else
   CLAUDE_HOME="$fresh_sandbox3/.claude" LOOM_HOME="$fresh_loom_home/.claude-loom" \
     bash "$ROOT_DIR/install.sh" >/dev/null
 
   if [ -L "$fresh_loom_home/.claude-loom/daemon.js" ]; then
     daemon_target=$(readlink "$fresh_loom_home/.claude-loom/daemon.js")
-    if [ "$daemon_target" = "$ROOT_DIR/daemon/dist/index.js" ] || \
-       [ "$(cd "$(dirname "$daemon_target")" 2>/dev/null && pwd)/$(basename "$daemon_target")" = "$ROOT_DIR/daemon/dist/index.js" ]; then
+    if [ "$daemon_target" = "$ROOT_DIR/daemon/dist/server.js" ] || \
+       [ "$(cd "$(dirname "$daemon_target")" 2>/dev/null && pwd)/$(basename "$daemon_target")" = "$ROOT_DIR/daemon/dist/server.js" ]; then
       echo "PASS: REQ-046: daemon.js symlink configured ($fresh_loom_home/.claude-loom/daemon.js -> $daemon_target)"
     else
-      echo "FAIL: REQ-046: daemon.js symlink target mismatch (expected $ROOT_DIR/daemon/dist/index.js, got $daemon_target)"
+      echo "FAIL: REQ-046: daemon.js symlink target mismatch (expected $ROOT_DIR/daemon/dist/server.js, got $daemon_target)"
       exit 1
     fi
   else
