@@ -157,8 +157,13 @@ open_browser() {
   $browser_cmd "$UI_URL" >/dev/null 2>&1 || true
 }
 
-# ── start_daemon: nohup bg start, PID file record
-# Returns 0 on success, 1 if daemon entry missing (caller skips browser open).
+# ── start_daemon: nohup bg start, PID file record, then port bind verify
+# Returns 0 if daemon started AND /health responds within timeout.
+# Returns 1 if daemon entry missing or port bind verify fails.
+# WHY: nohup success ≠ port bind success. EADDRINUSE / module crash etc.
+# silently die without verify → open_browser was being called for
+# already-dead daemons → multiple browser tabs spawned (Bug A, retro 2026-05-06-XXX).
+# Caller (main) skips open_browser on non-zero return.
 start_daemon() {
   if [ ! -f "$DAEMON_BIN" ]; then
     log_warn "Daemon entry not found: $DAEMON_BIN"
@@ -173,7 +178,28 @@ start_daemon() {
   local pid=$!
   echo "$pid" > "$PID_FILE"
   log_info "Daemon started (PID=$pid, pidfile=$PID_FILE)"
-  return 0
+
+  # NEW: Verify daemon actually bound port and responds to /health.
+  # WHY: nohup success ≠ port bind success. EADDRINUSE / module crash etc.
+  # silently die without verify → open_browser was being called for
+  # already-dead daemons → multiple browser tabs spawned (Bug A, retro 2026-05-06-XXX).
+  # env override LOOM_DAEMON_BOOT_MAX_ATTEMPTS for test fixture control (default 5).
+  local max_attempts="${LOOM_DAEMON_BOOT_MAX_ATTEMPTS:-5}"
+  local i=1
+  while [ "$i" -le "$max_attempts" ]; do
+    sleep 0.5
+    if curl -sf --max-time 1 "${DAEMON_URL}/health" >/dev/null 2>&1; then
+      log_info "Daemon health check passed after ${i} attempt(s)"
+      return 0
+    fi
+    i=$((i + 1))
+  done
+
+  local timeout_s
+  timeout_s=$(echo "$max_attempts * 0.5" | awk '{printf "%.1f", $1}')
+  log_warn "Daemon launched (PID=$pid) but failed to respond at $DAEMON_URL within ${timeout_s}s"
+  log_warn "Possible causes: EADDRINUSE (port already bound by another process), module crash, or slow init"
+  return 1  # caller (main) skips open_browser
 }
 
 # ── main ──────────────────────────────────────────────────────────────────────

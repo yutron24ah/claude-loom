@@ -118,6 +118,8 @@ echo "// fake" > "$FAKE_DAEMON4"
 export LOOM_DAEMON_BIN="$FAKE_DAEMON4"
 export LOOM_PID_FILE="$TMP_DIR/daemon4.pid"
 export LOOM_NODE_CMD="$FAKE_NODE"
+# Use minimal polling attempts to keep test fast (port 59998 never responds)
+export LOOM_DAEMON_BOOT_MAX_ATTEMPTS="1"
 
 stdout4=$(bash "$SCRIPT" 2>/dev/null) || true
 if [ -f "$CALL_LOG4" ] && grep -q "OPENED:" "$CALL_LOG4" 2>/dev/null; then
@@ -205,6 +207,9 @@ fi
 reset_env
 
 # ── 7. normal cold-start → browser open called once, URL on stdout ────────────
+# WHY: After Bug A fix, start_daemon polls /health to verify port bind.
+# The fake_node must actually start a background health server so polling succeeds.
+# Without this, start_daemon returns 1 and open_browser is correctly skipped.
 CALL_LOG7="$TMP_DIR/call7.log"
 FAKE_OPEN7="$TMP_DIR/fake_open7.sh"
 cat > "$FAKE_OPEN7" <<'EOF'
@@ -214,24 +219,52 @@ EOF
 chmod +x "$FAKE_OPEN7"
 export CALL_LOG_PATH="$CALL_LOG7"
 export LOOM_BROWSER_CMD_OVERRIDE="$FAKE_OPEN7"
-export LOOM_DAEMON_URL="http://127.0.0.1:59998"  # non-existent → cold-start
+MOCK_SERVER_PORT7=15758  # separate port to avoid conflicts with test 5/8
+export LOOM_DAEMON_URL="http://127.0.0.1:$MOCK_SERVER_PORT7"
 FAKE_DAEMON7="$TMP_DIR/fake_daemon7.js"
 echo "// fake" > "$FAKE_DAEMON7"
 export LOOM_DAEMON_BIN="$FAKE_DAEMON7"
 export LOOM_PID_FILE="$TMP_DIR/daemon7.pid"
-export LOOM_NODE_CMD="$FAKE_NODE"
+export LOOM_DAEMON_BOOT_MAX_ATTEMPTS="5"
 
-stdout7=$(bash "$SCRIPT" 2>/dev/null) || true
+if [ -n "$PYTHON_BIN" ]; then
+  # fake_node starts a background HTTP server simulating a daemon that successfully
+  # binds its port — start_daemon's /health polling will detect this server
+  cat > "$TMP_DIR/fake_node7.sh" <<EOFN7
+#!/usr/bin/env bash
+$PYTHON_BIN -c "
+import http.server
 
-if [ -f "$CALL_LOG7" ] && grep -q "OPENED:" "$CALL_LOG7" 2>/dev/null; then
-  pass "cold-start: browser open called"
+class H(http.server.BaseHTTPRequestHandler):
+  def do_GET(self):
+    self.send_response(200)
+    self.end_headers()
+    self.wfile.write(b'ok')
+  def log_message(self, *a): pass
+
+srv = http.server.HTTPServer(('127.0.0.1', $MOCK_SERVER_PORT7), H)
+srv.timeout = 0.1
+for _ in range(60): srv.handle_request()
+" &
+EOFN7
+  chmod +x "$TMP_DIR/fake_node7.sh"
+  export LOOM_NODE_CMD="$TMP_DIR/fake_node7.sh"
+
+  stdout7=$(bash "$SCRIPT" 2>/dev/null) || true
+  pkill -f "HTTPServer.*$MOCK_SERVER_PORT7" 2>/dev/null || true
+
+  if [ -f "$CALL_LOG7" ] && grep -q "OPENED:" "$CALL_LOG7" 2>/dev/null; then
+    pass "cold-start: browser open called"
+  else
+    fail "cold-start: browser open NOT called (expected it to be called)"
+  fi
+  if echo "$stdout7" | grep -q "http://127.0.0.1:5757"; then
+    pass "cold-start: URL printed to stdout"
+  else
+    fail "cold-start: URL not printed to stdout (got: '$stdout7')"
+  fi
 else
-  fail "cold-start: browser open NOT called (expected it to be called)"
-fi
-if echo "$stdout7" | grep -q "http://127.0.0.1:5757"; then
-  pass "cold-start: URL printed to stdout"
-else
-  fail "cold-start: URL not printed to stdout (got: '$stdout7')"
+  echo "SKIP: cold-start browser test (python3/python not available)"
 fi
 reset_env
 

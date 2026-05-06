@@ -151,3 +151,7 @@
 ## M0.X-runtime-mode-recovery t11: daemon runtime mode E2E smoke test
 
 - **REQ-054**: `tests/daemon_runtime_mode_test.sh` が 3 boot scenario の integrated E2E smoke test を提供する。(1) prod mode (LOOM_ENTRY=lazy-launch): `/mode` → `mode=prod` + `entry=lazy-launch` + `ui_serving=true` (ui/dist 存在時)、`/` → 200 + HTML。(2) dev mode (LOOM_DEV_MODE=1 LOOM_ENTRY=pnpm-dev): `/mode` → `mode=dev` + `entry=pnpm-dev` + `ui_serving=false`、`/` → 404 (static skip 確認)。(3) manual mode (env なし): `/mode` → `mode=prod` + `entry=manual` + SPEC §3.2.1 規定 6 fields 全存在確認。test port は 15870–15872 (既存 test 15850–15863 と衝突なし)、`LOOM_PORT` env var で daemon が custom port を受け付ける (CLI entry の default 5757 を override)。`tests/daemon_runtime_mode_test.sh` でカバー (15 assertion)。
+
+## M0.X-runtime-mode-recovery hotfix: start_daemon port bind verify (Bug A)
+
+- **REQ-055**: `hooks/loom-launch-ui.sh` の `start_daemon()` が `nohup` 後に `/health` polling (default 5 attempts × 0.5s) で実際の port bind 成功を verify する。verify 失敗時は exit 1 を返し `main()` が `open_browser` を skip（Bug A 修正: nohup success ≠ port bind success）。env override `LOOM_DAEMON_BOOT_MAX_ATTEMPTS` で polling 試行数を制御可能（test fixture 用）。`while [ "$i" -le ... ]` POSIX 互換ループ使用（bash 3.x 対応）。happy path (daemon が /health で応答) では依然 exit 0 を返し open_browser が呼ばれる（regression 防止）。`tests/loom_launch_ui_bug_a_test.sh` でカバー（Test A: dead daemon → no browser / Test B: healthy daemon → browser called / Test C: attempt override effective）。既存 `tests/loom_launch_ui_test.sh` test 7 fixture が fake_node でバックグラウンド HTTP server を起動する形に更新（Bug A fix との整合）。
