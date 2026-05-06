@@ -178,6 +178,31 @@ Phase 1 MVP complete (functional + verification + aesthetic) + **Ceremony Reduct
 
 Phase 2 entry 前に [Phase 2 Entry Checklist](PLAN.md#phase-2-entry-checklist-formal-codifyretro-2026-05-06-002-f-pj-002-由来-ssot) (HARD blocker 3 項目 + Soft blocker 3 項目) で reconciliation。Phase 2 詳細 — see [PLAN.md](PLAN.md)。
 
+## Phase 2 以降 (roadmap)
+
+Phase 1 MVP が確立した harness (13 agents, 9 skills, 9 slash commands) と visualization GUI を土台に、Phase 2 では以下の方向を想定しています。
+
+- **Multi-contributor support** — Pull Request review flow の agent 統合、branch protection と連携した CI/CD hooks
+- **Task tool stability** — 現在 degraded mode で運用中の subagent dispatch を full parallel batch 運用へ復旧（Phase 2 HARD entry blocker）
+- **UI regression coverage** — Playwright e2e baseline の継続的維持と smoke test automation の充実
+- **Layer 2.5 PM dogfood** — 3 milestone 連続 success record で Phase 2 entry 品質基準を確認
+- **Project Settings UI** — dropdown data binding 修正と設定パネルの完全機能化
+
+詳細 roadmap と entry criteria: [PLAN.md](PLAN.md)。
+
+## Daemon Foundation (M1 から)
+
+claude-loom のバックエンドは M1 で導入された **Node.js daemon** (Fastify + tRPC + Drizzle + SQLite) で動いています。
+
+- **バインドアドレス**: `127.0.0.1:5757` のみ (loopback only、外部アクセス不可)
+- **認証**: nanoid token を `~/.claude-loom/daemon-token` (chmod 600) に保存、全 API リクエストに必須
+- **起動**: `pnpm install` 後、`/loom-pm` 等の trigger slash command を実行すると cold-start で自動起動、ブラウザが開く
+- **AppRouter**: tRPC の `AppRouter` 型を `@claude-loom/daemon` から export し、UI と型安全な API 通信
+- **スキーマ管理**: Drizzle ORM で `daemon/src/db/schema.ts` を SSoT として SQLite テーブルを管理
+- **アイドル shutdown**: 30 分無操作で自動停止、次回 slash command で再起動
+
+UI 開発時は `pnpm --filter @claude-loom/daemon dev` で dev mode 起動 (`LOOM_DEV_MODE=1` auto-inject)。詳細: [CLAUDE.md](CLAUDE.md) / [SPEC.md](SPEC.md) §3.2。
+
 ## License
 
 [MIT](LICENSE) © 2026 Koki Mogi
