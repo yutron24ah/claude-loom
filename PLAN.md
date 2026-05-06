@@ -493,6 +493,32 @@ M0.11.3 で `loom-ui-smoke` skill 完成 + Phase 1 functional MVP 検証完了�
 
 `./tests/run_tests.sh` 全 PASS（既存 18 PASS + 3 carryover fix = 21 PASS / 0 FAIL）、`m0.11.5-complete`〜`m0.11.7-complete` 全保持、Phase 2 entry checklist の test debt clear 項目 reset。
 
+## マイルストーン M0.X-startup-recovery (retro 2026-05-06-002 F-USER-005/006 由来)
+
+起源: 2026-05-06-002 retro 中 PM 直接 verify で発覚した M0.11.5 trinity の deployment level 破綻：
+
+- **F-USER-006 (CRITICAL)**: `install.sh` の `daemon.js` symlink target が `daemon/dist/index.js` (re-export module) を指していた。正は `daemon/dist/server.js` (CLI entry)
+- **F-USER-005 (CRITICAL)**: `daemon/dist/db/migrations/` が build 成果物に同梱されておらず、`runMigrations()` で `Can't find meta/_journal.json` crash → daemon production startup 不能
+
+両 finding は本 retro session 内で **hotfix commits + E2E test 設置済**、本 milestone は事後の状態 codify と再発防止の audit framework 化。
+
+### 設計合意（retro 2026-05-06-002 SSoT）
+
+- **scope**:
+  - [x] F-USER-006: install.sh symlink target を server.js に修正 (commit 713c631) <!-- id: m0.x-startup-t1 status: done -->
+  - [x] F-USER-005: daemon build script に migrations bundle copy step 追加 (commit 430924d) <!-- id: m0.x-startup-t2 status: done -->
+  - [x] F-USER-005: tests/daemon_e2e_startup_test.sh 新設 (commit fb1e7c1) <!-- id: m0.x-startup-t3 status: done -->
+  - [ ] tag `m0.x-startup-recovery-complete` 設置 (本 retro PR merge 後) <!-- id: m0.x-startup-t4 status: todo -->
+- **着手タイミング**: 本 retro PR で fix 自体は完了、Phase 2 entry 前の audit / tag 設置のみ未了
+- **rationale**: M0.11.5 trinity の core promise (lazy daemon auto-launch → UI serve) が claim level (SPEC + agent prompt 整合) で完成しただけで deployment level で破綻していた構造的 gap。F-USER-002 (default 値変更 audit) の structural fix が SPEC §3.6.8.8 に既存だが、build artifact bundle 完全性を audit する step が欠落していた。本 milestone で hotfix + E2E test 設置 + 再発防止 audit を完結
+
+### M0.X-startup-recovery 完成基準
+
+- `bash tests/daemon_e2e_startup_test.sh` PASS (curl /health → HTTP 200 + status:ok)
+- install.sh symlink target が `daemon/dist/server.js` に固定
+- daemon build script が migrations bundle copy を含む
+- tag `m0.x-startup-recovery-complete` 設置 (本 retro PR merge 後)
+
 ## Phase 2 entry criteria + carryover (retro 2026-05-05-001 由来)
 
 Phase 1 MVP の 3 段階 closure marker 全達成 (m5 = functional / m0.11.3 = verification / m0.11.4 = aesthetic) の後、Phase 2 entry 前に解決 / 整理すべき carryover を retro 2026-05-05-001 の 14 finding から集約。F-meta-003 (Phase 2 entry criteria 整備 gap) の structural action として本 section を新設。
