@@ -589,16 +589,19 @@ F-USER-007/008 (symlink CLI guard + hooks SDK 仕様準拠) と同 class の **p
 
 起源: 2026-05-06 daemon log 観察で発覚した hook ingest path の連続 400 失敗：直近 commit `c31a88e` (F-USER-007/008 hotfix: hooks SDK 仕様準拠) 後に **`POST /event` が `req-q` 〜 `req-z` まで連続 400 (Body is not valid JSON)** で失敗、hook event ingest が機能不全。F-USER-007/008 hotfix の regression 疑いあり、bisect investigation 必要。
 
-### 設計合意（2026-05-06 spec phase 対話）
+### 設計合意（2026-05-06 spec phase 対話、retro 2026-05-06-003 で scope 拡張）
 
 - **scope**: bash hook script の curl payload format と daemon `eventInputSchema` の整合性回復
 - **investigation phase**: bash hook script (5 種: `pre_tool.sh` / `post_tool.sh` / `session_start.sh` / `stop.sh` / `SubagentStop.sh`) の curl invocation を debug log で dump、daemon schema と照合して root cause 特定
 - **修正方針**: payload format を daemon schema に合わせる (script side fix 推奨、user 環境影響最小) or schema 側を SDK 仕様に合わせる (user 環境影響大、最終手段)
 - **再発防止**: hook script ↔ daemon schema の cross-check assertion を `tests/REQUIREMENTS.md` に REQ 化、integration test で構造的 detect 可能化
+- **scope 拡張 (retro 2026-05-06-003 由来)**:
+  - **F-proc-002**: parallel batch dispatch + SessionStart hook 多重発火 interaction の test fixture 追加 (Bug A symptom chain trigger 部分の structural verify)
+  - **F-meta-004**: `~/.claude-loom/command-frequency.log` 不在 silent failure の investigation 追加 (post_tool hook が actual に発火しとるか probe 動作 verify)
 - **scope 外 (YAGNI)**: hook event ingest path 全体の refactor、event correlation 強化、`/event` endpoint の versioning 戦略は本 milestone 対象外
-- **rationale**: M0.X-runtime-mode-recovery とは bug class が独立 (startup ≠ runtime ingest)、investigation phase 必要なため別 milestone で集中する方が clean
+- **rationale**: M0.X-runtime-mode-recovery とは bug class が独立 (startup ≠ runtime ingest)、investigation phase 必要なため別 milestone で集中する方が clean。retro 2026-05-06-003 で発覚した parallel batch interaction (Bug A trigger) と post_tool freq probe silent failure を本 milestone scope に統合 (root cause overlap)
 
-### Task （推定 5 task）
+### Task （推定 7 task、retro 2026-05-06-003 で scope 拡張）
 
 - [x] PLAN.md milestone 挿入（本 spec phase で実施）
       <!-- id: m0.x-hook-ingest-t1 status: done planned_files: PLAN.md -->
@@ -608,17 +611,23 @@ F-USER-007/008 (symlink CLI guard + hooks SDK 仕様準拠) と同 class の **p
       <!-- id: m0.x-hook-ingest-t3 status: todo planned_files: hooks/*.sh (修正対象は t2 で確定) -->
 - [ ] tests: hook script ↔ daemon schema cross-check assertion を `tests/REQUIREMENTS.md` に REQ 化 + integration test 新設
       <!-- id: m0.x-hook-ingest-t4 status: todo planned_files: tests/REQUIREMENTS.md, tests/hook_ingest_integration_test.sh -->
+- [ ] **retro 2026-05-06-003 F-proc-002 由来**: parallel batch dispatch + SessionStart hook 多重発火 interaction の test fixture 追加 (mock parallel SessionStart で daemon load 観察 + Bug A trigger 部分の structural verify)
+      <!-- id: m0.x-hook-ingest-t5 status: todo planned_files: tests/hook_parallel_batch_interaction_test.sh -->
+- [ ] **retro 2026-05-06-003 F-meta-004 由来**: `~/.claude-loom/command-frequency.log` 不在 silent failure investigation — post_tool hook が `tool_name == "SlashCommand"` 判定後に actual log write しとるか probe、SPEC §3.9.15 path 設計と prefs / install 状態の乖離 root cause 確定 + fix
+      <!-- id: m0.x-hook-ingest-t6 status: todo planned_files: hooks/post_tool.sh, daemon/src/hooks/ingest.ts -->
 - [ ] tag `m0.x-hook-ingest-recovery-complete` 設置
-      <!-- id: m0.x-hook-ingest-t5 status: todo planned_files: (tag setting only) -->
+      <!-- id: m0.x-hook-ingest-t7 status: todo planned_files: (tag setting only) -->
 
-**dispatch 戦略**: t2 (investigation) sequential（root cause 確定が前提）→ t3 (fix) sequential（t2 結果に依存）→ t4 (test) sequential（t3 で fix 確定後）→ t5 (tag) closure。Strategy a default。
+**dispatch 戦略**: t2 (investigation) sequential（root cause 確定が前提）→ t3 (fix) + t5 + t6 parallel candidate（file disjoint 確認後）→ t4 (test) sequential（t3-t6 で fix 確定後）→ t7 (tag) closure。Strategy a default。
 
 ### M0.X-hook-ingest-recovery 完成基準
 
 - `POST /event` 400 spam が daemon log から消失
 - 5 種 hook script からの ingest 成功率 100% (10 invocation 中 10 成功 sample 確認)
 - `bash tests/hook_ingest_integration_test.sh` PASS
-- `tests/REQUIREMENTS.md` に hook script ↔ daemon schema cross-check REQ 追加
+- `bash tests/hook_parallel_batch_interaction_test.sh` PASS (retro 2026-05-06-003 F-proc-002)
+- `~/.claude-loom/command-frequency.log` が actual session で write されとる evidence (retro 2026-05-06-003 F-meta-004)
+- `tests/REQUIREMENTS.md` に hook script ↔ daemon schema cross-check REQ + parallel interaction REQ 追加
 - tag `m0.x-hook-ingest-recovery-complete` 設置
 
 ## Phase 2 entry criteria + carryover (retro 2026-05-05-001 由来)
@@ -657,12 +666,15 @@ Phase 2 entry の HARD blocker と soft blocker を 1 箇所に SSoT 化、retro
 - [ ] **F-USER-005/006 hotfix verified** (本 retro 2026-05-06-002 で対処、`bash tests/daemon_e2e_startup_test.sh` PASS で確認、tag `m0.x-startup-recovery-complete` 設置)
 - [ ] **3 pre-existing test failure cleanup**: M0.X-test-debt-cleanup milestone 完走 (`docs_release_test.sh` / `dry_run_applied_summary_test.sh` / `m1_docs_test.sh` 3 件 fix、`./tests/run_tests.sh` 21 PASS / 0 FAIL)
 - [ ] **path C default 昇格 SSoT 整合確認** (SPEC §3.6.8.7 + §3.9.13 + §3.9.13.1 の cross-reference 整合済、retro 2026-05-06-002 F-proc-003 で codify)
+- [ ] **Layer 2.5 PM dogfood smoke 運用 N 回 success record** (retro 2026-05-06-003 F-USER-009 + F-meta-002 由来、SPEC §10.4.1 SSoT): trust recovery milestone series 3 連続 (F-USER-005/006 + F-USER-007/008 + Bug A) を Phase 2 multi-contributor 環境で再発させないため、Layer 2.5 が **少なくとも 3 milestone 連続で運用 success** することを確認 (推奨 N=3、user 判断で増減可)
+- [ ] **post-tag hotfix 0 件 milestone N 回連続 record** (retro 2026-05-06-003 F-meta-002 由来 soft blocker → Phase 2 multi-contributor で hard 化候補): F-USER-007/008 + Bug A の post-tag hotfix 2 連続 pattern が解消されとるか確認、3 milestone 連続で 0 件 record で entry permit (SPEC §3.6.8.11 protocol 準拠 hotfix は record-only として count から除外可、判断は retro 時)
 
 **Soft blocker (Phase 2 entry 可能、ただし spec phase 1st task で解消推奨)**:
 
 - [ ] F-001 structural fix (project-settings dropdown data binding regression、retro 2026-05-05-001 carryover)
 - [ ] REQ-045 smoke skill bind 明文化 (F-pj-002 from 2026-05-05-001)
 - [ ] subordinate research task `docs/research/task-tool-availability.md` の Phase 2 中並行進行 (HARD blocker でない、§3.9.13.1 SSoT)
+- [ ] M0.X-runtime-mode-recovery hotfix verified (retro 2026-05-06-003 由来): `bash tests/loom_launch_ui_bug_a_test.sh` PASS、Bug A symptom (タブ大量起動) が再発しないこと、SPEC §3.2.3 Boot health-check polling SSoT 整合確認
 
 ### Phase 2 entry sequence (推奨)
 

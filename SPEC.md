@@ -202,6 +202,31 @@ const shouldServeStatic = !isDevMode && existsSync(uiDistPath);
 
 **rationale**: dev / prod の役割分担を明文化することで、「lazy launch path で env 注入忘れ → static skip」のような partial implementation を構造的に防止。判定ロジックを `LOOM_DEV_MODE` 一本に集約することで、SSoT が明確化し、test fixture も `process.env.LOOM_DEV_MODE` の mutate のみで済む。
 
+### 3.2.3 Boot health-check polling（retro 2026-05-06-003 F-pj-002 由来、Bug A hotfix で codify）
+
+`hooks/loom-launch-ui.sh` の `start_daemon()` 関数は、`nohup` で daemon を launch した後 **port bind 成功を verify してから exit 0 を返す**。verify 失敗 (timeout / EADDRINUSE / module crash 等) の場合 exit 1 → main() で `open_browser` 呼ばれない。
+
+**polling 仕様**:
+
+| 項目 | default 値 | 備考 |
+|---|---|---|
+| max attempts | 5 | env override `LOOM_DAEMON_BOOT_MAX_ATTEMPTS` で変更可 |
+| attempt interval | 0.5 秒 | sleep 0.5 で fixed (本 milestone scope 外、Phase 2 で exponential backoff 検討) |
+| max wait | 2.5 秒 (default) | max_attempts × interval |
+| probe target | `${DAEMON_URL}/health` | `LOOM_DAEMON_URL` env で URL override 可 |
+| probe command | `curl -sf --max-time 1 "$DAEMON_URL/health"` | timeout 1 秒 |
+
+**verify 失敗時 log 形式**:
+
+```
+[loom-launch-ui] WARN: Daemon launched (PID=<pid>) but failed to respond at <URL> within <max_attempts/2>s
+[loom-launch-ui] WARN: Possible causes: EADDRINUSE (port already bound by another process), module crash, or slow init
+```
+
+**rationale**: `nohup` 成功 ≠ port bind 成功。EADDRINUSE / module crash で即死した daemon に対して open_browser が呼ばれる false positive を構造的に防止 (Bug A 修正、retro 2026-05-06-003)。F-USER-007/008 と同 class の partial implementation を再発させない。
+
+**実装 trace**: `hooks/loom-launch-ui.sh` `start_daemon()`、test coverage は `tests/loom_launch_ui_bug_a_test.sh` (3 scenario)、REQ trace は `tests/REQUIREMENTS.md` REQ-055。
+
 ### 3.3 中央指令室モデル
 
 - **PM = singleton セッション**：ユーザーが `/loom-pm` で 1 つ立ち上げ、開きっぱなしにする
@@ -364,6 +389,8 @@ claude-loom の PM / dev agent prompt に組み込む 5 項目の workflow disci
 #### 3.6.8.1 Parallel dispatch self-verify
 
 PM が「parallel batch」と plan で宣言した task を dispatch する場合、**同 message 内に複数 Agent invocation を含めること**。1 message = 1 Agent invocation = sequential dispatch であり、parallel ではない。post-dispatch で self-check を行い、宣言と実装が乖離していたら process-axis finding として retro pending state に記録。
+
+**side-effect note (retro 2026-05-06-003 F-proc-002 由来)**: parallel dispatch では各 subagent の `SessionStart` hook が同時多重発火し、`POST /event` を daemon に集中送信する。daemon が一時的に busy になり `/health` probe timeout → false cold-start trigger を引き起こす可能性あり (Bug A symptom chain の trigger 部分)。Bug A hotfix (SPEC §3.2.3 Boot health-check polling) で start_daemon 側の defense は入ったが、daemon load 根本対策は M0.X-hook-ingest-recovery (Layer 3 POST /event spam fix) scope。parallel batch を multiple subagent で宣言する場面では本 side-effect を念頭に置く。
 
 #### 3.6.8.2 Task tool fallback degraded mode
 
@@ -528,6 +555,25 @@ PM auto-spec entry の context 評価は Bash tool で `git log --oneline -5`, `
 PM auto-go entry の context 評価は Bash tool で `grep -c "status: todo" PLAN.md`, `git log --oneline -10` 等を probe する形で実現。Task tool 不在時（degraded mode）も Bash tool 単体で代替評価可能、**本機構は degraded mode でも機能する設計**とする。
 
 **SSoT 宣言**: 本章（§3.6.8.10）が PM Auto-Go Entry 機能の SSoT。`agents/loom-pm.md`（t3 担当）は本章を参照し実装。他 doc（CLAUDE.md / PLAN.md）からの参照は本章 section 番号を引用。
+
+#### 3.6.8.11 Post-tag hotfix protocol（retro 2026-05-06-003 F-pj-001 由来）
+
+milestone tag 設置後に同 branch 上で発覚した bug への hotfix を **正規化された運用 pattern** として codify。precedent 2 連続:
+
+- F-USER-007/008 hotfix (commit `c31a88e`、M0.11.5 tag 後) — symlink CLI guard + hooks SDK 仕様準拠
+- Bug A hotfix (commit `91cdcbb`、M0.X-runtime-mode-recovery tag 後) — start_daemon port bind verify gap
+
+**Protocol rules**:
+
+1. **tag 移動禁止**: hotfix commit を milestone tag に取り込まず、tag は当該 milestone の closure marker として **不変** に保つ。git history を時系列線形に保ち、release tag semantics を破壊しない
+2. **commit message annotation 必須**: hotfix commit message に `[post-tag-hotfix]` 文字列を含める (git log grep 検出可能化)。subject prefix or body どちらでも可、ただし grep で機械的 detect できる位置に配置
+3. **同 branch 継続**: hotfix は milestone branch (`fix/m0.x-...`) に追加 commit、別 branch を切らない (PR review scope 統一)
+4. **当該 milestone retro scope への必須 inclusion**: post-tag hotfix が発生した場合、当該 milestone retro 起動時の scope に **必ず含める** (retro-pm dispatch prompt の `## Scope` block + `## Milestone scope (N commits)` table に hotfix commit を明記)
+5. **PR description note**: PR body の "## 修正内容" に "post-tag hotfix" subsection を追加、root cause + fix + precedent 参照を明記
+
+**rationale**: post-tag hotfix を「process bug の繰り返し」と判定するか「正規化された pattern」と認めるかは retro でしか判断できない。本 protocol は precedent 2 連続を受けて後者と認め、構造的な codify で次回以降の運用 ambiguity を解消する。同時に、retro scope に必ず含めることで「tag 設置 = 完成」の illusion を構造的に解体し、Layer 2.5 (§10.4.1) との pair で trust recovery process を成立させる。
+
+**SSoT 宣言**: 本章（§3.6.8.11）が post-tag hotfix protocol の SSoT。`agents/loom-pm.md` milestone closure workflow + `agents/loom-retro-pm.md` retro scope 定義は本章を参照する。
 
 ### 3.6.9 M3 UI Architecture（M3 から）
 
@@ -1084,6 +1130,29 @@ degraded mode が 3 retro 連続持続して escalation rule が trigger され�
 
 **rationale**: 2026-05-05-001 / 2026-05-06-001 / 2026-05-06-002 の 3 連続 degraded mode 発生で 1 回目 trigger 達成、本 subsection が初適用 case。Phase 2 entry を blocker で留めるよりも path C を first-class 化して進行を維持し、Task tool 復旧調査は subordinate research として並行で進める判断 (累積 evidence: M0.11.5 6/6 dispatch 全部 path C で pass、運用 fit 立証済)。
 
+##### 3.9.13.2 N-strike persistence count tracking（retro 2026-05-06-003 F-meta-001 由来）
+
+3-strike trigger 達成後も degraded mode が持続する場合、escalation status を **N-strike-continuation form** で継続記録する。本 subsection で transparency tracking を SSoT 化：
+
+**escalation_status field 表記 (pending.json + user-prefs.json retro_session_history 共通)**:
+
+| 状態 | 表記 example | 意味 |
+|---|---|---|
+| 1〜2 retro 連続 | `1-strike` / `2-strike` | accumulating (3-strike trigger 未達) |
+| 3 retro 連続 (初 trigger) | `3-strike-trigger-1st` | 初 trigger、§3.9.13.1 必須 action 5 項目発動 |
+| 4 retro 連続以降 | `4-strike-continuation` / `5-strike-continuation` / ... | trigger 後の持続記録 (transparency) |
+
+**記録方法**:
+- `pending.json` の root level に `escalation_status` field を retro-pm が write する (既存 schema_version 2 に追加)
+- `~/.claude-loom/user-prefs.json` の `retro_session_history[].escalation_status` field に同値を mirror (aggregator が session 完了時 update)
+
+**future trigger 候補 (codify、未発動)**:
+
+- **6-strike continuation**: 6 retro 連続持続したら、Task tool 復旧調査 (`docs/research/task-tool-availability.md`) を **HARD blocker promotion 検討 trigger** とする。3-strike では subordinate research に留めたが、6-strike では Phase 移行 blocker として user 判断仰ぐ。**未発動、現時点では future codify**
+- **9-strike continuation**: 9 retro 連続持続したら、path C default を **正規 default** として SPEC §3.6.8.7 から「default 反転 (2026-05-06)」のような暫定的呼称を除去、運用は first-class operating mode と完全 codify
+
+**rationale**: 2026-05-05-001 (1-strike) → 2026-05-06-001 (2-strike) → 2026-05-06-002 (3-strike-trigger-1st) → 2026-05-06-003 (4-strike-continuation) の累積で escalation rule の運用が始まった。trigger 後の transparency が無いと「1 度発動したらそれっきり」になり、Phase 2 entry や Task tool 復旧 timing の判断材料が失われる。本 codify で N-strike continuation を継続可視化、6+ で blocker promotion 議論を可能化する。
+
 **guidance lifecycle 統合**:
 `learned_guidance` の auto-prune rule（§6.9.4 末尾拡張参照）: `ttl_sessions` main（`null` = infinite default、`> 0` = N retro 後 auto-deactivate） + `last_used_in` audit（retro 参照時 aggregator update、N session 連続未使用 → meta lens stale guidance finding）。責務分離: auto-deactivate = 決定論的（ttl）、user 承認 prune = dynamic（last_used_in 経由 meta lens proposal）。
 
@@ -1109,6 +1178,7 @@ retro architecture を data 駆動化し、Phase 2 candidate prioritization に 
 - **retro Stage 0 拡張**: `loom-retro-pm` が verdict_evidence + applied_summary build に続き、command-frequency.log を直近 N 日分集計 → 4 lens の Stage 1 dispatch prompt に context 注入。lens 側は invocation pattern (e.g., `/loom-spec` 高頻度 + `/loom-go` 低頻度 = spec phase ceremony 過剰の signal) を Phase 2 candidate prioritization 軸として活用
 - **責務分離**: probe 自体は post_tool hook の bash 内で完結 (daemon 経由不要、daemon 停止時も収集継続可能)。集計・lens 注入は retro-pm Stage 0 の Read tool 経由
 - **目的**: Phase 1 までの retro は code state + git log を主 evidence としていたが、user 行動 (どの slash command を何回使うか) という reality data の欠落で「使用頻度が低い command を rich 化」のような誤った prioritization を生むリスクがあった。frequency log 導入で reality data 駆動の prioritization を可能化
+- **silent failure 検出強化 (retro 2026-05-06-003 F-meta-004 由来)**: `~/.claude-loom/command-frequency.log` 不在時、retro-pm Stage 0 は **空 tally で proceed するだけでなく warning log を出力** (`log_warn "command-frequency.log not found at <path>; post_tool hook may not be wired or LOOM_FREQUENCY_LOG override mismatched"`)。post_tool hook が actual 発火しとるかを Bash で path 検証 (`ls -la ~/.claude-loom/command-frequency.log` 等)、log 不在が連続検出される場合は M0.X-hook-ingest-recovery scope の post_tool hook investigation task を retro-pm が PM に escalation 提案する
 
 ### 3.10 superpowers Independence（M0.9 から）
 
@@ -2288,6 +2358,39 @@ UI 開発時の test 戦略を **2 層化**：
 | **Layer 2: browser-interactive smoke** | `loom-ui-smoke` skill (§3.6.11)、Playwright MCP `browser_*` tool 経由 | **実機での描画・WS 流通・state propagation・navigation・interactivity** が automated test mock の隙間に隠れた gap を検出 |
 
 両 layer を **milestone closure default** として実行、F-proc-005 success record の継続的拡張。Layer 2 は UI 開発を含む milestone のみ適用 (suggest skill、§3.10.1)、daemon-only / agent-prompt-only の milestone では skip 可能。
+
+#### 10.4.1 Layer 2.5: PM dogfood smoke（M0.X-runtime-mode-recovery 後 retro 2026-05-06-003 F-USER-009 由来、必須）
+
+**trust recovery milestone series 3 連続発覚 pattern (F-USER-005/006 + F-USER-007/008 + Bug A) は全て Layer 1 + Layer 2 が pass した状態で user 直接 dogfood verify でしか発覚しなかった**。Layer 1 (automated test) と Layer 2 (UI smoke) の隙間に「実 user fixture path」が抜けとる構造的 gap。本 layer はその gap を構造的に塞ぐ：
+
+| Layer | 担当 | 検出する gap |
+|---|---|---|
+| **Layer 2.5: PM dogfood smoke** | PM agent が milestone tag 設置 **直前** に Bash + curl + (optional) WebFetch で実機 verify | **install path → lazy launch hook 起動 → daemon 起動 → /health + /mode probe → UI HTML 取得 → 重要 endpoint 動作** までの user-facing pipeline 全体の actual 動作 |
+
+**verify steps (PM が milestone closure 直前に必ず実行)**:
+
+1. `bash hooks/loom-launch-ui.sh` (or 同等の lazy launch trigger) を user fixture と同条件で実行
+2. `curl -sf http://127.0.0.1:5757/health` → `{"status":"ok"}` 応答確認
+3. `curl -s http://127.0.0.1:5757/mode | jq .` → SPEC §3.2.1 shape (mode/entry/version/started_at/pid/ui_serving) 全 field 充足確認
+4. `curl -sI http://127.0.0.1:5757/` → `200` + `content-type: text/html` 応答確認 (ui/dist 存在 milestone のみ)
+5. milestone scope の他 user-visible endpoint があれば追加 verify
+6. 結果を `docs/smoke-tests/<date>-<milestone>-dogfood.md` に出力 (任意 format、key signal 列挙)
+
+**failure handling**:
+- Layer 2.5 で **任意の失敗を検出 → tag 設置を block**、failed step を user に報告 + fix task を PLAN.md に追加して closure 延期
+- pass のみで tag 設置可、後続の milestone retro hook + branch hygiene PR opening trigger に進む
+
+**rationale**:
+- F-USER-005/006 (install / build artifact gap) → install path 通せばすぐ気づく
+- F-USER-007/008 (symlink CLI guard / hooks SDK 仕様) → lazy launch + /health probe で immediate 検出
+- F-USER-009 / Bug A (NODE_ENV / static serving / port bind verify gap) → / + /mode 直接 curl で immediate 検出
+- 3 連続全て Layer 2.5 で Layer 1+2 通過後にも検出可能だった (post-hoc analysis)
+
+#### 10.4.2 Layer 3: user verify request（補助 layer、record only）
+
+**Layer 3 は anti-pattern として明示**：開発側の Layer 2.5 dogfood gap を user 拘束 ("動作確認してくれ") で塞ぐ運用は持続不能 (Phase 2 multi-contributor 時に scale せず、user trust を消耗する)。Layer 3 は補助的に **emergency case (Layer 2.5 で気づけない user environment 固有の issue)** にのみ依存し、default workflow からは除外する。
+
+agents/loom-pm.md milestone closure workflow は Layer 1 → Layer 2 (UI 開発時) → **Layer 2.5 (必須)** → tag 設置 → Layer 3 (user-side、record only) の順序で固定。
 
 ---
 

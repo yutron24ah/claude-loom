@@ -41,6 +41,7 @@ Phase 1 MVP closure 時に「4 branch chain × 32+ commits ahead of main、PR �
 - **planning 時**: PLAN.md task entry に `<!-- planned_files: ... -->` HTML comment で edit 対象 file path を絶対 / プロジェクト相対で明記
 - **dispatch 時**: PM (agents/loom-pm.md Implementation Phase Step 3) が parallel dispatch 前に各 task の `planned_files` を比較、overlap 検出 → parallel claim 撤回 (sequential / unified annotation / task 分離 のいずれか)
 - **rationale**: M0.11.6 t4/t5/t6 + M0.11.7 t4/t5 で parallel batch 宣言したが同 file 編集で実 parallel 不能、PM が dispatch 前 audit で検出した事象 (retro 2026-05-06-002 F-proc-001)
+- **side-effect 注意 (retro 2026-05-06-003 F-proc-002)**: parallel dispatch 中は各 subagent の `SessionStart` hook が同時多重発火し、`POST /event` を daemon に集中送信する。daemon 不安定 (e.g., M0.X-hook-ingest-recovery で対象の Layer 3 spam) と組み合わさると `/health` probe timeout → false cold-start trigger → `open_browser` 多重 invoke → タブ大量起動 (Bug A symptom chain) を引き起こす。Bug A hotfix (commit `91cdcbb`) で start_daemon 側の defense in depth は入ったが、daemon load の根本対策は M0.X-hook-ingest-recovery scope
 
 ### Dependency audit 規律（retro 2026-05-06-001 F-USER-002 由来、SPEC §3.6.8.8 SSoT）
 
