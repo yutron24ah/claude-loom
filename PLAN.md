@@ -605,18 +605,18 @@ F-USER-007/008 (symlink CLI guard + hooks SDK 仕様準拠) と同 class の **p
 
 - [x] PLAN.md milestone 挿入（本 spec phase で実施）
       <!-- id: m0.x-hook-ingest-t1 status: done planned_files: PLAN.md -->
-- [ ] investigation: 5 種 bash hook script の curl payload を debug log で dump、daemon `eventInputSchema` と照合 (root cause specific identification)
-      <!-- id: m0.x-hook-ingest-t2 status: todo planned_files: hooks/pre_tool.sh, hooks/post_tool.sh, hooks/session_start.sh, hooks/stop.sh, hooks/SubagentStop.sh, daemon/src/hooks/ingest.ts -->
-- [ ] fix: payload format alignment (script side fix が default、impl phase で root cause 確定後に判断)
-      <!-- id: m0.x-hook-ingest-t3 status: todo planned_files: hooks/*.sh (修正対象は t2 で確定) -->
-- [ ] tests: hook script ↔ daemon schema cross-check assertion を `tests/REQUIREMENTS.md` に REQ 化 + integration test 新設
-      <!-- id: m0.x-hook-ingest-t4 status: todo planned_files: tests/REQUIREMENTS.md, tests/hook_ingest_integration_test.sh -->
+- [x] investigation: 5 種 bash hook script の curl payload を debug log で dump、daemon `eventInputSchema` と照合 (root cause specific identification)
+      <!-- id: m0.x-hook-ingest-t2 status: done planned_files: hooks/pre_tool.sh, hooks/post_tool.sh, hooks/session_start.sh, hooks/stop.sh, hooks/SubagentStop.sh, daemon/src/hooks/ingest.ts note: PM 直接 investigation で root cause 確定 — `date +%s%3N` macOS BSD date が `%3N` 非対応で生文字 `N` を残置、`TS=17780770293N` 生成 → JSON parse 失敗 → daemon 400 spam。bash -x trace + 直接 POST cross-check で確定。F-USER-007/008 hotfix (c31a88e) は hooks 配線を正規 SDK 仕様化したのみ、本 bug は macOS で初日から潜在、c31a88e で hooks が「正しく発火する」状態になり broken payload が表面化。SESSION_ID=unknown / TOOL_NAME=unknown 問題は SDK stdin input 読込み不在 (scope 外、後続 milestone 候補) -->
+- [x] fix: payload format alignment — `ts_ms()` helper 関数導入 (python3 → node → s 精度 fallback の 3 段、案 A 採用)、5 hook script 全部の `TS=$(date +%s%3N)` を `TS=$(ts_ms)` 化
+      <!-- id: m0.x-hook-ingest-t3 status: done planned_files: hooks/pre_tool.sh, hooks/post_tool.sh, hooks/session_start.sh, hooks/stop.sh, hooks/SubagentStop.sh commit: 9a56842 note: dev path C self-review (Task tool deferred)、PM smoke test で live daemon に 5 hook 全部 ok:true 確認、cross-platform verify -->
+- [x] tests: hook script ↔ daemon schema cross-check assertion を `tests/REQUIREMENTS.md` に REQ 化 + `tests/hook_ingest_integration_test.sh` 新設 (TDD: RED 先行で broken payload 再現 → GREEN で fix 確認)
+      <!-- id: m0.x-hook-ingest-t4 status: done planned_files: tests/REQUIREMENTS.md, tests/hook_ingest_integration_test.sh commit: 28d3023 note: REQ-056 追加、Test 1-3 = 22 assertion / Test 4 (live daemon) = 5 assertion、合計 22 PASS、daemon-absent 時は Test 4 skip + WARN -->
 - [ ] **retro 2026-05-06-003 F-proc-002 由来**: parallel batch dispatch + SessionStart hook 多重発火 interaction の test fixture 追加 (mock parallel SessionStart で daemon load 観察 + Bug A trigger 部分の structural verify)
-      <!-- id: m0.x-hook-ingest-t5 status: todo planned_files: tests/hook_parallel_batch_interaction_test.sh -->
+      <!-- id: m0.x-hook-ingest-t5 status: todo planned_files: tests/hook_parallel_batch_interaction_test.sh note: α (t2-t4) 作業時、retro archive 0914e6f が orphan branch にあって PLAN.md 上は不可視、scope expansion を見落として tag 設置済 — post-tag-hotfix protocol §3.6.8.11 適用候補 -->
 - [ ] **retro 2026-05-06-003 F-meta-004 由来**: `~/.claude-loom/command-frequency.log` 不在 silent failure investigation — post_tool hook が `tool_name == "SlashCommand"` 判定後に actual log write しとるか probe、SPEC §3.9.15 path 設計と prefs / install 状態の乖離 root cause 確定 + fix
-      <!-- id: m0.x-hook-ingest-t6 status: todo planned_files: hooks/post_tool.sh, daemon/src/hooks/ingest.ts -->
-- [ ] tag `m0.x-hook-ingest-recovery-complete` 設置
-      <!-- id: m0.x-hook-ingest-t7 status: todo planned_files: (tag setting only) -->
+      <!-- id: m0.x-hook-ingest-t6 status: todo planned_files: hooks/post_tool.sh, daemon/src/hooks/ingest.ts note: t5 と同様、α 作業時に scope 不可視 — post-tag-hotfix protocol 適用候補 -->
+- [x] tag `m0.x-hook-ingest-recovery-complete` 設置
+      <!-- id: m0.x-hook-ingest-t7 status: done note: 5b4ca6b に対して設置済、α (t2-t4) 完了 marker。但し t5/t6 は α 作業時 retro archive orphan で scope 不可視、tag 設置後の retro 取込 merge で発覚 — SPEC §3.6.8.11 post-tag-hotfix protocol 適用、tag 移動禁止、t5/t6 完了は post-tag fix で対応 -->
 
 **dispatch 戦略**: t2 (investigation) sequential（root cause 確定が前提）→ t3 (fix) + t5 + t6 parallel candidate（file disjoint 確認後）→ t4 (test) sequential（t3-t6 で fix 確定後）→ t7 (tag) closure。Strategy a default。
 
