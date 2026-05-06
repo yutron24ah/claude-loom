@@ -36,3 +36,25 @@ S_ESC=$(json_escape "$SESSION_ID")
 TS=$(date +%s%3N)
 PAYLOAD='{"sessionId":'"$S_ESC"',"eventType":"session_start","toolName":null,"payload":{"timestamp":'"$TS"'}}'
 post_event "$PAYLOAD"
+
+# ── UI auto-launch (retro 2026-05-06-002 F-USER-003 由来) ─────────────────────
+# slash command markdown body の bash invoke は Claude execution priority に
+# 依存して確率的に発火せず (M0.11.5 retro F-USER-001 hypothesis 1 root cause)。
+# SessionStart hook で正規 trigger 化することで、loom PJ の cwd で session
+# 開始した瞬間に lazy daemon + UI auto-launch を guarantee する。
+#
+# 非 loom PJ では .claude-loom/ 不在ゆえ silent skip (gate)。LOOM_NO_AUTO_UI=1
+# で env override 無効化可能 (CI / headless / user opt-out)。
+if [ "${LOOM_NO_AUTO_UI:-0}" = "1" ]; then
+  exit 0
+fi
+
+if [ ! -d "$PWD/.claude-loom" ]; then
+  exit 0  # 非 loom PJ、silent skip
+fi
+
+LAUNCH_HOOK="${LOOM_LAUNCH_UI_HOOK:-$HOME/.claude/hooks/loom-launch-ui.sh}"
+if [ -x "$LAUNCH_HOOK" ]; then
+  # background fire-and-forget (session_start を block しない、fail-silent)
+  ( "$LAUNCH_HOOK" >/dev/null 2>&1 & ) || true
+fi

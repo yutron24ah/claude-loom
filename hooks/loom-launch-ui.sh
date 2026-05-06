@@ -12,6 +12,14 @@
 # -e is omitted so curl/daemon failures do not propagate as fatal errors.
 set -uo pipefail
 
+# ── cwd gate (retro 2026-05-06-002 F-USER-003 由来) ───────────────────────────
+# 非 loom PJ で session_start hook 経由で本 script が呼ばれた場合、.claude-loom/
+# 不在 → silent skip。slash command 経由 invoke でも cwd != loom PJ なら no-op。
+# LOOM_FORCE_LAUNCH=1 で gate を bypass 可能 (test fixture / 手動 launch 用)。
+if [ "${LOOM_FORCE_LAUNCH:-0}" != "1" ] && [ ! -d "${PWD:-/}/.claude-loom" ]; then
+  exit 0
+fi
+
 # ── Constants ─────────────────────────────────────────────────────────────────
 UI_URL="http://127.0.0.1:5757"
 DAEMON_URL="${LOOM_DAEMON_URL:-http://127.0.0.1:5757}"

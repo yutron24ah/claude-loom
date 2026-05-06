@@ -108,19 +108,24 @@ claude-loom は **Claude Code 上で agile 開発チームを丸ごと再現す�
 
 ### 3.2 Lazy Daemon ライフサイクル
 
-`/loom`（help/entry）と `/loom-stop`（shutdown）以外の 7 種 slash command（`/loom-pm`, `/loom-spec`, `/loom-go`, `/loom-retro`, `/loom-status`, `/loom-worktree`, `/loom-mode`）が trigger となる。
+trigger は **dual path**:
+- **primary**: Claude Code の `SessionStart` hook 経由 (loom PJ で session 開始した瞬間に発火、retro 2026-05-06-002 F-USER-003 で正規化)
+- **secondary**: 7 種 slash command（`/loom-pm`, `/loom-spec`, `/loom-go`, `/loom-retro`, `/loom-status`, `/loom-worktree`, `/loom-mode`）の markdown body bash invoke (補助 path、Claude execution priority に依存して確率的に発火)
 
-1. user が trigger 対象の slash command を任意のディレクトリで実行
-2. command が `localhost:5757/health` を叩く
-3. 無応答なら daemon を `nohup node ~/.claude-loom/daemon.js &` で起動（cold start）、PID ファイル記録
-4. **cold start 時のみ** `open http://localhost:5757` でブラウザを開く（既起動時は health-check のみで browser open せず、`xdg-open` 系のタブ氾濫を回避）
-5. **headless 環境では browser open を skip し URL を terminal に出力**。検出条件: `$SSH_CONNECTION` セット / Linux で `$DISPLAY` 空 / `open`・`xdg-open`・`start` のいずれも不在。`LOOM_NO_UI=1` 環境変数で強制 skip 可能
-6. daemon は 30 分イベント無しでセルフシャットダウン
-7. 明示停止は `/loom-stop`、状態確認は `/loom-status`
+1. session 開始時、`SessionStart` hook (`hooks/session_start.sh`) が cwd の `.claude-loom/` 存在を gate check (非 loom PJ は silent skip)
+2. gate pass なら `hooks/loom-launch-ui.sh` を background fire-and-forget で invoke (session_start を block しない、fail-silent)
+3. launch hook が `localhost:5757/health` を叩く
+4. 無応答なら daemon を `nohup node ~/.claude-loom/daemon.js &` で起動（cold start）、PID ファイル記録
+5. **cold start 時のみ** `open http://localhost:5757` でブラウザを開く（既起動時は health-check のみで browser open せず、`xdg-open` 系のタブ氾濫を回避）
+6. **headless 環境では browser open を skip し URL を terminal に出力**。検出条件: `$SSH_CONNECTION` セット / Linux で `$DISPLAY` 空 / `open`・`xdg-open`・`start` のいずれも不在。`LOOM_NO_UI=1` 環境変数で強制 skip 可能
+7. daemon は 30 分イベント無しでセルフシャットダウン
+8. 明示停止は `/loom-stop`、状態確認は `/loom-status`
+
+**SessionStart hook 正規化の経緯 (retro 2026-05-06-002 F-USER-003)**: M0.11.5 trinity 設計時は slash command markdown body の bash invoke を primary trigger としたが、Claude execution priority に依存して確率的に発火せず、loom PJ 開始時の core promise (lazy daemon auto-launch → UI serve) が確実に機能しない silent failure を起こしていた (M0.11.5 retro F-USER-001 hypothesis 1 root cause)。SessionStart hook を primary trigger に正規化することで「loom PJ で session 開始した瞬間に必ず UI が立ち上がる」を guarantee 可能化。slash command markdown 経由の invoke は補助 path として残置 (multiple trigger redundancy)。
 
 **`/loom` の役割**: daemon URL 表示 + clipboard コピー（user が「もう 1 タブ欲しい」時の救済路、cold-start-only open ポリシーを補完する dual path）。
 
-**永続 opt-out**: `<project>/.claude-loom/project-prefs.json` の `ui.auto_launch: false` で PJ 単位で auto-launch 無効化。`LOOM_NO_UI=1` は session 単位の緊急上書き。
+**永続 opt-out**: `<project>/.claude-loom/project-prefs.json` の `ui.auto_launch: false` で PJ 単位で auto-launch 無効化。`LOOM_NO_UI=1` は session 単位の緊急上書き、`LOOM_NO_AUTO_UI=1` は session_start hook 経由の auto-launch のみ無効化 (slash command 経由は許可、CI / headless 環境用)。
 
 ### 3.3 中央指令室モデル
 
