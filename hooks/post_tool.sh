@@ -21,6 +21,18 @@ json_escape() {
   fi
 }
 
+# Cross-platform millisecond timestamp.
+# WHY: macOS BSD `date` doesn't support `+%3N` (yields literal `N`), breaking JSON.
+ts_ms() {
+  if command -v python3 >/dev/null 2>&1; then
+    python3 -c "import time; print(int(time.time()*1000))"
+  elif command -v node >/dev/null 2>&1; then
+    node -e "process.stdout.write(String(Date.now()))"
+  else
+    echo "$(date +%s)000"  # second-precision fallback (degraded)
+  fi
+}
+
 post_event() {
   local payload="$1"
   curl -sS -X POST "$LOOM_DAEMON_URL/event" \
@@ -37,7 +49,7 @@ TOOL_NAME="${CLAUDE_TOOL_NAME:-unknown}"
 FILE_PATH="${CLAUDE_TOOL_INPUT_FILE_PATH:-}"
 S_ESC=$(json_escape "$SESSION_ID")
 T_ESC=$(json_escape "$TOOL_NAME")
-TS=$(date +%s%3N)
+TS=$(ts_ms)
 
 # WHY: spec_edit_candidate flag tells the daemon to check if this is a SPEC file edit.
 # We flag it when tool is Edit or Write AND the file is a .md file.
