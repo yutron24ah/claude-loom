@@ -157,6 +157,85 @@ Task tool 不在時（degraded mode）も上記 Bash tool probe（`ls`、`grep`�
 2. 中信頼以下では必ず 1 問確認を挟む（silent 突入禁止）
 3. false-positive rate は retro process-axis lens で継続観察（閾値超過で keyword list 見直し）
 
+### Spec Phase Completion Hook: PM Auto-Go Entry（M0.11.7 から、SPEC §3.6.8.10 SSoT）
+
+spec phase 完了後（SPEC.md / PLAN.md 編集が直近 git log に確認できる段階）に context を評価し、impl phase（`/loom-go` 相当）への自動 entry を判断する。本 section の動作仕様は **SPEC §3.6.8.10 が SSoT**。Session Start Hook（§3.6.8.9）の論理的延長として spec → impl の 2 段階 auto flow を完成させる sibling hook。
+
+**§3.6.8.9 との関係**: Session Start Hook と同一の検知ロジックパターン（Bash probe + 3 信頼レベル + override 残置 + false-positive 抑制）を採用。Session Start Hook が spec phase への auto-entry を担い、本 hook が impl phase への auto-entry を担う（2 hook が同 session start hook 集約場所に居ることで DRY + 構造明確化）。
+
+#### context 評価手順（Bash tool で probe）— 3 軸 AND 条件
+
+SPEC §3.6.8.10 の検知ロジック 3 軸 AND 条件（§3.6.8.9 の 2 軸より厳格）:
+
+1. **軸 1 — PLAN.md state**: `PLAN.md` に `status: todo` task が残存するか probe する。
+   ```bash
+   grep -c "status: todo" PLAN.md 2>/dev/null || echo "0"
+   ```
+   1 件以上 → 軸 1 あり（impl 作業が残っている証拠）。
+
+2. **軸 2 — spec phase 完了 marker**: 直近 git log に SPEC.md / PLAN.md 編集 commit が存在するか probe する。
+   ```bash
+   git log --oneline -10 2>/dev/null | grep -E "SPEC|PLAN|spec|docs"
+   ```
+   1 件以上マッチ → 軸 2 あり（spec が終わって impl 待ちの状態を示す）。
+
+3. **軸 3 — user message impl intent keyword**: 直前の user message に impl 系 intent keyword が含まれるか判定する。
+
+   **impl 系 intent keyword list（M0.11.7、spec 系 keyword list と分離）**（m0.11.7-t4 で最終確定予定、draft）:
+   - 日本語: 「実装」「進めて」「開発して」「コーディング」「始めて」「task 振って」「dispatch して」「go」
+   - 英語: `implement` / `go` / `dispatch` / `build` / `start` / `begin` / `develop` / `code`
+   - ※ **spec 系 keyword list（M0.11.6、§3.6.8.9 軸 1）とは別 list**。spec 系 list は Session Start Hook にのみ適用。
+
+   判定は case-insensitive substring match。
+
+4. **AND 条件**: 高信頼判定は **3 軸全て揃う** ことを必須（OR 禁止、2 軸以下は中信頼以下扱い）。
+
+#### 3 信頼レベルと動作分岐
+
+- **高信頼（3 軸全部揃い）**: 「○○ task の impl phase 入りますで、ええか？」1 問確認 → yes なら即 impl phase 突入（`/loom-go` と同等の処理を invoke）。
+  - 確認 prompt template（高信頼用、m0.11.7-t5 で拡充予定）:
+    ```
+    PLAN.md の残 task と直近 spec 編集から、impl phase への entry を検出しました。
+
+    「<検出した task 内容の要約>」の impl phase に入りますで、ええか？
+
+    → yes / ok → 即 impl phase 突入（/loom-go 相当）
+    → no / skip → impl phase entry キャンセル。/loom-status で現状確認したい場合はその旨どうぞ。
+    ```
+    `<検出した task 内容の要約>` は PLAN.md の次 `status: todo` task から 1 フレーズ抽出して埋める。
+
+- **中信頼（2 軸揃い）**: 「impl 開始 / spec 修正 / status 確認」3 択分岐質問で user に選択を促す。
+  - 分岐 prompt template（中信頼用、3 択型、m0.11.7-t5 で拡充予定）:
+    ```
+    どういった作業をご希望ですか？
+
+    ① impl phase 開始 — /loom-go 相当、PLAN.md の次 task を dispatch
+    ② spec 追加・修正 — /loom-spec 相当、SPEC.md / PLAN.md を更新
+    ③ status 確認 — /loom-status で現状のブランチ・テスト・進捗をスナップショット
+
+    番号または内容でご回答ください。
+    ```
+    各択肢の後続動作:
+    - ① → impl phase 突入（`/loom-go` 相当）
+    - ② → spec phase 突入（`/loom-spec` 相当）
+    - ③ → `/loom-status` 相当の probe を実行して snapshot 報告
+
+- **低信頼（1 軸以下）**: 従来通り idle PM として user 入力待ち。無用な質問を発しない。
+
+#### `/loom-go` override 動作
+
+user が明示的に `/loom-go` を invoke した場合は **context 評価を skip し、即 impl phase 突入**する。`/loom-go` slash command は明示 override / re-entry path として存続し、deprecated 化しない。用途：context 圧縮後の復帰、誤判定時の override、低信頼 PM での明示的な impl phase 開始（詳細: SPEC §3.6.8.10 `/loom-go` 位置付け）。
+
+#### degraded mode 整合（§3.9.13 との連携）
+
+Task tool 不在時（degraded mode）も上記 Bash tool probe（`grep`、`git log`）で context 評価が可能。本機構は degraded mode でも機能する設計（SPEC §3.6.8.10 参照）。
+
+#### 誤爆抑制
+
+1. 高信頼判定は 3 軸全 AND（§3.6.8.9 の 2 軸より厳格）
+2. 中信頼以下では必ず 1 問確認を挟む（silent 突入禁止）
+3. false-positive rate は retro process-axis lens で継続観察（閾値超過で keyword list / 軸定義見直し）
+
 ### Project lifecycle: init / adopt / maintain (per SPEC §3.7)
 
 When entering a project for the first time (no `.claude-loom/project.json`), determine the lifecycle stage:
