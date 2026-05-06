@@ -140,7 +140,8 @@ fi
 
 # daemon.js symlink (M0.11.5 hotfix REQ-046、retro 2026-05-06-001 F-USER-001)
 # loom-launch-ui.sh の DAEMON_BIN=$LOOM_HOME/daemon.js 参照を満たす bootstrap
-DAEMON_DIST="$ROOT_DIR/daemon/dist/index.js"
+# 2026-05-06-002 retro F-USER-006 hotfix: target を index.js (re-export module) → server.js (CLI entry) に修正
+DAEMON_DIST="$ROOT_DIR/daemon/dist/server.js"
 DAEMON_LINK="$LOOM_HOME/daemon.js"
 mkdir -p "$LOOM_HOME"
 
