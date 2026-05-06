@@ -126,3 +126,7 @@
 - **REQ-047**: `agents/loom-pm.md` に Spec Phase Completion Hook（PM Auto-Go Entry）が追加され、SPEC §3.6.8.10 を SSoT として参照し、3 軸 AND 条件 / 3 信頼レベル分岐 / `/loom-go` override 動作 / impl keyword list（spec keyword list と分離）/ 既存 M0.11.6 Session Start Hook 構造の維持を含む。`tests/m0117_t3_loom_pm_auto_go_test.sh` でカバー。
 
 - **REQ-048**: `agents/loom-pm.md` の Spec Phase Completion Hook section 内 2 placeholder（impl intent keyword list / 確認 prompt template）が実内容で埋まっていること。impl 系 keyword list が 10 個以上（着手・kick off 等含む）かつ spec 系 keyword list（M0.11.6）と分離維持。高信頼 template に `/loom-spec` + `/loom-status` bypass option 明示。中信頼 3 択 template（impl 開始 / spec 修正 / status 確認）が記述済み。`tests/m0117_t4_t5_placeholders_test.sh` でカバー。
+
+## M0.X-runtime-mode-recovery t2/t3: /mode endpoint + LOOM_DEV_MODE switch
+
+- **REQ-049**: `daemon/src/server.ts` の static serving 判定が `LOOM_DEV_MODE` env var ベース（`isDevMode = !!process.env.LOOM_DEV_MODE`、`NODE_ENV` 依存を deprecate）に切替済みかつ `GET /mode` endpoint が SPEC §3.2.1 shape（`mode` / `entry` / `version` / `started_at` / `pid` / `ui_serving` 6 fields）を返す。`LOOM_DEV_MODE` truthy → `mode=dev` + `ui_serving=false`、unset + ui/dist 存在 → `mode=prod` + `ui_serving=true`、unset + ui/dist 不在 → `mode=prod` + `ui_serving=false`。`LOOM_ENTRY` 各値（`lazy-launch` / `pnpm-dev` / `manual`）が `/mode` response の `entry` field に反映。`pnpm --filter @claude-loom/daemon test test/server-mode-endpoint.test.ts` 13 PASS、`test/server-static.test.ts` 11 PASS（`NODE_ENV` mutation → `LOOM_DEV_MODE` mutation 移行済み）。
