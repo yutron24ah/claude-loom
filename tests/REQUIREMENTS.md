@@ -129,8 +129,17 @@
 
 ## M0.X-runtime-mode-recovery t4: /mode probe + Vite redirect in loom-launch-ui.sh
 
-- **REQ-050**: `hooks/loom-launch-ui.sh` の warm-start path (health-check 通過後) が `/mode` endpoint を probe し mode に応じて分岐する (SPEC §3.2.2 dev daemon 検出時の lazy launch 挙動 4 step 準拠)。`mode=dev` かつ Vite (`LOOM_VITE_URL` override 対応、default `:5173`) 応答あり → Vite URL を browser open + stdout。`mode=dev` かつ Vite 応答なし → warning log (stderr) + Vite URL stdout のみ (browser open skip)。`mode=prod` warm → 既存挙動 (browser open skip)。`/mode` endpoint fail / unparseable → 既存挙動 fallback (browser open skip)。`tests/loom_launch_ui_mode_probe_test.sh` でカバー。
+- **REQ-050**: `hooks/loom-launch-ui.sh`
+<!-- NOTE: REQ-050 is used by t4 task above -->
+
+## M0.X-runtime-mode-recovery t8: post-install stale tsx watch detection
+
+- **REQ-051**: `install.sh` post-install check で stale tsx watch プロセス（`tsx.*server.ts` pattern）を `pgrep -f` で検出、存在時 WARNING + PID リスト + cleanup suggestion 出力（zombie 自動 kill なし、user 明示提案のみ）。pgrep 不在 / エラー時は `|| true` で graceful fallback し install.sh exit 0 を維持。`tests/install_post_check_test.sh` でカバー（zombie あり / なし / pgrep unavailable 3 scenario）。 の warm-start path (health-check 通過後) が `/mode` endpoint を probe し mode に応じて分岐する (SPEC §3.2.2 dev daemon 検出時の lazy launch 挙動 4 step 準拠)。`mode=dev` かつ Vite (`LOOM_VITE_URL` override 対応、default `:5173`) 応答あり → Vite URL を browser open + stdout。`mode=dev` かつ Vite 応答なし → warning log (stderr) + Vite URL stdout のみ (browser open skip)。`mode=prod` warm → 既存挙動 (browser open skip)。`/mode` endpoint fail / unparseable → 既存挙動 fallback (browser open skip)。`tests/loom_launch_ui_mode_probe_test.sh` でカバー。
 
 ## M0.X-runtime-mode-recovery t2/t3: /mode endpoint + LOOM_DEV_MODE switch
 
 - **REQ-049**: `daemon/src/server.ts` の static serving 判定が `LOOM_DEV_MODE` env var ベース（`isDevMode = !!process.env.LOOM_DEV_MODE`、`NODE_ENV` 依存を deprecate）に切替済みかつ `GET /mode` endpoint が SPEC §3.2.1 shape（`mode` / `entry` / `version` / `started_at` / `pid` / `ui_serving` 6 fields）を返す。`LOOM_DEV_MODE` truthy → `mode=dev` + `ui_serving=false`、unset + ui/dist 存在 → `mode=prod` + `ui_serving=true`、unset + ui/dist 不在 → `mode=prod` + `ui_serving=false`。`LOOM_ENTRY` 各値（`lazy-launch` / `pnpm-dev` / `manual`）が `/mode` response の `entry` field に反映。`pnpm --filter @claude-loom/daemon test test/server-mode-endpoint.test.ts` 13 PASS、`test/server-static.test.ts` 11 PASS（`NODE_ENV` mutation → `LOOM_DEV_MODE` mutation 移行済み）。
+
+## M0.X-runtime-mode-recovery t7: /loom-stop --all zombie cleanup
+
+- **REQ-052**: `hooks/loom-stop.sh` が `--all` flag に対応する。引数なしは既存挙動（graceful shutdown 1 daemon、fail-silent）を維持。`--all` では (1) POST /shutdown 試行、(2) daemon.pid stale kill、(3) `pgrep -f "tsx.*server\.ts"` zombie kill、(4) `pgrep -f "node.*\.claude-loom/daemon\.js"` manual launch kill、(5) killed/not-found report を stdout 出力、(6) best-effort exit 0。`commands/loom-stop.md` が `--all` flag description を含む。テスト専用 `LOOM_TEST_ZOMBIE_PIDS` env var で mock PID 直接指定可能。`tests/loom_stop_all_test.sh` でカバー。

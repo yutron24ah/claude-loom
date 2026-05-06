@@ -180,5 +180,25 @@ else
 fi
 
 echo ""
+echo "=== Post-install check: stale tsx watch processes ==="
+# WHY: zombie tsx watch processes from previous 'pnpm dev' sessions can conflict
+# with daemon startup. We detect them here and suggest cleanup without auto-killing,
+# since we cannot distinguish dev-session processes from other user processes.
+zombie_pids=$(pgrep -f "tsx.*server\.ts" 2>/dev/null || true)
+if [ -n "$zombie_pids" ]; then
+  echo "  WARNING: stale tsx watch processes detected:"
+  for pid in $zombie_pids; do
+    echo "    PID=$pid"
+  done
+  echo ""
+  echo "  These may be from a previous 'pnpm dev' session that didn't clean up."
+  echo "  Recommended cleanup (choose one):"
+  echo "    /loom-stop --all"
+  echo "    pkill -f 'tsx.*server\.ts'"
+else
+  echo "  No stale tsx watch processes found"
+fi
+
+echo ""
 echo "✅ Installation complete."
 echo "Next: run /loom-pm in Claude Code to start a PM session."
