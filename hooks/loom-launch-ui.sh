@@ -29,6 +29,8 @@ PID_FILE="${LOOM_PID_FILE:-$HOME/.claude-loom/daemon.pid}"
 NODE_CMD="${LOOM_NODE_CMD:-node}"
 # LOOM_BROWSER_CMD_OVERRIDE: override for test mocking (default: auto-detect)
 BROWSER_OVERRIDE="${LOOM_BROWSER_CMD_OVERRIDE:-}"
+# LOOM_VITE_URL: override for test mocking of Vite dev server (default: :5173)
+VITE_URL="${LOOM_VITE_URL:-http://127.0.0.1:5173}"
 
 # ── Logging helpers (stderr only — stdout reserved for URL) ───────────────────
 log_warn() { echo "[loom-launch-ui] WARN: $*" >&2; }
@@ -37,6 +39,62 @@ log_info() { echo "[loom-launch-ui] $*" >&2; }
 # ── health_check: returns 0 if daemon responds, 1 otherwise ───────────────────
 health_check() {
   curl -sf --max-time 2 "${DAEMON_URL}/health" >/dev/null 2>&1
+}
+
+# ── probe_daemon_mode: echoes "dev", "prod", or "" on failure ─────────────────
+# WHY: /mode endpoint was added in M0.X-startup-recovery (SPEC §3.2.1/§3.2.2).
+# Parses the JSON response with python3 if available, falls back to grep.
+# Returns "" on any failure — caller treats as fallback to existing behavior.
+probe_daemon_mode() {
+  local response
+  response="$(curl -sf --max-time 2 "${DAEMON_URL}/mode" 2>/dev/null)" || {
+    echo ""
+    return
+  }
+  # Prefer python3 for robust JSON parse; grep as workaround per SPEC §3.2.2 note
+  if command -v python3 >/dev/null 2>&1; then
+    python3 -c "
+import json, sys
+try:
+    d = json.loads(sys.argv[1])
+    print(d.get('mode', ''))
+except Exception:
+    print('')
+" "$response" 2>/dev/null || echo ""
+  else
+    # Grep workaround: extract "mode":"<value>"
+    echo "$response" | grep -o '"mode":"[^"]*"' | head -1 | grep -o '"[^"]*"$' | tr -d '"' || echo ""
+  fi
+}
+
+# ── vite_health_check: returns 0 if Vite dev server responds, 1 otherwise ────
+vite_health_check() {
+  curl -sf --max-time 2 "${VITE_URL}" >/dev/null 2>&1
+}
+
+# ── open_browser_at: calls browser cmd or prints URL if headless ──────────────
+# Like open_browser but accepts an explicit URL argument.
+open_browser_at() {
+  local url="$1"
+  # Always print URL to stdout (pipe / clipboard friendly)
+  echo "$url"
+
+  # Headless check gates all browser invocations (including overrides)
+  if is_headless; then
+    log_info "Headless environment detected — open $url in your browser"
+    return
+  fi
+
+  local browser_cmd
+  browser_cmd="$(resolve_browser_cmd)"
+
+  if [ -z "$browser_cmd" ]; then
+    log_info "No browser command found — open $url in your browser"
+    return
+  fi
+
+  # shellcheck disable=SC2086
+  $browser_cmd "$url" >/dev/null 2>&1 || true
 }
 
 # ── resolve_browser_cmd: echoes the browser open command, or "" if none found ─
@@ -127,9 +185,28 @@ main() {
     return
   fi
 
-  # Warm-start path: daemon already running → health-check only, no browser open
+  # Warm-start path: daemon already running → probe /mode, branch by mode
   if health_check; then
     log_info "Daemon already running at $DAEMON_URL"
+    # WHY: SPEC §3.2.2 dev daemon detection — probe /mode to decide whether to
+    # redirect browser to Vite (:5173) instead of the prod daemon (:5757).
+    # Failure to parse /mode falls back to existing no-open behavior (fail-silent).
+    local daemon_mode
+    daemon_mode="$(probe_daemon_mode)"
+    if [ "$daemon_mode" = "dev" ]; then
+      # Dev daemon detected — check if Vite is up
+      if vite_health_check; then
+        log_info "Dev daemon detected, Vite running at $VITE_URL — opening dev UI"
+        open_browser_at "$VITE_URL"
+      else
+        # WHY: Vite down means user hasn't started 'pnpm dev' yet in the UI dir.
+        # Print warning + Vite URL so user can start it manually (SPEC §3.2.2 step 4).
+        log_warn "Dev daemon detected but Vite not responding at $VITE_URL"
+        log_warn "Start Vite with: pnpm --filter @claude-loom/ui dev"
+        echo "$VITE_URL"
+      fi
+    fi
+    # mode=prod or mode='' (probe fail) → existing behavior: warm, no browser open
     return
   fi
 
