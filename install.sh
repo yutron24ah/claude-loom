@@ -112,28 +112,46 @@ install_dir_links "$ROOT_DIR/prompts" "$CLAUDE_HOME/prompts" "*"
 mkdir -p "$CLAUDE_HOME/hooks"
 install_links "$ROOT_DIR/hooks" "$CLAUDE_HOME/hooks" "*.sh"
 
-# settings.json への hooks 配線（jq + atomic mv）(M1)
+# settings.json への hooks 配線 (Claude Code SDK 仕様: PascalCase + matcher 配列)
+# retro 2026-05-06-003 F-USER-008 hotfix:
+#   旧 snake_case + 直接 path 形式 (session_start: "...") は SDK が認識せず → hook 発火せん
+#   正しい形式: PascalCase event 名 + [{matcher, hooks: [{type, command}]}] 配列
 SETTINGS_FILE="$CLAUDE_HOME/settings.json"
-HOOKS_PATCH='{
-  "hooks": {
-    "session_start": "'"$CLAUDE_HOME"'/hooks/session_start.sh",
-    "pre_tool": "'"$CLAUDE_HOME"'/hooks/pre_tool.sh",
-    "post_tool": "'"$CLAUDE_HOME"'/hooks/post_tool.sh",
-    "stop": "'"$CLAUDE_HOME"'/hooks/stop.sh",
-    "SubagentStop": "'"$CLAUDE_HOME"'/hooks/SubagentStop.sh"
-  }
-}'
+HOOKS_DIR="$CLAUDE_HOME/hooks"
 
 if command -v jq >/dev/null 2>&1; then
-  if [ -f "$SETTINGS_FILE" ]; then
-    # 既存 settings に hooks merge（既存設定を保持）
-    TMP="$(mktemp)"
-    jq -s '.[0] * .[1]' "$SETTINGS_FILE" <(echo "$HOOKS_PATCH") > "$TMP" && mv "$TMP" "$SETTINGS_FILE"
-  else
-    # 新規作成
-    echo "$HOOKS_PATCH" | jq . > "$SETTINGS_FILE"
+  TMP="$(mktemp)"
+  # 新規 settings.json なら空 object から開始
+  if [ ! -f "$SETTINGS_FILE" ]; then
+    echo '{}' > "$SETTINGS_FILE"
   fi
-  echo "  hooks 配線 settings.json に追加"
+
+  # jq script:
+  #   1) 旧 snake_case keys を cleanup (legacy install からの migration)
+  #   2) PascalCase event 配列に loom hook entry を idempotent 追加 (既存 entry は dedupe)
+  #      他 plugin の hook entry (Stop に blog-journal.sh 等) は preserve
+  jq \
+    --arg ss   "$HOOKS_DIR/session_start.sh" \
+    --arg pre  "$HOOKS_DIR/pre_tool.sh" \
+    --arg pt   "$HOOKS_DIR/post_tool.sh" \
+    --arg stop "$HOOKS_DIR/stop.sh" \
+    --arg sub  "$HOOKS_DIR/SubagentStop.sh" '
+      def add_loom_hook($key; $cmd):
+        .hooks[$key] = (
+          ((.hooks[$key] // []) | map(select(
+            ((.hooks // []) | map(.command)) as $cmds | $cmds | any(. == $cmd) | not
+          )))
+          + [{matcher: "*", hooks: [{type: "command", command: $cmd}]}]
+        );
+      .hooks //= {}
+      | del(.hooks.session_start, .hooks.pre_tool, .hooks.post_tool, .hooks.stop)
+      | add_loom_hook("SessionStart"; $ss)
+      | add_loom_hook("PreToolUse"; $pre)
+      | add_loom_hook("PostToolUse"; $pt)
+      | add_loom_hook("Stop"; $stop)
+      | add_loom_hook("SubagentStop"; $sub)
+    ' "$SETTINGS_FILE" > "$TMP" && mv "$TMP" "$SETTINGS_FILE"
+  echo "  hooks 配線 settings.json に追加 (PascalCase + matcher 配列、SDK 仕様準拠)"
 else
   echo "  WARNING: jq 不在、settings.json への hooks 配線 skip。手動で hooks 設定してください"
 fi
