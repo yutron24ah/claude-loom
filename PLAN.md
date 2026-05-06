@@ -529,6 +529,98 @@ M0.11.3 で `loom-ui-smoke` skill 完成 + Phase 1 functional MVP 検証完了�
 - daemon build script が migrations bundle copy を含む
 - tag `m0.x-startup-recovery-complete` 設置 (本 retro PR merge 後)
 
+## マイルストーン M0.X-runtime-mode-recovery (本 spec phase 2026-05-06 由来)
+
+起源: 2026-05-06 user 直接 verify (`/loom-pm` 起動後に `127.0.0.1:5757` で 404 真っ黒画面) で発覚した M0.X-startup-recovery (F-USER-005/006 hotfix) **直後の 4 層構造的 bug**：
+
+- **Layer 1 (root cause)**: lazy launch path で `NODE_ENV` env 不在 → `isProductionMode()` false → static serving skip → `/` 404 (UI が真っ黒画面)
+- **case 1**: 同 PJ 内で複数 daemon 並走（`pnpm dev` の tsx watch + lazy launch）の競合 detection 不在、PID file は記録だけで lock 機能なし
+- **Layer 2**: tsx watch 起動失敗で zombie 残留（観察時点で PID 10762 が 1 日 13h 前から残骸化）
+- **dev/prod semantics 不在**: `pnpm dev` と lazy launch の役割分担が SPEC で未明文化、`NODE_ENV` 依存の判定 logic に hidden coupling
+
+F-USER-007/008 (symlink CLI guard + hooks SDK 仕様準拠) と同 class の **partial implementation** pattern。
+
+### 設計合意（2026-05-06 spec phase 対話、SPEC §3.2.1 + §3.2.2 SSoT）
+
+- **Layer 1 fix**: 案 B 採用 — `isProductionMode()` (NODE_ENV 依存) を deprecate、`!isDevMode && existsSync(uiDistPath)` ベースに切替。`LOOM_DEV_MODE` env 一本化で「build artifact 存在 + 明示 dev override なし = serve」という直感的 mental model に統一
+- **case 1 fix**: 案 γ-2 採用 — daemon に `/mode` endpoint 新設 (SSoT = daemon process 自身)、PID file は debug breadcrumb として残置 (user 救済路 `kill $(cat daemon.pid)` 保持)
+- **dev/prod semantics**: `pnpm dev` script に `LOOM_DEV_MODE=1 LOOM_ENTRY=pnpm-dev` auto-inject、lazy launch は `LOOM_ENTRY=lazy-launch` のみ inject (env 無し = prod default)
+- **Layer 2 cleanup**: `/loom-stop --all` semantics 拡張 (全 daemon プロセス kill + tsx watch 残骸 detection)、案 γ pre-flight 採用後は新規 zombie 発生を構造的に防止
+- **rationale**: 「変更が小さい = スマート」ではなく **設計として正しいのがスマート** (本 spec phase の user feedback)。sidecar file (PID JSON) を SSoT とする案 β より、daemon endpoint を SSoT とする案 γ が race / stale / 2-writer の edge case を構造的に消去
+- **scope 外 (YAGNI)**: Layer 3 (POST /event 400 spam) は別 milestone (M0.X-hook-ingest-recovery)、multi-PJ design pivot (case 2/3) は Phase 2 deferred
+
+### Task （推定 11 task、planned_files 注釈付き）
+
+- [x] PLAN.md milestone 挿入 + SPEC §3.2 改訂（本 spec phase で実施）
+      <!-- id: m0.x-runtime-mode-t1 status: done planned_files: PLAN.md, SPEC.md -->
+- [ ] daemon: `server.ts` の static serving 判定を `LOOM_DEV_MODE` ベースに切替 + `/mode` endpoint 新設
+      <!-- id: m0.x-runtime-mode-t2 status: todo planned_files: daemon/src/server.ts -->
+- [ ] daemon: `test/server-static.test.ts` を `LOOM_DEV_MODE` mutation ベースに書換、`/mode` endpoint test 追加
+      <!-- id: m0.x-runtime-mode-t3 status: todo planned_files: daemon/test/server-static.test.ts, daemon/test/server-mode-endpoint.test.ts -->
+- [ ] hooks/loom-launch-ui.sh: `/mode` probe + dev daemon 検出時の Vite (:5173) redirect logic 追加
+      <!-- id: m0.x-runtime-mode-t4 status: todo planned_files: hooks/loom-launch-ui.sh -->
+- [ ] daemon/package.json: `dev` script に `LOOM_DEV_MODE=1 LOOM_ENTRY=pnpm-dev` auto-inject
+      <!-- id: m0.x-runtime-mode-t5 status: todo planned_files: daemon/package.json -->
+- [ ] daemon: pre-flight script 新設 (`scripts/pnpm-dev-preflight.sh` 等、`/health` + `/mode` で prod daemon 検出時に diagnostic 出して exit)、`pnpm dev` script から invoke
+      <!-- id: m0.x-runtime-mode-t6 status: todo planned_files: daemon/scripts/pnpm-dev-preflight.sh, daemon/package.json -->
+- [ ] commands/loom-stop.md + hooks/loom-stop.sh: `/loom-stop --all` semantics 拡張 (全 daemon プロセス kill + tsx watch 残骸 cleanup)
+      <!-- id: m0.x-runtime-mode-t7 status: todo planned_files: commands/loom-stop.md, hooks/loom-stop.sh -->
+- [ ] install.sh: post-install で stale tsx watch detection + warning メッセージ追加
+      <!-- id: m0.x-runtime-mode-t8 status: todo planned_files: install.sh -->
+- [ ] tests/REQUIREMENTS.md: REQ-XXX (`/mode` endpoint shape / dev/prod static serving 切替 / 競合 diagnostic) 追加
+      <!-- id: m0.x-runtime-mode-t9 status: todo planned_files: tests/REQUIREMENTS.md -->
+- [ ] CLAUDE.md + README.md cascade update (dev/prod mode 役割分担 + access URL 違いを user 視点で明記)
+      <!-- id: m0.x-runtime-mode-t10 status: todo planned_files: CLAUDE.md, README.md -->
+- [ ] e2e smoke test (`tests/daemon_runtime_mode_test.sh`) 新設 + tag `m0.x-runtime-mode-recovery-complete` 設置
+      <!-- id: m0.x-runtime-mode-t11 status: todo planned_files: tests/daemon_runtime_mode_test.sh -->
+
+**dispatch 戦略**: t2 (daemon server.ts) → t3 (daemon test) sequential（同 daemon module）、t4 (hooks) と t5+t6 (package.json + pre-flight) は file disjoint で parallel 可能、t7-t8 sequential（install.sh と loom-stop.sh で hooks/ 共有 risk）、t9-t11 sequential closure。Strategy a default (dev 自身 commit)、Strategy b は parallel batch 採用時のみ。
+
+### M0.X-runtime-mode-recovery 完成基準
+
+- `bash tests/daemon_runtime_mode_test.sh` PASS (curl `/` → 200 + `index.html` 返却、curl `/mode` → JSON 応答)
+- lazy launch で起動 → `ui/dist` 自動 serve、`/` で UI 描画 (今回の 404 事件再発防止確認)
+- `pnpm dev` 起動済 + `/loom-pm` の場合：lazy launch hook が dev daemon 検出 → Vite (:5173) redirect
+- lazy launch 起動済 + `pnpm dev` の場合：pre-flight が prod daemon 検出 → ERROR exit + diagnostic message
+- `./tests/run_tests.sh` 全 PASS、`pnpm --filter @claude-loom/daemon test` 全 PASS
+- tag `m0.x-runtime-mode-recovery-complete` 設置、既存全 tag 保持
+
+## マイルストーン M0.X-hook-ingest-recovery (本 spec phase 2026-05-06 由来)
+
+起源: 2026-05-06 daemon log 観察で発覚した hook ingest path の連続 400 失敗：直近 commit `c31a88e` (F-USER-007/008 hotfix: hooks SDK 仕様準拠) 後に **`POST /event` が `req-q` 〜 `req-z` まで連続 400 (Body is not valid JSON)** で失敗、hook event ingest が機能不全。F-USER-007/008 hotfix の regression 疑いあり、bisect investigation 必要。
+
+### 設計合意（2026-05-06 spec phase 対話）
+
+- **scope**: bash hook script の curl payload format と daemon `eventInputSchema` の整合性回復
+- **investigation phase**: bash hook script (5 種: `pre_tool.sh` / `post_tool.sh` / `session_start.sh` / `stop.sh` / `SubagentStop.sh`) の curl invocation を debug log で dump、daemon schema と照合して root cause 特定
+- **修正方針**: payload format を daemon schema に合わせる (script side fix 推奨、user 環境影響最小) or schema 側を SDK 仕様に合わせる (user 環境影響大、最終手段)
+- **再発防止**: hook script ↔ daemon schema の cross-check assertion を `tests/REQUIREMENTS.md` に REQ 化、integration test で構造的 detect 可能化
+- **scope 外 (YAGNI)**: hook event ingest path 全体の refactor、event correlation 強化、`/event` endpoint の versioning 戦略は本 milestone 対象外
+- **rationale**: M0.X-runtime-mode-recovery とは bug class が独立 (startup ≠ runtime ingest)、investigation phase 必要なため別 milestone で集中する方が clean
+
+### Task （推定 5 task）
+
+- [x] PLAN.md milestone 挿入（本 spec phase で実施）
+      <!-- id: m0.x-hook-ingest-t1 status: done planned_files: PLAN.md -->
+- [ ] investigation: 5 種 bash hook script の curl payload を debug log で dump、daemon `eventInputSchema` と照合 (root cause specific identification)
+      <!-- id: m0.x-hook-ingest-t2 status: todo planned_files: hooks/pre_tool.sh, hooks/post_tool.sh, hooks/session_start.sh, hooks/stop.sh, hooks/SubagentStop.sh, daemon/src/hooks/ingest.ts -->
+- [ ] fix: payload format alignment (script side fix が default、impl phase で root cause 確定後に判断)
+      <!-- id: m0.x-hook-ingest-t3 status: todo planned_files: hooks/*.sh (修正対象は t2 で確定) -->
+- [ ] tests: hook script ↔ daemon schema cross-check assertion を `tests/REQUIREMENTS.md` に REQ 化 + integration test 新設
+      <!-- id: m0.x-hook-ingest-t4 status: todo planned_files: tests/REQUIREMENTS.md, tests/hook_ingest_integration_test.sh -->
+- [ ] tag `m0.x-hook-ingest-recovery-complete` 設置
+      <!-- id: m0.x-hook-ingest-t5 status: todo planned_files: (tag setting only) -->
+
+**dispatch 戦略**: t2 (investigation) sequential（root cause 確定が前提）→ t3 (fix) sequential（t2 結果に依存）→ t4 (test) sequential（t3 で fix 確定後）→ t5 (tag) closure。Strategy a default。
+
+### M0.X-hook-ingest-recovery 完成基準
+
+- `POST /event` 400 spam が daemon log から消失
+- 5 種 hook script からの ingest 成功率 100% (10 invocation 中 10 成功 sample 確認)
+- `bash tests/hook_ingest_integration_test.sh` PASS
+- `tests/REQUIREMENTS.md` に hook script ↔ daemon schema cross-check REQ 追加
+- tag `m0.x-hook-ingest-recovery-complete` 設置
+
 ## Phase 2 entry criteria + carryover (retro 2026-05-05-001 由来)
 
 Phase 1 MVP の 3 段階 closure marker 全達成 (m5 = functional / m0.11.3 = verification / m0.11.4 = aesthetic) の後、Phase 2 entry 前に解決 / 整理すべき carryover を retro 2026-05-05-001 の 14 finding から集約。F-meta-003 (Phase 2 entry criteria 整備 gap) の structural action として本 section を新設。
