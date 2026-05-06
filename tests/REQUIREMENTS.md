@@ -147,3 +147,7 @@
 ## M0.X-runtime-mode-recovery t5/t6: pnpm dev preflight + LOOM_DEV_MODE auto-inject
 
 - **REQ-053**: `daemon/package.json` の `dev` script が `LOOM_DEV_MODE=1 LOOM_ENTRY=pnpm-dev` を auto-inject + `bash scripts/pnpm-dev-preflight.sh` を tsx watch 起動前に invoke。`daemon/scripts/pnpm-dev-preflight.sh` が SPEC §3.2.2 prod daemon 検出時挙動を実装: `/health` + `/mode` probe で `mode=prod` 検出 → ERROR + PID + entry を stderr に出力して exit 1 (tsx watch 起動ブロック)、dev daemon / daemon 不在 / probe fail は exit 0 (graceful)。`tests/m0x_t5_t6_preflight_test.sh` でカバー (13 scenario)。
+
+## M0.X-runtime-mode-recovery t11: daemon runtime mode E2E smoke test
+
+- **REQ-054**: `tests/daemon_runtime_mode_test.sh` が 3 boot scenario の integrated E2E smoke test を提供する。(1) prod mode (LOOM_ENTRY=lazy-launch): `/mode` → `mode=prod` + `entry=lazy-launch` + `ui_serving=true` (ui/dist 存在時)、`/` → 200 + HTML。(2) dev mode (LOOM_DEV_MODE=1 LOOM_ENTRY=pnpm-dev): `/mode` → `mode=dev` + `entry=pnpm-dev` + `ui_serving=false`、`/` → 404 (static skip 確認)。(3) manual mode (env なし): `/mode` → `mode=prod` + `entry=manual` + SPEC §3.2.1 規定 6 fields 全存在確認。test port は 15870–15872 (既存 test 15850–15863 と衝突なし)、`LOOM_PORT` env var で daemon が custom port を受け付ける (CLI entry の default 5757 を override)。`tests/daemon_runtime_mode_test.sh` でカバー (15 assertion)。

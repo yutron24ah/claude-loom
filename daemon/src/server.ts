@@ -123,7 +123,10 @@ export async function startServer(port = 5757, host = "127.0.0.1") {
 const argvPath = process.argv[1] ? realpathSync(process.argv[1]) : "";
 const importPath = fileURLToPath(import.meta.url);
 if (argvPath === importPath) {
-  startServer().catch((err) => {
+  // WHY: LOOM_PORT env var lets integration tests bind on a random port to
+  // avoid colliding with any running production daemon on :5757.
+  const port = process.env.LOOM_PORT ? parseInt(process.env.LOOM_PORT, 10) : 5757;
+  startServer(port).catch((err) => {
     console.error("Failed to start daemon:", err);
     process.exit(1);
   });

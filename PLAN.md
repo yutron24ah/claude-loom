@@ -569,10 +569,10 @@ F-USER-007/008 (symlink CLI guard + hooks SDK 仕様準拠) と同 class の **p
       <!-- id: m0.x-runtime-mode-t8 status: done planned_files: install.sh commit: 3a24688 note: REQ-051 追加、install_post_check_test 7 件 PASS (3 scenario)、auto-kill なし read-only check -->
 - [x] tests/REQUIREMENTS.md: REQ for 競合 diagnostic + dev/prod 切替の access URL pattern 追加
       <!-- id: m0.x-runtime-mode-t9 status: done planned_files: tests/REQUIREMENTS.md note: scope absorbed — t2-t8 個別 dev による REQ-049/050/051/052/053 追加で本 task scope 全カバー、separate dispatch 不要 -->
-- [ ] CLAUDE.md + README.md cascade update (dev/prod mode 役割分担 + access URL 違いを user 視点で明記)
-      <!-- id: m0.x-runtime-mode-t10 status: todo planned_files: CLAUDE.md, README.md -->
-- [ ] e2e smoke test (`tests/daemon_runtime_mode_test.sh`) 新設 + tag `m0.x-runtime-mode-recovery-complete` 設置
-      <!-- id: m0.x-runtime-mode-t11 status: todo planned_files: tests/daemon_runtime_mode_test.sh -->
+- [x] CLAUDE.md + README.md cascade update (dev/prod mode 役割分担 + access URL 違いを user 視点で明記)
+      <!-- id: m0.x-runtime-mode-t10 status: done planned_files: CLAUDE.md, README.md, README.ja.md commit: 5afef01 note: dev/prod mode 比較表 + access URL (:5757 vs :5173) + LOOM_DEV_MODE/LOOM_ENTRY + opt-out 追加、path C self-review 完了 -->
+- [x] e2e smoke test (`tests/daemon_runtime_mode_test.sh`) 新設 + tag `m0.x-runtime-mode-recovery-complete` 設置
+      <!-- id: m0.x-runtime-mode-t11 status: done planned_files: tests/daemon_runtime_mode_test.sh, daemon/src/server.ts (LOOM_PORT env var), tests/REQUIREMENTS.md (REQ-054) note: 3 boot scenario × 15 assertion PASS、port 15870-15872 (衝突回避) -->
 
 **dispatch 戦略**: t2 (daemon server.ts) → t3 (daemon test) sequential（同 daemon module）、t4 (hooks) と t5+t6 (package.json + pre-flight) は file disjoint で parallel 可能、t7-t8 sequential（install.sh と loom-stop.sh で hooks/ 共有 risk）、t9-t11 sequential closure。Strategy a default (dev 自身 commit)、Strategy b は parallel batch 採用時のみ。
 
