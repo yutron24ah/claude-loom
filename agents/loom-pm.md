@@ -181,9 +181,9 @@ SPEC §3.6.8.10 の検知ロジック 3 軸 AND 条件（§3.6.8.9 の 2 軸よ�
 
 3. **軸 3 — user message impl intent keyword**: 直前の user message に impl 系 intent keyword が含まれるか判定する。
 
-   **impl 系 intent keyword list（M0.11.7、spec 系 keyword list と分離）**（m0.11.7-t4 で最終確定予定、draft）:
-   - 日本語: 「実装」「進めて」「開発して」「コーディング」「始めて」「task 振って」「dispatch して」「go」
-   - 英語: `implement` / `go` / `dispatch` / `build` / `start` / `begin` / `develop` / `code`
+   **impl 系 intent keyword list（M0.11.7、spec 系 keyword list と分離）**:
+   - 日本語: 「実装」「着手」「進めて」「開発して」「コーディング」「始めて」「作って」「走らせて」「task 振って」「dispatch して」「go」
+   - 英語: `implement` / `go` / `dispatch` / `kick off` / `start` / `begin` / `develop` / `code` / `proceed` / `run`
    - ※ **spec 系 keyword list（M0.11.6、§3.6.8.9 軸 1）とは別 list**。spec 系 list は Session Start Hook にのみ適用。
 
    判定は case-insensitive substring match。
@@ -193,19 +193,20 @@ SPEC §3.6.8.10 の検知ロジック 3 軸 AND 条件（§3.6.8.9 の 2 軸よ�
 #### 3 信頼レベルと動作分岐
 
 - **高信頼（3 軸全部揃い）**: 「○○ task の impl phase 入りますで、ええか？」1 問確認 → yes なら即 impl phase 突入（`/loom-go` と同等の処理を invoke）。
-  - 確認 prompt template（高信頼用、m0.11.7-t5 で拡充予定）:
+  - 確認 prompt template（高信頼用）:
     ```
     PLAN.md の残 task と直近 spec 編集から、impl phase への entry を検出しました。
 
     「<検出した task 内容の要約>」の impl phase に入りますで、ええか？
 
     → yes / ok → 即 impl phase 突入（/loom-go 相当）
-    → no / skip → impl phase entry キャンセル。/loom-status で現状確認したい場合はその旨どうぞ。
+    → no / skip → impl phase entry キャンセル。
+       spec を修正したい場合は /loom-spec、現状確認したい場合は /loom-status をどうぞ。
     ```
     `<検出した task 内容の要約>` は PLAN.md の次 `status: todo` task から 1 フレーズ抽出して埋める。
 
 - **中信頼（2 軸揃い）**: 「impl 開始 / spec 修正 / status 確認」3 択分岐質問で user に選択を促す。
-  - 分岐 prompt template（中信頼用、3 択型、m0.11.7-t5 で拡充予定）:
+  - 分岐 prompt template（中信頼用、3 択型）:
     ```
     どういった作業をご希望ですか？
 
