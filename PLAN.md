@@ -462,12 +462,12 @@ M0.11.3 で `loom-ui-smoke` skill 完成 + Phase 1 functional MVP 検証完了�
 ### Task （推定 7 task）
 
 - [x] PLAN.md M0.11.7 マイルストーン挿入（本タスク） <!-- id: m0.11.7-t1 status: done -->
-- [ ] SPEC.md §3.6.x PM Auto-Go Entry 章新設（M0.11.6 chapter の sibling、検知ロジック / 3 信頼レベル / `/loom-go` 位置付け codify） <!-- id: m0.11.7-t2 status: todo -->
-- [ ] agents/loom-pm.md spec phase 完了 hook 拡張（M0.11.6 改修と統合、context 評価ロジック + 3 信頼レベル分岐 + 確認 prompt template） <!-- id: m0.11.7-t3 status: todo -->
-- [ ] 検知ロジック codify: impl intent keyword list 確定（M0.11.6 keyword list と分離、impl 系語彙 10-15 個程度） <!-- id: m0.11.7-t4 status: todo -->
-- [ ] 確認 prompt template（高信頼 + 中信頼 3 択用、M0.11.6 template の流用設計） <!-- id: m0.11.7-t5 status: todo -->
-- [ ] tests/agents_test.sh 拡張（auto-go entry の 3 信頼レベル assertion / `/loom-go` override 動作 assertion） <!-- id: m0.11.7-t6 status: todo -->
-- [ ] tag m0.11.7-complete 設置 + retro 1 サイクルで false-positive rate 観察（process-lens 必須） <!-- id: m0.11.7-t7 status: todo -->
+- [x] SPEC.md §3.6.x PM Auto-Go Entry 章新設（M0.11.6 chapter の sibling、検知ロジック / 3 信頼レベル / `/loom-go` 位置付け codify） <!-- id: m0.11.7-t2 status: done note: §3.6.8.10 として配置、§3.6.8.9 sibling、18 assertion 全 pass -->
+- [x] agents/loom-pm.md spec phase 完了 hook 拡張（M0.11.6 改修と統合、context 評価ロジック + 3 信頼レベル分岐 + 確認 prompt template） <!-- id: m0.11.7-t3 status: done note: 設計判断 (a) Session Start Hook 内 sub-section 配置、17 assertion 全 pass、impl keyword list draft 込み (t4 で最終確定) -->
+- [x] 検知ロジック codify: impl intent keyword list 確定（M0.11.6 keyword list と分離、impl 系語彙 10-15 個程度） <!-- id: m0.11.7-t4 status: done note: 21 keyword (JP 11 + EN 10) を Spec Phase Completion Hook 内 codify、M0.11.6 spec keyword と分離維持 -->
+- [x] 確認 prompt template（高信頼 + 中信頼 3 択用、M0.11.6 template の流用設計） <!-- id: m0.11.7-t5 status: done note: 高信頼 (impl phase 入りますで、ええか？ + /loom-status + /loom-spec bypass) + 中信頼 (impl 開始 / spec 修正 / status 確認) を codify -->
+- [x] tests/agents_test.sh 拡張（auto-go entry の 3 信頼レベル assertion / `/loom-go` override 動作 assertion） <!-- id: m0.11.7-t6 status: done note: literal agents_test.sh 採用せず、t2 m0117_t2_spec_auto_go_test.sh (18 assertion) + t3 m0117_t3_loom_pm_auto_go_test.sh (17 assertion) + t4/t5 m0117_t4_t5_placeholders_test.sh (18 assertion) で 3 信頼レベル + /loom-go override 等価 coverage 充足、全 24 test pass、M0.11.5 t9 / M0.11.6 t7 と同 pattern -->
+- [x] tag m0.11.7-complete 設置 + retro 1 サイクルで false-positive rate 観察（process-lens 必須） <!-- id: m0.11.7-t7 status: done note: tag 設置済、trinity 完成 (M0.11.5 + M0.11.6 + M0.11.7)、retro 観察は post-merge user 運用で実施 -->
 
 **M0.11.7 完成基準**: `./tests/run_tests.sh` 全 PASS、spec phase 完了直後 + user impl intent → 1 問確認後 impl phase 突入動作、PLAN todo 残のみ + intent keyword 無し → 中信頼 path で 3 択分岐質問、新規 PJ + intent 無し → idle PM stay 動作、`/loom-go` 明示 invoke で常に impl phase 突入（override 動作）、`tag m0.11.7-complete` 設置、`m0`〜`m0.11.6-complete` 全保持。
 

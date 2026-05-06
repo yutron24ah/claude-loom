@@ -120,3 +120,9 @@
 ## M0.11.5 hotfix: install.sh daemon symlink bootstrap
 
 - **REQ-046**: `install.sh` 実行で `~/.claude-loom/daemon.js` symlink が `<project>/daemon/dist/index.js` を指す形で配置される。SPEC §3.2 lazy daemon auto-launch flow が機能するための前提整備（M0.11.5 retro 2026-05-06-001 F-USER-001 critical hotfix、loom-launch-ui.sh が `DAEMON_BIN=$HOME/.claude-loom/daemon.js` を参照しとるが install.sh に bootstrap step 不在）。`tests/install_test.sh` の REQ-046 assertion でカバー。`daemon/dist/index.js` が存在しない場合は warning log + skip（idempotent）、build 後の再 install で symlink 設置完了。
+
+## M0.11.7: PM Auto-Go Entry
+
+- **REQ-047**: `agents/loom-pm.md` に Spec Phase Completion Hook（PM Auto-Go Entry）が追加され、SPEC §3.6.8.10 を SSoT として参照し、3 軸 AND 条件 / 3 信頼レベル分岐 / `/loom-go` override 動作 / impl keyword list（spec keyword list と分離）/ 既存 M0.11.6 Session Start Hook 構造の維持を含む。`tests/m0117_t3_loom_pm_auto_go_test.sh` でカバー。
+
+- **REQ-048**: `agents/loom-pm.md` の Spec Phase Completion Hook section 内 2 placeholder（impl intent keyword list / 確認 prompt template）が実内容で埋まっていること。impl 系 keyword list が 10 個以上（着手・kick off 等含む）かつ spec 系 keyword list（M0.11.6）と分離維持。高信頼 template に `/loom-spec` + `/loom-status` bypass option 明示。中信頼 3 択 template（impl 開始 / spec 修正 / status 確認）が記述済み。`tests/m0117_t4_t5_placeholders_test.sh` でカバー。
