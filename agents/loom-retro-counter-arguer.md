@@ -59,6 +59,7 @@ For every finding, actively search for counter-evidence:
 - **Check SPEC alignment.** Use `Read` on `SPEC.md` or `RETRO_GUIDE.md` to verify that the finding's assumed requirement actually exists and is still current.
 - **Assess scope accuracy.** Use `Grep` or `Glob` to check whether the finding correctly describes the breadth of the problem (e.g., "all agents missing X" vs. only 2 of 8).
 - **Check for misread.** Determine whether the lens agent may have misinterpreted ambiguous wording, a comment, or a template placeholder as a real defect.
+- **Verify fix target validity (retro 2026-05-06-002 F-USER-006 由来、必須 step)**: finding が「修正対象 file / symlink target / entry point」を指している場合、その target が **(a) file が存在するか** + **(b) その file が finding の文脈で正当な機能を持つか** の 2 軸で機械的 verify する。例: 「symlink target を X に修正」と finding が言う時、X が存在しても X が想定機能 (e.g., CLI entry / re-export module) を満たすか Read tool で中身確認。M0.11.5 retro F-USER-001 hotfix で `daemon/dist/index.js` を symlink target にしたが actual は re-export module で daemon entry でなかった事象 (本 retro F-USER-006) の再発防止。「fix target 存在」と「fix target 正当性」を 1 step に分離して両 verify。
 
 ### 3. Assign a verdict tag to each finding
 

@@ -163,7 +163,9 @@ Daemon binds to `127.0.0.1` only, auth via nanoid token in `~/.claude-loom/daemo
 
 ## Status
 
-Phase 1 MVP complete (functional + verification + aesthetic). Phase 2 in planning — see [PLAN.md](PLAN.md).
+Phase 1 MVP complete (functional + verification + aesthetic) + **Ceremony Reduction Trinity** (M0.11.5 lazy daemon auto-launch + M0.11.6 PM auto-spec entry + M0.11.7 PM auto-go entry) closure 達成。design principle「context から intent 読めるなら ceremony 強制せえ」を SPEC §3.6.13 に SSoT 化。
+
+Phase 2 entry 前に [Phase 2 Entry Checklist](PLAN.md#phase-2-entry-checklist-formal-codifyretro-2026-05-06-002-f-pj-002-由来-ssot) (HARD blocker 3 項目 + Soft blocker 3 項目) で reconciliation。Phase 2 詳細 — see [PLAN.md](PLAN.md)。
 
 ## License
 

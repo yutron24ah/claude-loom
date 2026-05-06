@@ -108,19 +108,24 @@ claude-loom は **Claude Code 上で agile 開発チームを丸ごと再現す�
 
 ### 3.2 Lazy Daemon ライフサイクル
 
-`/loom`（help/entry）と `/loom-stop`（shutdown）以外の 7 種 slash command（`/loom-pm`, `/loom-spec`, `/loom-go`, `/loom-retro`, `/loom-status`, `/loom-worktree`, `/loom-mode`）が trigger となる。
+trigger は **dual path**:
+- **primary**: Claude Code の `SessionStart` hook 経由 (loom PJ で session 開始した瞬間に発火、retro 2026-05-06-002 F-USER-003 で正規化)
+- **secondary**: 7 種 slash command（`/loom-pm`, `/loom-spec`, `/loom-go`, `/loom-retro`, `/loom-status`, `/loom-worktree`, `/loom-mode`）の markdown body bash invoke (補助 path、Claude execution priority に依存して確率的に発火)
 
-1. user が trigger 対象の slash command を任意のディレクトリで実行
-2. command が `localhost:5757/health` を叩く
-3. 無応答なら daemon を `nohup node ~/.claude-loom/daemon.js &` で起動（cold start）、PID ファイル記録
-4. **cold start 時のみ** `open http://localhost:5757` でブラウザを開く（既起動時は health-check のみで browser open せず、`xdg-open` 系のタブ氾濫を回避）
-5. **headless 環境では browser open を skip し URL を terminal に出力**。検出条件: `$SSH_CONNECTION` セット / Linux で `$DISPLAY` 空 / `open`・`xdg-open`・`start` のいずれも不在。`LOOM_NO_UI=1` 環境変数で強制 skip 可能
-6. daemon は 30 分イベント無しでセルフシャットダウン
-7. 明示停止は `/loom-stop`、状態確認は `/loom-status`
+1. session 開始時、`SessionStart` hook (`hooks/session_start.sh`) が cwd の `.claude-loom/` 存在を gate check (非 loom PJ は silent skip)
+2. gate pass なら `hooks/loom-launch-ui.sh` を background fire-and-forget で invoke (session_start を block しない、fail-silent)
+3. launch hook が `localhost:5757/health` を叩く
+4. 無応答なら daemon を `nohup node ~/.claude-loom/daemon.js &` で起動（cold start）、PID ファイル記録
+5. **cold start 時のみ** `open http://localhost:5757` でブラウザを開く（既起動時は health-check のみで browser open せず、`xdg-open` 系のタブ氾濫を回避）
+6. **headless 環境では browser open を skip し URL を terminal に出力**。検出条件: `$SSH_CONNECTION` セット / Linux で `$DISPLAY` 空 / `open`・`xdg-open`・`start` のいずれも不在。`LOOM_NO_UI=1` 環境変数で強制 skip 可能
+7. daemon は 30 分イベント無しでセルフシャットダウン
+8. 明示停止は `/loom-stop`、状態確認は `/loom-status`
+
+**SessionStart hook 正規化の経緯 (retro 2026-05-06-002 F-USER-003)**: M0.11.5 trinity 設計時は slash command markdown body の bash invoke を primary trigger としたが、Claude execution priority に依存して確率的に発火せず、loom PJ 開始時の core promise (lazy daemon auto-launch → UI serve) が確実に機能しない silent failure を起こしていた (M0.11.5 retro F-USER-001 hypothesis 1 root cause)。SessionStart hook を primary trigger に正規化することで「loom PJ で session 開始した瞬間に必ず UI が立ち上がる」を guarantee 可能化。slash command markdown 経由の invoke は補助 path として残置 (multiple trigger redundancy)。
 
 **`/loom` の役割**: daemon URL 表示 + clipboard コピー（user が「もう 1 タブ欲しい」時の救済路、cold-start-only open ポリシーを補完する dual path）。
 
-**永続 opt-out**: `<project>/.claude-loom/project-prefs.json` の `ui.auto_launch: false` で PJ 単位で auto-launch 無効化。`LOOM_NO_UI=1` は session 単位の緊急上書き。
+**永続 opt-out**: `<project>/.claude-loom/project-prefs.json` の `ui.auto_launch: false` で PJ 単位で auto-launch 無効化。`LOOM_NO_UI=1` は session 単位の緊急上書き、`LOOM_NO_AUTO_UI=1` は session_start hook 経由の auto-launch のみ無効化 (slash command 経由は許可、CI / headless 環境用)。
 
 ### 3.3 中央指令室モデル
 
@@ -730,6 +735,23 @@ design は **all SVG + DOM + CSS** で構築 (Phaser 不使用)。M3.0 の Phase
 
 `ui/package.json` から `phaser` (^4.1.0) dependency 削除、関連 file (`ui/src/views/room/PhaserCanvas.tsx`、`ui/src/views/room/scenes/RoomScene.ts`、`ui/src/views/room/agentSpriteSync.ts`) を **物理削除** (SPEC §3.9.x P4 理想形「symptomatic patch 構造解決後の rollback」と同 pattern、Phaser infra rollback)。Playwright e2e baseline (`ui/e2e/__screenshots__/room-baseline.spec.ts-snapshots/room-pop.png`) は新 design 実装後に再生成。
 
+### 3.6.13 Ceremony Reduction Trinity Marker（2026-05-06-002 retro F-pj-001 由来、SSoT）
+
+claude-loom Phase 1 closure trinity (M0.11.5 / M0.11.6 / M0.11.7) で codify された design principle 「**context から intent 読めるなら ceremony 強制せえ**」の cross-reference を 1 箇所で参照可能にする SSoT marker。Phase 2 candidate 設計時に毎回 3 章探索コストが発生する discoverability gap を解消する。
+
+| trinity 章 | milestone | scope | rationale |
+|---|---|---|---|
+| **§3.2** Lazy Daemon ライフサイクル | M0.11.5 | session 開始時の SessionStart hook + slash command dual path で UI auto-launch、cold-start-only browser open | user が `/loom-pm` 起動直後に GUI を自然に視界へ出す ceremony reduction、context = "loom PJ 開始した" → intent = "GUI も見たい" の自動推論 |
+| **§3.6.8.9** PM Auto-Spec Entry | M0.11.6 | PM が context (PLAN.md status / git log / SPEC.md unchanged time) から spec phase 必要性を probe、auto-entry | user が `/loom-spec` 明示宣言不要、context = "milestone 境界 + SPEC drift" → intent = "spec 確認したい" の自動推論 |
+| **§3.6.8.10** PM Auto-Go Entry | M0.11.7 | PM が context (PLAN.md status / spec phase 完了 marker) から impl phase 必要性を probe、auto-entry | user が `/loom-go` 明示宣言不要、context = "spec done + PLAN ready" → intent = "実装着手したい" の自動推論 |
+
+**共通 design principle**:
+- ceremony (明示 slash command 宣言) は default off、context probe で intent を満たせない時のみ user が ceremony で override
+- 全 trinity 章は §3.6.8.7 path C (degraded mode = first-class operating mode) と整合、Bash tool 単体で context probe 可能 (Task tool 不要)
+- intent keyword (`/loom-spec` / `/loom-go` invoke 直前の user 文言) を SPEC §3.6.8.9 / §3.6.8.10 に列挙、PM は keyword 検出で auto-entry の信頼度を上げる
+
+**Phase 2 application**: Phase 2 candidate (`Phase 2 candidate pool: UX refinement series`) の優先順位判定軸として、本 marker を 1st-class 評価軸とする。「該当 candidate が ceremony reduction trinity の延長線上にあるか」を design phase で確認すること。
+
 ### 3.7 プロジェクトライフサイクルと adopt 戦略
 
 claude-loom は **新規プロジェクトの立ち上げ** にも **既存プロジェクトの取り込み（adopt）** にも対応する。両者は明確に区別され、PM が異なるフローで処理する。
@@ -975,6 +997,18 @@ Task tool unavailable 時 (degraded mode) に retro-pm が 4 lens dispatch 不�
 - **schema_version 出力規律**: retro-pm が pending.json を新規 write する時 `schema_version: 2` 必須 (§6.9.6 v2、§6.9.6.1 SSoT 統一表組参照)、`schema_version: 1.0.0` 等の semver 形式 / v1 形式 出力は invalid (本 retro session で発生した bug の codify)
 - **persistence escalation rule** (2026-05-06 F-meta-001): degraded mode が **3 retro 連続持続** したら本 §3.9.13 の review 必須。Task tool 復旧条件 (Claude Agent SDK env 制約 / harness 起動 mode 制約) を user + meta lens で再評価、agent definition update or workaround codify を進める
 
+##### 3.9.13.1 3-strike trigger 後の必須 action items（2026-05-06-002 retro F-proc-003 由来、SSoT）
+
+degraded mode が 3 retro 連続持続して escalation rule が trigger された時点で、retro-pm + PM 連携で下記 action を必須執行する：
+
+1. **path C default 昇格の追認**: §3.6.8.7 path C default 反転 (2026-05-06) を SSoT として確認、「degraded」呼称を内部 detection 用語に縮退、user 向け呼称は **first-class operating mode** へ正規化（path C は abnormal fallback ではなく Claude Agent SDK 環境での通常運用 mode）
+2. **subordinate research task 起票** (HARD blocker ではなく Phase 内並行調査): Task tool availability の Claude Code 公式 API upstream 調査を `docs/research/task-tool-availability.md` に新設し、Phase の中で並行で進める。完了は milestone closure / Phase 移行の HARD blocker にしない
+3. **probe 標準化の再確認**: agents/loom-retro-pm.md の `Degraded mode protocol` section に `ToolSearch query="select:Task" max_results=1` の標準 probe 手順が明記されとるか audit、不明なら更新
+4. **archive 透明化**: 該当 retro archive markdown 冒頭に `escalation_status: 3-strike-trigger-N回目` を必須記載、user に escalation 進行を可視化
+5. **synthesis confidence 注釈**: 3-strike 達成 retro の findings は通常 retro より一段 confidence を下げて評価、approval flow で user に明示
+
+**rationale**: 2026-05-05-001 / 2026-05-06-001 / 2026-05-06-002 の 3 連続 degraded mode 発生で 1 回目 trigger 達成、本 subsection が初適用 case。Phase 2 entry を blocker で留めるよりも path C を first-class 化して進行を維持し、Task tool 復旧調査は subordinate research として並行で進める判断 (累積 evidence: M0.11.5 6/6 dispatch 全部 path C で pass、運用 fit 立証済)。
+
 **guidance lifecycle 統合**:
 `learned_guidance` の auto-prune rule（§6.9.4 末尾拡張参照）: `ttl_sessions` main（`null` = infinite default、`> 0` = N retro 後 auto-deactivate） + `last_used_in` audit（retro 参照時 aggregator update、N session 連続未使用 → meta lens stale guidance finding）。責務分離: auto-deactivate = 決定論的（ttl）、user 承認 prune = dynamic（last_used_in 経由 meta lens proposal）。
 
@@ -989,6 +1023,17 @@ retro carryover findings (前 retro で defer された pre-existing test failur
 - **目的**: carryover の意味回復 (defer ≠ 無視)、累積負債を milestone scope に格上げして可視化、Phase 2 移行前の cleanup loop 起動
 
 **M0.11.5 retro 適用 case**: pre-existing test failures 3 件 (`docs_release_test.sh` / `dry_run_applied_summary_test.sh` / `m1_docs_test.sh`) は M0.X 系列で 3 retro 連続 carryover、本 retro F-proc-004 で escalation rule が適用された初例。専用 fix milestone は本 retro 後の PLAN.md insertion で対応。
+
+#### 3.9.15 Command frequency probe (data-driven retro context)（2026-05-06-002 retro F-USER-004 由来）
+
+retro architecture を data 駆動化し、Phase 2 candidate prioritization に reality data を提供するための probe 機構。
+
+- **collection**: `hooks/post_tool.sh` 内で `tool_name == "SlashCommand"` を check、command name を `~/.claude-loom/command-frequency.log` に append。format `<unix_ms> <session_id> <command_name>` の 1 line / event
+- **opt-out**: `LOOM_NO_FREQUENCY_LOG=1` env 経由で session 単位 disable (privacy concern 用)、`LOOM_FREQUENCY_LOG=<path>` で log path override 可能
+- **lifecycle**: log は append-only、size cap / rotation は M4 doc consistency engine の collateral として後続 codify (本節時点では simple text log)
+- **retro Stage 0 拡張**: `loom-retro-pm` が verdict_evidence + applied_summary build に続き、command-frequency.log を直近 N 日分集計 → 4 lens の Stage 1 dispatch prompt に context 注入。lens 側は invocation pattern (e.g., `/loom-spec` 高頻度 + `/loom-go` 低頻度 = spec phase ceremony 過剰の signal) を Phase 2 candidate prioritization 軸として活用
+- **責務分離**: probe 自体は post_tool hook の bash 内で完結 (daemon 経由不要、daemon 停止時も収集継続可能)。集計・lens 注入は retro-pm Stage 0 の Read tool 経由
+- **目的**: Phase 1 までの retro は code state + git log を主 evidence としていたが、user 行動 (どの slash command を何回使うか) という reality data の欠落で「使用頻度が低い command を rich 化」のような誤った prioritization を生むリスクがあった。frequency log 導入で reality data 駆動の prioritization を可能化
 
 ### 3.10 superpowers Independence（M0.9 から）
 

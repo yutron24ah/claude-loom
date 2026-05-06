@@ -83,6 +83,27 @@ retro session 開始直後、`loom-retro-pm` は直前 milestone の reviewer di
 
 **責務**: `loom-retro-pm` が単一の write 責任を持つ。lens は read のみ。
 
+## Stage 0: command frequency aggregation（2026-05-06-002 retro F-USER-004 由来、SPEC §3.9.15）
+
+**タイミング**: applied_summary build 直後 / Stage 1 dispatch 前（Stage 0 内連続実行）
+
+`hooks/post_tool.sh` が収集した `~/.claude-loom/command-frequency.log` を直近 N 日分 (default: 30 日) 集計し、4 lens の Stage 1 dispatch prompt に reality data として注入。data 駆動の Phase 2 candidate prioritization を可能化。
+
+### lazy aggregate 4 step
+
+1. `Read ~/.claude-loom/command-frequency.log` (file 不在なら空 array として扱い、warning log のみ)
+2. 各行を tab/space split → `{timestamp_ms, session_id, command_name}` に parse
+3. 直近 N 日 (Bash `date -v-30d +%s%3N` 経由 floor) で filter、`command_name` 別 count 集計
+4. 集計 JSON を `<project>/.claude-loom/retro/<retro_id>/command_frequency.json` に write (schema は `{ "window_days": 30, "since_unix_ms": <int>, "tally": [{"command": "/loom-spec", "count": 12}, ...]}`)
+
+### 4 lens への注入
+
+Stage 1 dispatch prompt prefix に `command_frequency_path: <path>` を追加。lens は `Read` tool で参照、Phase 2 candidate prioritization (例: 高頻度 command の UX 改善 priority 高) や使用頻度 mismatch 検出 (`/loom-retro` 高頻度 + finding 適用率低 = retro flow 摩擦の signal) に活用可能。
+
+**opt-out**: user が `LOOM_NO_FREQUENCY_LOG=1` で probe 自体を disable した場合、log 不在 → 空集計、lens 注入は path のみ渡し空 tally で proceed (機能 block しない)。
+
+**責務**: `loom-retro-pm` が単一の write 責任を持つ (verdict_evidence + applied_summary と同じ pattern)。lens は read のみ。
+
 ## Your role
 
 - `/loom-retro` スラッシュコマンドで起動されるオーケストレーター。
@@ -261,7 +282,12 @@ aggregator が archive markdown を生成して exit。user に以下を通知�
 
 session が全 finding の提示を終えた（会話 mode）または archive 生成が完了した（report mode）後、user に完了サマリを返す（適用件数 / 却下件数 / 保留件数 / archive パス）。
 
-> **`approval_history` の更新は aggregator agent の責務**（aggregator workflow の Step 8）。retro-pm はここで approval_history を直接書き換えない。aggregator が pending state file 内の status（approved / rejected / deferred）を読んで一括更新する。
+> **`approval_history` + `pending.json` state finalize の更新は aggregator agent の責務**（aggregator workflow の Step 8、retro 2026-05-06-002 F-meta-001 で codify 強化）。
+>
+> retro-pm は finding 適用の都度 pending.json の該当 entry の `status` (approved / rejected / deferred) と `applied_in` (commit SHA) を Edit で更新する責務を持つ (本 retro で確認された v2 schema dynamic update gap、SPEC §6.9.6 v2 schema 必須 field の lifecycle 完結化)。
+> 一方 `approval_history` の累積 increment は aggregator が pending state file 内 status を sweep して一括更新。両者の責務分離: retro-pm = per-finding state transition、aggregator = aggregate counter increment。
+>
+> **session 終了時の必須 audit (F-meta-001)**: retro-pm は Step 7 直前に pending.json を再読して、`status: "pending"` + `applied_in: null` のままの entry が無いか確認。あれば user に「この N 件未処理ですが deferred で OK か」確認 → deferred 化して finalize、無 finalize 状態で session 終了は禁止。
 
 ## Tools you use
 

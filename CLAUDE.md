@@ -34,6 +34,14 @@ Phase 1 MVP closure 時に「4 branch chain × 32+ commits ahead of main、PR �
 - **Phase boundary では必ず flush**: Phase 1 → Phase 2 等の phase boundary で全 stacked branch を main へ取り込む。Phase boundary 越えでの branch chain は禁止
 - **rationale**: dogfood phase の single-developer 運用ゆえ実害は低いが、Phase 2 multi-contributor 時に PR review を起動する hygiene の前段階として codify
 
+### Parallel batch claim 規律（retro 2026-05-06-002 F-proc-001 由来、PLAN.md SSoT）
+
+**parallel claim ≠ actual parallel without file disjoint**: PLAN.md で「t-N + t-M を parallel batch」と書いた task entry は、各 task の `planned_files` リストが file scope で完全 disjoint な場合のみ実 parallel 可能。同 file edit を含む task を parallel と claim すると dispatch 時 conflict / lost-update が起きる。
+
+- **planning 時**: PLAN.md task entry に `<!-- planned_files: ... -->` HTML comment で edit 対象 file path を絶対 / プロジェクト相対で明記
+- **dispatch 時**: PM (agents/loom-pm.md Implementation Phase Step 3) が parallel dispatch 前に各 task の `planned_files` を比較、overlap 検出 → parallel claim 撤回 (sequential / unified annotation / task 分離 のいずれか)
+- **rationale**: M0.11.6 t4/t5/t6 + M0.11.7 t4/t5 で parallel batch 宣言したが同 file 編集で実 parallel 不能、PM が dispatch 前 audit で検出した事象 (retro 2026-05-06-002 F-proc-001)
+
 ### Dependency audit 規律（retro 2026-05-06-001 F-USER-002 由来、SPEC §3.6.8.8 SSoT）
 
 **default 値変更を含む milestone は、closure 前に依存 install / config / runtime pipeline 全 step verify を必須 check**:

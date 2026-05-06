@@ -12,6 +12,16 @@ last_synced_at: 1778025600000
 >
 > **dogfood 戦略**：M0 = harness 完成後、M1 以降の実装は M0 の agent / command 群を使って進める（PM 主導、開発者が TDD、Reviewer が観点別レビュー — default は single mode 1 体、critical path は trio mode 3 体並列に切替可）。
 
+## Milestone planning convention (retro 2026-05-06-002 F-proc-001 由来 SSoT)
+
+milestone task entry を書く際の必須 metadata：
+
+- **`planned_files`**: 各 task が edit / create する file の絶対 path リスト (SPEC.md / PLAN.md / agents/*.md / hooks/*.sh / 等)。task description 直下の HTML comment で `<!-- planned_files: a.md, b.sh, c/d.ts -->` 形式記録。
+- **parallel batch 宣言**: PLAN.md で「t4 + t5 + t6 を parallel batch」と書く場合、各 task の `planned_files` リストが **disjoint であることが宣言時の必須 verify 項目**。overlap が見つかったら parallel 宣言を撤回し sequential / unified annotation / task 分離のいずれかを採用。
+- **PM dispatch 時の audit**: `agents/loom-pm.md` Implementation Phase Step 3 で file overlap pre-check を必須 step 化、disjoint 不成立なら parallel 宣言を撤回。
+
+**rationale**: M0.11.6 t4/t5/t6 + M0.11.7 t4/t5 は PLAN で parallel batch 宣言したが、実際は同 file (agents/loom-pm.md) 編集で安全な並列不能、PM が dispatch 前 audit で検出 → 単一 dev 統合に切替えた事象 (本 retro F-proc-001)。F-USER-002 (default 値変更 audit) と同 family の audit gap を planning 段階で機械的 detect 可能化。
+
 ## 原 6 案件 → milestone 対応表（M0 系列で完走）
 
 session 起源の 6 案件 (A/B/C+G/D/E/F) と実装 milestone の対応：
@@ -493,6 +503,32 @@ M0.11.3 で `loom-ui-smoke` skill 完成 + Phase 1 functional MVP 検証完了�
 
 `./tests/run_tests.sh` 全 PASS（既存 18 PASS + 3 carryover fix = 21 PASS / 0 FAIL）、`m0.11.5-complete`〜`m0.11.7-complete` 全保持、Phase 2 entry checklist の test debt clear 項目 reset。
 
+## マイルストーン M0.X-startup-recovery (retro 2026-05-06-002 F-USER-005/006 由来)
+
+起源: 2026-05-06-002 retro 中 PM 直接 verify で発覚した M0.11.5 trinity の deployment level 破綻：
+
+- **F-USER-006 (CRITICAL)**: `install.sh` の `daemon.js` symlink target が `daemon/dist/index.js` (re-export module) を指していた。正は `daemon/dist/server.js` (CLI entry)
+- **F-USER-005 (CRITICAL)**: `daemon/dist/db/migrations/` が build 成果物に同梱されておらず、`runMigrations()` で `Can't find meta/_journal.json` crash → daemon production startup 不能
+
+両 finding は本 retro session 内で **hotfix commits + E2E test 設置済**、本 milestone は事後の状態 codify と再発防止の audit framework 化。
+
+### 設計合意（retro 2026-05-06-002 SSoT）
+
+- **scope**:
+  - [x] F-USER-006: install.sh symlink target を server.js に修正 (commit 713c631) <!-- id: m0.x-startup-t1 status: done -->
+  - [x] F-USER-005: daemon build script に migrations bundle copy step 追加 (commit 430924d) <!-- id: m0.x-startup-t2 status: done -->
+  - [x] F-USER-005: tests/daemon_e2e_startup_test.sh 新設 (commit fb1e7c1) <!-- id: m0.x-startup-t3 status: done -->
+  - [ ] tag `m0.x-startup-recovery-complete` 設置 (本 retro PR merge 後) <!-- id: m0.x-startup-t4 status: todo -->
+- **着手タイミング**: 本 retro PR で fix 自体は完了、Phase 2 entry 前の audit / tag 設置のみ未了
+- **rationale**: M0.11.5 trinity の core promise (lazy daemon auto-launch → UI serve) が claim level (SPEC + agent prompt 整合) で完成しただけで deployment level で破綻していた構造的 gap。F-USER-002 (default 値変更 audit) の structural fix が SPEC §3.6.8.8 に既存だが、build artifact bundle 完全性を audit する step が欠落していた。本 milestone で hotfix + E2E test 設置 + 再発防止 audit を完結
+
+### M0.X-startup-recovery 完成基準
+
+- `bash tests/daemon_e2e_startup_test.sh` PASS (curl /health → HTTP 200 + status:ok)
+- install.sh symlink target が `daemon/dist/server.js` に固定
+- daemon build script が migrations bundle copy を含む
+- tag `m0.x-startup-recovery-complete` 設置 (本 retro PR merge 後)
+
 ## Phase 2 entry criteria + carryover (retro 2026-05-05-001 由来)
 
 Phase 1 MVP の 3 段階 closure marker 全達成 (m5 = functional / m0.11.3 = verification / m0.11.4 = aesthetic) の後、Phase 2 entry 前に解決 / 整理すべき carryover を retro 2026-05-05-001 の 14 finding から集約。F-meta-003 (Phase 2 entry criteria 整備 gap) の structural action として本 section を新設。
@@ -520,12 +556,29 @@ Phase 1 MVP の 3 段階 closure marker 全達成 (m5 = functional / m0.11.3 = v
 
 - F-proc-001 (commit_handoff=pm 9 連続成功)、F-proc-004 (milestone tag → main flush hygiene 1st validation)、F-meta-001 (loom-ui-smoke skill 1st milestone closure validation)、F-meta-004 (applied_summary build state stable)、F-res-001 (DOM/SVG 移行知見の external 還元 candidate)、F-res-002 (claude-room-handoff design bundle full port pattern external 還元 candidate)
 
+### Phase 2 Entry Checklist (formal codify、retro 2026-05-06-002 F-pj-002 由来 SSoT)
+
+Phase 2 entry の HARD blocker と soft blocker を 1 箇所に SSoT 化、retro context 箇条書きの session 跨ぎ消失リスクを抑える。
+
+**HARD blocker (Phase 2 entry 不可、本項全 PASS まで `M0.12 系列` 着手禁止)**:
+
+- [ ] **F-USER-005/006 hotfix verified** (本 retro 2026-05-06-002 で対処、`bash tests/daemon_e2e_startup_test.sh` PASS で確認、tag `m0.x-startup-recovery-complete` 設置)
+- [ ] **3 pre-existing test failure cleanup**: M0.X-test-debt-cleanup milestone 完走 (`docs_release_test.sh` / `dry_run_applied_summary_test.sh` / `m1_docs_test.sh` 3 件 fix、`./tests/run_tests.sh` 21 PASS / 0 FAIL)
+- [ ] **path C default 昇格 SSoT 整合確認** (SPEC §3.6.8.7 + §3.9.13 + §3.9.13.1 の cross-reference 整合済、retro 2026-05-06-002 F-proc-003 で codify)
+
+**Soft blocker (Phase 2 entry 可能、ただし spec phase 1st task で解消推奨)**:
+
+- [ ] F-001 structural fix (project-settings dropdown data binding regression、retro 2026-05-05-001 carryover)
+- [ ] REQ-045 smoke skill bind 明文化 (F-pj-002 from 2026-05-05-001)
+- [ ] subordinate research task `docs/research/task-tool-availability.md` の Phase 2 中並行進行 (HARD blocker でない、§3.9.13.1 SSoT)
+
 ### Phase 2 entry sequence (推奨)
 
-1. Task tool 復旧確認 (F-proc-002 + F-meta-002 の (a) 判断) → 復旧不能なら (b) で SPEC 改訂 spec phase 起動
-2. **Ceremony reduction trinity 完走**: M0.11.5 (Lazy Daemon Auto-Launch) + M0.11.6 (PM Auto-Spec Entry) を **parallel 完走** → M0.11.7 (`/loom-go` Auto-Entry) sequential 後続 (M0.11.6 と同 agent prompt file 編集のため)。SPEC §3.2 + §3.6 整合性回復、Phase 1 closure cleanup の本丸
-3. F-001 structural fix (F-pj-001) を Phase 2 1st impl task として dispatch
-4. PLAN.md / SPEC §3 に formal "Phase 2 entry checklist" 新設 (F-meta-003 の structural completion)
+1. **HARD blocker 全 PASS verify** (上記 checklist 3 項目すべて完了確認)
+2. **Ceremony reduction trinity 完走 verified**: M0.11.5/6/7 trinity 完成 + 本 retro F-USER-005/006 hotfix 込で deployment level でも actual 機能。SPEC §3.6.13 Trinity Marker SSoT に整合性確認
+3. F-001 structural fix (F-pj-001 from 2026-05-05-001) を Phase 2 1st impl task として dispatch
+4. REQ-045 smoke skill bind 明文化 (F-pj-002 from 2026-05-05-001)
+5. Phase 2 milestone (M0.12 系列以降) entry — **Phase 2 candidate pool** (下記) を spec phase で優先順位再判定 (SPEC §3.6.13 Trinity Marker を 1st-class 評価軸として使用)
 5. REQ-045 smoke skill bind 明文化 (F-pj-002)
 6. Phase 2 milestone (M0.12 系列以降) entry — **Phase 2 candidate pool** (下記) を spec phase で優先順位再判定
 

@@ -291,6 +291,7 @@ adopt mode の中で：
    - 詳細: `agents/loom-developer.md` §"Commit handoff strategy" 参照
    (When daemon arrives in M1+, this metadata enables daemon to correlate the subagent with the correct project. For M0 it is just convention.)
 3. Use **parallel Task calls** when tasks are independent (multiple Task invocations in 1 message).
+   - **File overlap pre-check (retro 2026-05-06-002 F-proc-001 由来、必須 step)**: parallel dispatch 前に各 task の `planned_files` (spec phase で記録、PLAN.md task entry の comment block 等) を比較し、**任意の 2 task で file scope が overlap していないことを verify**。overlap 検出 → parallel claim を撤回し、(1) 単一 dev へ統合、(2) Strategy b unified annotation で sequential 化、(3) overlap 部分を別 task として分離 — のいずれか選択。`planned_files` 不明な task は parallel に含めず単独 dispatch を default。
 4. Monitor each developer's final report. Update `PLAN.md` to mark tasks `status: done`.
 5. **Commit handoff verification** (M0.14.x、retro 2026-05-02-001 finding-proc-001/002 由来)：
    - `commit_handoff=dev` 想定の dispatch → final report の `committed_sha` field 必須、null は invalid response として retry or follow-up ask

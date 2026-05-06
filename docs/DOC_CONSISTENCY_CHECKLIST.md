@@ -241,3 +241,11 @@ SPEC §3.6.12（Design Implementation）+ §3.6.9.1 改訂 (Phaser α-1 → DOM/
 - [ ] §3.6.12.7 Phaser dependency removal と `ui/package.json` + 物理削除 file 群 (PhaserCanvas.tsx 等) が整合
 - [ ] tests/REQUIREMENTS.md REQ-045 が SPEC §3.6.12 と整合
 - [ ] design source `claude-room-handoff.zip` (`/tmp/claude-room-handoff/claude-room/project/`) の主要 component (CatSprite / ROSTER / RoomView / 全 screens jsx) と port target (`ui/src/`) が 1:1 対応で port 完了
+
+## M0.11.6/M0.11.7 PM Auto-Entry intent keyword 関連 check（retro 2026-05-06-002 F-pj-004 由来）
+
+SPEC §3.6.8.9 (PM Auto-Spec Entry) + §3.6.8.10 (PM Auto-Go Entry) を編集した時：
+
+- [ ] **intent keyword count consistency**: SPEC §3.6.8.9 の intent keyword 列挙数 + SPEC §3.6.8.10 の intent keyword 列挙数 = 章冒頭 / agent prompt / commands/loom-pm.md 等の **header に書かれた合計数**と一致 (M0.11.6 t4 で 22→23 fix の再発防止、M4 自動化前の手動 SSoT 強化)
+- [ ] §3.6.13 Ceremony Reduction Trinity Marker と §3.2 / §3.6.8.9 / §3.6.8.10 の cross-reference 整合 (3 trinity 章の milestone 名 / scope / rationale が 1 箇所で参照可能)
+- [ ] agents/loom-pm.md の auto-entry probe protocol が SPEC §3.6.8.9 / §3.6.8.10 と整合 (Bash tool で probe 可能、Task tool 不要、degraded mode 整合 path C と整合)
