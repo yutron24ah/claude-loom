@@ -602,11 +602,11 @@ F-USER-007/008 (symlink CLI guard + hooks SDK 仕様準拠) と同 class の **p
 
 - [x] PLAN.md milestone 挿入（本 spec phase で実施）
       <!-- id: m0.x-hook-ingest-t1 status: done planned_files: PLAN.md -->
-- [ ] investigation: 5 種 bash hook script の curl payload を debug log で dump、daemon `eventInputSchema` と照合 (root cause specific identification)
-      <!-- id: m0.x-hook-ingest-t2 status: todo planned_files: hooks/pre_tool.sh, hooks/post_tool.sh, hooks/session_start.sh, hooks/stop.sh, hooks/SubagentStop.sh, daemon/src/hooks/ingest.ts -->
-- [ ] fix: payload format alignment (script side fix が default、impl phase で root cause 確定後に判断)
-      <!-- id: m0.x-hook-ingest-t3 status: todo planned_files: hooks/*.sh (修正対象は t2 で確定) -->
-- [ ] tests: hook script ↔ daemon schema cross-check assertion を `tests/REQUIREMENTS.md` に REQ 化 + integration test 新設
+- [x] investigation: 5 種 bash hook script の curl payload を debug log で dump、daemon `eventInputSchema` と照合 (root cause specific identification)
+      <!-- id: m0.x-hook-ingest-t2 status: done planned_files: hooks/pre_tool.sh, hooks/post_tool.sh, hooks/session_start.sh, hooks/stop.sh, hooks/SubagentStop.sh, daemon/src/hooks/ingest.ts note: PM 直接 investigation で root cause 確定 — `date +%s%3N` macOS BSD date が `%3N` 非対応で生文字 `N` を残置、`TS=17780770293N` 生成 → JSON parse 失敗 → daemon 400 spam。bash -x trace + 直接 POST cross-check で確定。F-USER-007/008 hotfix (c31a88e) は hooks 配線を正規 SDK 仕様化したのみ、本 bug は macOS で初日から潜在、c31a88e で hooks が「正しく発火する」状態になり broken payload が表面化。SESSION_ID=unknown / TOOL_NAME=unknown 問題は SDK stdin input 読込み不在 (scope 外、後続 milestone 候補) -->
+- [ ] fix: payload format alignment — `ts_ms()` helper 関数導入 (python3 → node → s 精度 fallback の 3 段、案 A 採用)、5 hook script 全部の `TS=$(date +%s%3N)` を `TS=$(ts_ms)` 化
+      <!-- id: m0.x-hook-ingest-t3 status: todo planned_files: hooks/pre_tool.sh, hooks/post_tool.sh, hooks/session_start.sh, hooks/stop.sh, hooks/SubagentStop.sh -->
+- [ ] tests: hook script ↔ daemon schema cross-check assertion を `tests/REQUIREMENTS.md` に REQ 化 + `tests/hook_ingest_integration_test.sh` 新設 (TDD: RED 先行で broken payload 再現 → GREEN で fix 確認)
       <!-- id: m0.x-hook-ingest-t4 status: todo planned_files: tests/REQUIREMENTS.md, tests/hook_ingest_integration_test.sh -->
 - [ ] tag `m0.x-hook-ingest-recovery-complete` 設置
       <!-- id: m0.x-hook-ingest-t5 status: todo planned_files: (tag setting only) -->
