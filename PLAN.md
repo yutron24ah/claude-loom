@@ -463,7 +463,7 @@ M0.11.3 で `loom-ui-smoke` skill 完成 + Phase 1 functional MVP 検証完了�
 
 - [x] PLAN.md M0.11.7 マイルストーン挿入（本タスク） <!-- id: m0.11.7-t1 status: done -->
 - [x] SPEC.md §3.6.x PM Auto-Go Entry 章新設（M0.11.6 chapter の sibling、検知ロジック / 3 信頼レベル / `/loom-go` 位置付け codify） <!-- id: m0.11.7-t2 status: done note: §3.6.8.10 として配置、§3.6.8.9 sibling、18 assertion 全 pass -->
-- [ ] agents/loom-pm.md spec phase 完了 hook 拡張（M0.11.6 改修と統合、context 評価ロジック + 3 信頼レベル分岐 + 確認 prompt template） <!-- id: m0.11.7-t3 status: todo -->
+- [x] agents/loom-pm.md spec phase 完了 hook 拡張（M0.11.6 改修と統合、context 評価ロジック + 3 信頼レベル分岐 + 確認 prompt template） <!-- id: m0.11.7-t3 status: done note: 設計判断 (a) Session Start Hook 内 sub-section 配置、17 assertion 全 pass、impl keyword list draft 込み (t4 で最終確定) -->
 - [ ] 検知ロジック codify: impl intent keyword list 確定（M0.11.6 keyword list と分離、impl 系語彙 10-15 個程度） <!-- id: m0.11.7-t4 status: todo -->
 - [ ] 確認 prompt template（高信頼 + 中信頼 3 択用、M0.11.6 template の流用設計） <!-- id: m0.11.7-t5 status: todo -->
 - [ ] tests/agents_test.sh 拡張（auto-go entry の 3 信頼レベル assertion / `/loom-go` override 動作 assertion） <!-- id: m0.11.7-t6 status: todo -->
