@@ -8,7 +8,7 @@
     "./db": "./src/db/schema.ts"
   },
   "scripts": {
-    "dev": "tsx watch src/server.ts",
+    "dev": "bash scripts/pnpm-dev-preflight.sh && LOOM_DEV_MODE=1 LOOM_ENTRY=pnpm-dev tsx watch src/server.ts",
     "build": "tsc && pnpm run build:migrations",
     "build:migrations": "rm -rf dist/db/migrations && cp -R src/db/migrations dist/db/migrations",
     "start": "node dist/server.js",

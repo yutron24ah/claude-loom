@@ -95,12 +95,23 @@ slash command 一覧の詳細は [CLAUDE.md](CLAUDE.md) を参照。
 
 ### Development workflow
 
+claude-loom は `LOOM_DEV_MODE` 環境変数で制御される 2 つのモードで動作する：
+
+| | **prod mode**（default） | **dev mode** |
+|---|---|---|
+| 起動 | SessionStart hook による自動起動 | `pnpm --filter @claude-loom/daemon dev` |
+| access URL | `http://127.0.0.1:5757` | API: `http://127.0.0.1:5757`、UI: `http://127.0.0.1:5173` |
+| static serving | daemon が `ui/dist` を serve | skip — Vite が hot-reload UI を提供 |
+| 用途 | end-user 消費、lazy daemon auto-launch | HMR 付き UI 開発 |
+
 UI 開発中の hot-reload 用途では daemon と UI を別 dev server で起動する：
 
 ```bash
-pnpm --filter @claude-loom/daemon dev   # daemon: http://127.0.0.1:5757
-pnpm --filter @claude-loom/ui dev       # UI:    http://localhost:5173
+pnpm --filter @claude-loom/daemon dev   # daemon（API のみ）: http://127.0.0.1:5757
+pnpm --filter @claude-loom/ui dev       # UI（Vite + HMR）:   http://127.0.0.1:5173
 ```
+
+`pnpm dev` script は `LOOM_DEV_MODE=1` を auto-inject し、prod daemon が稼働中に誤って dev daemon を起動することを防ぐ pre-flight check を実行する。実行時のモードは `GET /mode` endpoint で確認できる。役割分担の詳細は [SPEC.md §3.2.2](SPEC.md) を参照。
 
 ## カスタマイズ
 

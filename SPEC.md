@@ -115,7 +115,7 @@ trigger は **dual path**:
 1. session 開始時、`SessionStart` hook (`hooks/session_start.sh`) が cwd の `.claude-loom/` 存在を gate check (非 loom PJ は silent skip)
 2. gate pass なら `hooks/loom-launch-ui.sh` を background fire-and-forget で invoke (session_start を block しない、fail-silent)
 3. launch hook が `localhost:5757/health` を叩く
-4. 無応答なら daemon を `nohup node ~/.claude-loom/daemon.js &` で起動（cold start）、PID ファイル記録
+4. 無応答なら daemon を `nohup env LOOM_ENTRY=lazy-launch node ~/.claude-loom/daemon.js &` で起動（cold start）。PID ファイル (`~/.claude-loom/daemon.pid`) は debug breadcrumb として記録のみ、lock semantics は `/mode` endpoint が SSoT (§3.2.1)
 5. **cold start 時のみ** `open http://localhost:5757` でブラウザを開く（既起動時は health-check のみで browser open せず、`xdg-open` 系のタブ氾濫を回避）
 6. **headless 環境では browser open を skip し URL を terminal に出力**。検出条件: `$SSH_CONNECTION` セット / Linux で `$DISPLAY` 空 / `open`・`xdg-open`・`start` のいずれも不在。`LOOM_NO_UI=1` 環境変数で強制 skip 可能
 7. daemon は 30 分イベント無しでセルフシャットダウン
@@ -126,6 +126,81 @@ trigger は **dual path**:
 **`/loom` の役割**: daemon URL 表示 + clipboard コピー（user が「もう 1 タブ欲しい」時の救済路、cold-start-only open ポリシーを補完する dual path）。
 
 **永続 opt-out**: `<project>/.claude-loom/project-prefs.json` の `ui.auto_launch: false` で PJ 単位で auto-launch 無効化。`LOOM_NO_UI=1` は session 単位の緊急上書き、`LOOM_NO_AUTO_UI=1` は session_start hook 経由の auto-launch のみ無効化 (slash command 経由は許可、CI / headless 環境用)。
+
+**dev mode 切替**: `LOOM_DEV_MODE=1` で dev mode 起動（static serving skip、Vite :5173 を UI 提供元として想定）。`pnpm --filter @claude-loom/daemon dev` script は本 env var を auto-inject。lazy launch path は本 env var 未設定 (prod mode) が default。詳細は §3.2.2。
+
+**起動 entry tag**: `LOOM_ENTRY` env var で起動経路を識別。値: `lazy-launch` / `pnpm-dev` / `manual` (default)。`/mode` endpoint で expose（§3.2.1）、競合 detection 時の diagnostic message に活用。
+
+### 3.2.1 Daemon mode と `/mode` endpoint（M0.X-startup-recovery で codify）
+
+**mode 判定の SSoT は daemon process 自身**。起動時に `process.env.LOOM_DEV_MODE` の有無で `dev` / `prod` mode を固定し、`/mode` endpoint が canonical source of truth として外部に expose する。
+
+**`/mode` endpoint の応答 shape**:
+
+```json
+GET /mode
+{
+  "mode": "dev" | "prod",
+  "entry": "lazy-launch" | "pnpm-dev" | "manual",
+  "version": "0.1.0",
+  "started_at": "2026-05-06T15:46:00Z",
+  "pid": 74382,
+  "ui_serving": false
+}
+```
+
+`ui_serving` は **prod mode かつ ui/dist 存在時のみ true**。`mode=dev` では常に false (Vite が UI を担うため、daemon は API のみ提供)。
+
+**PID file (`~/.claude-loom/daemon.pid`) の位置付け**: debug breadcrumb として残置（user が `kill $(cat daemon.pid)` で daemon を救済停止する path を保持）。**decision logic では使用せず**、daemon の生死判定は `/health` 応答、mode 判定は `/mode` 応答が SSoT。
+
+**競合 detection 規約**:
+
+- `loom-launch-ui.sh` (lazy launch path)：`/health` 応答あり → `/mode` で既存 daemon の mode を probe → mode に応じて分岐 (§3.2.2)
+- `pnpm --filter @claude-loom/daemon dev` (dev path)：tsx watch 起動前に pre-flight script が `/health` + `/mode` を probe → 既存 daemon 検出時は明確 diagnostic 出して exit
+- 両 entry point ともに OS の port bind (EADDRINUSE) を atomic lock として併用
+
+**rationale**: sidecar file (PID file + JSON state) を SSoT とすると race condition / stale file / 2-writer の edge case が構造的に発生する。daemon process 自身を SSoT にすることで、OS の port allocation atomic semantics + endpoint 応答の生死で edge case を構造的に消去。partial implementation pattern (F-USER-007/008 と同 class) の再発防止としても機能。
+
+### 3.2.2 dev mode と prod mode の役割分担
+
+| | **dev mode** (`pnpm dev`) | **prod mode** (lazy launch) |
+|---|---|---|
+| trigger | `pnpm --filter @claude-loom/daemon dev` が `LOOM_DEV_MODE=1` + `LOOM_ENTRY=pnpm-dev` を auto-inject | `loom-launch-ui.sh` が `LOOM_ENTRY=lazy-launch` のみ inject (env 無し = prod default) |
+| static serving | **skip** (ui/dist が build 済でも無視) | **serve** (ui/dist 存在時のみ `@fastify/static` register) |
+| UI 提供元 | Vite (:5173) + HMR | daemon (:5757) static |
+| API | daemon (:5757) | daemon (:5757) |
+| user の access URL | `http://127.0.0.1:5173` | `http://127.0.0.1:5757` |
+| use case | claude-loom 自身の UI 開発 | end-user による消費 |
+
+**static serving 判定 logic** (server.ts):
+
+```ts
+const isDevMode = !!process.env.LOOM_DEV_MODE;
+const shouldServeStatic = !isDevMode && existsSync(uiDistPath);
+```
+
+`NODE_ENV === "production"` 依存は deprecate。`LOOM_DEV_MODE` の有無で判定する mental model に統一（"build artifact 存在 + 明示 dev override なし = serve" という直感的 rule）。
+
+**dev daemon 検出時の lazy launch 挙動** (loom-launch-ui.sh):
+
+1. `/health` OK + `/mode` 応答が `mode=dev` を検出
+2. Vite (:5173) の health-check 実施
+3. Vite 応答あり → `http://127.0.0.1:5173` を browser open（dev mode UI に redirect）
+4. Vite 応答なし → warning log + URL stdout のみ（user が手動で起動する path 残置）
+
+**prod daemon 検出時の `pnpm dev` 挙動** (pre-flight script):
+
+1. tsx watch 起動前に `/health` + `/mode` probe
+2. `mode=prod` 検出 → ERROR 出して exit:
+   ```
+   ERROR: production daemon already running (PID=<pid>, started by lazy launch).
+       To switch to dev mode:
+         → kill <pid> and run 'pnpm dev' again, OR
+         → set LOOM_NO_AUTO_UI=1 in your shell to disable lazy launch
+   ```
+3. 既存 prod daemon が live な間は dev daemon を起動させない（port bind 競合で silent zombie 化することを構造的に防止）
+
+**rationale**: dev / prod の役割分担を明文化することで、「lazy launch path で env 注入忘れ → static skip」のような partial implementation を構造的に防止。判定ロジックを `LOOM_DEV_MODE` 一本に集約することで、SSoT が明確化し、test fixture も `process.env.LOOM_DEV_MODE` の mutate のみで済む。
 
 ### 3.3 中央指令室モデル
 

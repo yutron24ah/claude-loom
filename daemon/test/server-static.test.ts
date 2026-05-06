@@ -1,20 +1,22 @@
 /**
  * M0.11.5 t3 TDD: Fastify static plugin for ui/dist serving
- * RED: tests written before static plugin implementation exists
+ * Migrated (M0.X-runtime-mode-recovery t3): NODE_ENV → LOOM_DEV_MODE
  *
- * WHY: daemon must serve ui/dist at :5757 in production mode (SPEC §3.2),
+ * WHY: daemon must serve ui/dist at :5757 in prod mode (SPEC §3.2),
  * while NOT interfering with dev mode (Vite :5173 separate) or crashing
  * when ui/dist is absent.
+ * SPEC §3.2.2: NODE_ENV === "production" dependency deprecated.
+ * LOOM_DEV_MODE is the sole gate for static serving skip.
  */
 import { describe, it, expect, afterEach, beforeEach } from "vitest";
 import { mkdirSync, writeFileSync, rmSync, existsSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 
-describe("daemon static plugin — production mode", () => {
+describe("daemon static plugin — production mode (LOOM_DEV_MODE unset)", () => {
   let app: Awaited<ReturnType<typeof import("../src/server.js").buildServer>> | null = null;
   let testDistDir: string;
-  let originalNodeEnv: string | undefined;
+  let originalLoomDevMode: string | undefined;
 
   beforeEach(() => {
     // Create a temporary ui/dist directory with a minimal index.html
@@ -22,8 +24,9 @@ describe("daemon static plugin — production mode", () => {
     mkdirSync(testDistDir, { recursive: true });
     writeFileSync(join(testDistDir, "index.html"), "<html><body>Test UI</body></html>");
 
-    originalNodeEnv = process.env.NODE_ENV;
-    process.env.NODE_ENV = "production";
+    // WHY: prod mode = LOOM_DEV_MODE unset (SPEC §3.2.2)
+    originalLoomDevMode = process.env.LOOM_DEV_MODE;
+    delete process.env.LOOM_DEV_MODE;
     process.env.LOOM_UI_DIST = testDistDir;
   });
 
@@ -33,10 +36,10 @@ describe("daemon static plugin — production mode", () => {
       app = null;
     }
     // Restore env
-    if (originalNodeEnv === undefined) {
-      delete process.env.NODE_ENV;
+    if (originalLoomDevMode === undefined) {
+      delete process.env.LOOM_DEV_MODE;
     } else {
-      process.env.NODE_ENV = originalNodeEnv;
+      process.env.LOOM_DEV_MODE = originalLoomDevMode;
     }
     delete process.env.LOOM_UI_DIST;
 
@@ -101,13 +104,14 @@ describe("daemon static plugin — production mode", () => {
   });
 });
 
-describe("daemon static plugin — ui/dist absent in production mode", () => {
+describe("daemon static plugin — ui/dist absent in production mode (LOOM_DEV_MODE unset)", () => {
   let app: Awaited<ReturnType<typeof import("../src/server.js").buildServer>> | null = null;
-  let originalNodeEnv: string | undefined;
+  let originalLoomDevMode: string | undefined;
 
   beforeEach(() => {
-    originalNodeEnv = process.env.NODE_ENV;
-    process.env.NODE_ENV = "production";
+    // WHY: prod mode = LOOM_DEV_MODE unset (SPEC §3.2.2)
+    originalLoomDevMode = process.env.LOOM_DEV_MODE;
+    delete process.env.LOOM_DEV_MODE;
     // Point to a non-existent directory
     process.env.LOOM_UI_DIST = "/nonexistent/path/to/dist-" + Date.now();
   });
@@ -117,10 +121,10 @@ describe("daemon static plugin — ui/dist absent in production mode", () => {
       await app.close();
       app = null;
     }
-    if (originalNodeEnv === undefined) {
-      delete process.env.NODE_ENV;
+    if (originalLoomDevMode === undefined) {
+      delete process.env.LOOM_DEV_MODE;
     } else {
-      process.env.NODE_ENV = originalNodeEnv;
+      process.env.LOOM_DEV_MODE = originalLoomDevMode;
     }
     delete process.env.LOOM_UI_DIST;
   });
@@ -158,19 +162,20 @@ describe("daemon static plugin — ui/dist absent in production mode", () => {
   });
 });
 
-describe("daemon static plugin — dev mode (not production)", () => {
+describe("daemon static plugin — dev mode (LOOM_DEV_MODE=1)", () => {
   let app: Awaited<ReturnType<typeof import("../src/server.js").buildServer>> | null = null;
   let testDistDir: string;
-  let originalNodeEnv: string | undefined;
+  let originalLoomDevMode: string | undefined;
 
   beforeEach(() => {
-    // Even with ui/dist present, dev mode should NOT register static plugin
+    // Even with ui/dist present, LOOM_DEV_MODE=1 should NOT register static plugin
     testDistDir = join(tmpdir(), `loom-test-dist-dev-${Date.now()}`);
     mkdirSync(testDistDir, { recursive: true });
     writeFileSync(join(testDistDir, "index.html"), "<html><body>Dev should not serve this</body></html>");
 
-    originalNodeEnv = process.env.NODE_ENV;
-    process.env.NODE_ENV = "development";
+    // WHY: dev mode = LOOM_DEV_MODE set to any truthy value (SPEC §3.2.2)
+    originalLoomDevMode = process.env.LOOM_DEV_MODE;
+    process.env.LOOM_DEV_MODE = "1";
     process.env.LOOM_UI_DIST = testDistDir;
   });
 
@@ -179,10 +184,10 @@ describe("daemon static plugin — dev mode (not production)", () => {
       await app.close();
       app = null;
     }
-    if (originalNodeEnv === undefined) {
-      delete process.env.NODE_ENV;
+    if (originalLoomDevMode === undefined) {
+      delete process.env.LOOM_DEV_MODE;
     } else {
-      process.env.NODE_ENV = originalNodeEnv;
+      process.env.LOOM_DEV_MODE = originalLoomDevMode;
     }
     delete process.env.LOOM_UI_DIST;
 
@@ -219,17 +224,22 @@ describe("daemon static plugin — dev mode (not production)", () => {
   });
 });
 
-describe("daemon static plugin — env var unset (legacy mode, not production)", () => {
+describe("daemon static plugin — no env vars set, ui/dist absent (plain startup fallback)", () => {
   let app: Awaited<ReturnType<typeof import("../src/server.js").buildServer>> | null = null;
-  let originalNodeEnv: string | undefined;
+  let originalLoomDevMode: string | undefined;
   let originalLoomUiDist: string | undefined;
 
   beforeEach(() => {
-    originalNodeEnv = process.env.NODE_ENV;
+    originalLoomDevMode = process.env.LOOM_DEV_MODE;
     originalLoomUiDist = process.env.LOOM_UI_DIST;
-    // Remove both env vars to simulate plain startup (no static)
-    delete process.env.NODE_ENV;
-    delete process.env.LOOM_UI_DIST;
+    // WHY: Simulate plain startup — neither LOOM_DEV_MODE set, ui/dist forced absent.
+    // SPEC §3.2.2: no explicit dev override + ui/dist absent = no static serving.
+    // We must override LOOM_UI_DIST to point to absent path because ui/dist may
+    // actually exist in the repo (built artifact), and SPEC §3.2.2 says
+    // "build artifact exists + no dev override = serve". So this test covers
+    // the absent-ui/dist prod path specifically.
+    delete process.env.LOOM_DEV_MODE;
+    process.env.LOOM_UI_DIST = "/nonexistent/path/dist-" + Date.now();
   });
 
   afterEach(async () => {
@@ -237,10 +247,10 @@ describe("daemon static plugin — env var unset (legacy mode, not production)",
       await app.close();
       app = null;
     }
-    if (originalNodeEnv === undefined) {
-      delete process.env.NODE_ENV;
+    if (originalLoomDevMode === undefined) {
+      delete process.env.LOOM_DEV_MODE;
     } else {
-      process.env.NODE_ENV = originalNodeEnv;
+      process.env.LOOM_DEV_MODE = originalLoomDevMode;
     }
     if (originalLoomUiDist === undefined) {
       delete process.env.LOOM_UI_DIST;
@@ -249,13 +259,13 @@ describe("daemon static plugin — env var unset (legacy mode, not production)",
     }
   });
 
-  it("server starts when NODE_ENV is unset", async () => {
+  it("server starts when LOOM_DEV_MODE is unset and ui/dist is absent", async () => {
     const { buildServer } = await import("../src/server.js");
     app = await buildServer();
     expect(app).toBeDefined();
   });
 
-  it("GET / returns 404 when NODE_ENV is not production", async () => {
+  it("GET / returns 404 when LOOM_DEV_MODE unset and ui/dist absent (no static plugin registered)", async () => {
     const { buildServer } = await import("../src/server.js");
     app = await buildServer();
 
@@ -264,6 +274,8 @@ describe("daemon static plugin — env var unset (legacy mode, not production)",
       url: "/",
     });
 
+    // WHY: shouldServeStatic = !isDevMode && existsSync(uiDistPath)
+    // isDevMode=false, existsSync=false → shouldServeStatic=false → 404
     expect(response.statusCode).toBe(404);
   });
 });

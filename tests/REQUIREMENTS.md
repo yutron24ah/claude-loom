@@ -126,3 +126,32 @@
 - **REQ-047**: `agents/loom-pm.md` に Spec Phase Completion Hook（PM Auto-Go Entry）が追加され、SPEC §3.6.8.10 を SSoT として参照し、3 軸 AND 条件 / 3 信頼レベル分岐 / `/loom-go` override 動作 / impl keyword list（spec keyword list と分離）/ 既存 M0.11.6 Session Start Hook 構造の維持を含む。`tests/m0117_t3_loom_pm_auto_go_test.sh` でカバー。
 
 - **REQ-048**: `agents/loom-pm.md` の Spec Phase Completion Hook section 内 2 placeholder（impl intent keyword list / 確認 prompt template）が実内容で埋まっていること。impl 系 keyword list が 10 個以上（着手・kick off 等含む）かつ spec 系 keyword list（M0.11.6）と分離維持。高信頼 template に `/loom-spec` + `/loom-status` bypass option 明示。中信頼 3 択 template（impl 開始 / spec 修正 / status 確認）が記述済み。`tests/m0117_t4_t5_placeholders_test.sh` でカバー。
+
+## M0.X-runtime-mode-recovery t4: /mode probe + Vite redirect in loom-launch-ui.sh
+
+- **REQ-050**: `hooks/loom-launch-ui.sh`
+<!-- NOTE: REQ-050 is used by t4 task above -->
+
+## M0.X-runtime-mode-recovery t8: post-install stale tsx watch detection
+
+- **REQ-051**: `install.sh` post-install check で stale tsx watch プロセス（`tsx.*server.ts` pattern）を `pgrep -f` で検出、存在時 WARNING + PID リスト + cleanup suggestion 出力（zombie 自動 kill なし、user 明示提案のみ）。pgrep 不在 / エラー時は `|| true` で graceful fallback し install.sh exit 0 を維持。`tests/install_post_check_test.sh` でカバー（zombie あり / なし / pgrep unavailable 3 scenario）。 の warm-start path (health-check 通過後) が `/mode` endpoint を probe し mode に応じて分岐する (SPEC §3.2.2 dev daemon 検出時の lazy launch 挙動 4 step 準拠)。`mode=dev` かつ Vite (`LOOM_VITE_URL` override 対応、default `:5173`) 応答あり → Vite URL を browser open + stdout。`mode=dev` かつ Vite 応答なし → warning log (stderr) + Vite URL stdout のみ (browser open skip)。`mode=prod` warm → 既存挙動 (browser open skip)。`/mode` endpoint fail / unparseable → 既存挙動 fallback (browser open skip)。`tests/loom_launch_ui_mode_probe_test.sh` でカバー。
+
+## M0.X-runtime-mode-recovery t2/t3: /mode endpoint + LOOM_DEV_MODE switch
+
+- **REQ-049**: `daemon/src/server.ts` の static serving 判定が `LOOM_DEV_MODE` env var ベース（`isDevMode = !!process.env.LOOM_DEV_MODE`、`NODE_ENV` 依存を deprecate）に切替済みかつ `GET /mode` endpoint が SPEC §3.2.1 shape（`mode` / `entry` / `version` / `started_at` / `pid` / `ui_serving` 6 fields）を返す。`LOOM_DEV_MODE` truthy → `mode=dev` + `ui_serving=false`、unset + ui/dist 存在 → `mode=prod` + `ui_serving=true`、unset + ui/dist 不在 → `mode=prod` + `ui_serving=false`。`LOOM_ENTRY` 各値（`lazy-launch` / `pnpm-dev` / `manual`）が `/mode` response の `entry` field に反映。`pnpm --filter @claude-loom/daemon test test/server-mode-endpoint.test.ts` 13 PASS、`test/server-static.test.ts` 11 PASS（`NODE_ENV` mutation → `LOOM_DEV_MODE` mutation 移行済み）。
+
+## M0.X-runtime-mode-recovery t7: /loom-stop --all zombie cleanup
+
+- **REQ-052**: `hooks/loom-stop.sh` が `--all` flag に対応する。引数なしは既存挙動（graceful shutdown 1 daemon、fail-silent）を維持。`--all` では (1) POST /shutdown 試行、(2) daemon.pid stale kill、(3) `pgrep -f "tsx.*server\.ts"` zombie kill、(4) `pgrep -f "node.*\.claude-loom/daemon\.js"` manual launch kill、(5) killed/not-found report を stdout 出力、(6) best-effort exit 0。`commands/loom-stop.md` が `--all` flag description を含む。テスト専用 `LOOM_TEST_ZOMBIE_PIDS` env var で mock PID 直接指定可能。`tests/loom_stop_all_test.sh` でカバー。
+
+## M0.X-runtime-mode-recovery t5/t6: pnpm dev preflight + LOOM_DEV_MODE auto-inject
+
+- **REQ-053**: `daemon/package.json` の `dev` script が `LOOM_DEV_MODE=1 LOOM_ENTRY=pnpm-dev` を auto-inject + `bash scripts/pnpm-dev-preflight.sh` を tsx watch 起動前に invoke。`daemon/scripts/pnpm-dev-preflight.sh` が SPEC §3.2.2 prod daemon 検出時挙動を実装: `/health` + `/mode` probe で `mode=prod` 検出 → ERROR + PID + entry を stderr に出力して exit 1 (tsx watch 起動ブロック)、dev daemon / daemon 不在 / probe fail は exit 0 (graceful)。`tests/m0x_t5_t6_preflight_test.sh` でカバー (13 scenario)。
+
+## M0.X-runtime-mode-recovery t11: daemon runtime mode E2E smoke test
+
+- **REQ-054**: `tests/daemon_runtime_mode_test.sh` が 3 boot scenario の integrated E2E smoke test を提供する。(1) prod mode (LOOM_ENTRY=lazy-launch): `/mode` → `mode=prod` + `entry=lazy-launch` + `ui_serving=true` (ui/dist 存在時)、`/` → 200 + HTML。(2) dev mode (LOOM_DEV_MODE=1 LOOM_ENTRY=pnpm-dev): `/mode` → `mode=dev` + `entry=pnpm-dev` + `ui_serving=false`、`/` → 404 (static skip 確認)。(3) manual mode (env なし): `/mode` → `mode=prod` + `entry=manual` + SPEC §3.2.1 規定 6 fields 全存在確認。test port は 15870–15872 (既存 test 15850–15863 と衝突なし)、`LOOM_PORT` env var で daemon が custom port を受け付ける (CLI entry の default 5757 を override)。`tests/daemon_runtime_mode_test.sh` でカバー (15 assertion)。
+
+## M0.X-runtime-mode-recovery hotfix: start_daemon port bind verify (Bug A)
+
+- **REQ-055**: `hooks/loom-launch-ui.sh` の `start_daemon()` が `nohup` 後に `/health` polling (default 5 attempts × 0.5s) で実際の port bind 成功を verify する。verify 失敗時は exit 1 を返し `main()` が `open_browser` を skip（Bug A 修正: nohup success ≠ port bind success）。env override `LOOM_DAEMON_BOOT_MAX_ATTEMPTS` で polling 試行数を制御可能（test fixture 用）。`while [ "$i" -le ... ]` POSIX 互換ループ使用（bash 3.x 対応）。happy path (daemon が /health で応答) では依然 exit 0 を返し open_browser が呼ばれる（regression 防止）。`tests/loom_launch_ui_bug_a_test.sh` でカバー（Test A: dead daemon → no browser / Test B: healthy daemon → browser called / Test C: attempt override effective）。既存 `tests/loom_launch_ui_test.sh` test 7 fixture が fake_node でバックグラウンド HTTP server を起動する形に更新（Bug A fix との整合）。

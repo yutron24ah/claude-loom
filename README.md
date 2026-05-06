@@ -95,12 +95,23 @@ Running `/loom` prints the daemon URL and copies it to the clipboard (cross-plat
 
 ### Development workflow
 
-For hot-reload during UI development, run the daemon and UI as separate dev servers:
+claude-loom runs in two modes, controlled by the `LOOM_DEV_MODE` environment variable:
+
+| | **prod mode** (default) | **dev mode** |
+|---|---|---|
+| Trigger | SessionStart hook auto-launch | `pnpm --filter @claude-loom/daemon dev` |
+| Access URL | `http://127.0.0.1:5757` | API: `http://127.0.0.1:5757`, UI: `http://127.0.0.1:5173` |
+| Static serving | daemon serves `ui/dist` | skipped — Vite provides hot-reload UI |
+| Use case | end-user consumption | UI development with HMR |
+
+For hot-reload during UI development:
 
 ```bash
-pnpm --filter @claude-loom/daemon dev   # daemon: http://127.0.0.1:5757
-pnpm --filter @claude-loom/ui dev       # UI:    http://localhost:5173
+pnpm --filter @claude-loom/daemon dev   # daemon (API only): http://127.0.0.1:5757
+pnpm --filter @claude-loom/ui dev       # UI (Vite + HMR):   http://127.0.0.1:5173
 ```
+
+The `pnpm dev` script auto-injects `LOOM_DEV_MODE=1` and runs a pre-flight check to guard against accidentally starting a dev daemon when a prod daemon is already running. Check `GET /mode` for the current mode at runtime. See [SPEC.md §3.2.2](SPEC.md) for full role-separation details.
 
 ## Customization
 
