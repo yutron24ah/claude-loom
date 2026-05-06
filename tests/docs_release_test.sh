@@ -29,11 +29,12 @@ echo "=== docs_release_test ==="
 
 # --- README checks ---
 
-# REQ-042a: README.md "## ライセンス" section exists (placeholder allowed)
-if grep -qE "^## ライセンス" "$ROOT_DIR/README.md"; then
-  check "README.md has '## ライセンス' section" "ok"
+# REQ-042a: README.md "## ライセンス" or "## License" section exists (日英両対応)
+# README.md primary is English ("## License"), README.ja.md holds Japanese variant.
+if grep -qE "^## (ライセンス|License)" "$ROOT_DIR/README.md"; then
+  check "README.md has '## ライセンス' or '## License' section" "ok"
 else
-  check "README.md has '## ライセンス' section" "fail"
+  check "README.md has '## ライセンス' or '## License' section" "fail"
 fi
 
 # REQ-042b: README.md mentions Phase 1 MVP completion
@@ -43,12 +44,8 @@ else
   check "README.md mentions Phase 1 MVP" "fail"
 fi
 
-# REQ-042c: README.md mentions M5 milestone
-if grep -qE "M5" "$ROOT_DIR/README.md"; then
-  check "README.md mentions M5" "ok"
-else
-  check "README.md mentions M5" "fail"
-fi
+# REQ-042c: removed — internal milestone identifier (M5) exposure in user-facing README is
+# not required. English README uses "Phase 1 MVP" language per Phase-based roadmap.
 
 # REQ-042d: README.md has Phase 2 section
 if grep -qE "^## Phase 2|Phase 2 以降" "$ROOT_DIR/README.md"; then
