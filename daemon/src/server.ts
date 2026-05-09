@@ -8,6 +8,7 @@ import {
 import { appRouter, type AppRouter } from "./router.js";
 import { createContext } from "./trpc.js";
 import { registerIngestRoute } from "./hooks/ingest.js";
+import { createDBClient, runMigrations } from "./db/client.js";
 import { startIdleShutdown } from "./lifecycle/idle-shutdown.js";
 import { scheduleEventCleanup } from "./lifecycle/event-cleanup.js";
 import { existsSync, realpathSync } from "node:fs";
@@ -31,6 +32,19 @@ export async function buildServer() {
   // WHY: Capture start time once at build time so /mode endpoint returns a stable
   // ISO8601 timestamp reflecting when this server instance was initialized.
   const startedAt = new Date().toISOString();
+
+  // WHY: Route files (consistency.ts / project.ts / etc.) use module-level
+  // `const db = createDBClient()` (no path) which binds to default
+  // `~/.claude-loom/loom.db` at import time. Only `registerIngestRoute` runs
+  // migrations, and only for `process.env.CLAUDE_LOOM_DB_PATH` if set. Fresh
+  // environments (CI workers, first run) leave the default DB un-migrated,
+  // breaking any non-ingest route that touches a table. Running migrations on
+  // the default path here is idempotent (drizzle migrator skips applied ones)
+  // and guarantees all module-level route dbs operate on a migrated schema.
+  // SSoT: SPEC §3.2 (daemon startup pipeline integrity) — surfaced by retro
+  // 2026-05-06-004 follow-up CI investigation (consistency-spec-changes.test.ts
+  // failures on fresh CI workers, see commit 25593385889).
+  runMigrations(createDBClient());
 
   // WHY: SPEC §3.2.2 — LOOM_DEV_MODE replaces NODE_ENV as the static serving gate.
   // "build artifact exists + no explicit dev override = serve" mental model.
