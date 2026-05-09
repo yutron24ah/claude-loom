@@ -98,9 +98,12 @@ describe("daemon static plugin — production mode (LOOM_DEV_MODE unset)", () =>
       url: "/some/spa/route",
     });
 
-    // SPA fallback: should return index.html or 404 (implementation choice)
-    // We test that server does NOT crash
-    expect([200, 404]).toContain(response.statusCode);
+    // WHY: SPA fallback contract is now explicit (M0.X-asset-cache-recovery):
+    // GET to any unknown non-API path must return index.html so React Router
+    // can resolve the route on the client. The previous soft assertion let a
+    // 404 regression slip through silently.
+    expect(response.statusCode).toBe(200);
+    expect(response.body).toContain("Test UI");
   });
 });
 
@@ -221,6 +224,170 @@ describe("daemon static plugin — dev mode (LOOM_DEV_MODE=1)", () => {
     expect(response.statusCode).toBe(200);
     const body = JSON.parse(response.body);
     expect(body.status).toBe("ok");
+  });
+});
+
+describe("daemon static plugin — dynamic file serving + SPA fallback (M0.X-asset-cache-recovery)", () => {
+  // WHY: regression net for the "rebuild → daemon restart required" trap caused
+  // by `wildcard: false` freezing the dist file list at register time.
+  // SPEC §3.2.2 + structural anti-pattern: init-time state freeze (cf. memory
+  // entry "test isolation module-level db caching" — same root cause family).
+  let app: Awaited<ReturnType<typeof import("../src/server.js").buildServer>> | null = null;
+  let testDistDir: string;
+  let originalLoomDevMode: string | undefined;
+
+  beforeEach(() => {
+    testDistDir = join(tmpdir(), `loom-test-dyn-${Date.now()}`);
+    mkdirSync(testDistDir, { recursive: true });
+    writeFileSync(join(testDistDir, "index.html"), "<html><body>Test UI</body></html>");
+    originalLoomDevMode = process.env.LOOM_DEV_MODE;
+    delete process.env.LOOM_DEV_MODE;
+    process.env.LOOM_UI_DIST = testDistDir;
+  });
+
+  afterEach(async () => {
+    if (app) {
+      await app.close();
+      app = null;
+    }
+    if (originalLoomDevMode === undefined) {
+      delete process.env.LOOM_DEV_MODE;
+    } else {
+      process.env.LOOM_DEV_MODE = originalLoomDevMode;
+    }
+    delete process.env.LOOM_UI_DIST;
+    if (existsSync(testDistDir)) {
+      rmSync(testDistDir, { recursive: true, force: true });
+    }
+  });
+
+  it("serves an asset file added AFTER server boot (no init-time freeze)", async () => {
+    const { buildServer } = await import("../src/server.js");
+    app = await buildServer();
+
+    // Simulate `pnpm build` running while daemon is alive: vite wipes dist and
+    // writes new hashed assets. The daemon must serve them without a restart.
+    mkdirSync(join(testDistDir, "assets"), { recursive: true });
+    writeFileSync(
+      join(testDistDir, "assets", "index-POSTBOOT.js"),
+      "console.log('post-boot asset');"
+    );
+
+    const res = await app.inject({
+      method: "GET",
+      url: "/assets/index-POSTBOOT.js",
+    });
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toContain("post-boot asset");
+  });
+
+  it("SPA fallback: unknown GET path returns 200 with index.html content", async () => {
+    const { buildServer } = await import("../src/server.js");
+    app = await buildServer();
+
+    const res = await app.inject({ method: "GET", url: "/plan" });
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toContain("Test UI");
+    expect(res.headers["content-type"]).toMatch(/html/);
+  });
+
+  it("API guard: /health stays JSON, not hijacked by SPA fallback", async () => {
+    const { buildServer } = await import("../src/server.js");
+    app = await buildServer();
+
+    const res = await app.inject({ method: "GET", url: "/health" });
+
+    expect(res.statusCode).toBe(200);
+    expect(res.headers["content-type"]).toMatch(/json/);
+    const body = JSON.parse(res.body);
+    expect(body.status).toBe("ok");
+  });
+
+  it("API guard: /mode stays JSON, not hijacked by SPA fallback", async () => {
+    const { buildServer } = await import("../src/server.js");
+    app = await buildServer();
+
+    const res = await app.inject({ method: "GET", url: "/mode" });
+
+    expect(res.statusCode).toBe(200);
+    expect(res.headers["content-type"]).toMatch(/json/);
+    const body = JSON.parse(res.body);
+    expect(body.mode).toBe("prod");
+  });
+
+  it("API guard: /trpc/unknown.procedure returns non-HTML response", async () => {
+    const { buildServer } = await import("../src/server.js");
+    app = await buildServer();
+
+    const res = await app.inject({
+      method: "GET",
+      url: "/trpc/nonexistent.procedure",
+    });
+
+    // tRPC owns /trpc/* — whatever it returns (typically 4xx JSON) must NOT
+    // be the HTML SPA fallback.
+    expect(res.headers["content-type"] ?? "").not.toMatch(/text\/html/);
+  });
+
+  it("API guard: non-GET method on unknown path returns 404 (not SPA fallback)", async () => {
+    const { buildServer } = await import("../src/server.js");
+    app = await buildServer();
+
+    const res = await app.inject({
+      method: "POST",
+      url: "/random/spa-looking/path",
+    });
+
+    // POST to unknown path must not be treated as SPA navigation.
+    expect(res.statusCode).not.toBe(200);
+    expect(res.headers["content-type"] ?? "").not.toMatch(/text\/html/);
+  });
+
+  it("API guard: /event/<id> returns JSON 404, not SPA fallback", async () => {
+    const { buildServer } = await import("../src/server.js");
+    app = await buildServer();
+
+    const res = await app.inject({
+      method: "GET",
+      url: "/event/12345",
+    });
+
+    // /event is in apiPrefixes — must not be hijacked by SPA fallback.
+    expect(res.statusCode).toBe(404);
+    expect(res.headers["content-type"]).toMatch(/json/);
+  });
+
+  it("SPA fallback: /plan?tab=retro (route with query string) returns index.html", async () => {
+    const { buildServer } = await import("../src/server.js");
+    app = await buildServer();
+
+    const res = await app.inject({
+      method: "GET",
+      url: "/plan?tab=retro",
+    });
+
+    // WHY: query-string strip in setNotFoundHandler must not break SPA fallback.
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toContain("Test UI");
+    expect(res.headers["content-type"]).toMatch(/html/);
+  });
+
+  it("SPA fallback: /healthcheck is NOT mis-classified as /health API prefix", async () => {
+    const { buildServer } = await import("../src/server.js");
+    app = await buildServer();
+
+    const res = await app.inject({
+      method: "GET",
+      url: "/healthcheck",
+    });
+
+    // WHY: prefix match must use `p === url || url.startsWith(p + "/")` so that
+    // /healthcheck does not match /health. If a future refactor drops the
+    // trailing-slash guard, this test catches the silent mis-classification.
+    expect(res.statusCode).toBe(200);
+    expect(res.headers["content-type"]).toMatch(/html/);
   });
 });
 
