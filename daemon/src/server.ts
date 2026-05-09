@@ -68,13 +68,37 @@ export async function buildServer() {
   if (shouldServeStatic) {
     await app.register(fastifyStatic, {
       root: uiDistPath,
-      // WHY: wildcard=false prevents @fastify/static from consuming unknown paths
-      // with a 404 that blocks our own 404 handling. SPA routes that don't match
-      // real files will fall through to Fastify's default 404 handler.
-      wildcard: false,
-      // Serve index.html at root
+      // WHY explicit wildcard=true: load-bearing for the SPA fallback below.
+      // When a file is missing, @fastify/static calls reply.callNotFound() so
+      // setNotFoundHandler can serve index.html. With wildcard=false the file
+      // list would freeze at register time (UI rebuilds → new hash → 404 until
+      // daemon restart) — same anti-pattern family as module-level db caching
+      // that broke test isolation. Set explicitly so a future "default change"
+      // upstream can never silently regress this behavior.
+      // SSoT: SPEC §3.2.2 + memory entry on init-time state freeze.
+      wildcard: true,
       index: "index.html",
     });
+
+    // WHY: SPA fallback for client-side routes (/plan, /retro, /worktree, ...).
+    // Fastify falls through to this handler for any path not matched by an
+    // explicit route or a static file. We delegate GET to index.html so React
+    // Router can resolve the route on the client. API endpoints are guarded
+    // explicitly because @fastify/static does not know they are reserved.
+    const apiPrefixes = ["/trpc", "/event", "/health", "/mode"];
+    app.setNotFoundHandler((req, reply) => {
+      if (req.method !== "GET") {
+        reply.code(404).send({ error: "Not Found" });
+        return;
+      }
+      const url = req.url.split("?")[0];
+      if (apiPrefixes.some((p) => url === p || url.startsWith(p + "/"))) {
+        reply.code(404).send({ error: "Not Found" });
+        return;
+      }
+      reply.sendFile("index.html");
+    });
+
     app.log.info(`static: serving ui/dist from ${uiDistPath}`);
   } else if (!isDevMode) {
     // WHY: fallback = skip silently rather than crash (SPEC §3.2 fallback requirement).
