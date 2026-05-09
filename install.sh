@@ -156,6 +156,44 @@ else
   echo "  WARNING: jq 不在、settings.json への hooks 配線 skip。手動で hooks 設定してください"
 fi
 
+# Auto-build daemon/dist + ui/dist (REQ-061 — end-user "just works" UX)
+# WHY: 旧 README は `./install.sh` → `pnpm install` 順、user は build を別途
+# 走らせる必要があり、忘れる → daemon symlink skip → /loom invoke で silent
+# 失敗、というハマり所だった。install.sh 1 発で完結させる。
+#   - LOOM_NO_BUILD=1 で skip (dev contributors that manage builds themselves)
+#     既存 codebase の LOOM_NO_* 命名規約 (LOOM_NO_AUTO_UI / LOOM_NO_UI 等) に整合
+#   - pnpm が PATH に無い時は WARN + skip (user 側で pnpm install 後 re-run 案内)
+#   - 各 build 失敗は WARN のみ (install.sh 自体は完走)
+echo ""
+echo "=== Auto-build daemon + UI dist (REQ-061) ==="
+if [ "${LOOM_NO_BUILD:-0}" = "1" ]; then
+  echo "  build skipped (LOOM_NO_BUILD=1 set)"
+elif ! command -v pnpm >/dev/null 2>&1; then
+  echo "  WARNING: pnpm not found in PATH — auto-build skipped."
+  echo "  Install pnpm (https://pnpm.io/installation) and re-run install.sh,"
+  echo "  or build manually: 'pnpm install && pnpm build'"
+else
+  # node_modules 不在なら pnpm install を先に走らせる (root の workspace 設定あり)
+  if [ ! -d "$ROOT_DIR/node_modules" ]; then
+    echo "  installing dependencies (pnpm install)..."
+    (cd "$ROOT_DIR" && pnpm install) || {
+      echo "  WARNING: pnpm install failed; subsequent builds may fail" >&2
+    }
+  fi
+
+  # daemon build (tsc — 出力先 daemon/dist/server.js)
+  echo "  building daemon..."
+  (cd "$ROOT_DIR" && pnpm --filter @claude-loom/daemon build) || {
+    echo "  WARNING: daemon build failed; lazy launch will not work until rebuilt" >&2
+  }
+
+  # ui build (vite production — 出力先 ui/dist/index.html + assets/)
+  echo "  building UI..."
+  (cd "$ROOT_DIR" && pnpm --filter @claude-loom/ui build) || {
+    echo "  WARNING: UI build failed; daemon will only serve API endpoints" >&2
+  }
+fi
+
 # daemon.js symlink (M0.11.5 hotfix REQ-046、retro 2026-05-06-001 F-USER-001)
 # loom-launch-ui.sh の DAEMON_BIN=$LOOM_HOME/daemon.js 参照を満たす bootstrap
 # 2026-05-06-002 retro F-USER-006 hotfix: target を index.js (re-export module) → server.js (CLI entry) に修正
