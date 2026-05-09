@@ -291,7 +291,16 @@ adopt mode の中で：
    - 詳細: `agents/loom-developer.md` §"Commit handoff strategy" 参照
    (When daemon arrives in M1+, this metadata enables daemon to correlate the subagent with the correct project. For M0 it is just convention.)
 3. Use **parallel Task calls** when tasks are independent (multiple Task invocations in 1 message).
-   - **File overlap pre-check (retro 2026-05-06-002 F-proc-001 由来、必須 step)**: parallel dispatch 前に各 task の `planned_files` (spec phase で記録、PLAN.md task entry の comment block 等) を比較し、**任意の 2 task で file scope が overlap していないことを verify**。overlap 検出 → parallel claim を撤回し、(1) 単一 dev へ統合、(2) Strategy b unified annotation で sequential 化、(3) overlap 部分を別 task として分離 — のいずれか選択。`planned_files` 不明な task は parallel に含めず単独 dispatch を default。
+   - **File overlap pre-check (retro 2026-05-06-002 F-proc-001 由来、必須 step)**: parallel dispatch 前に各 task の `planned_files` (spec phase で記録、PLAN.md task entry の comment block 等) を比較し、**任意の 2 task で file scope が overlap していないことを verify**。overlap 検出 → parallel claim を撤回し、(1) 単一 dev へ統合、(2) Strategy b unified annotation で sequential 化、(3) overlap 部分を別 task として分離、(4) **`isolation: "worktree"` parameter 採用 (推奨、下記参照)** — のいずれか選択。`planned_files` 不明な task は parallel に含めず単独 dispatch を default。
+   - **Worktree isolation (retro 2026-05-06-004 res-002 + F-proc-003 由来、parallel race 構造解消)**: parallel batch dispatch 時は **Agent tool の `isolation: "worktree"` parameter を必須採用**。各 subagent invocation が automatic temporary git worktree で隔離実行され、shared working tree race condition を構造的に消去する (β t1+t3 + t2 で発生した c2fec72 race の re-occurrence 防止)。`planned_files` 完全 disjoint でも shared working tree state (untracked / staged changes / dev 1 の git add が dev 2 file を巻き込む) で atomic commit boundary が壊れる pattern を構造的に塞ぐ。**dispatch 例**:
+     ```
+     Agent({
+       subagent_type: "loom-developer",
+       isolation: "worktree",  // ← parallel batch 時必須
+       prompt: "[loom-meta] project_id=... slot=dev-1 ..."
+     })
+     ```
+     **適用 condition**: 同 message 内 2+ Agent invocation = parallel batch、isolation 必須。1 Agent = sequential、isolation 任意 (single dev は shared tree で問題なし)。**例外**: PM 自身の context が直接編集する file scope と subagent dispatch scope が重なる場合も isolation 推奨 (parent-child shared tree race 防止)。worktree が make no changes な subagent invocation では auto cleanup される (Agent tool 仕様)。
 4. Monitor each developer's final report. Update `PLAN.md` to mark tasks `status: done`.
 5. **Commit handoff verification** (M0.14.x、retro 2026-05-02-001 finding-proc-001/002 由来)：
    - `commit_handoff=dev` 想定の dispatch → final report の `committed_sha` field 必須、null は invalid response として retry or follow-up ask
