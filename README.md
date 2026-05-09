@@ -52,15 +52,22 @@ Together they turn Claude Code from a single-window chat into a **multi-agent de
 git clone https://github.com/yutron24ah/claude-loom.git
 cd claude-loom
 ./install.sh
-pnpm install
 ```
 
-`install.sh` symlinks agents, slash commands, and skills under `~/.claude/` and wires the loom hooks into `~/.claude/settings.json`. `pnpm install` brings in daemon + UI dependencies.
+`install.sh` does everything: symlinks agents / slash commands / skills under `~/.claude/`, wires the loom hooks into `~/.claude/settings.json`, then runs `pnpm install` and builds the daemon + UI so the GUI is ready immediately. After it finishes, run `/loom-pm` (or any trigger command) in Claude Code and the central command room opens at `http://127.0.0.1:5757`.
 
 If your Claude Code config lives somewhere non-standard:
 
 ```bash
 CLAUDE_HOME=/path/to/your/claude-config ./install.sh
+```
+
+If you prefer to manage `pnpm install` and the builds yourself (CI, custom workflow), skip the auto-build with `LOOM_NO_BUILD=1`:
+
+```bash
+LOOM_NO_BUILD=1 ./install.sh
+pnpm install
+pnpm build
 ```
 
 ## Quick start
@@ -99,19 +106,25 @@ claude-loom runs in two modes, controlled by the `LOOM_DEV_MODE` environment var
 
 | | **prod mode** (default) | **dev mode** |
 |---|---|---|
-| Trigger | SessionStart hook auto-launch | `pnpm --filter @claude-loom/daemon dev` |
+| Trigger | SessionStart hook auto-launch | `pnpm dev` (or `pnpm --filter @claude-loom/{daemon,ui} dev`) |
 | Access URL | `http://127.0.0.1:5757` | API: `http://127.0.0.1:5757`, UI: `http://127.0.0.1:5173` |
 | Static serving | daemon serves `ui/dist` | skipped — Vite provides hot-reload UI |
 | Use case | end-user consumption | UI development with HMR |
 
-For hot-reload during UI development:
+For hot-reload during UI development, run both dev servers in parallel — the root `pnpm dev` does this in one command:
+
+```bash
+pnpm dev
+```
+
+This is `concurrently` running `pnpm --filter @claude-loom/daemon dev` and `pnpm --filter @claude-loom/ui dev` together with prefixed log output. Running the UI dev server alone leaves the WebSocket pointed at a missing daemon, so a persistent "disconnected, retrying…" banner stays on screen until the daemon comes up. Prefer this combined script unless you genuinely need only one side:
 
 ```bash
 pnpm --filter @claude-loom/daemon dev   # daemon (API only): http://127.0.0.1:5757
 pnpm --filter @claude-loom/ui dev       # UI (Vite + HMR):   http://127.0.0.1:5173
 ```
 
-The `pnpm dev` script auto-injects `LOOM_DEV_MODE=1` and runs a pre-flight check to guard against accidentally starting a dev daemon when a prod daemon is already running. Check `GET /mode` for the current mode at runtime. See [SPEC.md §3.2.2](SPEC.md) for full role-separation details.
+The daemon `dev` script auto-injects `LOOM_DEV_MODE=1` and runs a pre-flight check to guard against accidentally starting a dev daemon when a prod daemon is already running. Check `GET /mode` for the current mode at runtime. See [SPEC.md §3.2.2](SPEC.md) for full role-separation details.
 
 ## Customization
 
@@ -196,7 +209,7 @@ claude-loom のバックエンドは M1 で導入された **Node.js daemon** (F
 
 - **バインドアドレス**: `127.0.0.1:5757` のみ (loopback only、外部アクセス不可)
 - **認証**: nanoid token を `~/.claude-loom/daemon-token` (chmod 600) に保存、全 API リクエストに必須
-- **起動**: `pnpm install` 後、`/loom-pm` 等の trigger slash command を実行すると cold-start で自動起動、ブラウザが開く
+- **起動**: `./install.sh` 完了後、`/loom-pm` 等の trigger slash command を実行すると cold-start で自動起動、ブラウザが開く
 - **AppRouter**: tRPC の `AppRouter` 型を `@claude-loom/daemon` から export し、UI と型安全な API 通信
 - **スキーマ管理**: Drizzle ORM で `daemon/src/db/schema.ts` を SSoT として SQLite テーブルを管理
 - **アイドル shutdown**: 30 分無操作で自動停止、次回 slash command で再起動

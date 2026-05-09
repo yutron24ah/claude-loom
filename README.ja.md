@@ -52,15 +52,22 @@ claude-loom は **2 本柱** で構成された Claude Code プラグイン：
 git clone https://github.com/yutron24ah/claude-loom.git
 cd claude-loom
 ./install.sh
-pnpm install
 ```
 
-`install.sh` は agent / slash command / skill を `~/.claude/` 以下に symlink で設置し、loom hooks を `~/.claude/settings.json` に配線する。`pnpm install` で daemon + UI の依存を引く。
+`install.sh` がすべて面倒みる：agent / slash command / skill を `~/.claude/` 以下に symlink で設置、loom hooks を `~/.claude/settings.json` に配線、続いて `pnpm install` と daemon + UI の build を実行して GUI を即起動できる状態にする。完了後 Claude Code 上で `/loom-pm`（or 任意の trigger command）を叩けば中央指令室が `http://127.0.0.1:5757` で開く。
 
 Claude Code の設定ディレクトリが標準位置にない場合は環境変数で上書き可：
 
 ```bash
 CLAUDE_HOME=/path/to/your/claude-config ./install.sh
+```
+
+`pnpm install` と build を自分で管理したい場合（CI、独自 workflow など）は `LOOM_NO_BUILD=1` で auto-build を skip：
+
+```bash
+LOOM_NO_BUILD=1 ./install.sh
+pnpm install
+pnpm build
 ```
 
 ## クイックスタート
@@ -99,19 +106,25 @@ claude-loom は `LOOM_DEV_MODE` 環境変数で制御される 2 つのモード
 
 | | **prod mode**（default） | **dev mode** |
 |---|---|---|
-| 起動 | SessionStart hook による自動起動 | `pnpm --filter @claude-loom/daemon dev` |
+| 起動 | SessionStart hook による自動起動 | `pnpm dev`（または `pnpm --filter @claude-loom/{daemon,ui} dev` 個別起動） |
 | access URL | `http://127.0.0.1:5757` | API: `http://127.0.0.1:5757`、UI: `http://127.0.0.1:5173` |
 | static serving | daemon が `ui/dist` を serve | skip — Vite が hot-reload UI を提供 |
 | 用途 | end-user 消費、lazy daemon auto-launch | HMR 付き UI 開発 |
 
-UI 開発中の hot-reload 用途では daemon と UI を別 dev server で起動する：
+UI 開発中の hot-reload 用途では daemon と UI を並走起動する。root `pnpm dev` 1 コマンドで両方上がる：
+
+```bash
+pnpm dev
+```
+
+これは `concurrently` で `pnpm --filter @claude-loom/daemon dev` と `pnpm --filter @claude-loom/ui dev` を並列起動する script で、prefix 付き log を 1 ペインに混ぜて出力する。UI dev server だけ単独起動すると WS が daemon (:5757) 不在のまま再接続を繰り返すため、画面上部に「切断、再接続中…」の persistent banner が出続ける。原則 `pnpm dev` を推奨、片方だけ起動したい時は従来どおり：
 
 ```bash
 pnpm --filter @claude-loom/daemon dev   # daemon（API のみ）: http://127.0.0.1:5757
 pnpm --filter @claude-loom/ui dev       # UI（Vite + HMR）:   http://127.0.0.1:5173
 ```
 
-`pnpm dev` script は `LOOM_DEV_MODE=1` を auto-inject し、prod daemon が稼働中に誤って dev daemon を起動することを防ぐ pre-flight check を実行する。実行時のモードは `GET /mode` endpoint で確認できる。役割分担の詳細は [SPEC.md §3.2.2](SPEC.md) を参照。
+daemon の `dev` script は `LOOM_DEV_MODE=1` を auto-inject し、prod daemon が稼働中に誤って dev daemon を起動することを防ぐ pre-flight check を実行する。実行時のモードは `GET /mode` endpoint で確認できる。役割分担の詳細は [SPEC.md §3.2.2](SPEC.md) を参照。
 
 ## カスタマイズ
 

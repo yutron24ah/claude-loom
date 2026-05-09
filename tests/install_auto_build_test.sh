@@ -164,6 +164,25 @@ else
   check "T3: pnpm 不在でも install 自体は完走" "fail"
 fi
 
+# ----- Test 4: README に LOOM_NO_BUILD escape hatch が文書化されている -----
+# WHY: m0115_t8 が LOOM_NO_UI / ui.auto_launch を README mirror で守るのと
+# 同 pattern。escape hatch は contributors / CI が知る必要があるので silently
+# 削除されたら気づきたい。
+echo ""
+echo "--- Test 4: README に LOOM_NO_BUILD 記述あり ---"
+
+if grep -q "LOOM_NO_BUILD" "$ROOT_DIR/README.md"; then
+  check "T4: README.md に LOOM_NO_BUILD 記述" "ok"
+else
+  check "T4: README.md に LOOM_NO_BUILD 記述" "fail"
+fi
+
+if grep -q "LOOM_NO_BUILD" "$ROOT_DIR/README.ja.md"; then
+  check "T4: README.ja.md に LOOM_NO_BUILD 記述" "ok"
+else
+  check "T4: README.ja.md に LOOM_NO_BUILD 記述" "fail"
+fi
+
 echo ""
 echo "Passed: $pass   Failed: $fail"
 [ "$fail" -eq 0 ]
