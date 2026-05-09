@@ -43,7 +43,7 @@ Refs: m0.5-t5
 | `style` | フォーマット / 空白 / コメント等の整形（ロジック不変） | `style: align indent in install.sh` |
 | `refactor` | リファクタ（機能不変） | `refactor(skills): extract find_project_root helper` |
 | `perf` | パフォーマンス改善 | `perf(daemon): batch event writes` |
-| `test` | テストのみの追加・修正 | `test(install): add REQ-008 coverage` |
+| `test` | テストのみの追加・修正、**test 期待緩和 (assertion relaxation)** も含む | `test(install): add REQ-008 coverage` / `test(harness): relax docs_release expectations` |
 | `build` | ビルドシステム / 依存関係 | `build: bump bun to 1.2` |
 | `ci` | CI 設定 | `ci: add lint workflow` |
 | `chore` | 雑務（リリース準備、tooling 等） | `chore: scaffold M0 repo structure` |
@@ -55,6 +55,8 @@ Refs: m0.5-t5
 
 良い例：`feat(skills)`, `fix(agents)`, `docs(plan)`, `test(commands)`
 悪い例：`feat(skills,agents,docs)` ← 多すぎ、scope 省略推奨
+
+**test relaxation の type 選択 (retro 2026-05-06-004 F-proc-004 由来)**: test 期待を **緩和**（regex 緩和 / assertion 削除 / fixture stale 化対応で fixture update）する commit は **`test` 型必須**、`fix` 型禁止。`fix` は production code の defect correction を意味、test relaxation は assertion を意図的に弱めとる作業で意味が違う。RED+GREEN unified commit が test relaxation + docs change を含む場合も primary change category (test) を type で表現する。例: `test(harness): relax docs_release REQ-042a 日英両対応 + REQ-042c 削除` (`fix(docs): test debt cleanup` ちゃう)。
 
 ### 1.4 Subject（件名）
 

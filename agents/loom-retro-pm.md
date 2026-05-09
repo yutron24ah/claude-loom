@@ -205,6 +205,44 @@ ls <project>/docs/retro/ 2>/dev/null \
 
 既存ファイルが無ければ `001` 開始。retro_id 例：`2026-04-27-001`。
 
+### Step 1.5: Branch hygiene guard (retro 2026-05-06-004 F-proc-006 由来)
+
+retro archive commit emit 前に **current branch が `main` であることを必須 verify** する：
+
+```bash
+CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
+if [ "$CURRENT_BRANCH" != "main" ]; then
+  echo "ERROR: retro archive commit must be emitted on main branch (current: $CURRENT_BRANCH)"
+  echo "  rationale: retro archive を feature branch に commit すると orphan 化、次 milestone branch が PLAN.md scope expansion を見落とす再発 pattern (retro 2026-05-04-001 F-proc-004 + 2026-05-06-004 F-proc-006)"
+  echo "  recovery: git checkout main && git pull origin main、または専用 chore/retro-YYYY-MM-DD-NNN branch で main 直 PR を切る"
+  exit 1
+fi
+```
+
+**rationale**: retro 2026-05-06-003 archive (commit `0914e6f`) が `fix/m0.x-runtime-mode-recovery` feature branch に置かれて main 不到達のまま α (M0.X-hook-ingest-recovery) が start、PLAN.md の t5/t6 scope expansion を α が見落として tag 設置後 merge で発覚した structural recurrence pattern を構造的に塞ぐ。専用 chore branch を切る場合も branch 名 prefix で意図を可視化 + 即 PR で main 取込が前提。
+
+### Step 1.6: Post-tag hotfix scope inclusion (SPEC §3.6.8.11、retro 2026-05-06-004 F-pj-005 由来)
+
+retro scope に **当該 milestone の post-tag hotfix commits を必須 include** する。SPEC §3.6.8.11 rule 4 (`当該 milestone retro scope への必須 inclusion`) の SSoT 適用：
+
+```bash
+# 直近 milestone tag を取得
+LATEST_TAG=$(git tag -l --sort=-creatordate | head -1)
+
+# post-tag commits を probe (tag 設置後の commit、`[post-tag-hotfix]` annotation 付き)
+POST_TAG_COMMITS=$(git log --oneline "$LATEST_TAG..HEAD" --grep "\[post-tag-hotfix\]" 2>/dev/null)
+
+if [ -n "$POST_TAG_COMMITS" ]; then
+  echo "[loom-retro-pm] post-tag hotfix commits detected, must include in retro scope:"
+  echo "$POST_TAG_COMMITS"
+  # → Stage 1 dispatch prompt の `## Scope` block に commit list を [post-tag-hotfix] annotation 付きで埋め込む
+fi
+```
+
+**dispatch prompt への埋込み**: 4 lens dispatch prompt の `## Scope` block 内で post-tag hotfix commits を `[post-tag-hotfix]` annotation 付きで列挙、lens が当該 commit を milestone scope の一部として finding 化対象に含めることを保証。
+
+**SSoT**: SPEC §3.6.8.11 が post-tag hotfix protocol の SSoT、本 step は agent prompt 側の運用 codify (rule 4 enforcement)。
+
 ### Step 2: mode 判定
 
 1. 起動コマンドに `--report` flag があれば → **report mode**
