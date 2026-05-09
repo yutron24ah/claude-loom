@@ -60,16 +60,44 @@ export function ToastContainer(): JSX.Element {
   // Subscribe to toastBus on mount
   useEffect(() => {
     const unsub = toastBus.subscribe((incoming: Toast) => {
-      let timerId: ReturnType<typeof setTimeout> | null = null;
+      // REQ-060: dedup by id — if a toast with the same id already exists,
+      // replace it (latest message wins) and reset its auto-dismiss timer.
+      // State-style emitters (daemon_disconnected/reconnected) use a stable id
+      // so WS backoff retries do not pile up; occurrence emitters keep per-call
+      // unique ids and stack as before.
+      //
+      // WHY timer side-effect lives INSIDE the updater (acknowledged React API
+      // trade-off): React documents setState updaters as "should be pure" but
+      // does NOT enforce purity at runtime — Strict Mode double-invokes render
+      // functions and useState initializers, NOT setState updaters (React 18
+      // semantics, both dev and prod). Putting the side-effect here keeps the
+      // observation of `prev` and the clear-then-schedule sequence atomic
+      // against concurrent emits. Pulling the side-effect out would require
+      // a useRef-tracked timer map and a manual atomicity guard, which adds
+      // moving parts for a forward-compat concern that may never materialize.
+      // If a future React version starts double-invoking updaters, switch to
+      // an external timer registry. Tested in `re-emit of an auto-dismiss
+      // toast resets the timer` to lock in the behavior.
+      setActiveToasts((prev) => {
+        const existingIndex = prev.findIndex((a) => a.toast.id === incoming.id);
+        const existing = existingIndex >= 0 ? prev[existingIndex] : null;
+        if (existing?.timerId != null) {
+          clearTimeout(existing.timerId);
+        }
 
-      if (incoming.ttl_ms != null) {
-        // Schedule auto-dismiss — store timer id so we can clear on manual close
-        timerId = setTimeout(() => {
-          setActiveToasts((prev) => prev.filter((a) => a.toast.id !== incoming.id));
-        }, incoming.ttl_ms);
-      }
+        const timerId = incoming.ttl_ms != null
+          ? setTimeout(() => {
+              setActiveToasts((p) => p.filter((a) => a.toast.id !== incoming.id));
+            }, incoming.ttl_ms)
+          : null;
 
-      setActiveToasts((prev) => [...prev, { toast: incoming, timerId }]);
+        if (existingIndex >= 0) {
+          const next = [...prev];
+          next[existingIndex] = { toast: incoming, timerId };
+          return next;
+        }
+        return [...prev, { toast: incoming, timerId }];
+      });
     });
 
     // Clean up subscription and all pending timers on unmount

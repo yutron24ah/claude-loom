@@ -21,7 +21,15 @@ export type ToastEvent =
   | 'spec_change_detected';
 
 export interface Toast {
-  /** Unique identifier — callers should provide a stable id (nanoid or Date.now()) */
+  /**
+   * Identifier used for ToastContainer dedup (REQ-060).
+   *   - state-style toasts (singleton state, e.g. daemon connection) MUST use a
+   *     stable constant id (e.g. 'daemon_disconnected'); successive emits with
+   *     the same id replace the existing entry instead of stacking.
+   *   - occurrence-style toasts (countable events, e.g. a finding, a failed
+   *     subagent, a new project) use a per-call unique id (Date.now()-based or
+   *     nanoid) so each occurrence renders its own entry.
+   */
   id: string;
   kind: ToastKind;
   event: ToastEvent;
@@ -61,12 +69,22 @@ export const toastBus = {
 // 5-event helper functions (SCREEN_REQUIREMENTS §5.2)
 // WHY: named helpers make call-sites readable and enforce the correct
 //      kind/event/ttl_ms combination so callers cannot accidentally misconfigure.
+//
+// TODO(REQ-060 follow-up): the 5 occurrence-style emitters below all use the
+// `${event}-${Date.now()}` id template; if any becomes a hotspot for high-rate
+// emits we should extract a shared `occurrenceId(event)` helper (and consider
+// nanoid to defeat same-ms collisions). YAGNI today — none of the 5 events
+// fires faster than user-perceptible cadence.
 // ---------------------------------------------------------------------------
 
-/** Emit daemon_disconnected warning toast (persistent — user must close) */
+/**
+ * Emit daemon_disconnected warning toast (persistent — user must close).
+ * REQ-060: stable id so successive emits during WS exponential backoff
+ * dedup at ToastContainer level instead of piling up.
+ */
 export function emitDaemonDisconnected(message = 'デーモンから切断されました'): void {
   toastBus.emit({
-    id: `daemon_disconnected-${Date.now()}`,
+    id: 'daemon_disconnected',
     kind: 'warning',
     event: 'daemon_disconnected',
     message,
@@ -74,10 +92,14 @@ export function emitDaemonDisconnected(message = 'デーモンから切断され
   });
 }
 
-/** Emit daemon_reconnected success toast (auto-dismiss 3 s) */
+/**
+ * Emit daemon_reconnected success toast (auto-dismiss 3 s).
+ * REQ-060: stable id so a second reconnect doesn't double up if the user is
+ * mid-network-flap.
+ */
 export function emitDaemonReconnected(message = 'デーモンに再接続しました'): void {
   toastBus.emit({
-    id: `daemon_reconnected-${Date.now()}`,
+    id: 'daemon_reconnected',
     kind: 'success',
     event: 'daemon_reconnected',
     message,
