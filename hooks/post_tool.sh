@@ -4,6 +4,13 @@
 
 set -uo pipefail  # -e 外す（curl 失敗で Claude Code を kill しない）
 
+# WHY: Claude Code SDK passes hook input via stdin JSON, not env vars.
+# Read stdin if it's a pipe/redirected input (not interactive terminal).
+HOOK_STDIN=""
+if [ ! -t 0 ]; then
+  HOOK_STDIN=$(cat)
+fi
+
 LOOM_DAEMON_URL="${LOOM_DAEMON_URL:-http://127.0.0.1:5757}"
 LOOM_TOKEN_FILE="${LOOM_TOKEN_FILE:-$HOME/.claude-loom/daemon-token}"
 LOOM_TOKEN=""
@@ -82,13 +89,29 @@ post_event "$PAYLOAD"
 #
 # log format (1 line / event): `<unix_ms> <session_id> <command_name>`
 # LOOM_NO_FREQUENCY_LOG=1 で env 経由 opt-out 可能 (privacy concern 用)。
-if [ "${LOOM_NO_FREQUENCY_LOG:-0}" != "1" ] && [ "$TOOL_NAME" = "SlashCommand" ]; then
-  FREQ_LOG="${LOOM_FREQUENCY_LOG:-$HOME/.claude-loom/command-frequency.log}"
-  FREQ_DIR="$(dirname "$FREQ_LOG")"
-  mkdir -p "$FREQ_DIR" 2>/dev/null || true
-  # CLAUDE_TOOL_INPUT_COMMAND は SlashCommand tool で command name を expose
-  CMD_NAME="${CLAUDE_TOOL_INPUT_COMMAND:-${CLAUDE_TOOL_INPUT:-unknown}}"
-  # newline / log forge guard: 改行を空白に置換、非 ASCII は保持
-  CMD_NAME_SAFE="$(printf '%s' "$CMD_NAME" | tr '\n\r\t' ' ')"
-  printf '%s %s %s\n' "$TS" "$SESSION_ID" "$CMD_NAME_SAFE" >> "$FREQ_LOG" 2>/dev/null || true
+#
+# WHY stdin path: Claude Code SDK は hook input を stdin JSON で渡す仕様 (env var ちゃう)。
+# HOOK_STDIN から tool_name / tool_input.command を抽出、env var は fallback chain の後段。
+# (retro 2026-05-06-003 F-meta-004 由来、post-tag-hotfix §3.6.8.11 第 1 例)
+if [ "${LOOM_NO_FREQUENCY_LOG:-0}" != "1" ]; then
+  # Stdin JSON path (preferred — SDK passes input via stdin)
+  STDIN_TOOL_NAME=""
+  STDIN_CMD_NAME=""
+  if [ -n "$HOOK_STDIN" ] && command -v jq >/dev/null 2>&1; then
+    STDIN_TOOL_NAME=$(printf '%s' "$HOOK_STDIN" | jq -r '.tool_name // empty' 2>/dev/null || echo "")
+    STDIN_CMD_NAME=$(printf '%s' "$HOOK_STDIN" | jq -r '.tool_input.command // empty' 2>/dev/null || echo "")
+  fi
+
+  # Effective tool/cmd name: stdin JSON > CLAUDE_TOOL_* env var > fallback
+  EFFECTIVE_TOOL_NAME="${STDIN_TOOL_NAME:-$TOOL_NAME}"
+  EFFECTIVE_CMD_NAME="${STDIN_CMD_NAME:-${CLAUDE_TOOL_INPUT_COMMAND:-${CLAUDE_TOOL_INPUT:-unknown}}}"
+
+  if [ "$EFFECTIVE_TOOL_NAME" = "SlashCommand" ]; then
+    FREQ_LOG="${LOOM_FREQUENCY_LOG:-$HOME/.claude-loom/command-frequency.log}"
+    FREQ_DIR="$(dirname "$FREQ_LOG")"
+    mkdir -p "$FREQ_DIR" 2>/dev/null || true
+    # newline / log forge guard: 改行を空白に置換、非 ASCII は保持
+    CMD_NAME_SAFE="$(printf '%s' "$EFFECTIVE_CMD_NAME" | tr '\n\r\t' ' ')"
+    printf '%s %s %s\n' "$TS" "$SESSION_ID" "$CMD_NAME_SAFE" >> "$FREQ_LOG" 2>/dev/null || true
+  fi
 fi
