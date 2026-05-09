@@ -2,7 +2,7 @@
 
 > **本ドキュメントは Single Source of Truth (SSoT)。実装と乖離が出た場合は SPEC を先に更新してから実装を合わせる。**
 >
-> 最終更新: 2026-05-02
+> 最終更新: 2026-05-09
 > ステータス: Phase 1 (MVP) 設計確定、実装計画は `PLAN.md` を参照
 
 ---
@@ -1179,6 +1179,7 @@ retro architecture を data 駆動化し、Phase 2 candidate prioritization に 
 - **責務分離**: probe 自体は post_tool hook の bash 内で完結 (daemon 経由不要、daemon 停止時も収集継続可能)。集計・lens 注入は retro-pm Stage 0 の Read tool 経由
 - **目的**: Phase 1 までの retro は code state + git log を主 evidence としていたが、user 行動 (どの slash command を何回使うか) という reality data の欠落で「使用頻度が低い command を rich 化」のような誤った prioritization を生むリスクがあった。frequency log 導入で reality data 駆動の prioritization を可能化
 - **silent failure 検出強化 (retro 2026-05-06-003 F-meta-004 由来)**: `~/.claude-loom/command-frequency.log` 不在時、retro-pm Stage 0 は **空 tally で proceed するだけでなく warning log を出力** (`log_warn "command-frequency.log not found at <path>; post_tool hook may not be wired or LOOM_FREQUENCY_LOG override mismatched"`)。post_tool hook が actual 発火しとるかを Bash で path 検証 (`ls -la ~/.claude-loom/command-frequency.log` 等)、log 不在が連続検出される場合は M0.X-hook-ingest-recovery scope の post_tool hook investigation task を retro-pm が PM に escalation 提案する
+- **SDK input 依存 (retro 2026-05-06-004 F-pj-007 由来、α post-tag t6 fix で actual 解決)**: command name 抽出は Claude Code SDK の **stdin JSON input** から `.tool_name` + `.tool_input.command` を `jq` parse する path が primary (REQ-057)。env var (`CLAUDE_TOOL_NAME` / `CLAUDE_TOOL_INPUT_COMMAND` / `CLAUDE_TOOL_INPUT`) は **fallback chain** として残置 (test invoke / interactive 起動時の compat)、SDK が env var を set せん仕様で env-only path は永久 false negative になる。`hooks/post_tool.sh` 実装は `if [ ! -t 0 ]; then HOOK_STDIN=$(cat); fi` で stdin 利用可能時のみ read、`jq` 不在環境では env var fallback に degrade。CMD_NAME=`unknown` log entries は SDK env var が set されとらん環境 (= 通常の Claude Code session 経由 invoke) を示す signal、stdin reading 経由なら command name が正常に extract される
 
 ### 3.10 superpowers Independence（M0.9 から）
 

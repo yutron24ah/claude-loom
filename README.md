@@ -31,8 +31,8 @@ Together they turn Claude Code from a single-window chat into a **multi-agent de
 ## Features
 
 - **13 specialized subagents** — PM, Developer, single-mode Reviewer (default), Code/Security/Test reviewer trio (opt-in), 4 retro lens judges + counter-arguer + aggregator + retro PM
-- **9 skills** — `loom-tdd-cycle`, `loom-review`, `loom-review-trio`, `loom-retro`, `loom-test`, `loom-status`, `loom-worktree`, `loom-write-plan`, `loom-debug`
-- **9 slash commands** — `/loom-pm`, `/loom-spec`, `/loom-go`, `/loom-retro`, `/loom-status`, `/loom-worktree`, `/loom-mode`, `/loom-stop`, `/loom`
+- **10 skills** — `loom-tdd-cycle`, `loom-review`, `loom-review-trio`, `loom-retro`, `loom-test`, `loom-status`, `loom-worktree`, `loom-write-plan`, `loom-debug`, `loom-ui-smoke` (browser interactive smoke test)
+- **10 slash commands** — `/loom-pm`, `/loom-spec`, `/loom-go`, `/loom-retro`, `/loom-status`, `/loom-worktree`, `/loom-mode`, `/loom-stop`, `/loom`, `/loom-ui-smoke`
 - **Real-time GUI** — pixel-RPG room view, Plan + Gantt with bi-directional file sync, Session list, Agent Detail (React + Phaser/SVG)
 - **Local daemon** — Node.js + Fastify + tRPC + Drizzle + SQLite, binds to `127.0.0.1` only, auto-shuts after 30 min idle
 - **Retro protocol** — 4-lens × 3-stage (parallel critique → counter-argument → aggregation) for echo-chamber-resistant self-improvement
@@ -180,7 +180,7 @@ Phase 2 entry 前に [Phase 2 Entry Checklist](PLAN.md#phase-2-entry-checklist-f
 
 ## Phase 2 以降 (roadmap)
 
-Phase 1 MVP が確立した harness (13 agents, 9 skills, 9 slash commands) と visualization GUI を土台に、Phase 2 では以下の方向を想定しています。
+Phase 1 MVP が確立した harness (13 agents, 10 skills, 10 slash commands) と visualization GUI を土台に、Phase 2 では以下の方向を想定しています。
 
 - **Multi-contributor support** — Pull Request review flow の agent 統合、branch protection と連携した CI/CD hooks
 - **Task tool stability** — 現在 degraded mode で運用中の subagent dispatch を full parallel batch 運用へ復旧（Phase 2 HARD entry blocker）

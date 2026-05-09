@@ -495,7 +495,7 @@ M0.11.3 で `loom-ui-smoke` skill 完成 + Phase 1 functional MVP 検証完了�
   - [x] `tests/dry_run_applied_summary_test.sh` failures fix (fixture update path: total_retro_sessions 1→5、4 sessions 追加で stale 化した fixture を actual reflect) <!-- id: m0.x-debt-t2 status: done commit: c2fec72 note: parallel dev-1 の git add が dev-2 の fixture edit を巻き込んで 1 commit に統合 (Strategy a atomic unit race、retro material) -->
   - [x] `tests/m1_docs_test.sh` failures fix (README §Daemon Foundation (M1 から) section 追加で Fastify + tRPC + Drizzle + AppRouter + 127.0.0.1:5757 + pnpm 起動を user 向け説明) <!-- id: m0.x-debt-t3 status: done commit: c2fec72 -->
   - [x] `./tests/run_tests.sh` で **35 PASS / 0 FAIL** 達成、carryover state 解消 (元 PLAN claim 21 は過去 baseline、test 増加で actual 35) <!-- id: m0.x-debt-t4 status: done -->
-  - [ ] tag `m0.x-test-debt-cleanup-complete` 設置（M0 系列継続の cleanup marker） <!-- id: m0.x-debt-t5 status: todo -->
+  - [x] tag `m0.x-test-debt-cleanup-complete` 設置（M0 系列継続の cleanup marker） <!-- id: m0.x-debt-t5 status: done commit: f5f43ba note: tag 設置済 + main e9bdea8 到達、retro 2026-05-06-004 F-pj-002 で doc/git state 不一致 surface、本 cleanup batch で sync -->
 - **着手タイミング**: M0.11.7 完了後 / Phase 2 entry 前。Phase 2 spec phase の cleanup 前提として完走必要
 - **rationale**: 3 retro 連続 carryover の SPEC §3.9.14 escalation 適用例。専用 milestone scope 化により、各 dev session で「scope 外」と注記される carryover の意味を回復、user 環境での silent failure 減らす
 
@@ -664,7 +664,7 @@ Phase 2 entry の HARD blocker と soft blocker を 1 箇所に SSoT 化、retro
 **HARD blocker (Phase 2 entry 不可、本項全 PASS まで `M0.12 系列` 着手禁止)**:
 
 - [ ] **F-USER-005/006 hotfix verified** (本 retro 2026-05-06-002 で対処、`bash tests/daemon_e2e_startup_test.sh` PASS で確認、tag `m0.x-startup-recovery-complete` 設置)
-- [ ] **3 pre-existing test failure cleanup**: M0.X-test-debt-cleanup milestone 完走 (`docs_release_test.sh` / `dry_run_applied_summary_test.sh` / `m1_docs_test.sh` 3 件 fix、`./tests/run_tests.sh` 21 PASS / 0 FAIL)
+- [x] **3 pre-existing test failure cleanup**: M0.X-test-debt-cleanup milestone 完走 (`docs_release_test.sh` / `dry_run_applied_summary_test.sh` / `m1_docs_test.sh` 3 件 fix、`./tests/run_tests.sh` 37 PASS / 0 FAIL — actual baseline post-β + α post-tag t5/t6、test 増加で baseline は逐次成長、`run_tests.sh` 末尾出力が canonical)
 - [ ] **path C default 昇格 SSoT 整合確認** (SPEC §3.6.8.7 + §3.9.13 + §3.9.13.1 の cross-reference 整合済、retro 2026-05-06-002 F-proc-003 で codify)
 - [ ] **Layer 2.5 PM dogfood smoke 運用 N 回 success record** (retro 2026-05-06-003 F-USER-009 + F-meta-002 由来、SPEC §10.4.1 SSoT): trust recovery milestone series 3 連続 (F-USER-005/006 + F-USER-007/008 + Bug A) を Phase 2 multi-contributor 環境で再発させないため、Layer 2.5 が **少なくとも 3 milestone 連続で運用 success** することを確認 (推奨 N=3、user 判断で増減可)
 - [ ] **post-tag hotfix 0 件 milestone N 回連続 record** (retro 2026-05-06-003 F-meta-002 由来 soft blocker → Phase 2 multi-contributor で hard 化候補): F-USER-007/008 + Bug A の post-tag hotfix 2 連続 pattern が解消されとるか確認、3 milestone 連続で 0 件 record で entry permit (SPEC §3.6.8.11 protocol 準拠 hotfix は record-only として count から除外可、判断は retro 時)
