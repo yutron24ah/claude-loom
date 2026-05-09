@@ -10,8 +10,11 @@
     "test": "pnpm --filter @claude-loom/daemon test && bash tests/run_tests.sh",
     "test:harness": "bash tests/run_tests.sh",
     "test:daemon": "pnpm --filter @claude-loom/daemon test",
-    "dev": "pnpm --filter @claude-loom/daemon dev",
+    "dev": "concurrently --names 'daemon,ui' --prefix-colors 'cyan,magenta' 'pnpm --filter @claude-loom/daemon dev' 'pnpm --filter @claude-loom/ui dev'",
     "build": "pnpm -r build"
+  },
+  "devDependencies": {
+    "concurrently": "^9.0.0"
   },
   "pnpm": {
     "onlyBuiltDependencies": ["better-sqlite3", "esbuild"]
