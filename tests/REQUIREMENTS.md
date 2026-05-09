@@ -167,3 +167,7 @@
 ## M0.X-hook-ingest-recovery post-tag t5: parallel batch SessionStart interaction test
 
 - **REQ-058**: `tests/hook_parallel_batch_interaction_test.sh` が parallel SessionStart 多重発火 + daemon load 観察 + Bug A trigger interaction を structural verify する (4 scenario: 単発 baseline / 3 並列 200 応答 / 並列中 /health responsive / daemon 不在 fail-silent)。daemon 不在時は Test 2-3 skip + WARN (CI environment friendly)。**rationale**: retro 2026-05-06-003 F-proc-002 由来、parallel batch dispatch + SessionStart 多重発火 interaction の structural test gap を埋める。post-tag-hotfix protocol §3.6.8.11 適用第 1 例。
+
+## feat/dev-mode-ux item 1A: root pnpm dev で daemon + UI 並走
+
+- **REQ-059**: root `package.json` の `scripts.dev` が `concurrently` 経由で `@claude-loom/daemon` + `@claude-loom/ui` を並走起動すること、`devDependencies` に `concurrently` を宣言していること。`tests/root_dev_script_test.sh` でカバー (4 assertion: scripts.dev に concurrently / @claude-loom/daemon / @claude-loom/ui の 3 token 同時包含 + devDependencies.concurrently 存在)。**rationale**: `pnpm --filter @claude-loom/ui dev` 単独運用は WS が daemon (:5757) に繋がらず `daemon_disconnected` toast が exponential backoff 周期 (1s/3s/7s/15s/31s/61s/91s...) で連発するため、root 1 コマンドで両方起動する workflow を契約として固定する。escape hatch (`dev:daemon` / `dev:ui`) は YAGNI で省略 — `pnpm --filter @claude-loom/<x> dev` 直接叩けば等価。
