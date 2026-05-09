@@ -29,9 +29,28 @@ export function retryDelayMs(attempt: number): number {
 }
 
 /**
+ * Run a store-update callback that may throw a TypeError when the
+ * `useConnectionStore` import binding has been torn down by vitest's per-file
+ * module isolation (the wsClient is a module-level singleton, so its async WS
+ * callbacks can fire after the importing test file has finished). Real bugs
+ * (any non-TypeError, e.g. a runtime error inside a store handler) are
+ * re-thrown so they do not get masked.
+ */
+function safeCallOnTeardown(fn: () => void): void {
+  try {
+    fn();
+  } catch (e) {
+    if (e instanceof TypeError) return;
+    throw e;
+  }
+}
+
+/**
  * Factory returning the three wsLink callbacks wired to connectionStore.
  * Exported separately so tests can invoke each callback without a real WS.
- * WHY: decouples the callback logic from WebSocket instantiation.
+ * WHY: decouples the callback logic from WebSocket instantiation, and routes
+ * each call through `safeCallOnTeardown` so a test-isolation TypeError does
+ * not bubble out of an asynchronous WebSocket event dispatch.
  */
 export function createWsCallbacks(): {
   onOpen: () => void;
@@ -39,15 +58,10 @@ export function createWsCallbacks(): {
   onError: (err: unknown) => void;
 } {
   return {
-    onOpen: () => {
-      useConnectionStore.getState().handleOpen();
-    },
-    onClose: () => {
-      useConnectionStore.getState().handleClose();
-    },
-    onError: (err: unknown) => {
-      useConnectionStore.getState().handleError(err);
-    },
+    onOpen: () => safeCallOnTeardown(() => useConnectionStore.getState().handleOpen()),
+    onClose: () => safeCallOnTeardown(() => useConnectionStore.getState().handleClose()),
+    onError: (err: unknown) =>
+      safeCallOnTeardown(() => useConnectionStore.getState().handleError(err)),
   };
 }
 

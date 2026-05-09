@@ -110,3 +110,58 @@ describe('wsLink callbacks → useConnectionStore bridge', () => {
     expect(useConnectionStore.getState().status).toBe('reconnecting');
   });
 });
+
+// ---------------------------------------------------------------------------
+// Resilience: callbacks must NOT throw if the store binding is torn down by
+// vitest's per-file module isolation. Non-TypeError throws (real bugs) must
+// still propagate so they do not get silently masked.
+// ---------------------------------------------------------------------------
+describe('wsLink callbacks — resilient under store-binding teardown', () => {
+  beforeEach(() => {
+    useConnectionStore.setState({ status: 'connecting', attempts: 0 });
+  });
+
+  it('onOpen / onClose / onError do not throw when the store getState path fails', () => {
+    const { onOpen, onClose, onError } = createWsCallbacks();
+
+    // Snapshot the pre-call state so we can verify catch is a true no-op.
+    const stateBefore = { ...useConnectionStore.getState() };
+
+    // Simulate the failure mode: getState throws TypeError (proxy for the real
+    // failure where `useConnectionStore` import resolves to undefined and
+    // accessing `.getState` raises "Cannot read properties of undefined").
+    const original = useConnectionStore.getState;
+    (useConnectionStore as unknown as { getState: () => never }).getState = () => {
+      throw new TypeError('Cannot read properties of undefined (reading "getState")');
+    };
+
+    try {
+      expect(() => onOpen()).not.toThrow();
+      expect(() => onClose()).not.toThrow();
+      expect(() => onError(new Error('connection refused'))).not.toThrow();
+    } finally {
+      useConnectionStore.getState = original;
+    }
+
+    // No partial state mutation: catch must skip cleanly, not leave the store
+    // half-updated. The teardown-race surface is "TypeError before any state
+    // write", so the store status/attempts must be unchanged from the snapshot.
+    const stateAfter = useConnectionStore.getState();
+    expect(stateAfter.status).toBe(stateBefore.status);
+    expect(stateAfter.attempts).toBe(stateBefore.attempts);
+  });
+
+  it('rethrows non-TypeError so real bugs in store handlers are not masked', () => {
+    const { onClose } = createWsCallbacks();
+    const original = useConnectionStore.getState;
+    (useConnectionStore as unknown as { getState: () => never }).getState = () => {
+      throw new RangeError('something other than TypeError');
+    };
+
+    try {
+      expect(() => onClose()).toThrow(RangeError);
+    } finally {
+      useConnectionStore.getState = original;
+    }
+  });
+});
