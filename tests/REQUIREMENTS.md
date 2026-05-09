@@ -159,3 +159,11 @@
 ## M0.X-hook-ingest-recovery t3/t4: hook payload cross-platform timestamp fix
 
 - **REQ-056**: 5 種 bash hook script (`hooks/{pre_tool,post_tool,session_start,stop,SubagentStop}.sh`) が生成する JSON payload の `payload.timestamp` フィールドが macOS / Linux 両環境で pure integer (数字のみ) であること。各 hook script が `ts_ms()` cross-platform helper 関数を持ち、`date +%s%3N` の直接使用を行わないこと。`ts_ms()` は python3 → node → `date +%s` ×1000 の 3 段 fallback で ms 精度を取得。`tests/hook_ingest_integration_test.sh` でカバー（Test 1: `date +%s%3N` integer check / Test 2: PAYLOAD JSON validity per hook / Test 3: ts_ms() helper presence + no-raw-date assert / Test 4: daemon live POST ok:true、daemon 不在時 skip）。**rationale**: macOS BSD `date` は `+%3N` を非サポートで生文字 `N` を残置、`TS=17780770293N` 生成 → JSON parse 失敗 → daemon 400 spam が M0.X-hook-ingest-recovery root cause。同 class の cross-platform format mismatch を構造的に detect する。
+
+## M0.X-hook-ingest-recovery post-tag t6: command-frequency.log silent failure fix
+
+- **REQ-057**: `hooks/post_tool.sh` が Claude Code SDK の stdin JSON input から `tool_name` + `tool_input.command` を抽出、SlashCommand event 時に `~/.claude-loom/command-frequency.log` (env override `LOOM_FREQUENCY_LOG` で path 変更可、`LOOM_NO_FREQUENCY_LOG=1` で opt-out) に append する。stdin 不在時 (test invoke 等) は `CLAUDE_TOOL_*` env var fallback。`tests/command_frequency_log_test.sh` でカバー (4 scenario: stdin SlashCommand / opt-out / env var fallback / non-SlashCommand)。**rationale**: SDK は env var ちゃう stdin JSON で hook input 渡す仕様、env var only path は永久に false negative で silent failure (retro 2026-05-06-003 F-meta-004 由来、post-tag-hotfix protocol §3.6.8.11 適用第 1 例)。
+
+## M0.X-hook-ingest-recovery post-tag t5: parallel batch SessionStart interaction test
+
+- **REQ-058**: `tests/hook_parallel_batch_interaction_test.sh` が parallel SessionStart 多重発火 + daemon load 観察 + Bug A trigger interaction を structural verify する (4 scenario: 単発 baseline / 3 並列 200 応答 / 並列中 /health responsive / daemon 不在 fail-silent)。daemon 不在時は Test 2-3 skip + WARN (CI environment friendly)。**rationale**: retro 2026-05-06-003 F-proc-002 由来、parallel batch dispatch + SessionStart 多重発火 interaction の structural test gap を埋める。post-tag-hotfix protocol §3.6.8.11 適用第 1 例。

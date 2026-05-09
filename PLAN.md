@@ -585,7 +585,7 @@ F-USER-007/008 (symlink CLI guard + hooks SDK 仕様準拠) と同 class の **p
 - `./tests/run_tests.sh` 全 PASS、`pnpm --filter @claude-loom/daemon test` 全 PASS
 - tag `m0.x-runtime-mode-recovery-complete` 設置、既存全 tag 保持
 
-## マイルストーン M0.X-hook-ingest-recovery (本 spec phase 2026-05-06 由来)
+## マイルストーン M0.X-hook-ingest-recovery (本 spec phase 2026-05-06 由来、post-tag-hotfix protocol §3.6.8.11 適用第 1 例)
 
 起源: 2026-05-06 daemon log 観察で発覚した hook ingest path の連続 400 失敗：直近 commit `c31a88e` (F-USER-007/008 hotfix: hooks SDK 仕様準拠) 後に **`POST /event` が `req-q` 〜 `req-z` まで連続 400 (Body is not valid JSON)** で失敗、hook event ingest が機能不全。F-USER-007/008 hotfix の regression 疑いあり、bisect investigation 必要。
 
@@ -611,10 +611,10 @@ F-USER-007/008 (symlink CLI guard + hooks SDK 仕様準拠) と同 class の **p
       <!-- id: m0.x-hook-ingest-t3 status: done planned_files: hooks/pre_tool.sh, hooks/post_tool.sh, hooks/session_start.sh, hooks/stop.sh, hooks/SubagentStop.sh commit: 9a56842 note: dev path C self-review (Task tool deferred)、PM smoke test で live daemon に 5 hook 全部 ok:true 確認、cross-platform verify -->
 - [x] tests: hook script ↔ daemon schema cross-check assertion を `tests/REQUIREMENTS.md` に REQ 化 + `tests/hook_ingest_integration_test.sh` 新設 (TDD: RED 先行で broken payload 再現 → GREEN で fix 確認)
       <!-- id: m0.x-hook-ingest-t4 status: done planned_files: tests/REQUIREMENTS.md, tests/hook_ingest_integration_test.sh commit: 28d3023 note: REQ-056 追加、Test 1-3 = 22 assertion / Test 4 (live daemon) = 5 assertion、合計 22 PASS、daemon-absent 時は Test 4 skip + WARN -->
-- [ ] **retro 2026-05-06-003 F-proc-002 由来**: parallel batch dispatch + SessionStart hook 多重発火 interaction の test fixture 追加 (mock parallel SessionStart で daemon load 観察 + Bug A trigger 部分の structural verify)
-      <!-- id: m0.x-hook-ingest-t5 status: todo planned_files: tests/hook_parallel_batch_interaction_test.sh note: α (t2-t4) 作業時、retro archive 0914e6f が orphan branch にあって PLAN.md 上は不可視、scope expansion を見落として tag 設置済 — post-tag-hotfix protocol §3.6.8.11 適用候補 -->
-- [ ] **retro 2026-05-06-003 F-meta-004 由来**: `~/.claude-loom/command-frequency.log` 不在 silent failure investigation — post_tool hook が `tool_name == "SlashCommand"` 判定後に actual log write しとるか probe、SPEC §3.9.15 path 設計と prefs / install 状態の乖離 root cause 確定 + fix
-      <!-- id: m0.x-hook-ingest-t6 status: todo planned_files: hooks/post_tool.sh, daemon/src/hooks/ingest.ts note: t5 と同様、α 作業時に scope 不可視 — post-tag-hotfix protocol 適用候補 -->
+- [x] **retro 2026-05-06-003 F-proc-002 由来**: parallel batch dispatch + SessionStart hook 多重発火 interaction の test fixture 追加 (mock parallel SessionStart で daemon load 観察 + Bug A trigger 部分の structural verify)
+      <!-- id: m0.x-hook-ingest-t5 status: done planned_files: tests/hook_parallel_batch_interaction_test.sh note: post-tag-hotfix §3.6.8.11 適用第 1 例。REQ-058 追加 (4 scenario: 単発 baseline / 3 並列 200 / health concurrent / daemon absent fail-silent)。daemon 不在時 Test 2-3 skip + WARN (CI friendly)。branch: fix/m0.x-hook-ingest-posttag-t5-t6 -->
+- [x] **retro 2026-05-06-003 F-meta-004 由来**: `~/.claude-loom/command-frequency.log` 不在 silent failure investigation — post_tool hook が `tool_name == "SlashCommand"` 判定後に actual log write しとるか probe、root cause: SDK は stdin JSON で hook input 渡す仕様、env var only path は永久 false negative → stdin JSON read + env var fallback chain に修正
+      <!-- id: m0.x-hook-ingest-t6 status: done planned_files: hooks/post_tool.sh, tests/command_frequency_log_test.sh, tests/REQUIREMENTS.md note: post-tag-hotfix §3.6.8.11 適用第 1 例。REQ-057 追加 (4 scenario: stdin SlashCommand / opt-out / env var fallback / non-SlashCommand)。stdin JSON parse (jq) → env var fallback chain 実装。branch: fix/m0.x-hook-ingest-posttag-t5-t6 -->
 - [x] tag `m0.x-hook-ingest-recovery-complete` 設置
       <!-- id: m0.x-hook-ingest-t7 status: done note: 5b4ca6b に対して設置済、α (t2-t4) 完了 marker。但し t5/t6 は α 作業時 retro archive orphan で scope 不可視、tag 設置後の retro 取込 merge で発覚 — SPEC §3.6.8.11 post-tag-hotfix protocol 適用、tag 移動禁止、t5/t6 完了は post-tag fix で対応 -->
 
