@@ -64,11 +64,24 @@ importers:
         specifier: ^2.0.0
         version: 2.1.9(@types/node@20.19.39)(jsdom@25.0.1)
 
+  redesign:
+    dependencies:
+      react:
+        specifier: ^18.3.0
+        version: 18.3.1
+    devDependencies:
+      '@types/react':
+        specifier: ^18.3.0
+        version: 18.3.28
+
   ui:
     dependencies:
       '@claude-loom/daemon':
         specifier: workspace:*
         version: link:../daemon
+      '@claude-loom/redesign':
+        specifier: workspace:*
+        version: link:../redesign
       '@tanstack/react-query':
         specifier: ^5.75.0
         version: 5.100.7(react@18.3.1)
