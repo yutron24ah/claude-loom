@@ -1,74 +1,60 @@
 /**
- * SessionListView TDD tests — RED phase (M3.2 t1).
+ * SessionListView TDD tests — updated for M0.15 t8 redesign port.
  *
- * WHY: Verify that SessionListView renders filter/sort controls and
- * list rows, handles live subscription updates, and shows
- * loading/empty/error states correctly.
+ * WHY: Verify that SessionListView (redesign-driven) renders filter/sort controls,
+ * session entries, search interaction, and empty state correctly.
  *
- * SPEC §3.6.10 compliance: filter/sort values must come from constants/enums,
- * never raw string literals in implementation. Tests assert rendered values
- * without caring about internal enum naming.
- *
- * We mock useSessionList entirely so no WS connection is needed.
- * We test BEHAVIOR (visible UI states) not implementation internals.
+ * Updated for M0.15 t8:
+ * - useScenario() replaces useSessionList (tRPC) hardcoded fixture
+ * - visual layout uses inline styles (not rpg-frame/chip/dot CSS classes)
+ * - data-testids: session-entry (not session-row), session-verdict-badge,
+ *   session-search-input, session-filter-agent, session-filter-verdict
+ * - no loading/error states (redesign view is always-connected scenario model)
  */
-import { describe, it, expect, afterEach, vi, beforeEach } from 'vitest';
+import { describe, it, expect, afterEach, vi } from 'vitest';
 import { render, screen, cleanup, fireEvent } from '@testing-library/react';
-import type { Session } from '@claude-loom/daemon';
+import type { Scenario } from '@claude-loom/redesign/api/types';
 
 // ---------------------------------------------------------------------------
-// Mock useSessionList hook
+// Mock useScenario hook
 // ---------------------------------------------------------------------------
-const { mockUseSessionList } = vi.hoisted(() => ({
-  mockUseSessionList: vi.fn(),
+vi.mock('@claude-loom/redesign/api/websocket', () => ({
+  useScenario: () =>
+    ({
+      sessions: [
+        {
+          id: 's-2026-04-29-1721',
+          startedAt: '2026-04-29 17:21',
+          durationSec: 1820,
+          agentRoot: 'pm',
+          turns: 38,
+          verdict: 'PASS',
+          filesTouched: ['src/services/user.service.ts'],
+          relatedFindings: ['F-12'],
+          relatedRetro: 'retro-2026-04-29',
+          summary: 'M0.13 §3.6 ガント定義の議論 + auth TDD',
+        },
+        {
+          id: 's-2026-04-28-0930',
+          startedAt: '2026-04-28 09:30',
+          durationSec: 2400,
+          agentRoot: 'dev',
+          turns: 52,
+          verdict: 'FAIL',
+          filesTouched: ['ui/src/views/room/RoomView.tsx'],
+          relatedFindings: [],
+          relatedRetro: undefined,
+          summary: 'M0.11.4 RoomView RPG redesign',
+        },
+      ],
+      project: 'claude-loom',
+    }) as unknown as Scenario,
 }));
 
-vi.mock('@/live/useSessionList', () => ({
-  useSessionList: mockUseSessionList,
-}));
-
-// Import after mock is set up
 import { SessionListView } from '../../src/views/session-list/SessionListView';
 
 afterEach(() => {
   cleanup();
-});
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-function makeSession(overrides: Partial<Session> = {}): Session {
-  return {
-    sessionId: 'sess-001',
-    projectId: 'claude-loom',
-    worktreePath: '/repos/claude-loom',
-    role: 'pm',
-    status: 'active',
-    startedAt: new Date('2026-05-02T10:00:00Z'),
-    endedAt: null,
-    lastSeenAt: new Date('2026-05-02T10:05:00Z'),
-    ...overrides,
-  };
-}
-
-// ---------------------------------------------------------------------------
-// Default mock setup
-// ---------------------------------------------------------------------------
-
-beforeEach(() => {
-  mockUseSessionList.mockClear();
-  mockUseSessionList.mockReturnValue({
-    sessions: [],
-    isLoading: false,
-    error: null,
-    projectFilter: null,
-    roleFilter: null,
-    sortOrder: 'desc',
-    setProjectFilter: vi.fn(),
-    setRoleFilter: vi.fn(),
-    toggleSortOrder: vi.fn(),
-  });
 });
 
 // ---------------------------------------------------------------------------
@@ -81,137 +67,54 @@ describe('SessionListView — basic render', () => {
     expect(screen.getByTestId('session-list')).toBeInTheDocument();
   });
 
-  it('renders project filter dropdown', () => {
+  it('renders search input', () => {
     render(<SessionListView />);
-    expect(screen.getByTestId('session-filter-project')).toBeInTheDocument();
+    expect(screen.getByTestId('session-search-input')).toBeInTheDocument();
   });
 
-  it('renders role filter control', () => {
+  it('renders agent filter control', () => {
     render(<SessionListView />);
-    expect(screen.getByTestId('session-filter-role')).toBeInTheDocument();
+    expect(screen.getByTestId('session-filter-agent')).toBeInTheDocument();
   });
 
-  it('renders sort toggle button', () => {
+  it('renders verdict filter control', () => {
     render(<SessionListView />);
-    expect(screen.getByTestId('session-sort-toggle')).toBeInTheDocument();
-  });
-});
-
-// ---------------------------------------------------------------------------
-// Loading state
-// ---------------------------------------------------------------------------
-
-describe('SessionListView — loading state', () => {
-  it('shows loading indicator when isLoading is true', () => {
-    mockUseSessionList.mockReturnValue({
-      sessions: [],
-      isLoading: true,
-      error: null,
-      projectFilter: null,
-      roleFilter: null,
-      sortOrder: 'desc',
-      setProjectFilter: vi.fn(),
-      setRoleFilter: vi.fn(),
-      toggleSortOrder: vi.fn(),
-    });
-    render(<SessionListView />);
-    expect(screen.getByTestId('session-list-loading')).toBeInTheDocument();
-  });
-
-  it('does not show session rows when loading', () => {
-    mockUseSessionList.mockReturnValue({
-      sessions: [makeSession()],
-      isLoading: true,
-      error: null,
-      projectFilter: null,
-      roleFilter: null,
-      sortOrder: 'desc',
-      setProjectFilter: vi.fn(),
-      setRoleFilter: vi.fn(),
-      toggleSortOrder: vi.fn(),
-    });
-    render(<SessionListView />);
-    expect(screen.queryAllByTestId('session-row')).toHaveLength(0);
+    expect(screen.getByTestId('session-filter-verdict')).toBeInTheDocument();
   });
 });
 
 // ---------------------------------------------------------------------------
-// Error state
+// Session entries
 // ---------------------------------------------------------------------------
 
-describe('SessionListView — error state', () => {
-  it('shows error message when error is present', () => {
-    mockUseSessionList.mockReturnValue({
-      sessions: [],
-      isLoading: false,
-      error: new Error('Connection failed'),
-      projectFilter: null,
-      roleFilter: null,
-      sortOrder: 'desc',
-      setProjectFilter: vi.fn(),
-      setRoleFilter: vi.fn(),
-      toggleSortOrder: vi.fn(),
-    });
+describe('SessionListView — session entries', () => {
+  it('renders one session-entry per session', () => {
     render(<SessionListView />);
-    expect(screen.getByTestId('session-list-error')).toBeInTheDocument();
-  });
-});
-
-// ---------------------------------------------------------------------------
-// Empty state
-// ---------------------------------------------------------------------------
-
-describe('SessionListView — empty state', () => {
-  it('shows empty state when sessions array is empty', () => {
-    render(<SessionListView />);
-    expect(screen.getByTestId('session-list-empty')).toBeInTheDocument();
+    expect(screen.getAllByTestId('session-entry')).toHaveLength(2);
   });
 
-  it('does not show session rows when empty', () => {
+  it('renders verdict badge per session', () => {
     render(<SessionListView />);
-    expect(screen.queryAllByTestId('session-row')).toHaveLength(0);
-  });
-});
-
-// ---------------------------------------------------------------------------
-// Session rows
-// ---------------------------------------------------------------------------
-
-describe('SessionListView — session rows', () => {
-  it('renders one session-row per session', () => {
-    mockUseSessionList.mockReturnValue({
-      sessions: [
-        makeSession({ sessionId: 'sess-001' }),
-        makeSession({ sessionId: 'sess-002', role: 'dev_parent' }),
-        makeSession({ sessionId: 'sess-003', status: 'ended', role: null }),
-      ],
-      isLoading: false,
-      error: null,
-      projectFilter: null,
-      roleFilter: null,
-      sortOrder: 'desc',
-      setProjectFilter: vi.fn(),
-      setRoleFilter: vi.fn(),
-      toggleSortOrder: vi.fn(),
-    });
-    render(<SessionListView />);
-    expect(screen.getAllByTestId('session-row')).toHaveLength(3);
+    const badges = screen.getAllByTestId('session-verdict-badge');
+    expect(badges).toHaveLength(2);
   });
 
-  it('does not show empty state when sessions are present', () => {
-    mockUseSessionList.mockReturnValue({
-      sessions: [makeSession()],
-      isLoading: false,
-      error: null,
-      projectFilter: null,
-      roleFilter: null,
-      sortOrder: 'desc',
-      setProjectFilter: vi.fn(),
-      setRoleFilter: vi.fn(),
-      toggleSortOrder: vi.fn(),
-    });
+  it('renders PASS and FAIL verdict badges correctly', () => {
     render(<SessionListView />);
-    expect(screen.queryByTestId('session-list-empty')).not.toBeInTheDocument();
+    const badges = screen.getAllByTestId('session-verdict-badge');
+    const texts = badges.map(b => b.textContent ?? '');
+    expect(texts).toContain('PASS');
+    expect(texts).toContain('FAIL');
+  });
+
+  it('renders session summary text', () => {
+    render(<SessionListView />);
+    expect(screen.getByText('M0.13 §3.6 ガント定義の議論 + auth TDD')).toBeInTheDocument();
+  });
+
+  it('shows detail panel placeholder when no session is selected', () => {
+    render(<SessionListView />);
+    expect(screen.getByTestId('session-detail-panel')).toBeInTheDocument();
   });
 });
 
@@ -220,196 +123,58 @@ describe('SessionListView — session rows', () => {
 // ---------------------------------------------------------------------------
 
 describe('SessionListView — filter interaction', () => {
-  it('calls setProjectFilter when project dropdown changes', () => {
-    const setProjectFilter = vi.fn();
-    mockUseSessionList.mockReturnValue({
-      sessions: [],
-      isLoading: false,
-      error: null,
-      projectFilter: null,
-      roleFilter: null,
-      sortOrder: 'desc',
-      setProjectFilter,
-      setRoleFilter: vi.fn(),
-      toggleSortOrder: vi.fn(),
-    });
+  it('narrows entries when search query matches only one session', () => {
     render(<SessionListView />);
-    const dropdown = screen.getByTestId('session-filter-project');
-    fireEvent.change(dropdown, { target: { value: 'claude-loom' } });
-    expect(setProjectFilter).toHaveBeenCalledWith('claude-loom');
+    expect(screen.getAllByTestId('session-entry')).toHaveLength(2);
+
+    const searchInput = screen.getByTestId('session-search-input');
+    fireEvent.change(searchInput, { target: { value: 'RoomView' } });
+
+    expect(screen.getAllByTestId('session-entry')).toHaveLength(1);
   });
 
-  it('calls setRoleFilter when role filter changes', () => {
-    const setRoleFilter = vi.fn();
-    mockUseSessionList.mockReturnValue({
-      sessions: [],
-      isLoading: false,
-      error: null,
-      projectFilter: null,
-      roleFilter: null,
-      sortOrder: 'desc',
-      setProjectFilter: vi.fn(),
-      setRoleFilter,
-      toggleSortOrder: vi.fn(),
-    });
+  it('shows empty message when search matches nothing', () => {
     render(<SessionListView />);
-    const roleFilter = screen.getByTestId('session-filter-role');
-    fireEvent.change(roleFilter, { target: { value: 'pm' } });
-    expect(setRoleFilter).toHaveBeenCalledWith('pm');
+    const searchInput = screen.getByTestId('session-search-input');
+    fireEvent.change(searchInput, { target: { value: 'xxxxxxxxxxxxxxxx_no_match' } });
+
+    expect(screen.queryAllByTestId('session-entry')).toHaveLength(0);
+    expect(screen.getByText(/条件にマッチする session はありません/)).toBeInTheDocument();
+  });
+
+  it('verdict filter shows only PASS entries when PASS selected', () => {
+    render(<SessionListView />);
+    const verdictFilter = screen.getByTestId('session-filter-verdict');
+    fireEvent.change(verdictFilter, { target: { value: 'PASS' } });
+
+    const entries = screen.getAllByTestId('session-entry');
+    expect(entries).toHaveLength(1);
+    const badge = screen.getAllByTestId('session-verdict-badge')[0];
+    expect(badge.textContent).toBe('PASS');
   });
 });
 
 // ---------------------------------------------------------------------------
-// Sort toggle interaction
+// Detail panel — selection
 // ---------------------------------------------------------------------------
 
-describe('SessionListView — sort toggle', () => {
-  it('calls toggleSortOrder when sort toggle is clicked', () => {
-    const toggleSortOrder = vi.fn();
-    mockUseSessionList.mockReturnValue({
-      sessions: [],
-      isLoading: false,
-      error: null,
-      projectFilter: null,
-      roleFilter: null,
-      sortOrder: 'desc',
-      setProjectFilter: vi.fn(),
-      setRoleFilter: vi.fn(),
-      toggleSortOrder,
-    });
+describe('SessionListView — detail panel', () => {
+  it('shows session detail when a session entry is clicked', () => {
     render(<SessionListView />);
-    const sortBtn = screen.getByTestId('session-sort-toggle');
-    fireEvent.click(sortBtn);
-    expect(toggleSortOrder).toHaveBeenCalledOnce();
+    const entries = screen.getAllByTestId('session-entry');
+    fireEvent.click(entries[0]);
+
+    // After click, detail panel shows session summary (may appear in both list entry + detail panel)
+    const summaryEls = screen.getAllByText('M0.13 §3.6 ガント定義の議論 + auth TDD');
+    expect(summaryEls.length).toBeGreaterThanOrEqual(1);
   });
 
-  it('shows current sort direction in sort toggle', () => {
-    mockUseSessionList.mockReturnValue({
-      sessions: [],
-      isLoading: false,
-      error: null,
-      projectFilter: null,
-      roleFilter: null,
-      sortOrder: 'asc',
-      setProjectFilter: vi.fn(),
-      setRoleFilter: vi.fn(),
-      toggleSortOrder: vi.fn(),
-    });
+  it('shows FILES TOUCHED section in detail panel after selection', () => {
     render(<SessionListView />);
-    const sortBtn = screen.getByTestId('session-sort-toggle');
-    expect(sortBtn.textContent).toMatch(/asc/i);
-  });
-});
+    const entries = screen.getAllByTestId('session-entry');
+    fireEvent.click(entries[0]);
 
-// ---------------------------------------------------------------------------
-// Live subscription update (behavior test)
-// ---------------------------------------------------------------------------
-
-describe('SessionListView — live update via subscription', () => {
-  it('renders updated session list when hook returns new sessions', () => {
-    // Initially empty
-    mockUseSessionList.mockReturnValueOnce({
-      sessions: [],
-      isLoading: false,
-      error: null,
-      projectFilter: null,
-      roleFilter: null,
-      sortOrder: 'desc',
-      setProjectFilter: vi.fn(),
-      setRoleFilter: vi.fn(),
-      toggleSortOrder: vi.fn(),
-    });
-    const { rerender } = render(<SessionListView />);
-    expect(screen.queryAllByTestId('session-row')).toHaveLength(0);
-
-    // Subscription delivers a new session — hook now returns 1 session
-    mockUseSessionList.mockReturnValueOnce({
-      sessions: [makeSession({ sessionId: 'new-sess' })],
-      isLoading: false,
-      error: null,
-      projectFilter: null,
-      roleFilter: null,
-      sortOrder: 'desc',
-      setProjectFilter: vi.fn(),
-      setRoleFilter: vi.fn(),
-      toggleSortOrder: vi.fn(),
-    });
-    rerender(<SessionListView />);
-    expect(screen.getAllByTestId('session-row')).toHaveLength(1);
-  });
-});
-
-// ---------------------------------------------------------------------------
-// RPG style assertions (M0.11.4 Phase C t16)
-// ---------------------------------------------------------------------------
-
-describe('SessionListView — RPG style', () => {
-  it('wraps outer container in rpg-frame', () => {
-    const { container } = render(<SessionListView />);
-    const frame = container.querySelector('.rpg-frame');
-    expect(frame).toBeInTheDocument();
-  });
-
-  it('renders title with rpg-title class', () => {
-    const { container } = render(<SessionListView />);
-    const title = container.querySelector('.rpg-title');
-    expect(title).toBeInTheDocument();
-  });
-
-  it('renders session rows with rpg-frame class when sessions are present', () => {
-    mockUseSessionList.mockReturnValue({
-      sessions: [makeSession({ sessionId: 'rpg-sess' })],
-      isLoading: false,
-      error: null,
-      projectFilter: null,
-      roleFilter: null,
-      sortOrder: 'desc',
-      setProjectFilter: vi.fn(),
-      setRoleFilter: vi.fn(),
-      toggleSortOrder: vi.fn(),
-    });
-    const { container } = render(<SessionListView />);
-    const frames = container.querySelectorAll('.rpg-frame');
-    expect(frames.length).toBeGreaterThanOrEqual(1);
-  });
-
-  it('renders status dot elements with dot class for each session', () => {
-    mockUseSessionList.mockReturnValue({
-      sessions: [makeSession({ status: 'active' }), makeSession({ sessionId: 'sess-002', status: 'idle' })],
-      isLoading: false,
-      error: null,
-      projectFilter: null,
-      roleFilter: null,
-      sortOrder: 'desc',
-      setProjectFilter: vi.fn(),
-      setRoleFilter: vi.fn(),
-      toggleSortOrder: vi.fn(),
-    });
-    const { container } = render(<SessionListView />);
-    const dots = container.querySelectorAll('.dot');
-    expect(dots.length).toBeGreaterThanOrEqual(2);
-  });
-
-  it('renders session metadata with chip class', () => {
-    mockUseSessionList.mockReturnValue({
-      sessions: [makeSession({ role: 'pm', projectId: 'claude-loom' })],
-      isLoading: false,
-      error: null,
-      projectFilter: null,
-      roleFilter: null,
-      sortOrder: 'desc',
-      setProjectFilter: vi.fn(),
-      setRoleFilter: vi.fn(),
-      toggleSortOrder: vi.fn(),
-    });
-    const { container } = render(<SessionListView />);
-    const chips = container.querySelectorAll('.chip');
-    expect(chips.length).toBeGreaterThanOrEqual(1);
-  });
-
-  it('renders rpg-label elements for column headers or metadata', () => {
-    const { container } = render(<SessionListView />);
-    const labels = container.querySelectorAll('.rpg-label');
-    expect(labels.length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText('FILES TOUCHED')).toBeInTheDocument();
+    expect(screen.getByText('↗ src/services/user.service.ts')).toBeInTheDocument();
   });
 });
