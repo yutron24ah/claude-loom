@@ -10,6 +10,11 @@ export default defineConfig({
     },
   },
   server: {
+    // Allow Vite to read the sibling redesign/ directory at the workspace root
+    // (pnpm symlinks @claude-loom/redesign there from ../redesign).
+    fs: {
+      allow: [resolve(__dirname, '..')],
+    },
     proxy: {
       '/trpc': {
         target: 'http://127.0.0.1:5757',
