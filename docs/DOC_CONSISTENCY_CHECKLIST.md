@@ -249,3 +249,19 @@ SPEC §3.6.8.9 (PM Auto-Spec Entry) + §3.6.8.10 (PM Auto-Go Entry) を編集し
 - [ ] **intent keyword count consistency**: SPEC §3.6.8.9 の intent keyword 列挙数 + SPEC §3.6.8.10 の intent keyword 列挙数 = 章冒頭 / agent prompt / commands/loom-pm.md 等の **header に書かれた合計数**と一致 (M0.11.6 t4 で 22→23 fix の再発防止、M4 自動化前の手動 SSoT 強化)
 - [ ] §3.6.13 Ceremony Reduction Trinity Marker と §3.2 / §3.6.8.9 / §3.6.8.10 の cross-reference 整合 (3 trinity 章の milestone 名 / scope / rationale が 1 箇所で参照可能)
 - [ ] agents/loom-pm.md の auto-entry probe protocol が SPEC §3.6.8.9 / §3.6.8.10 と整合 (Bash tool で probe 可能、Task tool 不要、degraded mode 整合 path C と整合)
+
+## M0.15 UI Redesign Port 関連 check
+
+SPEC §3.6.14 (UI Redesign Port) を編集した時 + M0.15 milestone scope の各 task 着手時：
+
+- [ ] **mock fixture 保全 verify**: `redesign/scenarios.js` + `redesign/screens/*.jsx` (12 file) + `redesign/Redesign App.html` + `redesign/cat.jsx` + `redesign/styles.css` + `redesign/tokens.css` + `redesign/_chat{1,2}.md` + `redesign/_BUNDLE_README.md` が M0.15 期間中 untouched (`tests/redesign_invariant_test.sh` t18 で structural gate)
+- [ ] **production layer 編集可 file の境界**: `redesign/api/*.ts` + `redesign/scenarios.d.ts` + `redesign/README.md` + `redesign/package.json` のみ M0.15 内で編集可 (SPEC §3.6.14.3 table と整合)
+- [ ] **12 画面 useScenario shape の一致**: 各 `ui/src/views/<screen>/*.tsx` の destructuring が `redesign/screens/*.jsx` 冒頭の destructuring と整合 (data dependency 仕様の SSoT 一致)
+- [ ] **Phase 構成 17 task の SPEC ↔ PLAN 整合**: SPEC §3.6.14.4 の 6 phase 描写 と PLAN.md M0.15 section の task 数 + planned_files が一致
+- [ ] **Layer 2.5 dogfood smoke 7 step**: SPEC §3.6.14.5 の table と PLAN.md M0.15 t20 の実施手順が整合 (SPEC §10.4.1 PM 必須 step とも整合)
+- [ ] **完成基準の 11 項目チェック**: SPEC §3.6.14.6 の checkbox と PLAN.md M0.15 完成基準の項目数が一致
+- [ ] **trinity との関係明示**: SPEC §3.6.14.2 の table が §3.6.13 trinity (M0.11.5/6/7) と cross-reference 整合
+- [ ] **Phase 1 → Phase 2 boundary 位置付け**: SPEC §3.6.14.2 で「Phase 1 trinity の続編 = Phase 2 Kickoff (M1.0) の事前条件」明記、PLAN.md "Phase 1 → Phase 2 boundary" section が M0.15 closure 後に位置 (M0.15 が Phase boundary より前に挿入されとる)
+- [ ] **daemon 側 pm.* sub-router 完全性 (t13)**: `daemon/src/routes/pm.ts` (POST /pm/start / /pm/say / /pm/permission/:id / /pm/stop)、`daemon/src/events/types.ts` (pm.message / pm.permission_request / pm.permission_resolved の zod schema 3 個追加)、`daemon/src/events/broadcaster.ts` (emitPmMessage / emitPmPermissionRequest / emitPmPermissionResolved 3 関数追加)、`daemon/src/router.ts` (pm sub-router import + appRouter 統合) が同 commit で揃う (1 task = 1 unified commit、SPEC §3.6.8.6 unified annotation default に整合)
+- [ ] **重要 3 画面 1-click flow の REST 接続**: ⑦ Customization (PUT /customization/:id) / ⑬ PMChat (POST /pm/say) / ⑫ Settings (PUT /settings) が daemon REST に payload を届ける (M0.15 t16/t17 で hookup、t20 Layer 2.5 step 7 で confirm)
+- [ ] **closure tag の連鎖保持**: `m0.15-complete` 設置時 `m0`〜`m5-complete` の全 tag が消失/移動してへんこと (`git tag -l --sort=-creatordate | grep -E 'm[0-9]'` で確認)

@@ -873,6 +873,96 @@ claude-loom Phase 1 closure trinity (M0.11.5 / M0.11.6 / M0.11.7) で codify さ
 
 **Phase 2 application**: Phase 2 candidate (`Phase 2 candidate pool: UX refinement series`) の優先順位判定軸として、本 marker を 1st-class 評価軸とする。「該当 candidate が ceremony reduction trinity の延長線上にあるか」を design phase で確認すること。
 
+### 3.6.14 UI Redesign Port（M0.15 から、SPEC SSoT）
+
+claude.ai/design で詰めた UI 再設計を本実装に書き起こす milestone scope の SSoT。設計の納品物 (`redesign/scenarios.js` + `redesign/screens/*.jsx` + `redesign/Redesign App.html` + `redesign/cat.jsx` + `redesign/styles.css` + `redesign/tokens.css` + `redesign/_chat{1,2}.md`) は claude-loom リポジトリ内 `redesign/` 配下に保管され、本 milestone 完了後も **絶対に削除されない** 不変な mock fixture / data dependency 仕様書として運用する。
+
+#### 3.6.14.1 Scope と前提
+
+- **対象**: 既存 `ui/src/views/` 下の M0.11.4 で実装された Phase B aesthetic MVP のハードコード fixture (例: `AGENT_STATES = [{ task: "GREEN にする" }, ...]` 系) を全 12 画面で撤去、`useScenario()` 経由の scenario 駆動に書き換える
+- **対象外**: `redesign/` 配下の prototype HTML/JSX 自体（mock fixture として永続保管、§3.6.14.3 absolute rule）
+- **前提**: M0.X-startup-recovery + M0.11.5/6/7 (Phase 1 closure trinity) + M5 (M3 prep cleanup) 完了済、daemon broadcaster が 12 event 型 emit 済 (agent.change / plan.change / finding.new / approval.request / event.raw / learned_guidance.change / worktree.change / discipline_metric.update / todo.change / plan.conflict / session.change / spec_change_detected)、daemon に 16 sub-router (agent / approval / coexistence / config / consistency / discipline / events / note / personality / plan / prefs / project / retro / session / token / worktree) 実装済
+
+#### 3.6.14.2 Phase 1 closure trinity との関係
+
+§3.6.13 で codify された 「context から intent 読めるなら ceremony 強制せえ」 design principle の **UI 側 hardening** = Phase 1 hardening trinity の論理的続編として位置付け：
+
+| trinity 章 | M0.15 での visual surface 完成 |
+|---|---|
+| §3.2 Lazy Daemon ライフサイクル (M0.11.5) | UI auto-launch flow → M0.15 で実 user-visible 12 画面が live data で動く |
+| §3.6.8.9 PM Auto-Spec Entry (M0.11.6) | ③ Plan view + Room poster で auto-entry 結果が可視化 |
+| §3.6.8.10 PM Auto-Go Entry (M0.11.7) | ② Gantt view で impl phase の dispatch live が可視化 |
+
+M0.15 は Phase 1 trinity が成立させた「dogfood phase の自己再帰的開発 workflow」の **最終 visual surface** を完成させる milestone。Phase 2 Kickoff (M1.0) の事前条件。
+
+#### 3.6.14.3 Mock fixture 保全規律 (絶対消すな rule、harness gate)
+
+claude.ai/design 由来の以下 file 群は **3 役割を兼ねる SSoT**：
+
+1. **API contract**: `redesign/scenarios.js` 内 SCENARIOS object の shape = daemon WS reducer の output 型契約 (TypeScript 化は `redesign/api/types.ts` で実施済)
+2. **Mock fallback**: `?mock=idle | ?mock=active | ?mock=failed` URL query で開発中 visual confirm + visual regression baseline source
+3. **Data dependency 仕様書**: `redesign/screens/*.jsx` 各 file 冒頭の destructuring が当該画面の data dependency 仕様
+
+これらは M0.15 内で **編集も削除も禁止**。本規律は harness test (`tests/redesign_invariant_test.sh`、本 milestone t18 で新設) で構造的に gate する：
+
+| file | 編集禁止 | 編集可 |
+|---|:---:|:---:|
+| `redesign/scenarios.js` | ✓ |  |
+| `redesign/screens/*.jsx` (12 file) | ✓ |  |
+| `redesign/Redesign App.html` | ✓ |  |
+| `redesign/cat.jsx` | ✓ |  |
+| `redesign/styles.css` / `redesign/tokens.css` | ✓ |  |
+| `redesign/_chat{1,2}.md` / `redesign/_BUNDLE_README.md` | ✓ |  |
+| `redesign/scenarios.d.ts` |  | ✓ (production type shim) |
+| `redesign/api/*.ts` |  | ✓ (production 実装契約) |
+| `redesign/README.md` |  | ✓ (運用 doc) |
+| `redesign/package.json` |  | ✓ (workspace 設定) |
+
+scenarios.js の **fixture 内容** に変更が必要な場合は、(a) `redesign/api/mock-fixtures.ts` を新設して production 用 fixture を別管理する、または (b) 本 SPEC §3.6.14 を update して新 milestone scope で再 design する、のいずれか。直接 edit は禁止。
+
+#### 3.6.14.4 Phase 構成 (6 phase / 17 task) — PLAN SSoT 参照
+
+PLAN.md M0.15 section が task list の SSoT。本 SPEC は Phase 構成の概要のみ:
+
+1. **Phase 1**: reducer foundation (1 task, sequential) — `redesign/api/websocket.ts` に 8 event reducer 追加
+2. **Phase 2**: parallel screen batches (3 batch × 3 task = 9 task, worktree isolation 必須) — 12 画面のうち 9 画面 (Gantt / Plan / Worktree / Customization / Guidance / AgentDetailPanel / Sessions / Tokens / Settings)
+3. **Phase 3**: 中信頼 + PMChat (3 task) — Consistency / Retro + ⑬ PMChat (daemon `pm.*` sub-router 新設、3 新 event 型追加)
+4. **Phase 4**: shell + posters (2 task) — AppShell.tsx redesign 移植 + Room 3 posters scenario 化
+5. **Phase 5**: write API hookup (2 task) — 既存 daemon REST に button hook + PMChat write
+6. **Phase 6**: closure gates (5 task) — harness test / doc update / Layer 2.5 smoke / Playwright e2e / `m0.15-complete` tag + retro hook
+
+reviewer mode: single default、trio opt-in は 3 task のみ (⑦ Customization t5 / ⑬ PMChat t13 / Layer 2.5 smoke t20)。
+
+#### 3.6.14.5 Layer 2.5 dogfood smoke matrix (closure 必須、SPEC §10.4.1 整合)
+
+milestone tag (`m0.15-complete`) 設置 **直前** に PM 自身が以下を sequential 実行:
+
+| step | command | 期待 |
+|---|---|---|
+| 1 | `bash hooks/loom-launch-ui.sh` | daemon (5757) + UI (5173) 両方起動 |
+| 2 | `curl -sf http://127.0.0.1:5757/health` | `{"status":"ok"}` |
+| 3 | `curl -s http://127.0.0.1:5757/mode \| jq .` | SPEC §3.2.1 6 field 充足 |
+| 4 | `curl -sI http://127.0.0.1:5757/` | `200` + `content-type: text/html` |
+| 5 | 12 画面の SPA route (`/`, `/plan`, `/gantt`, `/retro`, `/consistency`, `/worktree`, `/customization`, `/guidance`, `/sessions`, `/project-settings`, `/tokens`, `/agents/:id`) を curl | 全部 `200` |
+| 6 | browser actual で `?mock=active` 付き 12 画面 visit | white screen 出さず claude.ai/design fixture が表示される |
+| 7 | 重要 3 画面の 1-click flow (⑦ Customization 保存 / ⑬ PMChat 送信 / ⑫ Settings 保存) | REST endpoint に payload が届く (daemon event log で confirm) |
+
+任意 step 失敗 → tag 設置 BLOCK、failed step を user に報告 + fix task を PLAN.md に追加して closure 延期。
+
+#### 3.6.14.6 完成基準 (PLAN.md M0.15 完成基準と整合)
+
+- [ ] 12 画面全部が `?mock=active` で動く (browser white screen 出さない)
+- [ ] 12 画面全部が daemon WS から live data を受信 (mock query 無し時 = production data)
+- [ ] 重要 3 画面 (⑦ Customization / ⑬ PMChat / ⑫ Settings) の 1-click flow が daemon REST に payload を届ける
+- [ ] `redesign/scenarios.js` + `redesign/screens/*.jsx` + `redesign/Redesign App.html` + `redesign/cat.jsx` + `redesign/styles.css` + `redesign/tokens.css` が untouched (`tests/redesign_invariant_test.sh` で gate)
+- [ ] Layer 1 全 test pass (bash + ui + daemon)
+- [ ] Layer 2 browser-interactive smoke pass (`/loom-ui-smoke --scope=full --auto-start`)
+- [ ] Layer 2.5 dogfood smoke 全 7 step pass
+- [ ] Playwright e2e baseline (12 画面 screenshot + 重要 3 画面 1-click flow) pass
+- [ ] SPEC §3.6.14 + `docs/SCREEN_REQUIREMENTS.md` (12 画面の useScenario shape) + `docs/DOC_CONSISTENCY_CHECKLIST.md` (M0.15 check items) update 済
+- [ ] tag `m0.15-complete` 設置 + retro hook trigger
+- [ ] `m0`〜`m5-complete` 全 tag 保持
+
 ### 3.7 プロジェクトライフサイクルと adopt 戦略
 
 claude-loom は **新規プロジェクトの立ち上げ** にも **既存プロジェクトの取り込み（adopt）** にも対応する。両者は明確に区別され、PM が異なるフローで処理する。
