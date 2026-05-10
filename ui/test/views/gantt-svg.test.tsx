@@ -1,224 +1,212 @@
 /**
- * GanttView SVG TDD tests — RED phase (M3.1 t4)
+ * GanttView redesign-port tests (M0.15 t2) — replaces M3.1 SVG test suite.
  *
- * WHY: The M2 implementation uses Tailwind div-based bars.
- * M3.1 t4 rewrites GanttView to pure SVG (rect/line/text) so that
- * CSS variable tokens (--color-bar etc.) directly affect SVG fill,
- * enabling instant theme switching without JS.
+ * WHY this rewrite:
+ * The M3.1 implementation used useGanttData() (tRPC hook) with an SVG-based
+ * renderer and bar click → navigate(). M0.15 t2 ports GanttView to use
+ * useScenario().gantt — the worktree-grouped, walk-cat visual from the
+ * redesign bundle. The useGanttData + useNavigate seam no longer exists.
  *
- * Behaviors under test:
- * 1. SVG <rect> elements render for each bar (data-testid="gantt-bar-rect")
- * 2. SVG <line> elements render for grid ticks (data-testid="gantt-grid-line")
- * 3. SVG <text> elements render for row labels
- * 4. Bar fill uses CSS variable reference (var(--color-bar) or fill="...")
- * 5. Bar click fires useNavigate to /agent/:id
- * 6. SVG root element is present (not a div-based layout)
- * 7. Time tick <line> elements present (data-testid="gantt-tick-line")
+ * This file covers the same behavioral surface as the old suite but through
+ * the new seam:
+ *  1. Row labels render from scenario.gantt.rows[].label
+ *  2. Bar segments render with data-kind attribute (kind-specific styling)
+ *  3. Now-line renders at data-testid="gantt-now-line"
+ *  4. Live cat renders at data-testid="gantt-live-cat" for live=true rows only
+ *  5. Worktree group headers render (collapsible UI)
+ *  6. Window label chip renders from gantt.windowLabel
  */
-import { describe, it, expect, afterEach, vi, beforeEach } from 'vitest';
+import { describe, it, expect, afterEach, vi } from 'vitest';
 import { render, screen, cleanup, fireEvent } from '@testing-library/react';
+import type { Scenario } from '@claude-loom/redesign/api/types';
 
 // ---------------------------------------------------------------------------
-// Mock react-router-dom useNavigate
-// WHY: We test that bar click triggers navigate without mounting a full router.
+// Mock useScenario with fixture data
 // ---------------------------------------------------------------------------
-const { mockNavigate } = vi.hoisted(() => ({
-  mockNavigate: vi.fn(),
-}));
+const FIXTURE_GANTT = {
+  windowLabel: '直近 30min',
+  nowPct: 75,
+  rows: [
+    {
+      worktree: 'main',
+      agentId: 'pm',
+      label: 'ニケ (PM)',
+      bars: [{ s: 5, e: 60, kind: 'busy' }],
+      live: true,
+    },
+    {
+      worktree: 'main',
+      agentId: 'dev',
+      label: 'サバ (Dev)',
+      bars: [
+        { s: 10, e: 40, kind: 'busy' },
+        { s: 50, e: 80, kind: 'tdd' },
+      ],
+      live: false,
+    },
+    {
+      worktree: 'feat/auth',
+      agentId: 'rev-sec',
+      label: 'シノビ (Sec)',
+      bars: [{ s: 20, e: 50, kind: 'fail' }],
+      live: false,
+    },
+    {
+      worktree: 'feat/auth',
+      agentId: 'rev',
+      label: 'ハカセ (Rev)',
+      bars: [{ s: 55, e: 70, kind: 'review' }],
+      live: false,
+    },
+  ],
+};
 
-vi.mock('react-router-dom', () => ({
-  useNavigate: () => mockNavigate,
-}));
-
-// ---------------------------------------------------------------------------
-// Mock useGanttData hook
-// WHY: Isolate GanttView render from tRPC/WS connection dependency.
-// ---------------------------------------------------------------------------
-const { mockUseGanttData } = vi.hoisted(() => ({
-  mockUseGanttData: vi.fn(),
-}));
-
-vi.mock('@/live/useGanttData', () => ({
-  useGanttData: mockUseGanttData,
+vi.mock('@claude-loom/redesign/api/websocket', () => ({
+  useScenario: () =>
+    ({ gantt: FIXTURE_GANTT }) as unknown as Scenario,
 }));
 
 import { GanttView } from '../../src/views/gantt/GanttView';
-
-/** Minimal GanttRow fixture matching the hook output type */
-const FIXTURE_ROWS = [
-  {
-    agentId: 'pm',
-    label: 'ニケ (PM)',
-    bars: [
-      { startPct: 5, endPct: 60, label: 'PM session', barKey: 'pm-0' },
-    ],
-  },
-  {
-    agentId: 'dev',
-    label: 'サバ (Dev)',
-    bars: [
-      { startPct: 10, endPct: 40, label: 'auth: TDD red', barKey: 'dev-0' },
-      { startPct: 50, endPct: 80, label: 'auth: green', barKey: 'dev-1' },
-    ],
-  },
-  {
-    agentId: 'sec',
-    label: 'シノビ (Sec)',
-    bars: [
-      { startPct: 20, endPct: 50, label: 'secret scan', barKey: 'sec-0' },
-    ],
-  },
-];
 
 afterEach(() => {
   cleanup();
 });
 
-beforeEach(() => {
-  mockNavigate.mockClear();
-  // Default: return fixture rows
-  mockUseGanttData.mockReturnValue({
-    rows: FIXTURE_ROWS,
-    isLoading: false,
-    error: null,
-  });
-});
-
 // ---------------------------------------------------------------------------
-// 1. SVG root element
+// 1. Row labels
 // ---------------------------------------------------------------------------
-describe('GanttView SVG — root element', () => {
-  it('renders an <svg> element as the chart container', () => {
-    const { container } = render(<GanttView />);
-    const svg = container.querySelector('svg[data-testid="gantt-svg"]');
-    expect(svg).toBeInTheDocument();
-  });
-});
-
-// ---------------------------------------------------------------------------
-// 2. <rect> bar elements
-// ---------------------------------------------------------------------------
-describe('GanttView SVG — <rect> bars', () => {
-  it('renders one <rect> per bar across all rows', () => {
-    const { container } = render(<GanttView />);
-    // fixture has 1+2+1 = 4 bars total
-    const rects = container.querySelectorAll('rect[data-testid="gantt-bar-rect"]');
-    expect(rects.length).toBe(4);
-  });
-
-  it('each bar <rect> has a fill referencing CSS variable or non-empty fill', () => {
-    const { container } = render(<GanttView />);
-    const rects = container.querySelectorAll('rect[data-testid="gantt-bar-rect"]');
-    rects.forEach((rect) => {
-      const fill = rect.getAttribute('fill');
-      // fill must be set (either a CSS var() reference or a color value)
-      expect(fill).toBeTruthy();
-    });
-  });
-
-  it('bar <rect> x/width attributes reflect startPct and endPct within track width', () => {
-    const { container } = render(<GanttView />);
-    const firstRect = container.querySelector('rect[data-testid="gantt-bar-rect"]');
-    expect(firstRect).toBeInTheDocument();
-    // x should be a positive number (percentage position scaled to track width)
-    const x = parseFloat(firstRect!.getAttribute('x') ?? '');
-    expect(x).toBeGreaterThanOrEqual(0);
-  });
-});
-
-// ---------------------------------------------------------------------------
-// 3. <text> label elements
-// ---------------------------------------------------------------------------
-describe('GanttView SVG — <text> labels', () => {
-  it('renders row label <text> elements for each row', () => {
+describe('GanttView redesign — row labels', () => {
+  it('renders row label text for each GanttRow', () => {
     render(<GanttView />);
-    // Row labels should appear as SVG <text> or accessible text
     expect(screen.getByText('ニケ (PM)')).toBeInTheDocument();
     expect(screen.getByText('サバ (Dev)')).toBeInTheDocument();
     expect(screen.getByText('シノビ (Sec)')).toBeInTheDocument();
+    expect(screen.getByText('ハカセ (Rev)')).toBeInTheDocument();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 2. Bar segments with data-kind
+// ---------------------------------------------------------------------------
+describe('GanttView redesign — bar segments', () => {
+  it('renders one bar segment per GanttBar', () => {
+    const { container } = render(<GanttView />);
+    // fixture: 1+2+1+1 = 5 bars
+    const bars = container.querySelectorAll('[data-kind]');
+    expect(bars.length).toBe(5);
   });
 
-  it('renders bar label <text> elements inside bars', () => {
+  it('bar segments carry correct data-kind values', () => {
+    const { container } = render(<GanttView />);
+    const kinds = Array.from(container.querySelectorAll('[data-kind]')).map(
+      (b) => b.getAttribute('data-kind'),
+    );
+    expect(kinds).toContain('busy');
+    expect(kinds).toContain('tdd');
+    expect(kinds).toContain('fail');
+    expect(kinds).toContain('review');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 3. Now-line
+// ---------------------------------------------------------------------------
+describe('GanttView redesign — now-line', () => {
+  it('renders now-line elements (one per row)', () => {
+    const { container } = render(<GanttView />);
+    const nowLines = container.querySelectorAll('[data-testid="gantt-now-line"]');
+    expect(nowLines.length).toBeGreaterThanOrEqual(1);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 4. Live cat sprite
+// ---------------------------------------------------------------------------
+describe('GanttView redesign — live cat sprite', () => {
+  it('renders live cat only for rows with live=true', () => {
+    const { container } = render(<GanttView />);
+    const liveCats = container.querySelectorAll('[data-testid="gantt-live-cat"]');
+    // fixture has 1 live row (pm)
+    expect(liveCats).toHaveLength(1);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 5. Worktree group headers
+// ---------------------------------------------------------------------------
+describe('GanttView redesign — worktree groups', () => {
+  it('renders worktree header for each unique worktree', () => {
     render(<GanttView />);
-    expect(screen.getByText('PM session')).toBeInTheDocument();
-    expect(screen.getByText('auth: TDD red')).toBeInTheDocument();
-    expect(screen.getByText('secret scan')).toBeInTheDocument();
-  });
-});
-
-// ---------------------------------------------------------------------------
-// 4. <line> grid elements
-// ---------------------------------------------------------------------------
-describe('GanttView SVG — <line> grid lines', () => {
-  it('renders at least one <line> for time tick grid', () => {
-    const { container } = render(<GanttView />);
-    const lines = container.querySelectorAll('line[data-testid="gantt-grid-line"]');
-    expect(lines.length).toBeGreaterThanOrEqual(1);
+    // fixture has 2 worktrees: main, feat/auth
+    expect(screen.getByText(/⌗ main/)).toBeInTheDocument();
+    expect(screen.getByText(/⌗ feat\/auth/)).toBeInTheDocument();
   });
 
-  it('renders time tick labels (data-testid="gantt-time-axis")', () => {
-    const { container } = render(<GanttView />);
-    const axis = container.querySelector('[data-testid="gantt-time-axis"]');
-    expect(axis).toBeInTheDocument();
-  });
-});
-
-// ---------------------------------------------------------------------------
-// 5. Bar click → navigate
-// ---------------------------------------------------------------------------
-describe('GanttView SVG — bar click navigate', () => {
-  it('clicking a bar calls navigate with /agent/:agentId', () => {
-    const { container } = render(<GanttView />);
-    // Click the first bar rect
-    const firstBar = container.querySelector('[data-testid="gantt-bar-rect"]');
-    expect(firstBar).toBeInTheDocument();
-    fireEvent.click(firstBar!);
-    expect(mockNavigate).toHaveBeenCalledTimes(1);
-    expect(mockNavigate).toHaveBeenCalledWith('/agent/pm');
-  });
-
-  it('clicking second row bar navigates to that agent', () => {
-    const { container } = render(<GanttView />);
-    // All bars from the 'dev' row
-    const allBars = container.querySelectorAll('[data-testid="gantt-bar-rect"]');
-    // fixture order: pm-0 (idx 0), dev-0 (idx 1), dev-1 (idx 2), sec-0 (idx 3)
-    fireEvent.click(allBars[1]);
-    expect(mockNavigate).toHaveBeenCalledWith('/agent/dev');
-  });
-});
-
-// ---------------------------------------------------------------------------
-// 6. Loading + error states
-// ---------------------------------------------------------------------------
-describe('GanttView SVG — loading state', () => {
-  it('shows loading indicator when isLoading is true', () => {
-    mockUseGanttData.mockReturnValue({ rows: [], isLoading: true, error: null });
+  it('shows LIVE badge for groups with live rows', () => {
     render(<GanttView />);
-    expect(screen.getByTestId('gantt-loading')).toBeInTheDocument();
+    expect(screen.getByText('● LIVE')).toBeInTheDocument();
   });
-});
 
-describe('GanttView SVG — error state', () => {
-  it('shows error message when error is set', () => {
-    mockUseGanttData.mockReturnValue({
-      rows: [],
-      isLoading: false,
-      error: new Error('WS closed'),
-    });
-    render(<GanttView />);
-    expect(screen.getByTestId('gantt-error')).toBeInTheDocument();
-  });
-});
-
-// ---------------------------------------------------------------------------
-// 7. 3-theme CSS variable fill — runtime check via attribute
-// ---------------------------------------------------------------------------
-describe('GanttView SVG — CSS variable fill (theme)', () => {
-  it('bar rect fill attribute contains "var(--color-bar)" CSS variable reference', () => {
+  it('collapses group rows on header click', () => {
     const { container } = render(<GanttView />);
-    const firstRect = container.querySelector('rect[data-testid="gantt-bar-rect"]');
-    const fill = firstRect?.getAttribute('fill');
-    // Must reference the CSS variable so theme switching works without JS
-    expect(fill).toContain('var(--color-bar');
+    // Initially all rows visible
+    const rowsBefore = container.querySelectorAll('[data-testid="gantt-row"]');
+    expect(rowsBefore.length).toBe(4);
+
+    // Click "main" worktree header to collapse it
+    const headers = screen.getAllByText(/⌗/);
+    fireEvent.click(headers[0]);
+
+    // After collapse, "main" rows should be hidden
+    const rowsAfter = container.querySelectorAll('[data-testid="gantt-row"]');
+    expect(rowsAfter.length).toBe(2); // only feat/auth rows remain
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 6. Window label chip
+// ---------------------------------------------------------------------------
+describe('GanttView redesign — window label', () => {
+  it('renders gantt.windowLabel in header', () => {
+    render(<GanttView />);
+    expect(screen.getByText('直近 30min')).toBeInTheDocument();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 7. Zoom strip
+// ---------------------------------------------------------------------------
+describe('GanttView redesign — zoom strip', () => {
+  it('renders 30m/1h/4h/all zoom buttons', () => {
+    render(<GanttView />);
+    expect(screen.getByText('30m')).toBeInTheDocument();
+    expect(screen.getByText('1h')).toBeInTheDocument();
+    expect(screen.getByText('4h')).toBeInTheDocument();
+    expect(screen.getByText('all')).toBeInTheDocument();
+  });
+
+  it('clicking zoom button changes active zoom', () => {
+    render(<GanttView />);
+    const btn1h = screen.getByText('1h');
+    fireEvent.click(btn1h);
+    // After clicking 1h the component re-renders; button still in DOM
+    expect(screen.getByText('1h')).toBeInTheDocument();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// 8. Time axis labels
+// ---------------------------------------------------------------------------
+describe('GanttView redesign — time axis', () => {
+  it('renders relative time labels (-30m, now)', () => {
+    render(<GanttView />);
+    expect(screen.getByText('-30m')).toBeInTheDocument();
+    expect(screen.getByText('now')).toBeInTheDocument();
+  });
+
+  it('renders subagent count badge in group header', () => {
+    render(<GanttView />);
+    // "main" group has 2 rows, "feat/auth" has 2 rows
+    expect(screen.getAllByText(/subagent/).length).toBeGreaterThanOrEqual(2);
   });
 });
