@@ -1069,9 +1069,9 @@ mock fixture (`redesign/scenarios.js` + `redesign/screens/*.jsx` + `redesign/Red
 dispatcher: Strategy a × 3 / single mode × 3 / **worktree isolation 必須** (同 message 内 3 Agent invocation)
 
 #### batch B — 確信:高 group B (3 dev parallel、1 trio)
-- [ ] ⑦ Customization redesign port <!-- id: m0.15-t5 status: todo reviewer_mode: trio planned_files: ui/src/views/customization/*.tsx, ui/test/views/customization/*.test.tsx -->
-- [ ] ⑧ Guidance redesign port <!-- id: m0.15-t6 status: todo planned_files: ui/src/views/guidance/*.tsx, ui/test/views/guidance/*.test.tsx -->
-- [ ] ⑨ AgentDetailPanel redesign port <!-- id: m0.15-t7 status: todo planned_files: ui/src/views/room/AgentDetailPanel.tsx, ui/test/views/room/agent-detail-panel.test.tsx -->
+- [x] ⑦ Customization redesign port <!-- id: m0.15-t5 status: done committed_sha: da97c03 path: C (trio mode self_review, 4-aspect checklist) reviewer_mode: trio planned_files: ui/src/views/customization/*.tsx, ui/test/views/customization/*.test.tsx -->
+- [x] ⑧ Guidance redesign port <!-- id: m0.15-t6 status: done committed_sha: 5f878f3 path: C (self_review, 4-aspect checklist) planned_files: ui/src/views/guidance/*.tsx, ui/test/views/guidance/*.test.tsx -->
+- [x] ⑨ AgentDetailPanel redesign port <!-- id: m0.15-t7 status: done committed_sha: 002d218 path: C (self_review, 4-aspect checklist) planned_files: ui/src/views/room/AgentDetailPanel.tsx, ui/test/views/room/agent-detail-panel.test.tsx -->
 
 dispatcher: Strategy a × 3 / single + trio + single / **worktree isolation 必須**
 
