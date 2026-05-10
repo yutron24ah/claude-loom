@@ -2,14 +2,21 @@
  * SubroomView — Worktree sub-agent detail modal.
  *
  * WHY this component: clicking a SubroomClone ghost cat opens this view,
- * showing branch state, current task, TDD phase, activity log, and a
- * mini gantt for just this clone's work.
+ * showing branch state, current task, path info, disk usage, and status.
+ *
+ * M0.15 t4 redesign port: replaces hardcoded SESSIONS fixture with live
+ * scenario.worktrees[] data from useScenario(). Structural sections
+ * (NOW / ACTIVITY / THIS BRANCH / PARENT) are preserved for test
+ * compatibility (subroom-view.test.tsx M0.11.4 contract).
+ *
+ * RoomView calling interface is unchanged:
+ *   branch: string, parentCat: RosterEntry, status?: SubroomStatus, width?: number
  *
  * Full port of /tmp/claude-room-handoff/claude-room/project/subroom.jsx (179 lines).
  * RPG-style frame uses .rpg-frame CSS class from Phase A tokens.css.
- *
- * Mock data is branch-keyed; real data wired in M3+ via tRPC worktreeRouter.
  */
+import { useScenario } from '@claude-loom/redesign/api/websocket';
+import type { Worktree } from '@claude-loom/redesign/api/types';
 import { CatSprite } from '../../components/CatSprite';
 import type { RosterEntry } from '../../data/roster';
 
@@ -22,78 +29,6 @@ interface SubroomViewProps {
   status?: SubroomStatus;
 }
 
-// Branch-specific demo content.
-// WHY hard-coded: real data from daemon wired in M3+; mock keeps visual fidelity now.
-interface SessionData {
-  task: string;
-  tdd: string;
-  tddDetail: string;
-  file: string;
-  diffAdds: number;
-  diffDels: number;
-  commits: number;
-  activity: Array<{ t: string; m: string; k: string }>;
-  bars: Array<{ s: number; e: number; c: string; l: string }>;
-}
-
-const SESSIONS: Record<string, SessionData> = {
-  'feat/oauth': {
-    task: 'freee OAuth callback の URL 検証',
-    tdd: 'RED',
-    tddDetail: 'test 3つ追加 → 失敗確認済',
-    file: 'src/auth/oauth.callback.ts',
-    diffAdds: 28,
-    diffDels: 4,
-    commits: 3,
-    activity: [
-      { t: '14:21', m: 'test: callback URL の query 検証を追加', k: 'test' },
-      { t: '14:18', m: 'feat: callback handler stub', k: 'code' },
-      { t: '14:14', m: 'spec §3.6.5 → cases 抽出', k: 'spec' },
-      { t: '14:09', m: 'branch: feat/oauth 作成', k: 'git' },
-    ],
-    bars: [
-      { s: 0,  e: 18, c: 'var(--p-success)', l: 'spec' },
-      { s: 18, e: 38, c: 'var(--p-warn)',    l: 'RED' },
-      { s: 38, e: 62, c: 'var(--p-warn)',    l: 'RED' },
-      { s: 62, e: 95, c: 'var(--p-accent)',  l: 'writing now' },
-    ],
-  },
-  'fix/test-flake': {
-    task: 'user.service.test.ts の flake 調査',
-    tdd: 'DIAGNOSE',
-    tddDetail: 'race condition 疑い、再現中',
-    file: 'src/users/user.service.test.ts',
-    diffAdds: 5,
-    diffDels: 12,
-    commits: 1,
-    activity: [
-      { t: '14:22', m: "verdict: 'review' をリクエスト", k: 'verdict' },
-      { t: '14:17', m: 'test: timing を deterministic に', k: 'test' },
-      { t: '14:11', m: '再現スクリプト → flake 80%', k: 'diag' },
-      { t: '14:03', m: 'branch: fix/test-flake 作成', k: 'git' },
-    ],
-    bars: [
-      { s: 0,  e: 22, c: 'var(--p-stone)',   l: 'repro' },
-      { s: 22, e: 55, c: 'var(--p-warn)',    l: 'diagnose' },
-      { s: 55, e: 80, c: 'var(--p-success)', l: 'fix' },
-      { s: 80, e: 95, c: 'var(--p-accent)',  l: 'review' },
-    ],
-  },
-};
-
-// Fallback for unknown branches.
-const FALLBACK_SESSION: SessionData = {
-  task: '—',
-  tdd: '—',
-  tddDetail: '',
-  file: '',
-  diffAdds: 0,
-  diffDels: 0,
-  commits: 0,
-  activity: [],
-  bars: [],
-};
-
 const STATUS_COLOR: Record<SubroomStatus, string> = {
   busy:   'var(--p-success)',
   review: 'var(--p-accent)',
@@ -101,6 +36,7 @@ const STATUS_COLOR: Record<SubroomStatus, string> = {
 };
 
 // WHY: activity kind → background colour mapping mirrors design source exactly.
+// Kept for structural rendering even when live data is minimal.
 const KIND_BG: Record<string, string> = {
   test:    'var(--p-warn)',
   code:    'var(--p-accent)',
@@ -110,13 +46,98 @@ const KIND_BG: Record<string, string> = {
   diag:    'var(--p-warn)',
 };
 
+// -------------------------------------------------------------------------
+// Data derivation from Worktree (scenario-driven)
+// -------------------------------------------------------------------------
+
+interface DerivedSession {
+  task: string;
+  tdd: string;
+  tddDetail: string;
+  file: string;
+  diffAdds: number;
+  diffDels: number;
+  commits: number;
+  activity: Array<{ t: string; m: string; k: string }>;
+  bars: Array<{ s: number; e: number; c: string; l: string }>;
+  path: string;
+  diskMB: number;
+  lastCommit: string;
+}
+
+/**
+ * Derives display data from a Worktree entry.
+ * WHY: Worktree type doesn't carry session-level data (diff/activity/gantt bars);
+ * we show lastCommit as the "NOW" task, and derive a simple gantt bar from status.
+ * Full session data will be wired in Phase 3 t13 via daemon subscription.
+ */
+function deriveSession(wt: Worktree | undefined): DerivedSession {
+  if (!wt) {
+    return {
+      task: '—',
+      tdd: '—',
+      tddDetail: '',
+      file: '',
+      diffAdds: 0,
+      diffDels: 0,
+      commits: 0,
+      activity: [],
+      bars: [],
+      path: '',
+      diskMB: 0,
+      lastCommit: '',
+    };
+  }
+
+  // Derive TDD label from status
+  const tddMap: Record<string, string> = {
+    busy:   'ACTIVE',
+    review: 'REVIEW',
+    idle:   'IDLE',
+    failed: 'FAILED',
+  };
+  const tdd = tddMap[wt.status] ?? '—';
+
+  // Derive a single gantt bar color from status
+  const barColorMap: Record<string, string> = {
+    busy:   'var(--p-success)',
+    review: 'var(--p-accent)',
+    idle:   'var(--p-stone)',
+    failed: 'var(--p-error)',
+  };
+  const barColor = barColorMap[wt.status] ?? 'var(--p-stone)';
+
+  // Derive activity entry from lastCommit
+  const activity: Array<{ t: string; m: string; k: string }> = wt.lastCommit
+    ? [{ t: wt.createdAt, m: wt.lastCommit, k: 'git' }]
+    : [];
+
+  return {
+    task: wt.lastCommit || '—',
+    tdd,
+    tddDetail: `${wt.use} worktree · ${wt.diskMB} MB`,
+    file: wt.path,
+    diffAdds: 0,
+    diffDels: 0,
+    commits: 0,
+    activity,
+    bars: [{ s: 0, e: 95, c: barColor, l: wt.status }],
+    path: wt.path,
+    diskMB: wt.diskMB,
+    lastCommit: wt.lastCommit,
+  };
+}
+
 export function SubroomView({
   width = 720,
   branch,
   parentCat,
   status = 'busy',
 }: SubroomViewProps): JSX.Element {
-  const session = SESSIONS[branch] ?? FALLBACK_SESSION;
+  const sc = useScenario();
+  const worktrees = sc.worktrees ?? [];
+  const matchedWt = worktrees.find((w) => w.branch === branch);
+  const session = deriveSession(matchedWt);
   const statusColor = STATUS_COLOR[status];
 
   return (
@@ -185,7 +206,7 @@ export function SubroomView({
 
       {/* BODY — 2 columns */}
       <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 0 }}>
-        {/* LEFT — current task + diff + activity */}
+        {/* LEFT — current task + disk info + activity */}
         <div
           style={{
             padding: 16,
@@ -195,7 +216,7 @@ export function SubroomView({
             gap: 12,
           }}
         >
-          {/* current task */}
+          {/* NOW section — current task (last commit) */}
           <div>
             <div
               style={{
@@ -236,7 +257,7 @@ export function SubroomView({
             </div>
           </div>
 
-          {/* file + diff */}
+          {/* Path / disk info */}
           {session.file && (
             <div
               style={{
@@ -253,7 +274,7 @@ export function SubroomView({
                   marginBottom: 3,
                 }}
               >
-                EDITING
+                PATH
               </div>
               <div
                 style={{
@@ -267,21 +288,17 @@ export function SubroomView({
               >
                 {session.file}
               </div>
-              <div style={{ marginTop: 4, fontSize: 10, display: 'flex', gap: 10 }}>
-                <span style={{ color: 'var(--p-success)', fontWeight: 700 }}>
-                  +{session.diffAdds}
-                </span>
-                <span style={{ color: 'var(--p-error)', fontWeight: 700 }}>
-                  −{session.diffDels}
-                </span>
-                <span style={{ color: 'var(--p-text-muted)' }}>
-                  · {session.commits} commits
-                </span>
-              </div>
+              {session.diskMB > 0 && (
+                <div style={{ marginTop: 4, fontSize: 10, display: 'flex', gap: 10 }}>
+                  <span style={{ color: 'var(--p-text-muted)' }}>
+                    {session.diskMB} MB on disk
+                  </span>
+                </div>
+              )}
             </div>
           )}
 
-          {/* activity */}
+          {/* ACTIVITY section */}
           <div>
             <div
               style={{
@@ -294,51 +311,57 @@ export function SubroomView({
               ▶ ACTIVITY
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-              {session.activity.map((a, i) => (
-                <div
-                  key={i}
-                  style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: 11 }}
-                >
-                  <span
-                    style={{
-                      fontSize: 9,
-                      color: 'var(--p-text-muted)',
-                      width: 36,
-                      flexShrink: 0,
-                    }}
+              {session.activity.length > 0 ? (
+                session.activity.map((a, i) => (
+                  <div
+                    key={i}
+                    style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: 11 }}
                   >
-                    {a.t}
-                  </span>
-                  <span
-                    style={{
-                      fontSize: 8,
-                      fontWeight: 700,
-                      padding: '1px 5px',
-                      background: KIND_BG[a.k] || 'var(--p-stone)',
-                      color: 'white',
-                      border: '1.5px solid var(--p-border)',
-                      width: 50,
-                      textAlign: 'center',
-                      flexShrink: 0,
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.04em',
-                    }}
-                  >
-                    {a.k}
-                  </span>
-                  <span
-                    style={{
-                      flex: 1,
-                      color: 'var(--p-text)',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap',
-                    }}
-                  >
-                    {a.m}
-                  </span>
-                </div>
-              ))}
+                    <span
+                      style={{
+                        fontSize: 9,
+                        color: 'var(--p-text-muted)',
+                        width: 36,
+                        flexShrink: 0,
+                      }}
+                    >
+                      {a.t}
+                    </span>
+                    <span
+                      style={{
+                        fontSize: 8,
+                        fontWeight: 700,
+                        padding: '1px 5px',
+                        background: KIND_BG[a.k] || 'var(--p-stone)',
+                        color: 'white',
+                        border: '1.5px solid var(--p-border)',
+                        width: 50,
+                        textAlign: 'center',
+                        flexShrink: 0,
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.04em',
+                      }}
+                    >
+                      {a.k}
+                    </span>
+                    <span
+                      style={{
+                        flex: 1,
+                        color: 'var(--p-text)',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      {a.m}
+                    </span>
+                  </div>
+                ))
+              ) : (
+                <span style={{ fontSize: 10, color: 'var(--p-text-muted)' }}>
+                  — no recent activity
+                </span>
+              )}
             </div>
           </div>
         </div>
@@ -352,7 +375,7 @@ export function SubroomView({
             gap: 12,
           }}
         >
-          {/* mini gantt */}
+          {/* THIS BRANCH section — mini gantt */}
           <div>
             <div
               style={{
@@ -416,7 +439,7 @@ export function SubroomView({
             </div>
           </div>
 
-          {/* meta — parent + parallelism info */}
+          {/* PARENT meta panel */}
           <div
             style={{
               background: 'var(--p-tint)',
@@ -472,7 +495,7 @@ export function SubroomView({
           >
             ◆ worktree path:{' '}
             <span style={{ fontWeight: 700, color: 'var(--p-text)' }}>
-              ~/loom/worktrees/{branch.replace('/', '-')}
+              {session.path || `~/loom/worktrees/${branch.replace('/', '-')}`}
             </span>
           </div>
         </div>
