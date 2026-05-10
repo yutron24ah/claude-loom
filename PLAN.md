@@ -1055,16 +1055,16 @@ mock fixture (`redesign/scenarios.js` + `redesign/screens/*.jsx` + `redesign/Red
 ### Phase 1: reducer foundation (sequential)
 
 - [x] redesign port 先行 t0: ① RoomView 駆動 (agent.change WS event のみ wire、本 milestone 着手前の session 内で完了済) <!-- id: m0.15-t0 status: done planned_files: redesign/api/websocket.ts, redesign/api/types.ts, redesign/scenarios.d.ts, ui/src/views/room/RoomView.tsx, ui/test/views/room/room-mock-active.test.tsx -->
-- [ ] websocket.ts に 8 event reducer 追加 <!-- id: m0.15-t1 status: todo planned_files: redesign/api/websocket.ts, redesign/api/types.ts, ui/test/redesign/websocket-reducer.test.ts -->
+- [x] websocket.ts に 8 event reducer 追加 <!-- id: m0.15-t1 status: done committed_sha: 7b2ca4b path: C (self_review, 4-aspect checklist + file:line refs) planned_files: redesign/api/websocket.ts, redesign/api/types.ts, ui/test/redesign/websocket-reducer.test.ts -->
   - todo.change / plan.change / worktree.change / learned_guidance.change / discipline_metric.update / approval.request / session.change / finding.new
   - dispatcher: Strategy a / single mode / shared tree
 
 ### Phase 2: parallel screen batches (worktree isolation 必須)
 
 #### batch A — 確信:高 group A (3 dev parallel)
-- [ ] ② Gantt redesign port <!-- id: m0.15-t2 status: todo planned_files: ui/src/views/gantt/*.tsx, ui/test/views/gantt/*.test.tsx -->
-- [ ] ③ Plan redesign port <!-- id: m0.15-t3 status: todo planned_files: ui/src/views/plan/*.tsx, ui/test/views/plan/*.test.tsx -->
-- [ ] ⑥ Worktree redesign port <!-- id: m0.15-t4 status: todo planned_files: ui/src/views/worktree/*.tsx, ui/test/views/worktree/*.test.tsx -->
+- [x] ② Gantt redesign port <!-- id: m0.15-t2 status: done committed_sha: 086629b path: C (self_review, 4-aspect checklist + file:line refs) planned_files: ui/src/views/gantt/*.tsx, ui/test/views/gantt/*.test.tsx -->
+- [x] ③ Plan redesign port <!-- id: m0.15-t3 status: done committed_sha: 2b401c5 path: C (self_review, 4-aspect checklist) planned_files: ui/src/views/plan/*.tsx, ui/test/views/plan/*.test.tsx -->
+- [x] ⑥ Worktree redesign port <!-- id: m0.15-t4 status: done committed_sha: cebdbd8 path: C (self_review, 4-aspect checklist) planned_files: ui/src/views/worktree/*.tsx, ui/test/views/worktree/*.test.tsx -->
 
 dispatcher: Strategy a × 3 / single mode × 3 / **worktree isolation 必須** (同 message 内 3 Agent invocation)
 
