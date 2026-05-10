@@ -1,24 +1,24 @@
 /**
  * RoomView — DOM/SVG orchestration hub for the claude-loom room.
  *
- * WHY rewrite (SPEC §3.6.9.1 α-2):
- * M3.0 used Phaser canvas as the primary rendering layer. M0.11.4 t12 replaces
- * the Phaser canvas with DOM/SVG components (Phase B Stage B1 + B2) and
- * orchestrates them in this single component. Phaser-related source files
- * were physically deleted in Phase D t17 (M0.11.4).
+ * WHY this rewrite (M0.12 redesign):
+ * The previous version (M0.11.4 / Phase B) used a hard-coded AGENT_STATES
+ * literal — `task: "GREEN にする"` etc. — which conflated design-time fixture
+ * with production state. The redesign bundle (claude-loom/redesign/) reframes
+ * this so that the room consumes a *scenario shape* via `useScenario()`:
  *
- * Phase B components orchestrated here:
- * - Stage B1: RoomBackground, RoomWallDecor, GanttPoster, PlanPoster,
- *             ConsistencyPoster, Islands, Plant, RoomModeToggle
- * - Stage B2: DeskStation (6 agents), SubroomClone (2 clones),
- *             RetroGathering (retro mode), AgentDetailPanel (overlay)
+ *   - ?mock=idle  → all cats sleeping (last-seen badges, hush filter)
+ *   - ?mock=active → busy cats animate via agent.change deltas
+ *   - ?mock=failed → dev cat in fail state
+ *   - no mock query → live daemon WS feed
  *
- * CRITICAL CONTRACT: `data-testid="room-canvas"` must remain on the wrapper div.
- * AppShell.test.tsx and main.test.tsx verify this attribute exists in the DOM.
+ * The component otherwise preserves M0.11.4 contracts:
+ *   - `data-testid="room-canvas"` on the wrapper (AppShell.test.tsx)
+ *   - retroMode toggle, SubroomClone overlays, modal overlays
+ *   - useViewStore.setSelectedAgentId on agent click
  *
- * Phase C views (PlanView / GanttView / RetroView / ConsistencyView) will be
- * rewritten in the next Phase. Placeholders are used here and will be swapped
- * out without requiring import changes (same file paths).
+ * SOURCE OF TRUTH for the visual layout: redesign/screens/room.jsx (read-only).
+ * SOURCE OF TRUTH for the data shape:    redesign/api/types.ts.
  */
 import React, { useState } from 'react';
 import { RoomBackground } from './RoomBackground';
@@ -29,7 +29,7 @@ import { Islands } from './Islands';
 import { GanttPoster } from './wall-posters/GanttPoster';
 import { PlanPoster } from './wall-posters/PlanPoster';
 import { ConsistencyPoster } from './wall-posters/ConsistencyPoster';
-import { DeskStation } from './DeskStation';
+import { DeskStation, type DeskStatus } from './DeskStation';
 import { SubroomClone } from './SubroomClone';
 import { RetroGathering } from './RetroGathering';
 import { AgentDetailPanel } from './AgentDetailPanel';
@@ -37,6 +37,8 @@ import { SubroomView } from '../worktree/SubroomView';
 import { ROSTER } from '../../data/roster';
 import type { RosterEntry } from '../../data/roster';
 import { useViewStore } from '../../store/view';
+import { useScenario } from '@claude-loom/redesign/api/websocket';
+import type { AgentState } from '@claude-loom/redesign/api/types';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -57,50 +59,78 @@ export interface RoomViewProps {
 }
 
 // ---------------------------------------------------------------------------
-// Constants (SPEC §3.6.10 SSoT — extracted from JSX for testability)
+// Constants — agents that have a *desk* in the open office.
+// (retro/* agents are introduced via RetroGathering when retroMode is on.)
+// Ordered to match the design source: PM at the top-right manager corner,
+// Dev on the left, three reviewers along the bottom-right row, plus the
+// generic 'rev' kept for backwards compatibility with M0.11.4 tests.
 // ---------------------------------------------------------------------------
-
-// WHY: per-agent live state drives DeskStation visual (task + tdd + scroll props).
-// Mock runtime state — will be replaced by daemon tRPC subscription in M3.2.
-interface AgentState {
-  catId: string;
-  status: 'busy' | 'idle' | 'review' | 'fail' | 'tdd';
-  task?: string;
-  label: string;
-  progress: number;
-  tdd?: string;
-  scroll?: boolean;
-}
-
-const AGENT_STATES: readonly AgentState[] = [
-  { catId: 'pm',       status: 'busy',   task: '仕様確認中',   label: 'PM',         progress: 62, scroll: true },
-  { catId: 'dev',      status: 'busy',   task: 'GREEN にする',  label: 'Dev',        progress: 78, tdd: 'GREEN', scroll: true },
-  { catId: 'rev',      status: 'review', task: 'verdict 草稿',  label: 'Reviewer',   progress: 45 },
-  { catId: 'rev-code', status: 'review', task: 'catch 漏れ 1',  label: 'Code Rev',   progress: 30, scroll: true },
-  { catId: 'rev-test', status: 'busy',   task: 'coverage 確認', label: 'Test Rev',   progress: 84 },
-  { catId: 'rev-sec',  status: 'idle',                          label: 'Sec Rev',    progress: 0,  scroll: true },
-  { catId: 'retro-pm', status: 'busy',   task: 'retro 集合〜',  label: 'Retro PM',   progress: 22 },
-  { catId: 'retro-agg',status: 'busy',   task: 'action plan',   label: 'Aggregator', progress: 55 },
+const ROOM_AGENT_IDS = [
+  'pm',
+  'dev',
+  'rev',
+  'rev-code',
+  'rev-test',
+  'rev-sec',
 ] as const;
+
+type RoomAgentId = (typeof ROOM_AGENT_IDS)[number];
 
 // WHY: position table derived from design source room.jsx L335-345.
 // Width-relative positions computed via factory so tests can pass custom width.
-function buildPositions(width: number): Record<string, { x: number; y: number }> {
+function buildPositions(width: number): Record<RoomAgentId, { x: number; y: number }> {
   return {
-    pm:         { x: width / 2 - 50, y: 220 },
-    dev:        { x: 130,            y: 400 },
-    rev:        { x: width - 380,    y: 400 },
-    'rev-code': { x: width - 270,    y: 400 },
-    'rev-test': { x: width - 160,    y: 400 },
-    'rev-sec':  { x: width - 270,    y: 480 },
+    pm: { x: width / 2 - 50, y: 220 },
+    dev: { x: 130, y: 400 },
+    rev: { x: width - 380, y: 400 },
+    'rev-code': { x: width - 270, y: 400 },
+    'rev-test': { x: width - 160, y: 400 },
+    'rev-sec': { x: width - 270, y: 480 },
   };
 }
 
 // WHY: clone data is design-source constant — real worktree state wired in M3+.
 const SUBROOM_CLONES: readonly { branch: string; status: SubroomStatus; x: number; y: number }[] = [
-  { branch: 'feat/oauth',     status: 'busy',   x: 218, y: 408 },
+  { branch: 'feat/oauth', status: 'busy', x: 218, y: 408 },
   { branch: 'fix/test-flake', status: 'review', x: 252, y: 446 },
 ] as const;
+
+// ---------------------------------------------------------------------------
+// AgentState (scenario shape) → DeskStation props mapping
+// ---------------------------------------------------------------------------
+// Scenario AgentStatus enum:  idle | busy | review | failed | completed
+// DeskStation DeskStatus enum: idle | busy | review | fail   | tdd
+// 'failed' → 'fail'      (visual error state)
+// 'completed' → 'idle'   (work done, cat naps)
+// 'tdd' is currently authored by the room itself when scenario hints
+//        an in-progress red-green cycle; today it is left undriven and
+//        the existing tests for that label still rely on hard-coded fixture.
+function toDeskStatus(state: AgentState | undefined): DeskStatus {
+  const s = state?.status ?? 'idle';
+  if (s === 'failed') return 'fail';
+  if (s === 'completed') return 'idle';
+  if (s === 'busy' || s === 'review' || s === 'idle') return s;
+  return 'idle';
+}
+
+function truncate(s: string, n: number): string {
+  return s.length > n ? `${s.slice(0, n - 1)}…` : s;
+}
+
+function toBubble(state: AgentState | undefined): string | undefined {
+  if (!state) return undefined;
+  if (state.currentTool) return state.currentTool;
+  if (state.currentReasoning) return truncate(state.currentReasoning, 28);
+  return undefined;
+}
+
+function toLabel(state: AgentState | undefined, fallback: string): string {
+  if (!state || state.status === 'idle') {
+    const seen = state?.lastSeenAt;
+    return seen ? `last: ${seen}` : fallback;
+  }
+  return fallback;
+}
 
 // ---------------------------------------------------------------------------
 // RoomView component
@@ -110,6 +140,7 @@ export function RoomView({
   height = 660,
   initialSelected = null,
 }: RoomViewProps): JSX.Element {
+  const scenario = useScenario();
   const [sel, setSel] = useState<string | null>(initialSelected ?? null);
   const [showPlan, setShowPlan] = useState(false);
   const [showGantt, setShowGantt] = useState(false);
@@ -121,7 +152,7 @@ export function RoomView({
 
   // Resolve selected agent from ROSTER for AgentDetailPanel
   const selectedEntry = sel
-    ? ROSTER.find((r) => r.id === sel) ?? null
+    ? (ROSTER.find((r) => r.id === sel) ?? null)
     : null;
 
   // Resolve dev cat for SubroomClones
@@ -193,24 +224,26 @@ export function RoomView({
 
       {/* === LAYER 6: DeskStation agents (hidden in retro mode) === */}
       {!retroMode &&
-        AGENT_STATES.filter((a) => positions[a.catId]).map((a) => {
-          const cat = ROSTER.find((r) => r.id === a.catId);
+        ROOM_AGENT_IDS.map((catId) => {
+          const cat = ROSTER.find((r) => r.id === catId);
           if (!cat) return null;
-          const p = positions[a.catId];
+          const p = positions[catId];
+          const live = scenario.agents[catId];
+          const deskStatus = toDeskStatus(live);
+          const bubble = toBubble(live);
           return (
             <DeskStation
-              key={a.catId}
+              key={catId}
               x={p.x}
               y={p.y}
               cat={cat}
-              status={a.status}
-              task={a.task}
-              tdd={a.tdd}
-              scroll={a.scroll}
-              label={a.label}
-              selected={sel === a.catId}
+              status={deskStatus}
+              task={bubble}
+              scroll={live?.status !== 'idle'}
+              label={toLabel(live, cat.role)}
+              selected={sel === catId}
               onClick={() => {
-                const next = sel === a.catId ? null : a.catId;
+                const next = sel === catId ? null : catId;
                 setSel(next);
                 useViewStore.getState().setSelectedAgentId(next);
               }}

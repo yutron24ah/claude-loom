@@ -1,0 +1,22 @@
+{
+  "name": "@claude-loom/redesign",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "claude-loom UI redesign — mock SCENARIOS fixture (prototype) + production hook + TypeScript shape contract.",
+  "exports": {
+    "./api/types": "./api/types.ts",
+    "./api/websocket": "./api/websocket.ts",
+    "./scenarios": {
+      "types": "./scenarios.d.ts",
+      "default": "./scenarios.js"
+    },
+    "./scenarios.js": "./scenarios.js"
+  },
+  "peerDependencies": {
+    "react": "^18.3.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.0"
+  }
+}
