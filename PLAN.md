@@ -1078,7 +1078,7 @@ dispatcher: Strategy a × 3 / single + trio + single / **worktree isolation 必�
 #### batch C — 確信:高 group C (3 dev parallel)
 - [ ] ⑩ Sessions redesign port <!-- id: m0.15-t8 status: todo planned_files: ui/src/views/session-list/*.tsx, ui/test/views/session-list/*.test.tsx -->
 - [ ] ⑪ Tokens redesign port <!-- id: m0.15-t9 status: todo planned_files: ui/src/views/tokens/*.tsx, ui/test/views/tokens/*.test.tsx -->
-- [ ] ⑫ Settings redesign port <!-- id: m0.15-t10 status: todo planned_files: ui/src/views/project-settings/*.tsx, ui/test/views/project-settings/*.test.tsx -->
+- [x] ⑫ Settings redesign port <!-- id: m0.15-t10 status: done planned_files: ui/src/views/project-settings/*.tsx, ui/test/views/project-settings/*.test.tsx -->
 
 dispatcher: Strategy a × 3 / single mode × 3 / **worktree isolation 必須**
 
