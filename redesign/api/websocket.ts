@@ -17,8 +17,25 @@ import type {
   AgentChangePayload,
   AgentState,
   AgentStatus,
+  ApprovalRequestPayload,
+  DisciplineMetricUpdatePayload,
+  FindingNewPayload,
+  LearnedGuidanceChangePayload,
+  Milestone,
+  MilestoneStatus,
+  PMPermissionRequest,
+  PMRisk,
+  PlanChangePayload,
   Scenario,
   ScenarioKey,
+  SessionChangePayload,
+  SessionItem,
+  TaskToolHealth,
+  TodoChangePayload,
+  TodoStatus,
+  Verdict,
+  Worktree,
+  WorktreeChangePayload,
 } from "./types";
 import { SCENARIOS } from "../scenarios.js";
 
@@ -41,6 +58,28 @@ function readMockKey(): ScenarioKey | null {
 // Live store (small pub/sub holding the latest aggregated Scenario)
 // -------------------------------------------------------------
 type Listener = () => void;
+
+// WHY: client-side rule-based risk classification for approval.request events.
+// The daemon cannot know risk without the client's context (e.g., cwd for
+// Write path checks). Simple regex matching covers the most dangerous patterns.
+const HIGH_RISK_PATTERNS = [
+  /rm\s+-rf/,
+  /git\s+push.*--force/,
+  /DELETE\s+FROM/i,
+  /DROP\s+TABLE/i,
+  /curl.*\|.*sh/,
+];
+const MED_RISK_PATTERNS = [
+  /\bsudo\b/,
+  /curl\b|wget\b/,
+];
+
+function computeRisk(toolName: string, args: string): PMRisk {
+  const combined = `${toolName} ${args}`;
+  if (HIGH_RISK_PATTERNS.some(re => re.test(combined))) return "high";
+  if (MED_RISK_PATTERNS.some(re => re.test(combined))) return "med";
+  return "low";
+}
 
 function mapAgentStatus(s: string): AgentStatus {
   // daemon agent.change emits { idle | busy | failed | completed }.
@@ -102,6 +141,227 @@ class LiveScenarioStore {
     this.emit();
   }
 
+  applyTodoChange(payload: TodoChangePayload): void {
+    this.snapshot = {
+      ...this.snapshot,
+      todos: payload.todos,
+      todosUpdatedAt: "now",
+    };
+    this.emit();
+  }
+
+  applyPlanChange(payload: PlanChangePayload): void {
+    // WHY: plan.change status uses 'doing' (PLAN.md domain) while the UI
+    // MilestoneStatus also uses 'doing'. Direct assignment is safe.
+    const updatedMilestones = this.snapshot.milestones.map(
+      (m): Milestone => {
+        if (m.id === payload.itemId) {
+          return { ...m, status: payload.status as MilestoneStatus };
+        }
+        return m;
+      },
+    );
+
+    // If no milestone matched by id, append as a child to milestones[0].
+    const matched = this.snapshot.milestones.some(m => m.id === payload.itemId);
+    if (!matched && updatedMilestones.length > 0) {
+      // Map plan status → TodoStatus for child entries
+      const todoStatusMap: Record<string, TodoStatus> = {
+        done: "completed",
+        doing: "in_progress",
+        todo: "pending",
+      };
+      const childStatus: TodoStatus = todoStatusMap[payload.status] ?? "pending";
+      const first = updatedMilestones[0];
+      updatedMilestones[0] = {
+        ...first,
+        children: [
+          ...first.children,
+          { t: payload.title, st: childStatus },
+        ],
+      };
+    }
+
+    this.snapshot = { ...this.snapshot, milestones: updatedMilestones };
+    this.emit();
+  }
+
+  applyWorktreeChange(payload: WorktreeChangePayload): void {
+    let worktrees = this.snapshot.worktrees;
+    switch (payload.action) {
+      case "created": {
+        const newWt: Worktree = {
+          path: payload.path,
+          branch: payload.branch ?? "",
+          use: "parallel",
+          status: "idle",
+          parentAgent: "dev",
+          diskMB: 0,
+          locked: false,
+          createdAt: new Date().toISOString(),
+          lastCommit: "",
+        };
+        worktrees = [...worktrees, newWt];
+        break;
+      }
+      case "removed":
+        worktrees = worktrees.filter(w => w.path !== payload.path);
+        break;
+      case "locked":
+        worktrees = worktrees.map(w =>
+          w.path === payload.path ? { ...w, locked: true } : w,
+        );
+        break;
+      case "unlocked":
+        worktrees = worktrees.map(w =>
+          w.path === payload.path ? { ...w, locked: false } : w,
+        );
+        break;
+    }
+    this.snapshot = { ...this.snapshot, worktrees };
+    this.emit();
+  }
+
+  applyLearnedGuidanceChange(payload: LearnedGuidanceChangePayload): void {
+    let guidance = this.snapshot.guidance;
+    if (payload.action === "toggled") {
+      guidance = guidance.map(g => {
+        // WHY: GuidanceItem doesn't have an id field in the current type, but
+        // the reducer expects one (guidanceId-derived). We cast to check for it.
+        const gWithId = g as typeof g & { id?: string };
+        if (gWithId.agentId === payload.agentName && gWithId.id === payload.guidanceId) {
+          return { ...g, active: payload.active ?? !g.active };
+        }
+        return g;
+      });
+    } else if (payload.action === "deleted") {
+      guidance = guidance.filter(g => {
+        const gWithId = g as typeof g & { id?: string };
+        return !(gWithId.agentId === payload.agentName && gWithId.id === payload.guidanceId);
+      });
+    }
+    this.snapshot = { ...this.snapshot, guidance };
+    this.emit();
+  }
+
+  applyDisciplineMetricUpdate(payload: DisciplineMetricUpdatePayload): void {
+    const prev = this.snapshot.disciplineMetrics;
+    let next = { ...prev };
+    switch (payload.metric) {
+      case "parallel":
+        next = { ...next, parallel: payload.value };
+        break;
+      case "tddViolations":
+        next = { ...next, tddViolations: Math.trunc(payload.value) };
+        break;
+      case "verdict": {
+        // WHY: numeric encoding allows daemon to emit numeric metric values
+        // uniformly. 1=PASS, 0=FAIL, -1=PENDING.
+        const verdictMap: Record<number, Verdict> = { 1: "PASS", 0: "FAIL", [-1]: "PENDING" };
+        const v: Verdict = verdictMap[payload.value] ?? prev.verdict;
+        next = { ...next, verdict: v };
+        break;
+      }
+      case "taskTool": {
+        // WHY: 1=ok/OK, 0=warn/DEGRADED, -1=fail/FAILED
+        const healthMap: Record<number, { status: TaskToolHealth; label: string }> = {
+          1:  { status: "ok",   label: "OK" },
+          0:  { status: "warn", label: "DEGRADED" },
+          [-1]: { status: "fail",  label: "FAILED" },
+        };
+        const h = healthMap[payload.value] ?? { status: prev.taskTool, label: prev.taskToolLabel };
+        next = { ...next, taskTool: h.status, taskToolLabel: h.label };
+        break;
+      }
+      default:
+        // Unknown metric — log and leave snapshot unchanged.
+        console.warn(`[LiveScenarioStore] unknown discipline metric: ${payload.metric}`);
+        return;
+    }
+    this.snapshot = { ...this.snapshot, disciplineMetrics: next };
+    this.emit();
+  }
+
+  applyApprovalRequest(payload: ApprovalRequestPayload): void {
+    const args = String(payload.metadata?.args ?? "");
+    const risk = computeRisk(payload.toolName, args);
+    const request: PMPermissionRequest = {
+      id: String(payload.eventId),
+      tool: payload.toolName,
+      args,
+      risk,
+      from: String(payload.metadata?.fromAgent ?? "unknown"),
+    };
+    this.snapshot = {
+      ...this.snapshot,
+      pm: {
+        ...this.snapshot.pm,
+        pendingApprovals: [...this.snapshot.pm.pendingApprovals, request],
+      },
+    };
+    this.emit();
+  }
+
+  applySessionChange(payload: SessionChangePayload): void {
+    let sessions = this.snapshot.sessions;
+    switch (payload.action) {
+      case "started": {
+        const newSession: SessionItem = {
+          id: payload.sessionId,
+          startedAt: new Date().toISOString(),
+          durationSec: 0,
+          agentRoot: payload.role ?? "unknown",
+          turns: 0,
+          verdict: "PASS",
+          filesTouched: [],
+          relatedFindings: [],
+          summary: "",
+        };
+        sessions = [newSession, ...sessions];
+        break;
+      }
+      case "ended":
+        sessions = sessions.map(s => {
+          if (s.id !== payload.sessionId) return s;
+          const verdict: SessionItem["verdict"] =
+            payload.status === "failed" ? "FAIL" : "PASS";
+          return { ...s, verdict };
+        });
+        break;
+      case "updated":
+        sessions = sessions.map(s => {
+          if (s.id !== payload.sessionId) return s;
+          return {
+            ...s,
+            ...(payload.role !== undefined ? { agentRoot: payload.role } : {}),
+          };
+        });
+        break;
+    }
+    this.snapshot = { ...this.snapshot, sessions };
+    this.emit();
+  }
+
+  applyFindingNew(payload: FindingNewPayload): void {
+    const newFinding = {
+      id: payload.findingId,
+      sev: payload.severity,
+      status: "open" as const,
+      file: payload.targetDoc,
+      lines: "",
+      title: payload.message,
+      detail: "",
+      suggest: "",
+      source: "ws.live (now)",
+    };
+    const severityOrder = { high: 0, medium: 1, low: 2 };
+    const findings = [...this.snapshot.findings, newFinding].sort(
+      (a, b) => severityOrder[a.sev] - severityOrder[b.sev],
+    );
+    this.snapshot = { ...this.snapshot, findings };
+    this.emit();
+  }
+
   connect(url: string): void {
     if (typeof window === "undefined") return;
     if (this.ws && this.ws.readyState !== WebSocket.CLOSED) return;
@@ -122,15 +382,40 @@ class LiveScenarioStore {
     });
     ws.addEventListener("message", (ev) => {
       try {
-        const msg = JSON.parse(String(ev.data)) as Partial<AgentChangeBroadcast> & {
-          type?: string;
-        };
-        if (msg.type === "agent.change" && msg.payload) {
-          this.applyAgentChange(msg.payload as AgentChangePayload);
+        const msg = JSON.parse(String(ev.data)) as { type?: string; payload?: unknown };
+        if (!msg.type || !msg.payload) return;
+        switch (msg.type) {
+          case "agent.change":
+            this.applyAgentChange(msg.payload as AgentChangePayload);
+            break;
+          case "todo.change":
+            this.applyTodoChange(msg.payload as TodoChangePayload);
+            break;
+          case "plan.change":
+            this.applyPlanChange(msg.payload as PlanChangePayload);
+            break;
+          case "worktree.change":
+            this.applyWorktreeChange(msg.payload as WorktreeChangePayload);
+            break;
+          case "learned_guidance.change":
+            this.applyLearnedGuidanceChange(msg.payload as LearnedGuidanceChangePayload);
+            break;
+          case "discipline_metric.update":
+            this.applyDisciplineMetricUpdate(msg.payload as DisciplineMetricUpdatePayload);
+            break;
+          case "approval.request":
+            this.applyApprovalRequest(msg.payload as ApprovalRequestPayload);
+            break;
+          case "session.change":
+            this.applySessionChange(msg.payload as SessionChangePayload);
+            break;
+          case "finding.new":
+            this.applyFindingNew(msg.payload as FindingNewPayload);
+            break;
+          default:
+            // Ignore unknown event types gracefully.
+            break;
         }
-        // todo.change / plan.change / finding.new / worktree.change /
-        // approval.request / pm.message wiring lands as each screen
-        // graduates from "★ 動く確信:高" stub to live data.
       } catch {
         // Malformed frames must never break the mock fallback path.
       }
@@ -188,3 +473,8 @@ export const SCENARIO_KEYS: readonly ScenarioKey[] = [
   "active",
   "failed",
 ];
+
+// WHY: export for test-only usage. Tests instantiate LiveScenarioStore
+// directly to verify reducer logic without a real WebSocket connection.
+// This is not a public API surface — consumers should use useScenario().
+export { LiveScenarioStore };

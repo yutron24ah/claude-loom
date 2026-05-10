@@ -411,3 +411,65 @@ export interface AgentChangeBroadcast {
   timestamp: number;
   payload: AgentChangePayload;
 }
+
+// WHY: 8 new payload types mirror daemon/src/events/types.ts zod schemas.
+// Structural type compatibility is intentional (no runtime zod parsing on
+// the client — the daemon guarantees shape before emitting over WS).
+
+export interface TodoChangePayload {
+  sessionId: string;
+  todos: { status: "pending" | "in_progress" | "completed"; text: string }[];
+}
+
+export interface PlanChangePayload {
+  itemId: string;
+  projectId: string;
+  /** WHY: plan.change uses 'doing' (PLAN.md lifecycle), not 'in_progress'. */
+  status: "todo" | "doing" | "done";
+  title: string;
+}
+
+export interface WorktreeChangePayload {
+  projectId: string;
+  action: "created" | "removed" | "locked" | "unlocked";
+  path: string;
+  branch?: string;
+}
+
+export interface LearnedGuidanceChangePayload {
+  scope: "user" | "project";
+  projectId?: string;
+  agentName: string;
+  guidanceId: string;
+  action: "toggled" | "deleted";
+  active?: boolean;
+}
+
+export interface DisciplineMetricUpdatePayload {
+  projectId: string;
+  metric: string;
+  value: number;
+  timestamp: number;
+}
+
+export interface ApprovalRequestPayload {
+  eventId: number;
+  sessionId: string;
+  toolName: string;
+  metadata?: Record<string, unknown>;
+}
+
+export interface SessionChangePayload {
+  sessionId: string;
+  action: "started" | "ended" | "updated";
+  projectId?: string;
+  role?: string;
+  status?: string;
+}
+
+export interface FindingNewPayload {
+  findingId: string;
+  severity: "low" | "medium" | "high";
+  targetDoc: string;
+  message: string;
+}
