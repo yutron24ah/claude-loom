@@ -1,195 +1,267 @@
 /**
- * CustomizationView — 13 agent × model + personality configuration UI.
- * WHY: Allows user to tune each agent's model and personality per scope.
+ * CustomizationView — per-agent model + personality with scope chain trace.
+ * WHY: Redesign port (M0.15 t5). Uses useScenario() as single data source.
+ * Visual layout driven by redesign/screens/customization.jsx SSoT.
+ * Static JSON overlay (default → user → project) is read-only in this phase;
+ * write hookup (PUT /customization/:id) lands in Phase 5 t16.
+ *
  * SCREEN_REQUIREMENTS §3.8 / §4.7
- * Ported from ui/prototype/screens-c.jsx CustomizationView.
- * M0.11.4 t15: rewritten to use rpg-frame / rpg-title / chip / btn-px (Phase A SSoT).
- * All interactions are noop in this milestone; real mutations wired in M3+.
- * Types aligned with daemon prefs schema (routes/prefs.ts LearnedGuidanceEntry).
+ * REQ-065
  */
+import { useState } from 'react';
+import { useScenario } from '@claude-loom/redesign/api/websocket';
+import type { AgentCustomization, CustomizationLayer, ModelId, PresetId } from '@claude-loom/redesign/api/types';
 import { CatSprite } from '../../components/CatSprite';
-import { ROSTER, type RosterEntry } from '../room/roster';
+import { ROSTER } from '../room/roster';
 
 // -------------------------------------------------------------------------
-// Types — aligned with daemon agentPrefsSchema
+// Constants — from redesign/scenarios.js PRESETS / MODELS (read-only consume)
+// WHY: Import directly to ensure visual parity with redesign SSoT.
 // -------------------------------------------------------------------------
 
-export type ModelId = 'opus' | 'sonnet' | 'haiku';
-export type PersonalityPresetId = 'default' | 'friendly-mentor' | 'strict-drill' | 'detective';
-export type ScopeId = 'user' | 'project';
-
-export interface PersonalityPreset {
-  id: PersonalityPresetId;
-  /** Display emoji for the preset */
+interface PresetDef {
+  id: PresetId;
   emoji: string;
   name: string;
   desc: string;
 }
 
-export interface AgentCustomization {
-  agentId: string;
-  model: ModelId;
-  preset: PersonalityPresetId;
-  scope: ScopeId;
-  custom: string;
+interface ModelDef {
+  id: ModelId;
+  color: string;
 }
 
-// -------------------------------------------------------------------------
-// Constants — typed to avoid string literal scatter (Principle: avoid string literals)
-// -------------------------------------------------------------------------
-
-const PERSONALITY_PRESETS: PersonalityPreset[] = [
-  { id: 'default',         emoji: '',   name: 'Default',         desc: '標準。プロンプトは原型のまま。' },
-  { id: 'friendly-mentor', emoji: '',   name: 'Friendly Mentor',  desc: 'やさしく褒める。初学者向け。' },
-  { id: 'strict-drill',    emoji: '',   name: 'Strict Drill',     desc: '厳しく指摘、根拠重視。' },
-  { id: 'detective',       emoji: '',   name: 'Detective',        desc: '問いで深掘り。仮説検証型。' },
+// Mirror of redesign/scenarios.js PRESETS (read-only)
+const PRESETS: PresetDef[] = [
+  { id: 'default',         emoji: '😌', name: 'Default',         desc: '標準。プロンプトは原型のまま。' },
+  { id: 'friendly-mentor', emoji: '🌱', name: 'Friendly Mentor', desc: 'やさしく褒める。初学者向け。' },
+  { id: 'strict-drill',    emoji: '💪', name: 'Strict Drill',    desc: '厳しく指摘、根拠重視。' },
+  { id: 'detective',       emoji: '🔍', name: 'Detective',       desc: '問いで深掘り。仮説検証型。' },
 ];
 
-const MODELS: { id: ModelId; label: string; color: string }[] = [
-  { id: 'opus',   label: 'opus',   color: 'var(--p-accent)' },
-  { id: 'sonnet', label: 'sonnet', color: 'var(--p-success)' },
-  { id: 'haiku',  label: 'haiku',  color: 'var(--p-stone)' },
+// Mirror of redesign/scenarios.js MODELS (read-only)
+const MODELS: ModelDef[] = [
+  { id: 'opus',   color: 'var(--p-accent)' },
+  { id: 'sonnet', color: 'var(--p-success)' },
+  { id: 'haiku',  color: 'var(--p-stone)' },
 ];
 
 // -------------------------------------------------------------------------
-// Mock data — 13 agents
+// Chain scope color helper
 // -------------------------------------------------------------------------
-
-const MOCK_SETTINGS: Record<string, AgentCustomization> = {
-  'pm':            { agentId: 'pm',            model: 'opus',   preset: 'default',         scope: 'user',    custom: '' },
-  'dev':           { agentId: 'dev',           model: 'sonnet', preset: 'friendly-mentor', scope: 'project', custom: 'TDD red 順序の遵守を最優先で。' },
-  'rev':           { agentId: 'rev',           model: 'sonnet', preset: 'default',         scope: 'user',    custom: '' },
-  'rev-code':      { agentId: 'rev-code',      model: 'sonnet', preset: 'strict-drill',    scope: 'project', custom: '' },
-  'rev-sec':       { agentId: 'rev-sec',       model: 'opus',   preset: 'detective',       scope: 'user',    custom: 'OWASP top 10 を必ず根拠に。' },
-  'rev-test':      { agentId: 'rev-test',      model: 'haiku',  preset: 'default',         scope: 'user',    custom: '' },
-  'retro-pm':      { agentId: 'retro-pm',      model: 'opus',   preset: 'default',         scope: 'user',    custom: '' },
-  'retro-counter': { agentId: 'retro-counter', model: 'opus',   preset: 'strict-drill',    scope: 'user',    custom: '' },
-  'retro-meta':    { agentId: 'retro-meta',    model: 'opus',   preset: 'detective',       scope: 'user',    custom: '' },
-  'retro-pj':      { agentId: 'retro-pj',      model: 'sonnet', preset: 'default',         scope: 'user',    custom: '' },
-  'retro-research':{ agentId: 'retro-research',model: 'sonnet', preset: 'default',         scope: 'user',    custom: '' },
-  'retro-proc':    { agentId: 'retro-proc',    model: 'sonnet', preset: 'default',         scope: 'user',    custom: '' },
-  'retro-agg':     { agentId: 'retro-agg',     model: 'opus',   preset: 'default',         scope: 'user',    custom: '' },
-};
+function scopeColor(scope: CustomizationLayer['scope']): string {
+  if (scope === 'default') return 'var(--p-stone)';
+  if (scope === 'user')    return 'var(--p-accent)';
+  return 'var(--p-warn)'; // project
+}
 
 // -------------------------------------------------------------------------
 // Sub-components
 // -------------------------------------------------------------------------
 
-interface ModelSelectorProps {
-  currentModel: ModelId;
-  agentId: string;
-}
-
-function ModelSelector({ currentModel, agentId }: ModelSelectorProps): JSX.Element {
-  return (
-    <div
-      data-testid="model-selector"
-      style={{ display: 'flex', border: '2px solid var(--p-border)', overflow: 'hidden', width: 'fit-content' }}
-    >
-      {MODELS.map((m) => (
-        <button
-          key={m.id}
-          data-testid={`model-option-${m.id}`}
-          style={{
-            padding: '4px 10px',
-            fontSize: 10,
-            fontWeight: 700,
-            fontFamily: 'ui-monospace, monospace',
-            background: currentModel === m.id ? m.color : 'transparent',
-            color: currentModel === m.id ? 'white' : 'var(--p-text-muted)',
-            border: 'none',
-            borderRight: '1px solid var(--p-border)',
-            cursor: 'pointer',
-          }}
-          onClick={() => undefined}
-          aria-pressed={currentModel === m.id}
-          aria-label={`${agentId} model ${m.id}`}
-        >
-          {m.label}
-        </button>
-      ))}
-    </div>
-  );
-}
-
-interface PersonalityDisplayProps {
-  preset: PersonalityPreset | undefined;
-  custom: string;
-}
-
-function PersonalityDisplay({ preset, custom }: PersonalityDisplayProps): JSX.Element {
-  return (
-    <div data-testid="personality-display" style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-      <span className="chip" style={{ background: 'var(--p-tint)' }}>
-        {preset?.name ?? 'default'}
-      </span>
-      {custom && (
-        <div style={{
-          fontSize: 10,
-          fontFamily: 'ui-monospace, monospace',
-          color: 'var(--p-text)',
-          padding: '4px 6px',
-          background: 'var(--p-tint)',
-          borderLeft: '3px solid var(--p-accent)',
-        }}>
-          {custom}
-        </div>
-      )}
-      {custom && (
-        <span style={{ fontSize: 9, color: 'var(--p-text-muted)' }}>+ custom override</span>
-      )}
-    </div>
-  );
-}
-
 interface AgentRowProps {
-  entry: RosterEntry;
-  settings: AgentCustomization;
+  agentId: string;
+  cust: AgentCustomization;
+  isOpen: boolean;
+  onToggle: () => void;
 }
 
-function AgentRow({ entry, settings }: AgentRowProps): JSX.Element {
-  const preset = PERSONALITY_PRESETS.find((p) => p.id === settings.preset);
+function AgentRow({ agentId, cust, isOpen, onToggle }: AgentRowProps): JSX.Element {
+  const entry = ROSTER.find((r) => r.id === agentId);
+  const eff = cust.effective;
+  const overridden = cust.chain.length > 1;
+  const preset = PRESETS.find((p) => p.id === eff.preset) ?? PRESETS[0];
 
   return (
     <div
       data-testid="agent-row"
+      data-agent-id={agentId}
+      id={`agent-row-${agentId}`}
       style={{
         display: 'grid',
-        gridTemplateColumns: '180px 1fr 1.4fr 80px',
-        gap: 8,
-        padding: '8px 10px',
+        gridTemplateColumns: '200px 1fr 1.4fr 60px',
         alignItems: 'center',
-        background: 'var(--p-paper)',
-        borderBottom: '1px solid var(--p-border)',
+        padding: '6px 10px',
+        borderBottom: '1px dashed var(--p-border)',
+        background: isOpen ? 'var(--p-accent-soft)' : 'transparent',
       }}
     >
-      {/* Agent identity with CatSprite */}
-      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-        <CatSprite size={28} fur={entry.fur} cheek={entry.cheek} hat={entry.hat} pose="sit" />
-        <div>
-          <div style={{ fontSize: 11, fontWeight: 700 }}>{entry.name}</div>
-          <div style={{ fontSize: 8, color: 'var(--p-text-muted)' }}>{entry.role}</div>
+      {/* Agent identity */}
+      <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+        {entry && (
+          <CatSprite size={22} fur={entry.fur} cheek={entry.cheek} hat={entry.hat} pose="sit" />
+        )}
+        <div style={{ minWidth: 0 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            {entry?.name ?? agentId}
+          </div>
+          <div style={{ fontSize: 8, color: 'var(--p-text-muted)', fontFamily: 'ui-monospace, monospace' }}>
+            {agentId}
+          </div>
         </div>
       </div>
 
-      {/* Model selector — segmented */}
-      <ModelSelector currentModel={settings.model} agentId={entry.id} />
-
-      {/* Personality */}
-      <PersonalityDisplay preset={preset} custom={settings.custom} />
-
-      {/* Scope */}
-      <div>
-        <span
-          data-testid="scope-badge"
-          className="chip"
-          style={settings.scope === 'project'
-            ? { background: 'var(--p-warn)', color: 'white', borderColor: 'var(--p-warn)' }
-            : undefined}
-        >
-          {settings.scope}
-        </span>
+      {/* Model selector */}
+      <div data-testid="model-selector" style={{ display: 'flex', gap: 3 }}>
+        {MODELS.map((m) => (
+          <button
+            key={m.id}
+            data-testid={`model-option-${m.id}`}
+            style={{
+              all: 'unset',
+              cursor: 'pointer',
+              padding: '2px 8px',
+              fontSize: 9,
+              fontWeight: 700,
+              border: '1.5px solid var(--p-border)',
+              background: m.id === eff.model ? m.color : 'var(--p-tint)',
+              color: m.id === eff.model ? 'white' : 'var(--p-text)',
+            }}
+            aria-pressed={m.id === eff.model}
+            aria-label={`${agentId} model ${m.id}`}
+            onClick={() => undefined}
+          >
+            {m.id}
+          </button>
+        ))}
       </div>
+
+      {/* Personality presets */}
+      <div style={{ display: 'flex', gap: 3, flexWrap: 'wrap' }}>
+        {PRESETS.map((p) => (
+          <button
+            key={p.id}
+            data-testid={`preset-btn-${p.id}`}
+            title={p.desc}
+            style={{
+              all: 'unset',
+              cursor: 'pointer',
+              padding: '2px 6px',
+              fontSize: 9,
+              border: '1.5px solid var(--p-border)',
+              background: p.id === eff.preset ? 'var(--p-accent)' : 'var(--p-tint)',
+              color: p.id === eff.preset ? 'white' : 'var(--p-text)',
+            }}
+            onClick={() => undefined}
+          >
+            {p.emoji} {p.name}
+          </button>
+        ))}
+      </div>
+
+      {/* Chain expand button */}
+      <button
+        data-testid="chain-expand-btn"
+        onClick={onToggle}
+        style={{
+          all: 'unset',
+          cursor: 'pointer',
+          textAlign: 'right',
+          fontSize: 9,
+          fontWeight: 700,
+          color: overridden ? 'var(--p-warn)' : 'var(--p-text-muted)',
+        }}
+      >
+        {cust.chain.length} ▸
+      </button>
+    </div>
+  );
+}
+
+interface ChainDetailPanelProps {
+  openAgentId: string | null;
+  customization: Record<string, AgentCustomization>;
+}
+
+function ChainDetailPanel({ openAgentId, customization }: ChainDetailPanelProps): JSX.Element {
+  const entry = openAgentId ? ROSTER.find((r) => r.id === openAgentId) : null;
+  const cust = openAgentId ? customization[openAgentId] : null;
+
+  return (
+    <div
+      data-testid="chain-detail-panel"
+      style={{
+        background: 'var(--p-paper)',
+        border: '2px solid var(--p-border)',
+        padding: 10,
+        position: 'sticky',
+        top: 16,
+      }}
+    >
+      <div style={{ fontSize: 9, color: 'var(--p-text-muted)', letterSpacing: '0.06em', marginBottom: 8 }}>
+        SCOPE CHAIN — 有効値の出処
+      </div>
+
+      {!openAgentId && (
+        <div style={{ fontSize: 10, color: 'var(--p-text-muted)', lineHeight: 1.5 }}>
+          行右端の <b>▸</b> をクリックすると、その agent の<br />
+          <code>default → user → project → effective</code><br />
+          の重ね順を表示します。
+        </div>
+      )}
+
+      {openAgentId && cust && (
+        <div>
+          <div style={{ fontSize: 11, fontWeight: 700, marginBottom: 8 }}>
+            {entry?.name ?? openAgentId}
+          </div>
+          {cust.chain.map((step, i, arr) => {
+            const isLast = i === arr.length - 1;
+            const c = scopeColor(step.scope);
+            return (
+              <div key={i} style={{ position: 'relative', paddingLeft: 14, paddingBottom: isLast ? 0 : 12 }}>
+                <span style={{
+                  position: 'absolute',
+                  left: 0,
+                  top: 4,
+                  width: 8,
+                  height: 8,
+                  background: c,
+                  border: '1.5px solid var(--p-border)',
+                }} />
+                {!isLast && (
+                  <span style={{
+                    position: 'absolute',
+                    left: 3,
+                    top: 14,
+                    bottom: 0,
+                    width: 2,
+                    background: 'var(--p-border)',
+                  }} />
+                )}
+                <div
+                  data-testid="chain-scope-tag"
+                  style={{ fontSize: 9, fontWeight: 700, color: c, letterSpacing: '0.06em' }}
+                >
+                  {step.scope.toUpperCase()}
+                </div>
+                <div style={{ fontSize: 10, color: 'var(--p-text)', marginTop: 2 }}>
+                  {step.model && <span>model: <b>{step.model}</b></span>}
+                  {step.model && step.preset && ' · '}
+                  {step.preset && <span>preset: <b>{step.preset}</b></span>}
+                </div>
+                {step.note && (
+                  <div style={{ fontSize: 9, fontStyle: 'italic', color: 'var(--p-text-muted)', marginTop: 2 }}>
+                    "{step.note}"
+                  </div>
+                )}
+              </div>
+            );
+          })}
+          <div style={{
+            marginTop: 10,
+            padding: 6,
+            fontSize: 9,
+            color: 'var(--p-text-muted)',
+            background: 'var(--p-tint)',
+            border: '1px dashed var(--p-border)',
+            lineHeight: 1.5,
+          }}>
+            ◆ 上から下へ重ね合わせて effective が決まる。<br />
+            ◆ project スコープは現 PJ のみ、user スコープは全 PJ で有効。
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -199,92 +271,86 @@ function AgentRow({ entry, settings }: AgentRowProps): JSX.Element {
 // -------------------------------------------------------------------------
 
 export function CustomizationView(): JSX.Element {
-  const projectOverrideCount = Object.values(MOCK_SETTINGS).filter(
-    (s) => s.scope === 'project'
-  ).length;
+  const sc = useScenario();
+  const customization = sc.customization;
+  const [openAgentId, setOpenAgentId] = useState<string | null>(null);
+  const [dirty, setDirty] = useState(false);
 
   return (
     <div
       data-testid="customization-view"
-      className="rpg-frame pixel"
-      style={{ padding: 18 }}
+      style={{ position: 'absolute', inset: 0, padding: 16, overflow: 'auto', background: 'var(--p-bg-sky)' }}
     >
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
         <div
           data-testid="customization-title"
-          className="rpg-title"
+          style={{ fontSize: 14, fontWeight: 700 }}
         >
-          Customization Layer — 13 agent
+          ✦ CUSTOMIZATION — agent ごとの model + personality
         </div>
-        <span className="chip">
-          scope: <b style={{ marginLeft: 4 }}>user-prefs</b> / project override {projectOverrideCount}件
-        </span>
         <div style={{ flex: 1 }} />
-        <button className="btn-px ghost" onClick={() => undefined}>
-          Reset to defaults
+        {dirty && (
+          <span style={{ fontSize: 9, color: 'var(--p-warn)', fontWeight: 700 }}>
+            ● 未保存変更あり
+          </span>
+        )}
+        <button
+          className="btn-px ghost"
+          style={{ fontSize: 9, padding: '3px 8px' }}
+          aria-label="取消"
+          onClick={() => setDirty(false)}
+        >
+          取消
+        </button>
+        <button
+          className={`btn-px ${dirty ? 'primary' : 'ghost'}`}
+          style={{ fontSize: 9, padding: '3px 8px' }}
+          aria-label="保存"
+          onClick={() => setDirty(false)}
+        >
+          保存
         </button>
       </div>
 
-      {/* Preset legend */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginBottom: 14 }}>
-        {PERSONALITY_PRESETS.map((p) => (
-          <div key={p.id} style={{
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 280px', gap: 14, alignItems: 'flex-start' }}>
+        {/* LEFT — agent table */}
+        <div style={{ background: 'var(--p-paper)', border: '2px solid var(--p-border)' }}>
+          {/* Table header */}
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: '200px 1fr 1.4fr 60px',
+            fontSize: 9,
+            color: 'var(--p-text-muted)',
+            letterSpacing: '0.06em',
+            padding: '6px 10px',
+            borderBottom: '2px solid var(--p-border)',
             background: 'var(--p-tint)',
-            border: '2px solid var(--p-border)',
-            padding: '8px 10px',
           }}>
-            <div style={{ fontSize: 11, fontWeight: 700, marginBottom: 2 }}>{p.name}</div>
-            <div style={{ fontSize: 9, color: 'var(--p-text-muted)', lineHeight: 1.4 }}>{p.desc}</div>
+            <span>AGENT</span>
+            <span>MODEL</span>
+            <span>PERSONALITY</span>
+            <span style={{ textAlign: 'right' }}>CHAIN</span>
           </div>
-        ))}
-      </div>
 
-      {/* Table header */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: '180px 1fr 1.4fr 80px',
-        gap: 8,
-        padding: '6px 10px',
-        fontSize: 9,
-        color: 'var(--p-text-muted)',
-        letterSpacing: '0.06em',
-        borderBottom: '2px solid var(--p-border)',
-      }}>
-        <span>AGENT</span>
-        <span>MODEL</span>
-        <span>PERSONALITY</span>
-        <span>SCOPE</span>
-      </div>
+          {/* Agent rows — iterate ROSTER order to preserve visual order */}
+          {ROSTER.map((entry) => {
+            const cust = customization[entry.id];
+            if (!cust) return null;
+            return (
+              <AgentRow
+                key={entry.id}
+                agentId={entry.id}
+                cust={cust}
+                isOpen={openAgentId === entry.id}
+                onToggle={() => setOpenAgentId((o) => (o === entry.id ? null : entry.id))}
+              />
+            );
+          })}
+        </div>
 
-      {/* Agent rows */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 0 }}>
-        {ROSTER.map((entry) => {
-          const settings = MOCK_SETTINGS[entry.id] ?? {
-            agentId: entry.id,
-            model: 'sonnet' as ModelId,
-            preset: 'default' as PersonalityPresetId,
-            scope: 'user' as ScopeId,
-            custom: '',
-          };
-          return (
-            <AgentRow key={entry.id} entry={entry} settings={settings} />
-          );
-        })}
-      </div>
-
-      {/* Footer hint */}
-      <div style={{
-        marginTop: 12,
-        padding: '8px 12px',
-        fontSize: 10,
-        color: 'var(--p-text-muted)',
-        background: 'var(--p-tint)',
-        border: '2px dashed var(--p-border)',
-        lineHeight: 1.5,
-      }}>
-        scope: user-prefs はすべての PJ に適用 / project は当 PJ のみ override。
-        custom override は preset の上に重ねがけされ、最終 prompt は両方を結合して agent に渡される。
+        {/* RIGHT — scope chain detail */}
+        <ChainDetailPanel openAgentId={openAgentId} customization={customization} />
       </div>
     </div>
   );

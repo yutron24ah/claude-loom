@@ -1,10 +1,41 @@
 /**
- * CustomizationView TDD tests — Red phase (Task 9 Subagent C)
+ * CustomizationView TDD tests
  * WHY: verify customization shows 13 agents with model + personality selectors.
  * SCREEN_REQUIREMENTS §3.8 / §4.7
+ *
+ * Updated for M0.15 t5 redesign port:
+ * - useScenario() replaces MOCK_SETTINGS hardcoded fixture
+ * - visual layout uses inline styles (not rpg-frame/chip CSS classes)
+ * - personality shown as preset buttons (not personality-display sub-component)
+ * - scope shown in chain detail panel (not scope-badge per row)
  */
-import { describe, it, expect, afterEach } from 'vitest';
+import { describe, it, expect, afterEach, vi } from 'vitest';
 import { render, screen, cleanup } from '@testing-library/react';
+import type { Scenario } from '@claude-loom/redesign/api/types';
+
+// WHY: Mock useScenario so the component never touches the real WS store.
+// Provides the minimal customization shape the redesign view needs.
+vi.mock('@claude-loom/redesign/api/websocket', () => ({
+  useScenario: () =>
+    ({
+      customization: {
+        pm:             { effective: { model: 'opus',   preset: 'default' },         chain: [{ scope: 'default', model: 'opus', preset: 'default' }] },
+        dev:            { effective: { model: 'sonnet', preset: 'friendly-mentor' }, chain: [{ scope: 'default', model: 'sonnet', preset: 'default' }, { scope: 'project', preset: 'friendly-mentor' }] },
+        rev:            { effective: { model: 'sonnet', preset: 'default' },         chain: [{ scope: 'default', model: 'sonnet', preset: 'default' }] },
+        'rev-code':     { effective: { model: 'sonnet', preset: 'strict-drill' },    chain: [{ scope: 'default', model: 'sonnet', preset: 'default' }, { scope: 'project', preset: 'strict-drill' }] },
+        'rev-sec':      { effective: { model: 'opus',   preset: 'detective' },       chain: [{ scope: 'default', model: 'sonnet', preset: 'default' }, { scope: 'user', model: 'opus', preset: 'detective' }] },
+        'rev-test':     { effective: { model: 'haiku',  preset: 'default' },         chain: [{ scope: 'default', model: 'sonnet', preset: 'default' }, { scope: 'user', model: 'haiku' }] },
+        'retro-pm':     { effective: { model: 'opus',   preset: 'default' },         chain: [{ scope: 'default', model: 'opus', preset: 'default' }] },
+        'retro-counter':{ effective: { model: 'opus',   preset: 'strict-drill' },    chain: [{ scope: 'default', model: 'opus', preset: 'default' }, { scope: 'user', preset: 'strict-drill' }] },
+        'retro-meta':   { effective: { model: 'opus',   preset: 'detective' },       chain: [{ scope: 'default', model: 'opus', preset: 'default' }, { scope: 'user', preset: 'detective' }] },
+        'retro-pj':     { effective: { model: 'sonnet', preset: 'default' },         chain: [{ scope: 'default', model: 'sonnet', preset: 'default' }] },
+        'retro-research':{ effective: { model: 'sonnet', preset: 'default' },        chain: [{ scope: 'default', model: 'sonnet', preset: 'default' }] },
+        'retro-proc':   { effective: { model: 'sonnet', preset: 'default' },         chain: [{ scope: 'default', model: 'sonnet', preset: 'default' }] },
+        'retro-agg':    { effective: { model: 'opus',   preset: 'default' },         chain: [{ scope: 'default', model: 'opus', preset: 'default' }] },
+      },
+    }) as unknown as Scenario,
+}));
+
 import { CustomizationView } from '../../src/views/customization/CustomizationView';
 
 afterEach(() => {
@@ -67,36 +98,34 @@ describe('CustomizationView — model selector', () => {
   });
 });
 
-describe('CustomizationView — personality selector', () => {
-  it('renders personality display for each agent (data-testid=personality-display)', () => {
+describe('CustomizationView — preset buttons (redesign port)', () => {
+  it('renders preset buttons for each agent (4 presets per row)', () => {
     render(<CustomizationView />);
-    const displays = screen.getAllByTestId('personality-display');
-    expect(displays).toHaveLength(13);
+    // 13 rows × 4 presets = 52 total preset buttons
+    const defaultBtns = screen.getAllByTestId('preset-btn-default');
+    expect(defaultBtns).toHaveLength(13);
   });
 
-  it('renders scope badge for each agent (data-testid=scope-badge)', () => {
+  it('renders chain expand buttons for each agent (data-testid=chain-expand-btn)', () => {
     render(<CustomizationView />);
-    const badges = screen.getAllByTestId('scope-badge');
-    expect(badges).toHaveLength(13);
+    const chainBtns = screen.getAllByTestId('chain-expand-btn');
+    expect(chainBtns).toHaveLength(13);
+  });
+
+  it('renders chain detail panel (data-testid=chain-detail-panel)', () => {
+    render(<CustomizationView />);
+    expect(screen.getByTestId('chain-detail-panel')).toBeInTheDocument();
   });
 });
 
-describe('CustomizationView — RPG design tokens (M0.11.4 t15)', () => {
-  it('wraps outer container in rpg-frame class', () => {
+describe('CustomizationView — save/cancel actions', () => {
+  it('renders cancel button', () => {
     render(<CustomizationView />);
-    const frame = document.querySelector('.rpg-frame');
-    expect(frame).toBeTruthy();
+    expect(screen.getByRole('button', { name: /取消/ })).toBeInTheDocument();
   });
 
-  it('renders customization title with rpg-title class', () => {
+  it('renders save button', () => {
     render(<CustomizationView />);
-    const title = document.querySelector('.rpg-title');
-    expect(title).toBeTruthy();
-  });
-
-  it('renders chip elements for scope and count display', () => {
-    render(<CustomizationView />);
-    const chips = document.querySelectorAll('.chip');
-    expect(chips.length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByRole('button', { name: /保存/ })).toBeInTheDocument();
   });
 });
