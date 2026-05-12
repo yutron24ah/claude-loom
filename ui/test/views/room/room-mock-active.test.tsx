@@ -26,7 +26,8 @@ const activeAgents: Record<string, AgentState> = {
 };
 
 vi.mock('@claude-loom/redesign/api/websocket', () => ({
-  // RoomView only reads scenario.agents today; safe to return a partial.
+  // RoomView reads scenario.agents + scenario.gantt (GanttPoster) +
+  // scenario.todos/milestones (PlanPoster) + scenario.findings (ConsistencyPoster).
   useScenario: () =>
     ({
       key: 'active',
@@ -36,6 +37,24 @@ vi.mock('@claude-loom/redesign/api/websocket', () => ({
       project: 'freee-mcp',
       branch: 'main',
       agents: activeAgents,
+      // WHY: GanttPoster reads scenario.gantt.rows + nowPct.
+      gantt: {
+        windowLabel: '直近 30min',
+        nowPct: 95,
+        rows: [
+          { worktree: 'main', agentId: 'pm',       label: 'PM',      bars: [], live: false },
+          { worktree: 'main', agentId: 'dev',      label: 'Dev',     bars: [], live: false },
+          { worktree: 'main', agentId: 'rev-code', label: 'CodeRev', bars: [], live: false },
+          { worktree: 'main', agentId: 'rev-test', label: 'TestRev', bars: [], live: false },
+          { worktree: 'main', agentId: 'rev-sec',  label: 'SecRev',  bars: [], live: false },
+        ],
+      },
+      // WHY: PlanPoster reads scenario.todos / milestones / todosUpdatedAt.
+      todos: [],
+      milestones: [],
+      todosUpdatedAt: '—',
+      // WHY: ConsistencyPoster reads scenario.findings.
+      findings: [],
     }) as unknown as Scenario,
   useScenarioMockKey: () => 'active' as const,
   getScenarioStore: () => ({

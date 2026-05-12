@@ -1,10 +1,23 @@
 /**
  * ConsistencyPoster — small alert plaque for doc consistency findings.
  *
- * WHY: Ported from design source room.jsx L289-307.
- * Shows NEW badge count, 3 finding rows with severity dots, and footer CTA.
+ * WHY: Ported from design source room.jsx L138-164 (M0.15 t15 redesign).
+ * Scenario-driven: reads useScenario().findings to show NEW badge count
+ * (high+open) and top 4 findings with severity color dots.
  * Uses Phase A CSS class tokens (.room-poster*).
+ *
+ * Previous implementation (M0.11.4) used hardcoded FINDINGS with fixed
+ * "NEW 2" badge. This version counts dynamically from scenario data.
  */
+import { useScenario } from '@claude-loom/redesign/api/websocket';
+import type { FindingSeverity } from '@claude-loom/redesign/api/types';
+
+// WHY: matches design source room.jsx L152-154 severity color mapping.
+const SEV_COLOR: Record<FindingSeverity, string> = {
+  high:   'var(--p-error)',
+  medium: 'var(--p-warn)',
+  low:    'var(--p-stone)',
+};
 
 export interface ConsistencyPosterProps {
   x: number;
@@ -14,19 +27,13 @@ export interface ConsistencyPosterProps {
   onClick: () => void;
 }
 
-interface Finding {
-  sev: 'high' | 'medium' | 'low';
-  c: string;
-  t: string;
-}
-
-const FINDINGS: Finding[] = [
-  { sev: 'high',   c: 'var(--p-error)', t: 'F-12 §3.6 ガント縦軸 矛盾' },
-  { sev: 'high',   c: 'var(--p-error)', t: 'F-11 TDD 順序 乖離' },
-  { sev: 'medium', c: 'var(--p-warn)',  t: 'F-09 hotfix CLI 古い' },
-];
-
 export function ConsistencyPoster({ x, y, width, height, onClick }: ConsistencyPosterProps) {
+  const scenario = useScenario();
+  const findings = scenario.findings;
+
+  // WHY: NEW badge = high severity AND open status, matching design source L139.
+  const newCount = findings.filter((f) => f.sev === 'high' && f.status === 'open').length;
+
   return (
     <button
       className="room-poster room-poster--consistency"
@@ -41,17 +48,17 @@ export function ConsistencyPoster({ x, y, width, height, onClick }: ConsistencyP
             fontSize: 8,
             fontWeight: 700,
             padding: '1px 5px',
-            background: 'var(--p-error)',
+            background: newCount ? 'var(--p-error)' : 'var(--p-stone)',
             color: 'white',
             border: '1px solid var(--p-border)',
             letterSpacing: '0.04em',
           }}
         >
-          NEW 2
+          NEW {newCount}
         </span>
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: 1, padding: '4px 0' }}>
-        {FINDINGS.map((f, i) => (
+        {findings.slice(0, 4).map((f, i) => (
           <div
             key={i}
             data-testid="consistency-finding"
@@ -61,7 +68,7 @@ export function ConsistencyPoster({ x, y, width, height, onClick }: ConsistencyP
               style={{
                 width: 5,
                 height: 5,
-                background: f.c,
+                background: SEV_COLOR[f.sev],
                 border: '1px solid var(--p-border)',
                 flexShrink: 0,
               }}
@@ -74,7 +81,7 @@ export function ConsistencyPoster({ x, y, width, height, onClick }: ConsistencyP
                 whiteSpace: 'nowrap',
               }}
             >
-              {f.t}
+              <strong style={{ color: 'var(--p-text)' }}>{f.id}</strong> {f.title}
             </span>
           </div>
         ))}
