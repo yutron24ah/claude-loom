@@ -1,41 +1,318 @@
 /**
- * AppShell — persistent Room canvas + sidebar + panel overlay routing structure.
+ * AppShell — redesign 全面移植 (M0.15 t14, REQ-075)
  *
- * WHY: Room canvas must stay mounted at all times (Hybrid C routing pattern):
- * - RoomView is rendered at z-index 0, always in the DOM
- * - Route-specific views are rendered as semi-transparent panels at z-index 10
- * - Panel close: background click OR Escape key → navigate('/')
+ * WHY: Phase 4 — port redesign/Redesign App.html shell (TopBar + Drawer +
+ * StatusBar + ScenarioPicker) to TypeScript/JSX using useScenario() as data
+ * source. Replaces M0.11.4 hard-coded DisciplineHeader + Sidebar with the
+ * redesign SSoT layout.
  *
- * Sidebar (z-25) sits above the panel overlay (z-10) and header (z-20) so it
- * remains accessible and clickable even when a panel is open. This allows users
- * to navigate between views without needing to dismiss the panel first.
+ * Layout (grid 3-row: topbar / main / statusbar):
+ *   - TopBar (36px): brand + project switcher + 4 metrics + conn + drawer toggle
+ *   - Main row: Drawer (collapsible, 168px → 40px) + content area
+ *     - Content: Room canvas (always mounted) + panel overlay + ScenarioPicker
+ *     - Right column: PMChatPanel mount slot (z-5, 340px, t13 preserved)
+ *   - StatusBar (24px): scenario label + events + project path
  *
- * WHY z-25 for sidebar: header z-20, panel z-10. Sidebar must be above both
- * so navigation links are always clickable regardless of panel state.
+ * Panel overlay routing (Hybrid C, unchanged from M0.11.4):
+ *   - RoomView at z-0, always mounted
+ *   - Route-specific panels at z-10 via Outlet
+ *   - Escape key / background click → navigate('/')
  *
- * Right column (z-5): PMChatPanel mount slot. Added in M0.15 t13 as a right-
- * column anchor. Phase 4 t14 will do a full AppShell rewrite; this slot is the
- * only structural change in t13. Width 340px matches redesign SSoT (room.jsx).
+ * WHY no ConnectionBanner import: redesign TopBar shows conn status via
+ * useScenario().conn. ConnectionBanner (which imports zustand connection store
+ * → @claude-loom/daemon → zod) is superseded by the TopBar's conn dot.
  *
- * Panel is only shown when current location is NOT the root route.
- * Escape listener is attached on mount and cleaned up on unmount.
+ * t13 PMChat panel mount slot is absolutely preserved: right column 340px,
+ * z-5, showPmPanel condition, onSend/onStart/onPermission handlers unchanged.
+ *
+ * REQ-075: AppShell × redesign 全面移植
  */
-import { useEffect, useCallback } from 'react';
-import { Outlet, useNavigate, useLocation } from 'react-router-dom';
+import { useState, useEffect, useCallback } from 'react';
+import { Outlet, useNavigate, useLocation, NavLink } from 'react-router-dom';
 import { RoomView } from '../views/room/RoomView';
-import { DisciplineHeader } from '../components/DisciplineHeader';
-import { Sidebar } from '../components/Sidebar';
-import { ConnectionBanner } from '../notifications/ConnectionBanner';
 import { ToastContainer } from '../notifications/ToastContainer';
 import { PMChatPanel } from '../views/pm-chat/PMChatPanel';
 import { useScenario } from '@claude-loom/redesign/api/websocket';
-import { getScenarioStore } from '@claude-loom/redesign/api/websocket';
+import type { DisciplineMetrics, ConnectionStatus } from '@claude-loom/redesign/api/types';
+
+// ---------------------------------------------------------------------------
+// NAV_GROUPS — redesign SSoT (Redesign App.html NAV_GROUPS constant)
+// 3 groups, 11 nav items total.
+// ---------------------------------------------------------------------------
+const NAV_GROUPS = [
+  {
+    id: 'operate',
+    label: 'OPERATE',
+    items: [
+      { id: 'room',        path: '/',            ico: '▦', label: 'Room' },
+      { id: 'plan',        path: '/plan',         ico: '≡', label: 'Plan' },
+      { id: 'gantt',       path: '/gantt',        ico: '▭', label: 'Gantt' },
+      { id: 'sessions',    path: '/sessions',     ico: '❐', label: 'Sessions' },
+      { id: 'consistency', path: '/consistency',  ico: '△', label: 'Consistency' },
+    ],
+  },
+  {
+    id: 'manage',
+    label: 'MANAGE',
+    items: [
+      { id: 'worktree',      path: '/worktree',      ico: '⌗', label: 'Worktree' },
+      { id: 'retro',         path: '/retro',          ico: '◆', label: 'Retro' },
+      { id: 'customization', path: '/customization',  ico: '✦', label: 'Customization' },
+      { id: 'guidance',      path: '/guidance',       ico: '❉', label: 'Guidance' },
+    ],
+  },
+  {
+    id: 'settings',
+    label: 'SETTINGS',
+    items: [
+      { id: 'tokens',           path: '/tokens',           ico: '$', label: 'Tokens' },
+      { id: 'project-settings', path: '/project-settings', ico: '⚙', label: 'Project Settings' },
+    ],
+  },
+] as const;
+
+// ---------------------------------------------------------------------------
+// TopBar — brand + project + 4 metrics + conn + drawer toggle
+// ---------------------------------------------------------------------------
+interface TopBarProps {
+  project: string;
+  conn: ConnectionStatus;
+  metrics: DisciplineMetrics;
+  onDrawerToggle: () => void;
+}
+
+function TopBar({ project, conn, metrics, onDrawerToggle }: TopBarProps): JSX.Element {
+  // Derive metric value class: ok / warn / err
+  function metricClass(ok: boolean, warn?: boolean): string {
+    if (warn) return 'warn';
+    return ok ? 'ok' : 'err';
+  }
+
+  return (
+    <div
+      data-testid="topbar"
+      className="top"
+    >
+      {/* Drawer toggle */}
+      <button
+        data-testid="topbar-drawer-toggle"
+        className="top__menu"
+        onClick={onDrawerToggle}
+        title="Toggle drawer"
+        aria-label="Toggle drawer"
+      >
+        ☰
+      </button>
+
+      {/* Brand */}
+      <div data-testid="topbar-brand" className="top__brand">
+        <div className="logo" />
+        claude-loom
+      </div>
+
+      {/* Project switcher */}
+      <button data-testid="topbar-project" className="top__pj" title="プロジェクト切替">
+        ◆ {project} <span style={{ color: 'var(--p-text-muted)' }}>▾</span>
+      </button>
+
+      {/* 4 discipline metrics */}
+      <div className="top__metrics">
+        <div data-testid="metric-parallel" className="m">
+          PARALLEL{' '}
+          <span className={`v ${metricClass(metrics.parallel >= 0.5)}`}>
+            {Math.round(metrics.parallel * 100)}%
+          </span>
+        </div>
+        <div data-testid="metric-task-tool" className="m">
+          TASK TOOL{' '}
+          <span className={`v ${metrics.taskTool}`}>{metrics.taskToolLabel}</span>
+        </div>
+        <div data-testid="metric-tdd-order" className="m">
+          TDD ORDER{' '}
+          <span className={`v ${metricClass(!metrics.tddViolations)}`}>
+            {metrics.tddViolations} VIOLATIONS
+          </span>
+        </div>
+        <div data-testid="metric-verdict" className="m">
+          VERDICT{' '}
+          <span className={`v ${metrics.verdict === 'PASS' ? 'ok' : 'err'}`}>
+            {metrics.verdict}
+          </span>
+        </div>
+      </div>
+
+      {/* Connection status */}
+      <div data-testid="topbar-conn" className="top__conn">
+        <span className={`dot ${conn === 'connected' ? 'busy' : 'fail'}`} />
+        <span>{conn === 'connected' ? 'WS connected' : '再接続中…'}</span>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Drawer — 11 nav links across 3 groups, collapsible
+// ---------------------------------------------------------------------------
+interface DrawerProps {
+  collapsed: boolean;
+  /** current pathname for active state highlight */
+  pathname: string;
+}
+
+function Drawer({ collapsed, pathname }: DrawerProps): JSX.Element {
+  return (
+    <div
+      data-testid="drawer"
+      data-collapsed={collapsed ? 'true' : undefined}
+      className={`drawer${collapsed ? ' collapsed' : ''}`}
+      style={{ width: collapsed ? 40 : 168 }}
+    >
+      {NAV_GROUPS.map((group) => (
+        <div key={group.id}>
+          {/* Group label — hidden when collapsed */}
+          <div
+            data-testid={`drawer-group-${group.id}`}
+            className="drawer__group"
+          >
+            {group.label}
+          </div>
+
+          {/* Nav items */}
+          {group.items.map((item) => {
+            // Room is the index route — active when pathname is exactly '/'
+            const isActive =
+              item.id === 'room'
+                ? pathname === '/'
+                : pathname === item.path || pathname.startsWith(item.path + '/');
+
+            return (
+              <NavLink
+                key={item.id}
+                to={item.path}
+                data-testid={`nav-link-${item.id}`}
+                className={`nav-link${isActive ? ' active' : ''}`}
+                // WHY: NavLink end prop only needed for the Room (index) route
+                end={item.id === 'room'}
+                title={item.label}
+              >
+                <span className="ico">{item.ico}</span>
+                {!collapsed && <span className="lbl">{item.label}</span>}
+              </NavLink>
+            );
+          })}
+        </div>
+      ))}
+
+      {/* Spacer */}
+      <div style={{ flex: 1 }} />
+
+      {/* Version footer — hidden when collapsed */}
+      {!collapsed && (
+        <div className="drawer__group" style={{ paddingBottom: 8 }}>
+          v0.15 · 127.0.0.1:5757
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// StatusBar — scenario label + events + project path
+// ---------------------------------------------------------------------------
+interface StatusBarProps {
+  label: string;
+  project: string;
+  conn: ConnectionStatus;
+}
+
+function StatusBar({ label, project, conn }: StatusBarProps): JSX.Element {
+  return (
+    <div data-testid="statusbar" className="statusbar">
+      <span className="seg">
+        <span className={`dot ${conn === 'connected' ? 'busy' : 'fail'}`} />
+        {conn === 'connected' ? 'WS connected' : '再接続中…'}
+      </span>
+      <span className="seg">
+        scenario: <strong style={{ color: 'var(--p-text)' }}>{label}</strong>
+      </span>
+      <span className="seg">events seen</span>
+      <span className="right">
+        claude-loom @ <code>~/work/{project}</code>
+      </span>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// ScenarioPicker — idle/active/failed scenario switcher (dev/QA tool)
+// Positioned in content area; adjusts right offset when rail is open.
+// ---------------------------------------------------------------------------
+interface ScenarioPickerProps {
+  rightOffset?: number;
+}
+
+function ScenarioPicker({ rightOffset = 8 }: ScenarioPickerProps): JSX.Element {
+  const SCENARIO_KEYS = ['idle', 'active', 'failed'] as const;
+
+  // WHY: ScenarioPicker only writes the ?mock= URL param — no state needed.
+  // In test env window.location.search is undefined so we guard with '?'.
+  const current =
+    typeof window !== 'undefined'
+      ? new URLSearchParams(window.location.search).get('mock') ?? ''
+      : '';
+
+  function activate(key: string): void {
+    if (typeof window === 'undefined') return;
+    const url = new URL(window.location.href);
+    if (key) {
+      url.searchParams.set('mock', key);
+    } else {
+      url.searchParams.delete('mock');
+    }
+    window.history.replaceState(null, '', url.toString());
+    window.dispatchEvent(new Event('popstate'));
+  }
+
+  return (
+    <div
+      data-testid="scenario-picker"
+      className={`scenario-picker${rightOffset === 8 ? ' no-rail' : ''}`}
+      style={{ right: rightOffset }}
+    >
+      <span className="scenario-picker__label">SCENARIO</span>
+      {SCENARIO_KEYS.map((k) => (
+        <button
+          key={k}
+          className={`scenario-picker__btn${current === k ? ' on' : ''}`}
+          onClick={() => activate(k)}
+        >
+          {k}
+        </button>
+      ))}
+      <button
+        className={`scenario-picker__btn${current === '' ? ' on' : ''}`}
+        onClick={() => activate('')}
+      >
+        live
+      </button>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// AppShell — main layout orchestrator
+// ---------------------------------------------------------------------------
+
+/** Right column width — matches redesign/screens/room.jsx CHAT_W constant. */
+const PM_PANEL_W = 340;
 
 export function AppShell(): JSX.Element {
   const navigate = useNavigate();
   const location = useLocation();
   const scenario = useScenario();
-  const store = getScenarioStore();
+
+  // Drawer collapse state — starts expanded
+  const [drawerCollapsed, setDrawerCollapsed] = useState(false);
 
   // Panel is visible when we're not at the root route
   const isPanelOpen = location.pathname !== '/';
@@ -47,7 +324,6 @@ export function AppShell(): JSX.Element {
         navigate('/');
       }
     }
-
     document.addEventListener('keydown', handleKeyDown);
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
@@ -58,15 +334,15 @@ export function AppShell(): JSX.Element {
     navigate('/');
   }
 
-  // PM chat handlers — stub: call daemon REST endpoints and let WS events update state
-  // Phase 5 t17 will replace these stubs with full tRPC mutations + proper error handling.
+  // PM chat handlers — stub REST endpoints; WS events drive UI state.
+  // Phase 5 t17 replaces these with full tRPC mutations + error handling.
   const handlePmSend = useCallback((text: string) => {
     fetch('/pm/say', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ text }),
     }).catch(() => {
-      // Fail silently — WS event (emitted by daemon) drives UI update, not response
+      // WHY: fail silently — WS event drives UI update, not response
     });
   }, []);
 
@@ -83,81 +359,116 @@ export function AppShell(): JSX.Element {
   }, []);
 
   // WHY: show PMChatPanel when PM is running or there are pending approvals.
-  // Panel stays visible if there are pending approvals even when PM is not running
-  // (edge case: PM crash mid-session). Always show when running.
+  // Panel stays visible on pending approvals even if PM crashed.
   const showPmPanel = scenario.pm.running || scenario.pm.pendingApprovals.length > 0;
 
-  // WHY: right column width 340px matches redesign/screens/room.jsx CHAT_W constant.
-  const PM_PANEL_W = 340;
+  const m = scenario.disciplineMetrics;
 
   return (
-    <div className="relative w-screen h-screen overflow-hidden">
-      {/* Connection banner — always shown above all layers when not connected */}
-      <div className="absolute top-0 left-0 right-0 z-30">
-        <ConnectionBanner />
-      </div>
+    <div
+      className="shell"
+      style={{ display: 'grid', gridTemplateRows: '36px 1fr 24px', height: '100vh' }}
+    >
+      {/* ── TopBar ── */}
+      <TopBar
+        project={scenario.project}
+        conn={scenario.conn}
+        metrics={m}
+        onDrawerToggle={() => setDrawerCollapsed((c) => !c)}
+      />
 
-      {/* Persistent discipline header — spans full width above sidebar */}
-      <div className="absolute top-0 left-0 right-0 z-20">
-        <DisciplineHeader />
-      </div>
-
-      {/* Sidebar — fixed left column, z-25 so it stays above panel overlay (z-10)
-          and is always clickable for navigation regardless of panel state.
-          WHY fixed width 220px: standard compact sidebar for a dense developer tool. */}
-      <div className="absolute left-0 bottom-0 top-0 w-[220px] z-[25] pt-[var(--header-height,40px)]">
-        <Sidebar />
-      </div>
-
-      {/* Room canvas — always mounted, z-index 0, offset right by sidebar width.
-          WHY mr-[PM_PANEL_W]: when PM panel is visible, room canvas shrinks to
-          avoid content being hidden under the right column (matches room.jsx W calc). */}
+      {/* ── Main row (Drawer + Content) ── */}
       <div
-        className="absolute inset-0 z-0 ml-[220px]"
-        style={{ marginRight: showPmPanel ? PM_PANEL_W : 0 }}
+        className="main"
+        style={{ position: 'relative', display: 'grid', gridTemplateColumns: 'auto 1fr', minHeight: 0 }}
       >
-        <RoomView />
+        {/* Drawer — left sidebar, collapsible */}
+        <Drawer collapsed={drawerCollapsed} pathname={location.pathname} />
+
+        {/* Content area — Room canvas + panel overlay + ScenarioPicker + PMChat */}
+        <div
+          className="content"
+          style={{
+            position: 'relative',
+            minWidth: 0,
+            overflow: 'hidden',
+          }}
+        >
+          {/* Room canvas — always mounted at z-0 */}
+          <div
+            style={{
+              position: 'absolute',
+              inset: 0,
+              zIndex: 0,
+              marginRight: showPmPanel ? PM_PANEL_W : 0,
+            }}
+          >
+            <RoomView />
+          </div>
+
+          {/* PMChatPanel right column mount slot (M0.15 t13 preserved).
+              WHY z-5: between room canvas (z-0) and panel overlay (z-10).
+              Interface: pm / stream / onSend / onStart / onPermission unchanged. */}
+          {showPmPanel && (
+            <div
+              data-testid="pm-chat-right-column"
+              style={{
+                position: 'absolute',
+                right: 0,
+                top: 0,
+                bottom: 0,
+                width: PM_PANEL_W,
+                zIndex: 5,
+              }}
+            >
+              <PMChatPanel
+                pm={scenario.pm}
+                stream={scenario.stream}
+                onSend={handlePmSend}
+                onStart={handlePmStart}
+                onPermission={handlePmPermission}
+              />
+            </div>
+          )}
+
+          {/* Panel overlay — only when not at root route.
+              WHY: room canvas visible behind semi-transparent overlay.
+              Escape key / background click → navigate('/') */}
+          {isPanelOpen && (
+            <div
+              data-testid="view-panel"
+              role="dialog"
+              aria-modal="true"
+              style={{
+                position: 'fixed',
+                inset: 0,
+                zIndex: 10,
+                marginRight: showPmPanel ? PM_PANEL_W : 0,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+              className="bg-bg1/80 backdrop-blur-sm"
+              onClick={handlePanelBackgroundClick}
+            >
+              <Outlet />
+            </div>
+          )}
+
+          {/* ScenarioPicker — dev/QA scenario switcher, top-right of content */}
+          <ScenarioPicker rightOffset={showPmPanel ? PM_PANEL_W + 8 : 8} />
+
+          {/* Toast container — z-50 above all layers */}
+          <ToastContainer />
+        </div>
       </div>
 
-      {/* PMChatPanel right column mount slot (M0.15 t13).
-          WHY z-5: between room canvas (z-0) and panel overlay (z-10). The right
-          column is non-blocking for navigation; panel overlay still sits above it.
-          Phase 4 t14 will do full AppShell rewrite; this is the minimal slot addition. */}
-      {showPmPanel && (
-        <div
-          data-testid="pm-chat-right-column"
-          className="absolute right-0 top-0 bottom-0 z-[5] pt-[var(--header-height,40px)]"
-          style={{ width: PM_PANEL_W }}
-        >
-          <PMChatPanel
-            pm={scenario.pm}
-            stream={scenario.stream}
-            onSend={handlePmSend}
-            onStart={handlePmStart}
-            onPermission={handlePmPermission}
-          />
-        </div>
-      )}
-
-      {/* Panel overlay — only rendered when not at root route.
-          ml-[220px] keeps sidebar visible above panel background.
-          WHY mr-[PM_PANEL_W]: panel overlay does not cover the PM right column. */}
-      {isPanelOpen && (
-        <div
-          data-testid="view-panel"
-          role="dialog"
-          aria-modal="true"
-          className="fixed inset-0 z-10 ml-[220px] bg-bg1/80 backdrop-blur-sm flex items-center justify-center"
-          style={{ marginRight: showPmPanel ? PM_PANEL_W : 0 }}
-          onClick={handlePanelBackgroundClick}
-        >
-          {/* Outlet renders the route-specific view inside the panel */}
-          <Outlet />
-        </div>
-      )}
-
-      {/* Toast container — always visible, z-50 above all layers */}
-      <ToastContainer />
+      {/* ── StatusBar ── */}
+      <StatusBar
+        label={scenario.label}
+        project={scenario.project}
+        conn={scenario.conn}
+      />
     </div>
   );
 }
