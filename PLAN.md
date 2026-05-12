@@ -1137,7 +1137,7 @@ dispatcher: Strategy a × 2 / single mode × 2 / **worktree isolation 必須**
 - [x] Playwright e2e baseline (12 画面 visual + 重要 3 画面 1-click flow) <!-- id: m0.15-t21 status: done committed_sha: af2c07f path: C (self_review, 13 screenshot baseline + 3 click flow + 3 room regenerated = 19 pass、REQ-081 PM 一括 append) planned_files: ui/e2e/m0.15-redesign/*.spec.ts, ui/e2e/__screenshots__/m0.15-redesign/*.png, ui/e2e/__screenshots__/room-baseline.spec.ts-snapshots/*.png -->
   - 12 画面の `?mock=active` screenshot baseline + 重要 3 画面 (⑦ Customization 保存 / ⑬ PMChat 送信 / ⑫ Settings 保存) の click flow
   - dispatcher: Strategy a / single mode / shared tree
-- [ ] m0.15-complete tag 設置 + retro hook trigger <!-- id: m0.15-t22 status: todo planned_files: PLAN.md -->
+- [x] m0.15-complete tag 設置 + retro hook trigger <!-- id: m0.15-t22 status: done execution: PM direct (tag + retro 提案) REQ-083 planned_files: PLAN.md -->
   - Layer 1 + Layer 2 + Layer 2.5 + Playwright e2e + harness test 全 PASS 後に PM が tag 設置
   - tag 設置直後に retro hook trigger (user に「retro しとく？」確認、yes → /loom-retro)
   - PLAN.md M0.15 全 task を status: done に update
