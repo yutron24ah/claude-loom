@@ -7,9 +7,20 @@
  * TopBar (4 discipline metrics + brand + project + conn dot). The smoke contract
  * is now "AppShell renders the redesign shell" — same intent, new testid.
  */
-import { describe, it, expect, afterEach } from 'vitest';
+import { describe, it, expect, afterEach, vi } from 'vitest';
 import { render, screen, cleanup } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
+
+// WHY: mock usePMSession to avoid tRPC provider requirement in smoke test.
+vi.mock('../src/live/usePMSession', () => ({
+  usePMSession: () => ({
+    start: () => {},
+    say: () => {},
+    permission: () => {},
+    isLoading: false,
+  }),
+}));
+
 import { AppShell } from '../src/routing/AppShell';
 
 afterEach(() => {

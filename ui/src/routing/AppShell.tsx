@@ -27,13 +27,14 @@
  *
  * REQ-075: AppShell × redesign 全面移植
  */
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { Outlet, useNavigate, useLocation, NavLink } from 'react-router-dom';
 import { RoomView } from '../views/room/RoomView';
 import { ToastContainer } from '../notifications/ToastContainer';
 import { PMChatPanel } from '../views/pm-chat/PMChatPanel';
 import { useScenario } from '@claude-loom/redesign/api/websocket';
 import type { DisciplineMetrics, ConnectionStatus } from '@claude-loom/redesign/api/types';
+import { usePMSession } from '../live/usePMSession';
 
 // ---------------------------------------------------------------------------
 // NAV_GROUPS — redesign SSoT (Redesign App.html NAV_GROUPS constant)
@@ -334,29 +335,22 @@ export function AppShell(): JSX.Element {
     navigate('/');
   }
 
-  // PM chat handlers — stub REST endpoints; WS events drive UI state.
-  // Phase 5 t17 replaces these with full tRPC mutations + error handling.
-  const handlePmSend = useCallback((text: string) => {
-    fetch('/pm/say', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text }),
-    }).catch(() => {
-      // WHY: fail silently — WS event drives UI update, not response
-    });
-  }, []);
+  // PM chat handlers — wired through usePMSession tRPC mutations (Phase 5 t17).
+  // WHY: replaces direct fetch() stubs with typed tRPC mutations. WS events
+  // (applyPmMessage / applyPmPermissionResolved) continue to drive UI state.
+  const pmSession = usePMSession();
 
-  const handlePmStart = useCallback(() => {
-    fetch('/pm/start', { method: 'POST' }).catch(() => {});
-  }, []);
+  function handlePmSend(text: string): void {
+    pmSession.say(text);
+  }
 
-  const handlePmPermission = useCallback((id: string, allow: boolean) => {
-    fetch(`/pm/permission/${encodeURIComponent(id)}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ allow }),
-    }).catch(() => {});
-  }, []);
+  function handlePmStart(): void {
+    pmSession.start();
+  }
+
+  function handlePmPermission(id: string, allow: boolean): void {
+    pmSession.permission(id, allow);
+  }
 
   // WHY: show PMChatPanel when PM is running or there are pending approvals.
   // Panel stays visible on pending approvals even if PM crashed.
