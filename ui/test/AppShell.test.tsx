@@ -44,6 +44,17 @@ vi.mock('../src/notifications/ToastContainer', () => ({
   ToastContainer: () => null,
 }));
 
+// WHY: mock usePMSession to avoid tRPC provider requirement.
+// AppShell layout tests do not exercise PM write mutations.
+vi.mock('../src/live/usePMSession', () => ({
+  usePMSession: () => ({
+    start: () => {},
+    say: () => {},
+    permission: () => {},
+    isLoading: false,
+  }),
+}));
+
 // WHY: mock redesign websocket hook with pm.running:false for baseline tests
 // (PMChatPanel right column not shown by default).
 vi.mock('@claude-loom/redesign/api/websocket', () => ({

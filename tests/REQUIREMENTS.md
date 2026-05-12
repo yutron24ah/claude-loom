@@ -228,4 +228,6 @@
 
 ## M0.15 Phase 4 t15: Room posters scenario-driven
 
+## M0.15 Phase 5 t17: PMChat write hookup
 
+- **REQ-078**: `ui/src/live/usePMSession.ts` が新規作成され、`usePMSession()` hook を export する。hook は `start()` / `say(text: string)` / `permission(id: string, allow: boolean)` / `isLoading: boolean` を返し、3 mutation を tRPC (`trpc.pm.start` / `trpc.pm.say` / `trpc.pm.resolvePermission`) 経由で呼び出す。`ui/src/routing/AppShell.tsx` の PM chat handlers が fetch() stub から `usePMSession` 経由に置換される (`handlePmSend` → `pmSession.say(text)` / `handlePmStart` → `pmSession.start()` / `handlePmPermission` → `pmSession.permission(id, allow)`)。PMChatPanel / PMApprovalModal / PMApprovalToast は props (onSend / onStart / onPermission) 経由で mutation を呼び出す interface を維持する (SRP: write logic は AppShell / usePMSession に集約、view layer は props を呼ぶだけ)。`AppShell.test.tsx` + `AppShell.redesign.test.tsx` + `main.test.tsx` が `usePMSession` mock を追加して regression なし。`ui/test/views/pm-chat/pm-write.test.tsx` の 6 ケース (usePMSession module export / say / start / permission allow × 2 / permission reject) 全 pass。`pnpm --filter @claude-loom/ui test` 全 pass (992 tests)。**rationale**: M0.15 Phase 5 t17 — AppShell の fetch() stub PM handlers を tRPC mutation hook (usePMSession) に置換。実際の claude CLI spawn は将来 scope、daemon pm.* sub-router stub が受け口として既に存在し、frontend 側の wire hookup のみ本 task scope。

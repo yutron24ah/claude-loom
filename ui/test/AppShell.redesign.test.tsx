@@ -91,6 +91,17 @@ vi.mock('../src/notifications/ToastContainer', () => ({
   ToastContainer: () => null,
 }));
 
+// WHY: mock usePMSession to avoid tRPC provider requirement.
+// AppShell tests exercise layout, not PM write mutations.
+vi.mock('../src/live/usePMSession', () => ({
+  usePMSession: () => ({
+    start: () => {},
+    say: () => {},
+    permission: () => {},
+    isLoading: false,
+  }),
+}));
+
 import { AppShell } from '../src/routing/AppShell';
 
 afterEach(() => {
