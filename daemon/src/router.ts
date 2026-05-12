@@ -17,6 +17,8 @@ import { coexistenceRouter } from "./routes/coexistence.js";
 import { disciplineRouter } from "./routes/discipline.js";
 // M5 t4: token usage read-only router
 import { tokenRouter } from "./routes/token.js";
+// M0.15 t13: PM chat stub router
+import { pmRouter } from "./routes/pm.js";
 
 // Sub-routers wired in Task 8 (M1), events added in Task 9, 6 new in Task 10 (M1.5)
 export const appRouter = router({
@@ -43,6 +45,8 @@ export const appRouter = router({
   discipline: disciplineRouter,
   // M5 t4: token usage
   token: tokenRouter,
+  // M0.15 t13: PM chat stub
+  pm: pmRouter,
 });
 
 export type AppRouter = typeof appRouter;

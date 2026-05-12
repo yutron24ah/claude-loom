@@ -473,3 +473,25 @@ export interface FindingNewPayload {
   targetDoc: string;
   message: string;
 }
+
+// WHY: PM chat event payload types mirror daemon/src/events/types.ts zod schemas.
+// Structural type compatibility intentional — no runtime zod parsing on client.
+// M0.15 t13 REQ-074.
+export interface PmMessageEventPayload {
+  who: "user" | "pm";
+  text: string;
+  ts: string;
+}
+
+export interface PmPermissionRequestEventPayload {
+  id: string;
+  tool: string;
+  args: string;
+  risk: PMRisk;
+  from: string;
+}
+
+export interface PmPermissionResolvedEventPayload {
+  id: string;
+  allow: boolean;
+}

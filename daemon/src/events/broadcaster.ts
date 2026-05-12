@@ -13,6 +13,9 @@ import type {
   PlanConflictEvent,
   SessionChangeEvent,
   SpecChangeDetectedEvent,
+  PmMessageEvent,
+  PmPermissionRequestEvent,
+  PmPermissionResolvedEvent,
 } from "./types.js";
 
 class Broadcaster extends EventEmitter {
@@ -136,6 +139,39 @@ class Broadcaster extends EventEmitter {
       payload,
     };
     this.emit("spec_change_detected", event);
+    this.emit("*", event);
+  }
+
+  // M0.15 t13: PM chat event emitters
+  // WHY: stub emitters forward PM session messages/approvals via WS broadcast.
+  // Phase 5 t17 will wire these to the actual claude CLI stdout/stderr streams.
+  emitPmMessage(payload: PmMessageEvent["payload"]) {
+    const event: PmMessageEvent = {
+      type: "pm.message",
+      timestamp: Date.now(),
+      payload,
+    };
+    this.emit("pm.message", event);
+    this.emit("*", event);
+  }
+
+  emitPmPermissionRequest(payload: PmPermissionRequestEvent["payload"]) {
+    const event: PmPermissionRequestEvent = {
+      type: "pm.permission_request",
+      timestamp: Date.now(),
+      payload,
+    };
+    this.emit("pm.permission_request", event);
+    this.emit("*", event);
+  }
+
+  emitPmPermissionResolved(payload: PmPermissionResolvedEvent["payload"]) {
+    const event: PmPermissionResolvedEvent = {
+      type: "pm.permission_resolved",
+      timestamp: Date.now(),
+      payload,
+    };
+    this.emit("pm.permission_resolved", event);
     this.emit("*", event);
   }
 }

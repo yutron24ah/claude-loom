@@ -23,9 +23,13 @@ import type {
   LearnedGuidanceChangePayload,
   Milestone,
   MilestoneStatus,
+  PMMessage,
   PMPermissionRequest,
   PMRisk,
   PlanChangePayload,
+  PmMessageEventPayload,
+  PmPermissionRequestEventPayload,
+  PmPermissionResolvedEventPayload,
   Scenario,
   ScenarioKey,
   SessionChangePayload,
@@ -342,6 +346,58 @@ class LiveScenarioStore {
     this.emit();
   }
 
+  // M0.15 t13 REQ-074 — PM chat reducers
+  // WHY: pm.message events append to pm.messages list; immutable snapshot update
+  // keeps the useSyncExternalStore pattern consistent.
+  applyPmMessage(payload: PmMessageEventPayload): void {
+    const msg: PMMessage = { who: payload.who, text: payload.text, ts: payload.ts };
+    this.snapshot = {
+      ...this.snapshot,
+      pm: {
+        ...this.snapshot.pm,
+        messages: [...this.snapshot.pm.messages, msg],
+      },
+    };
+    this.emit();
+  }
+
+  // WHY: pm.permission_request appends to pendingApprovals.
+  // The risk field is server-provided here (unlike approval.request which
+  // uses client-side computeRisk). PM chat uses server risk since the daemon
+  // hook script already classified the risk at block time.
+  applyPmPermissionRequest(payload: PmPermissionRequestEventPayload): void {
+    const request: PMPermissionRequest = {
+      id: payload.id,
+      tool: payload.tool,
+      args: payload.args,
+      risk: payload.risk,
+      from: payload.from,
+    };
+    this.snapshot = {
+      ...this.snapshot,
+      pm: {
+        ...this.snapshot.pm,
+        pendingApprovals: [...this.snapshot.pm.pendingApprovals, request],
+      },
+    };
+    this.emit();
+  }
+
+  // WHY: pm.permission_resolved removes the matching entry from pendingApprovals.
+  // This is the complement of applyPmPermissionRequest — user clicked allow or reject.
+  applyPmPermissionResolved(payload: PmPermissionResolvedEventPayload): void {
+    this.snapshot = {
+      ...this.snapshot,
+      pm: {
+        ...this.snapshot.pm,
+        pendingApprovals: this.snapshot.pm.pendingApprovals.filter(
+          (a) => a.id !== payload.id,
+        ),
+      },
+    };
+    this.emit();
+  }
+
   applyFindingNew(payload: FindingNewPayload): void {
     const newFinding = {
       id: payload.findingId,
@@ -411,6 +467,15 @@ class LiveScenarioStore {
             break;
           case "finding.new":
             this.applyFindingNew(msg.payload as FindingNewPayload);
+            break;
+          case "pm.message":
+            this.applyPmMessage(msg.payload as PmMessageEventPayload);
+            break;
+          case "pm.permission_request":
+            this.applyPmPermissionRequest(msg.payload as PmPermissionRequestEventPayload);
+            break;
+          case "pm.permission_resolved":
+            this.applyPmPermissionResolved(msg.payload as PmPermissionResolvedEventPayload);
             break;
           default:
             // Ignore unknown event types gracefully.

@@ -484,3 +484,117 @@ describe('LiveScenarioStore reducers', () => {
     expect(highFinding?.source).toBe('ws.live (now)');
   });
 });
+
+// ============================================================================
+// M0.15 t13 — REQ-074: PM chat reducers (applyPmMessage / applyPmPermissionRequest /
+// applyPmPermissionResolved)
+// ============================================================================
+
+describe('applyPmMessage — M0.15 t13 REQ-074', () => {
+  let store: LiveScenarioStore;
+
+  beforeEach(() => {
+    store = new LiveScenarioStore(SEED_SCENARIO);
+  });
+
+  it('appends a pm message to snapshot.pm.messages', () => {
+    store.applyPmMessage({ who: 'pm', text: 'task を dispatch します', ts: '14:23' });
+    const { pm } = store.getSnapshot();
+    expect(pm.messages).toHaveLength(1);
+    expect(pm.messages[0].who).toBe('pm');
+    expect(pm.messages[0].text).toBe('task を dispatch します');
+    expect(pm.messages[0].ts).toBe('14:23');
+  });
+
+  it('appends multiple messages in order', () => {
+    store.applyPmMessage({ who: 'user', text: '実装お願いします', ts: '14:20' });
+    store.applyPmMessage({ who: 'pm', text: '了解しました', ts: '14:21' });
+    const { messages } = store.getSnapshot().pm;
+    expect(messages).toHaveLength(2);
+    expect(messages[0].who).toBe('user');
+    expect(messages[1].who).toBe('pm');
+  });
+
+  it('does not mutate other pm fields when adding a message', () => {
+    const before = store.getSnapshot().pm;
+    store.applyPmMessage({ who: 'pm', text: 'hello', ts: '10:00' });
+    const after = store.getSnapshot().pm;
+    // running and pendingApprovals unchanged
+    expect(after.running).toBe(before.running);
+    expect(after.pendingApprovals).toEqual(before.pendingApprovals);
+  });
+});
+
+describe('applyPmPermissionRequest — M0.15 t13 REQ-074', () => {
+  let store: LiveScenarioStore;
+
+  beforeEach(() => {
+    store = new LiveScenarioStore(SEED_SCENARIO);
+  });
+
+  it('appends a permission request to snapshot.pm.pendingApprovals', () => {
+    store.applyPmPermissionRequest({
+      id: 'req-001',
+      tool: 'Bash',
+      args: 'git push --force',
+      risk: 'high',
+      from: 'loom-developer',
+    });
+    const { pendingApprovals } = store.getSnapshot().pm;
+    expect(pendingApprovals).toHaveLength(1);
+    expect(pendingApprovals[0].id).toBe('req-001');
+    expect(pendingApprovals[0].tool).toBe('Bash');
+    expect(pendingApprovals[0].risk).toBe('high');
+    expect(pendingApprovals[0].from).toBe('loom-developer');
+  });
+
+  it('stacks multiple pending approvals (stackable toasts)', () => {
+    store.applyPmPermissionRequest({ id: 'r1', tool: 'Read', args: 'file.ts', risk: 'low', from: 'dev' });
+    store.applyPmPermissionRequest({ id: 'r2', tool: 'Bash', args: 'sudo apt', risk: 'med', from: 'dev' });
+    expect(store.getSnapshot().pm.pendingApprovals).toHaveLength(2);
+  });
+
+  it('does not affect pm.messages when a permission request arrives', () => {
+    const msgsBefore = store.getSnapshot().pm.messages.length;
+    store.applyPmPermissionRequest({ id: 'r1', tool: 'Read', args: 'x', risk: 'low', from: 'dev' });
+    expect(store.getSnapshot().pm.messages).toHaveLength(msgsBefore);
+  });
+});
+
+describe('applyPmPermissionResolved — M0.15 t13 REQ-074', () => {
+  let store: LiveScenarioStore;
+
+  beforeEach(() => {
+    // Seed with one pending approval already in the store
+    store = new LiveScenarioStore({
+      ...SEED_SCENARIO,
+      pm: {
+        running: true,
+        messages: [],
+        pendingApprovals: [
+          { id: 'req-001', tool: 'Bash', args: 'rm -rf /tmp/test', risk: 'high', from: 'dev' },
+          { id: 'req-002', tool: 'Read', args: 'src/main.ts', risk: 'low', from: 'dev' },
+        ],
+      },
+    });
+  });
+
+  it('removes the resolved approval from pendingApprovals by id', () => {
+    store.applyPmPermissionResolved({ id: 'req-001', allow: true });
+    const { pendingApprovals } = store.getSnapshot().pm;
+    expect(pendingApprovals).toHaveLength(1);
+    expect(pendingApprovals[0].id).toBe('req-002');
+  });
+
+  it('removes rejected (allow=false) approval from pendingApprovals too', () => {
+    store.applyPmPermissionResolved({ id: 'req-002', allow: false });
+    const { pendingApprovals } = store.getSnapshot().pm;
+    expect(pendingApprovals).toHaveLength(1);
+    expect(pendingApprovals[0].id).toBe('req-001');
+  });
+
+  it('is a no-op when id does not match any pending approval', () => {
+    store.applyPmPermissionResolved({ id: 'nonexistent', allow: true });
+    expect(store.getSnapshot().pm.pendingApprovals).toHaveLength(2);
+  });
+});
