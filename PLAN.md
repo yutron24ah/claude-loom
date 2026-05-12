@@ -1085,8 +1085,8 @@ dispatcher: Strategy a × 3 / single mode × 3 / **worktree isolation 必須**
 ### Phase 3: 中信頼 + PMChat
 
 #### batch D — 中信頼 (Consistency + Retro、parallel)
-- [ ] ④ Consistency redesign port <!-- id: m0.15-t11 status: todo planned_files: ui/src/views/consistency/*.tsx, ui/test/views/consistency/*.test.tsx -->
-- [ ] ⑤ Retro redesign port <!-- id: m0.15-t12 status: todo planned_files: ui/src/views/retro/*.tsx, ui/test/views/retro/*.test.tsx -->
+- [x] ④ Consistency redesign port <!-- id: m0.15-t11 status: done committed_sha: b937f1b path: C (self_review, REQ-073 renamed from REQ-070 due to t8 collision) planned_files: ui/src/views/consistency/*.tsx, ui/test/views/consistency/*.test.tsx -->
+- [x] ⑤ Retro redesign port <!-- id: m0.15-t12 status: done committed_sha: 6f13b16 path: C (self_review, REQ-072) planned_files: ui/src/views/retro/*.tsx, ui/test/views/retro/*.test.tsx -->
 
 dispatcher: Strategy a × 2 / single mode × 2 / **worktree isolation 必須**
 
