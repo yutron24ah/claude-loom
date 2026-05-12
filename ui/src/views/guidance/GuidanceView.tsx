@@ -7,14 +7,15 @@
  * Data SSoT: redesign/api/types.ts GuidanceItem / GuidanceCategory / GuidanceScope
  * SPEC §3.6.14 / SCREEN_REQUIREMENTS §3.10 / §4.9
  *
- * Write hookup (DELETE /guidance/:id retire / toggle active) deferred to Phase 5 t16.
- * M0.15 t6: read-only visual port, useScenario() driven.
+ * Write hookup (DELETE /guidance/:id retire / toggle active) wired in Phase 5 t16.
+ * REQ-065, REQ-077
  */
 import React, { useState } from 'react';
 import { useScenario } from '@claude-loom/redesign/api/websocket';
 import type { GuidanceItem, GuidanceCategory } from '@claude-loom/redesign/api/types';
 import { CatSprite } from '../../components/CatSprite';
 import { ROSTER } from '../room/roster';
+import { useGuidanceMutations } from '../../live/useGuidanceMutations';
 
 // -------------------------------------------------------------------------
 // Helpers — typed constants avoid string literal scatter (Principle: avoid string literals)
@@ -68,9 +69,10 @@ interface GuidanceItemCardProps {
   item: GuidanceItem & { id?: string };
   diffOpen: boolean;
   onToggleDiff: () => void;
+  onRetire: () => void;
 }
 
-function GuidanceItemCard({ item, diffOpen, onToggleDiff }: GuidanceItemCardProps): JSX.Element {
+function GuidanceItemCard({ item, diffOpen, onToggleDiff, onRetire }: GuidanceItemCardProps): JSX.Element {
   const rosterEntry = ROSTER.find((r) => r.id === item.agentId);
 
   return (
@@ -175,7 +177,7 @@ function GuidanceItemCard({ item, diffOpen, onToggleDiff }: GuidanceItemCardProp
             data-testid="guidance-toggle"
             className="btn-px ghost"
             style={{ fontSize: 9, padding: '2px 6px', color: 'var(--p-text-muted)' }}
-            onClick={() => undefined}
+            onClick={onRetire}
           >
             retire
           </button>
@@ -197,6 +199,7 @@ function GuidanceItemCard({ item, diffOpen, onToggleDiff }: GuidanceItemCardProp
 export function GuidanceView(): JSX.Element {
   const scenario = useScenario();
   const all: (GuidanceItem & { id?: string })[] = scenario.guidance ?? [];
+  const { retireGuidance } = useGuidanceMutations();
 
   // Filter state — matches redesign/screens/guidance.jsx defaults
   const [activeOnly, setActiveOnly] = useState(true);
@@ -322,6 +325,11 @@ export function GuidanceView(): JSX.Element {
           item={item}
           diffOpen={diffOpenIndex === i}
           onToggleDiff={() => setDiffOpenIndex((prev) => (prev === i ? null : i))}
+          onRetire={() => retireGuidance({
+            id: item.id ?? `${item.agentId}-${i}`,
+            agentId: item.agentId,
+            scope: item.scope as 'user' | 'project',
+          })}
         />
       ))}
     </div>

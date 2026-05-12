@@ -12,6 +12,19 @@ import { describe, it, expect, afterEach, vi } from 'vitest';
 import { render, screen, cleanup } from '@testing-library/react';
 import type { Scenario } from '@claude-loom/redesign/api/types';
 
+// WHY: Mock useConsistencyMutations so tests don't need a tRPC provider (M0.15 t16).
+vi.mock('../../src/live/useConsistencyMutations', () => ({
+  useConsistencyMutations: () => ({
+    acknowledgeFinding: vi.fn(),
+    markFindingFixed: vi.fn(),
+    dismissFinding: vi.fn(),
+    openInEditor: vi.fn(),
+    isAcknowledgePending: false,
+    isMarkFixedPending: false,
+    isDismissPending: false,
+  }),
+}));
+
 // ---------------------------------------------------------------------------
 // Mock useScenario with same fixture as old MOCK_FINDINGS (all sev + all status)
 // WHY: existing tests were written against M0.11.4 hardcoded fixture containing

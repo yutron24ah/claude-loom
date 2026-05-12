@@ -4,17 +4,20 @@
  * WHY redesign port: M0.15 §3.6.14 replaces the M3.1 tRPC-based
  * usePlanItems / useTodoWrite / usePlanMutations approach with a single
  * useScenario() hook that aggregates scenario state from the daemon WS
- * broadcaster. Write API will be reconnected in Phase 5 t16.
+ * broadcaster. Write API reconnected in Phase 5 t16.
  *
  * SOURCE OF TRUTH for the visual layout: redesign/screens/plan.jsx (read-only).
  * SOURCE OF TRUTH for the data shape:    redesign/api/types.ts.
  *
  * Left pane:  milestones (active tab by default, done archive tab, edit tab).
  * Right pane: TodoWrite mirror (read-only, sticky).
+ *
+ * REQ-077
  */
 import { useState } from 'react';
 import { useScenario } from '@claude-loom/redesign/api/websocket';
 import type { TodoStatus } from '@claude-loom/redesign/api/types';
+import { usePlanMutations } from '../../live/usePlanMutations';
 
 // -------------------------------------------------------------
 // Status display constants (mirrors plan.jsx ST_GLYPH / ST_COLOR)
@@ -38,6 +41,7 @@ type PlanTab = 'active' | 'done' | 'edit';
 export function PlanView(): JSX.Element {
   const sc = useScenario();
   const [tab, setTab] = useState<PlanTab>('active');
+  const { upsertItem } = usePlanMutations();
 
   const { todos, todosUpdatedAt, milestones } = sc;
 
@@ -89,11 +93,16 @@ export function PlanView(): JSX.Element {
             );
           })}
         </div>
-        {/* + milestone placeholder — write API wired in Phase 5 t16 */}
+        {/* + milestone — calls upsertItem to create a new plan item (M0.15 t16) */}
         <button
           type="button"
           className="btn-px primary"
           style={{ fontSize: 9, padding: '3px 8px' }}
+          onClick={() => upsertItem({
+            title: '新しい milestone',
+            status: 'pending',
+            position: 0,
+          })}
         >
           + milestone
         </button>

@@ -1,22 +1,22 @@
 /**
- * WorktreeView — git worktree management screen (read-only visual port).
+ * WorktreeView — git worktree management screen.
  *
  * WHY: M0.15 t4 redesign port — replaces hardcoded MOCK_WORKTREES fixture with
  * live useScenario() data from @claude-loom/redesign/api/websocket.
+ * M0.15 t16 write hookup — lock/unlock/destroy/create buttons wired to
+ * useWorktreeMutations (tRPC worktree router).
  *
  * Design source: redesign/screens/worktree.jsx
  * Data contract: redesign/api/types.ts Worktree / WorktreeUse / WorktreeStatus
  *
- * Phase scope: read-only visual port. Write operations (POST /worktree,
- * DELETE /worktree/:branch, POST /worktree/:branch/lock) deferred to
- * Phase 5 t16.
- *
  * SCREEN_REQUIREMENTS §3.9 / §4.8 / §5.1
+ * REQ-077
  */
 import { useScenario } from '@claude-loom/redesign/api/websocket';
 import type { WorktreeUse, WorktreeStatus } from '@claude-loom/redesign/api/types';
 import { CatSprite } from '../../components/CatSprite';
 import { ROSTER } from '../../data/roster';
+import { useWorktreeMutations } from '../../live/useWorktreeMutations';
 
 // -------------------------------------------------------------------------
 // Design-source color maps (mirrors redesign/screens/worktree.jsx USE_COLOR / ST_COLOR)
@@ -45,6 +45,7 @@ export function WorktreeView(): JSX.Element {
   const worktrees = sc.worktrees ?? [];
   const rosterById = Object.fromEntries(ROSTER.map((r) => [r.id, r]));
   const totalDisk = worktrees.reduce((acc, w) => acc + w.diskMB, 0);
+  const { lockWorktree, unlockWorktree, destroyWorktree } = useWorktreeMutations();
 
   return (
     <div
@@ -343,13 +344,19 @@ export function WorktreeView(): JSX.Element {
                 {w.diskMB} MB
               </span>
 
-              {/* ACTIONS column (read-only stubs — Phase 5 t16 for live write) */}
+              {/* ACTIONS column — wired to useWorktreeMutations (M0.15 t16) */}
               <div style={{ display: 'flex', gap: 3, justifyContent: 'flex-end' }}>
                 <button
                   className="btn-px ghost"
                   title={w.locked ? 'unlock' : 'lock'}
                   style={{ fontSize: 10, padding: '1px 4px' }}
-                  disabled
+                  onClick={() => {
+                    if (w.locked) {
+                      unlockWorktree({ path: w.path, branch: w.branch });
+                    } else {
+                      lockWorktree({ path: w.path, branch: w.branch });
+                    }
+                  }}
                 >
                   {w.locked ? '🔓' : '🔒'}
                 </button>
@@ -357,7 +364,7 @@ export function WorktreeView(): JSX.Element {
                   className="btn-px ghost"
                   title="destroy"
                   style={{ fontSize: 10, padding: '1px 4px', color: 'var(--p-error)' }}
-                  disabled
+                  onClick={() => destroyWorktree({ path: w.path })}
                 >
                   ✕
                 </button>

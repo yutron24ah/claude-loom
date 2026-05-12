@@ -19,6 +19,17 @@ import { describe, it, expect, afterEach, vi, beforeEach } from 'vitest';
 import { render, screen, cleanup, fireEvent } from '@testing-library/react';
 import type { Scenario } from '@claude-loom/redesign/api/types';
 
+// WHY: Mock usePlanMutations so tests don't need a tRPC provider (M0.15 t16).
+vi.mock('../../src/live/usePlanMutations', () => ({
+  usePlanMutations: () => ({
+    upsertItem: vi.fn(),
+    updateItemStatus: vi.fn(),
+    deleteItem: vi.fn(),
+    isUpsertPending: false,
+    isUpdateStatusPending: false,
+  }),
+}));
+
 const { mockUseScenario } = vi.hoisted(() => ({
   mockUseScenario: vi.fn(),
 }));

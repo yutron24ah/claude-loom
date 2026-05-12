@@ -16,6 +16,16 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, screen, cleanup, fireEvent } from '@testing-library/react';
 import type { Scenario } from '@claude-loom/redesign/api/types';
 
+// WHY: Mock useGuidanceMutations so tests don't need a tRPC provider (M0.15 t16).
+vi.mock('../../../src/live/useGuidanceMutations', () => ({
+  useGuidanceMutations: () => ({
+    retireGuidance: vi.fn(),
+    toggleGuidance: vi.fn(),
+    isRetirePending: false,
+    isTogglePending: false,
+  }),
+}));
+
 // ---------------------------------------------------------------------------
 // Mock @claude-loom/redesign/api/websocket
 // WHY: This is the seam scenarios.js → daemon reducer; mocking proves the

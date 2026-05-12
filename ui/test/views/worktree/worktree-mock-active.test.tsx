@@ -16,6 +16,20 @@ afterEach(() => {
   cleanup();
 });
 
+// WHY: Mock useWorktreeMutations so tests don't need a tRPC provider (M0.15 t16).
+vi.mock('../../../src/live/useWorktreeMutations', () => ({
+  useWorktreeMutations: () => ({
+    createWorktree: vi.fn(),
+    destroyWorktree: vi.fn(),
+    lockWorktree: vi.fn(),
+    unlockWorktree: vi.fn(),
+    isCreatePending: false,
+    isDestroyPending: false,
+    isLockPending: false,
+    isUnlockPending: false,
+  }),
+}));
+
 // ---------------------------------------------------------------------------
 // Mock useScenario with 5 worktrees (scenario.active fixture)
 // ---------------------------------------------------------------------------

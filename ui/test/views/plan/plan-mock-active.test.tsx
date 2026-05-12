@@ -12,6 +12,17 @@ import { describe, it, expect, afterEach, vi } from 'vitest';
 import { render, screen, cleanup } from '@testing-library/react';
 import type { Scenario } from '@claude-loom/redesign/api/types';
 
+// WHY: Mock usePlanMutations so tests don't need a tRPC provider (M0.15 t16).
+vi.mock('../../../src/live/usePlanMutations', () => ({
+  usePlanMutations: () => ({
+    upsertItem: vi.fn(),
+    updateItemStatus: vi.fn(),
+    deleteItem: vi.fn(),
+    isUpsertPending: false,
+    isUpdateStatusPending: false,
+  }),
+}));
+
 // WHY: Mock useScenario so the component never touches the real WS store.
 // The mock fixture mirrors the `active` scenario shape from scenarios.js.
 vi.mock('@claude-loom/redesign/api/websocket', () => ({
