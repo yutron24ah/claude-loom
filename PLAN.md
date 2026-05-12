@@ -1098,10 +1098,10 @@ dispatcher: Strategy a × 2 / single mode × 2 / **worktree isolation 必須**
 
 ### Phase 4: shell + posters
 
-- [ ] AppShell.tsx redesign 移植 <!-- id: m0.15-t14 status: todo planned_files: ui/src/AppShell.tsx, ui/src/routing/routes.tsx, ui/test/AppShell.test.tsx -->
+- [x] AppShell.tsx redesign 移植 <!-- id: m0.15-t14 status: done committed_sha: 0c1bcb2 path: C (self_review, 4 aspect + SPEC cross-check pass、REQ-075) planned_files: ui/src/routing/AppShell.tsx, ui/src/routing/routes.tsx, ui/test/AppShell.test.tsx, ui/test/AppShell.redesign.test.tsx -->
   - drawer 11 nav (OPERATE / MANAGE / SETTINGS の 3 group)、topbar 4 metric (PARALLEL / TASK TOOL / TDD ORDER / VERDICT)、statusbar (scenario label + events seen + project path)、scenario picker (idle/active/failed)、conn 表示
   - dispatcher: Strategy a / single mode / shared tree
-- [ ] Room 3 posters scenario 駆動化 <!-- id: m0.15-t15 status: todo planned_files: ui/src/views/room/wall-posters/*.tsx, ui/test/views/room/wall-posters/*.test.tsx -->
+- [x] Room 3 posters scenario 駆動化 <!-- id: m0.15-t15 status: done committed_sha: 1d9480e path: C (self_review, REQ-076) planned_files: ui/src/views/room/wall-posters/*.tsx, ui/test/views/room/wall-posters/*.test.tsx -->
   - GanttPoster / PlanPoster / ConsistencyPoster の static 描画を撤去、scenario.todos / scenario.milestones / scenario.findings / scenario.gantt から駆動
   - dispatcher: Strategy a / single mode / shared tree
 

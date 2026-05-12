@@ -1,8 +1,11 @@
 /**
- * Smoke test: verify App component renders AppShell into DOM (updated m2-t3)
- * WHY: App.tsx now delegates to AppRouter (react-router v6 BrowserRouter + AppShell).
- * We verify the top-level shell structure is present: room-canvas + discipline-header.
- * The original theme toggle demo content (h1 "claude-loom UI") was replaced in m2-t3.
+ * Smoke test: verify App component renders AppShell into DOM.
+ * WHY: App.tsx delegates to AppRouter (react-router v6 BrowserRouter + AppShell).
+ * We verify the top-level shell structure is present: room-canvas + topbar.
+ *
+ * M0.15 t14 (REQ-075) replaced the discipline-header placeholder with the redesign
+ * TopBar (4 discipline metrics + brand + project + conn dot). The smoke contract
+ * is now "AppShell renders the redesign shell" — same intent, new testid.
  */
 import { describe, it, expect, afterEach } from 'vitest';
 import { render, screen, cleanup } from '@testing-library/react';
@@ -24,12 +27,12 @@ describe('App smoke test', () => {
     expect(screen.getByTestId('room-canvas')).toBeInTheDocument();
   });
 
-  it('renders discipline-header placeholder', () => {
+  it('renders topbar (redesign shell) with brand and metrics', () => {
     render(
       <MemoryRouter initialEntries={['/']}>
         <AppShell />
       </MemoryRouter>,
     );
-    expect(screen.getByTestId('discipline-header')).toBeInTheDocument();
+    expect(screen.getByTestId('topbar')).toBeInTheDocument();
   });
 });
