@@ -1107,7 +1107,7 @@ dispatcher: Strategy a × 2 / single mode × 2 / **worktree isolation 必須**
 
 ### Phase 5: write API hookup
 
-- [ ] 既存 daemon REST への button hook (6 画面) <!-- id: m0.15-t16 status: todo planned_files: ui/src/views/customization/*.tsx, ui/src/views/guidance/*.tsx, ui/src/views/worktree/*.tsx, ui/src/views/consistency/*.tsx, ui/src/views/plan/*.tsx, ui/src/views/project-settings/*.tsx, ui/src/live/*.ts -->
+- [x] 既存 daemon REST への button hook (6 画面) <!-- id: m0.15-t16 status: done committed_sha: 50a2a43 path: C (self_review, REQ-077) planned_files: ui/src/views/customization/*.tsx, ui/src/views/guidance/*.tsx, ui/src/views/worktree/*.tsx, ui/src/views/consistency/*.tsx, ui/src/views/plan/*.tsx, ui/src/views/project-settings/*.tsx, ui/src/live/*.ts -->
   - ⑦ Customization: PUT /customization/:id (既存 prefs router)
   - ⑧ Guidance: DELETE /guidance/:id (既存 prefs router)
   - ⑥ Worktree: POST /worktree, DELETE /worktree/:branch, POST /worktree/:branch/lock (既存 worktree router)
@@ -1115,7 +1115,7 @@ dispatcher: Strategy a × 2 / single mode × 2 / **worktree isolation 必須**
   - ③ Plan: PUT /plan_items (既存 plan router)
   - ⑫ Settings: PUT /settings (既存 project / config router)
   - dispatcher: Strategy a / single mode / shared tree
-- [ ] PMChat write hookup (POST /pm/say, /permission/:id, /start) <!-- id: m0.15-t17 status: todo planned_files: ui/src/views/pm-chat/*.tsx, ui/src/live/usePMSession.ts, ui/test/views/pm-chat/*.test.tsx -->
+- [x] PMChat write hookup (POST /pm/say, /permission/:id, /start) <!-- id: m0.15-t17 status: done committed_sha: aa2086e path: C (self_review, REQ-078) planned_files: ui/src/views/pm-chat/*.tsx, ui/src/live/usePMSession.ts, ui/test/views/pm-chat/*.test.tsx -->
   - ⑬ PMChat: POST /pm/start (起動), POST /pm/say (送信), POST /pm/permission/:id (承認/却下)
   - dispatcher: Strategy a / single mode / shared tree
 
