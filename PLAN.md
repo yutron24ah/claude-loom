@@ -1091,7 +1091,7 @@ dispatcher: Strategy a × 3 / single mode × 3 / **worktree isolation 必須**
 dispatcher: Strategy a × 2 / single mode × 2 / **worktree isolation 必須**
 
 #### t-pm — ⑬ PMChat 単独 (trio reviewer、daemon pm.* sub-router 新設含む)
-- [ ] ⑬ PMChat 実装 + daemon pm.* sub-router + 3 新 event 型 <!-- id: m0.15-t13 status: todo reviewer_mode: trio planned_files: ui/src/views/pm-chat/*.tsx, ui/src/AppShell.tsx, daemon/src/routes/pm.ts, daemon/src/events/types.ts, daemon/src/events/broadcaster.ts, daemon/src/router.ts, daemon/test/routes/pm.test.ts, daemon/test/events/pm-events.test.ts -->
+- [x] ⑬ PMChat 実装 + daemon pm.* sub-router + 3 新 event 型 <!-- id: m0.15-t13 status: done committed_sha: 97922f0 path: C (trio mode self_review, 3 aspect + SPEC cross-check all pass、REQ-074) reviewer_mode: trio planned_files: ui/src/views/pm-chat/*.tsx, ui/src/AppShell.tsx, daemon/src/routes/pm.ts, daemon/src/events/types.ts, daemon/src/events/broadcaster.ts, daemon/src/router.ts, daemon/test/routes/pm.test.ts, daemon/test/events/pm-events.test.ts -->
   - daemon 側: pm.message / pm.permission_request / pm.permission_resolved の 3 event schema を types.ts に追加、broadcaster に emit 関数 3 つ追加、routes/pm.ts に POST /pm/start / POST /pm/say / POST /pm/permission/:id / POST /pm/stop 実装、router.ts に pm sub-router 統合
   - frontend 側: ui/src/views/pm-chat/PMChatPanel.tsx + AppShell.tsx 右カラム構造 + risk-based modal/toast routing (high → 中央 modal、med/low → 右上 toast)
   - dispatcher: Strategy a / **trio mode** / shared tree (単独 task)
