@@ -1076,9 +1076,9 @@ dispatcher: Strategy a × 3 / single mode × 3 / **worktree isolation 必須** (
 dispatcher: Strategy a × 3 / single + trio + single / **worktree isolation 必須**
 
 #### batch C — 確信:高 group C (3 dev parallel)
-- [ ] ⑩ Sessions redesign port <!-- id: m0.15-t8 status: todo planned_files: ui/src/views/session-list/*.tsx, ui/test/views/session-list/*.test.tsx -->
-- [ ] ⑪ Tokens redesign port <!-- id: m0.15-t9 status: todo planned_files: ui/src/views/tokens/*.tsx, ui/test/views/tokens/*.test.tsx -->
-- [x] ⑫ Settings redesign port <!-- id: m0.15-t10 status: done planned_files: ui/src/views/project-settings/*.tsx, ui/test/views/project-settings/*.test.tsx -->
+- [x] ⑩ Sessions redesign port <!-- id: m0.15-t8 status: done committed_sha: 13e8dfe path: C (self_review, REQ-070 renumbered from REQ-068 due to merge collision with t10) planned_files: ui/src/views/session-list/*.tsx, ui/test/views/session-list/*.test.tsx -->
+- [x] ⑪ Tokens redesign port <!-- id: m0.15-t9 status: done committed_sha: bcbc55e path: C (self_review, REQ-069) planned_files: ui/src/views/tokens/*.tsx, ui/test/views/tokens/*.test.tsx -->
+- [x] ⑫ Settings redesign port <!-- id: m0.15-t10 status: done committed_sha: 9c8deeb path: C (self_review, REQ-068) planned_files: ui/src/views/project-settings/*.tsx, ui/test/views/project-settings/*.test.tsx -->
 
 dispatcher: Strategy a × 3 / single mode × 3 / **worktree isolation 必須**
 
