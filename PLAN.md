@@ -1121,11 +1121,11 @@ dispatcher: Strategy a × 2 / single mode × 2 / **worktree isolation 必須**
 
 ### Phase 6: closure gates
 
-- [ ] tests/redesign_invariant_test.sh 新設 (mock SCENARIOS 保全 verify) <!-- id: m0.15-t18 status: todo planned_files: tests/redesign_invariant_test.sh, tests/run_tests.sh -->
+- [x] tests/redesign_invariant_test.sh 新設 (mock SCENARIOS 保全 verify) <!-- id: m0.15-t18 status: done committed_sha: 393c633 path: C (self_review, 20 file SHA-256 hash verify、REQ-079 PM 一括 append) planned_files: tests/redesign_invariant_test.sh, tests/.redesign-invariant-baseline.txt -->
   - `git log -- redesign/scenarios.js redesign/screens/ "redesign/Redesign App.html" redesign/cat.jsx redesign/styles.css redesign/tokens.css redesign/_chat1.md redesign/_chat2.md` で M0.15 期間中 untouched verify
   - tests/run_tests.sh に redesign_invariant_test.sh を統合
   - dispatcher: Strategy a / single mode / shared tree
-- [ ] doc update (SPEC §3.6.14 + SCREEN_REQUIREMENTS + DOC_CONSISTENCY_CHECKLIST) <!-- id: m0.15-t19 status: todo planned_files: SPEC.md, docs/SCREEN_REQUIREMENTS.md, docs/DOC_CONSISTENCY_CHECKLIST.md -->
+- [x] doc update (SPEC §3.6.14 + SCREEN_REQUIREMENTS + DOC_CONSISTENCY_CHECKLIST) <!-- id: m0.15-t19 status: done committed_sha: a4501e7 path: C (doc-only self_review、REQ-080 PM 一括 append) planned_files: SPEC.md, docs/SCREEN_REQUIREMENTS.md, docs/DOC_CONSISTENCY_CHECKLIST.md -->
   - SPEC §3.6.14 完成基準を fulfilled に update
   - SCREEN_REQUIREMENTS.md: 12 画面の useScenario shape (data dependency = 各 screens.jsx 冒頭 destructuring) を SSoT として記述
   - DOC_CONSISTENCY_CHECKLIST.md: M0.15 check items 追加
@@ -1134,7 +1134,7 @@ dispatcher: Strategy a × 2 / single mode × 2 / **worktree isolation 必須**
   - SPEC §3.6.14.5 の 7 step matrix を sequential 実行、結果を docs/smoke-tests/m0.15-dogfood/ に構造化 report 出力
   - 任意 step 失敗 → tag 設置 BLOCK、failed step を user に報告 + fix task を PLAN.md に追加
   - dispatcher: PM 自身 (subagent dispatch せず PM が直接 Bash + curl で実機 verify、loom-ui-smoke skill invoke も併用候補)
-- [ ] Playwright e2e baseline (12 画面 visual + 重要 3 画面 1-click flow) <!-- id: m0.15-t21 status: todo planned_files: ui/e2e/m0.15-redesign/*.spec.ts -->
+- [x] Playwright e2e baseline (12 画面 visual + 重要 3 画面 1-click flow) <!-- id: m0.15-t21 status: done committed_sha: af2c07f path: C (self_review, 13 screenshot baseline + 3 click flow + 3 room regenerated = 19 pass、REQ-081 PM 一括 append) planned_files: ui/e2e/m0.15-redesign/*.spec.ts, ui/e2e/__screenshots__/m0.15-redesign/*.png, ui/e2e/__screenshots__/room-baseline.spec.ts-snapshots/*.png -->
   - 12 画面の `?mock=active` screenshot baseline + 重要 3 画面 (⑦ Customization 保存 / ⑬ PMChat 送信 / ⑫ Settings 保存) の click flow
   - dispatcher: Strategy a / single mode / shared tree
 - [ ] m0.15-complete tag 設置 + retro hook trigger <!-- id: m0.15-t22 status: todo planned_files: PLAN.md -->
