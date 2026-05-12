@@ -951,17 +951,17 @@ milestone tag (`m0.15-complete`) 設置 **直前** に PM 自身が以下を seq
 
 #### 3.6.14.6 完成基準 (PLAN.md M0.15 完成基準と整合)
 
-- [ ] 12 画面全部が `?mock=active` で動く (browser white screen 出さない)
-- [ ] 12 画面全部が daemon WS から live data を受信 (mock query 無し時 = production data)
-- [ ] 重要 3 画面 (⑦ Customization / ⑬ PMChat / ⑫ Settings) の 1-click flow が daemon REST に payload を届ける
-- [ ] `redesign/scenarios.js` + `redesign/screens/*.jsx` + `redesign/Redesign App.html` + `redesign/cat.jsx` + `redesign/styles.css` + `redesign/tokens.css` が untouched (`tests/redesign_invariant_test.sh` で gate)
-- [ ] Layer 1 全 test pass (bash + ui + daemon)
-- [ ] Layer 2 browser-interactive smoke pass (`/loom-ui-smoke --scope=full --auto-start`)
-- [ ] Layer 2.5 dogfood smoke 全 7 step pass
-- [ ] Playwright e2e baseline (12 画面 screenshot + 重要 3 画面 1-click flow) pass
-- [ ] SPEC §3.6.14 + `docs/SCREEN_REQUIREMENTS.md` (12 画面の useScenario shape) + `docs/DOC_CONSISTENCY_CHECKLIST.md` (M0.15 check items) update 済
-- [ ] tag `m0.15-complete` 設置 + retro hook trigger
-- [ ] `m0`〜`m5-complete` 全 tag 保持
+- [x] 12 画面全部が `?mock=active` で動く (browser white screen 出さない) ← Phase 1-4 (t0-t15) で全 12 画面 mock hookup 完了
+- [x] 12 画面全部が daemon WS から live data を受信 (mock query 無し時 = production data) ← t1 useScenario reducer + Phase 5 live hookup (t6-t15) で達成
+- [x] 重要 3 画面 (⑦ Customization / ⑬ PMChat / ⑫ Settings) の 1-click flow が daemon REST に payload を届ける ← Phase 5 t16 (write API hookup 6 screens) / t17 (usePMSession) で達成
+- [ ] `redesign/scenarios.js` + `redesign/screens/*.jsx` + `redesign/Redesign App.html` + `redesign/cat.jsx` + `redesign/styles.css` + `redesign/tokens.css` が untouched (`tests/redesign_invariant_test.sh` で gate) ← t18 で gate test 新設 (本 task では `[ ]` のまま、closure t22 で update)
+- [x] Layer 1 全 test pass (bash + ui + daemon) ← 1007 ui tests + daemon 546 tests GREEN (feat/redesign-room-mvp HEAD)
+- [ ] Layer 2 browser-interactive smoke pass (`/loom-ui-smoke --scope=full --auto-start`) ← t20 で実施
+- [ ] Layer 2.5 dogfood smoke 全 7 step pass ← t20 で実施
+- [ ] Playwright e2e baseline (12 画面 screenshot + 重要 3 画面 1-click flow) pass ← t21 で実施
+- [x] SPEC §3.6.14 + `docs/SCREEN_REQUIREMENTS.md` (12 画面の useScenario shape) + `docs/DOC_CONSISTENCY_CHECKLIST.md` (M0.15 check items) update 済 ← t19 (本 task) で完了
+- [ ] tag `m0.15-complete` 設置 + retro hook trigger ← t22 closure で PM が設置
+- [ ] `m0`〜`m5-complete` 全 tag 保持 ← t22 closure で verify
 
 ### 3.7 プロジェクトライフサイクルと adopt 戦略
 

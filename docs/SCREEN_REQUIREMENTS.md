@@ -435,6 +435,39 @@ frontend-design への hint（決定権は frontend-design に委譲）：
 
 ---
 
+## M0.15: useScenario shape SSoT (12 画面)
+
+> **M0.15 完了時点のインデックス。** 各画面の `ui/src/views/<screen>/*.tsx` が `useScenario()` から何を destructure するかを列挙する。
+> `redesign/screens/*.jsx` 冒頭 destructuring が視覚的 prototype 側の SSoT、本 section はその production port 対応表。
+> SPEC §3.6.14 §3.6.14.6 完成基準「12 画面全部が daemon WS から live data を受信」の根拠資料。
+
+### 12 画面 対応表
+
+| # | 画面名 | component | 主 useScenario フィールド |
+|---|---|---|---|
+| ① | Room (開発室メイン) | `ui/src/views/room/RoomView.tsx` | `agents` (各 agent の status)、`stream` (active check)、`pm` (chat panel 表示)、`todos` / `milestones` (PlanPoster)、`findings` (ConsistencyPoster)、`worktrees` (dev サブルーム) |
+| ② | AgentDetail (エージェント詳細) | `ui/src/views/room/AgentDetailPanel.tsx` | `agents[id]` (status)、`guidance` (agent 絞込)、`gantt.rows` (agent 絞込)、`stream` (agent 絞込)、`tokens.byAgent` |
+| ③ | Gantt (作業ガント) | `ui/src/views/gantt/GanttView.tsx` | `gantt` (rows / cols 全体) |
+| ④ | Plan (計画 todo) | `ui/src/views/plan/PlanView.tsx` | `todos`、`todosUpdatedAt`、`milestones` |
+| ⑤ | Retro (振り返り) | `ui/src/views/retro/RetroView.tsx` | `retroSession` (title / verdict / lenses / transcript / durationSec) |
+| ⑥ | Guidance (learned guidance) | `ui/src/views/guidance/GuidanceView.tsx` | `guidance` (GuidanceItem[] — agentId / text / active) |
+| ⑦ | Customization (エージェント設定) | `ui/src/views/customization/CustomizationView.tsx` | `customization` (personality presets / model selection) |
+| ⑧ | SessionList (セッション一覧) | `ui/src/views/session-list/SessionListView.tsx` | `sessions`、`project` |
+| ⑨ | Tokens (トークン消費) | `ui/src/views/tokens/TokensView.tsx` | `tokens` (byAgent / session totals)、`pricing` |
+| ⑩ | Worktree (ワークツリー) | `ui/src/views/worktree/WorktreeView.tsx` | `worktrees` |
+| ⑪ | Consistency (整合性 check) | `ui/src/views/consistency/ConsistencyView.tsx` | `findings`、`consistencyState` |
+| ⑫ | ProjectSettings (プロジェクト設定) | `ui/src/views/project-settings/ProjectSettingsView.tsx` | `settings`、`project` |
+| ⑬ | PMChat (PM チャットパネル) | `ui/src/views/pm-chat/PMChatPanel.tsx` + `AppShell` | `pm` (running / pendingApprovals / stream)、`stream` — props 経由で AppShell から渡される |
+
+### 補足
+
+- **PMChat (⑬)**: `PMChatPanel.tsx` 自体は `useScenario()` を直接 call せず、`AppShell.tsx` が `scenario.pm` + `scenario.stream` を prop として渡す (SRP: panel = pure render)。write 操作は `usePMSession()` (tRPC mutation) が担当 (Phase 5 t17 で hookup)。
+- **重要 3 画面の write path**: ⑦ Customization (`PUT /customization/:id`)、⑬ PMChat (`POST /pm/say`)、⑫ ProjectSettings (`PUT /settings`) は t16/t17 で daemon REST に接続済み。
+- **フィールド型定義 SSoT**: `redesign/api/types.ts` (ScenarioShape interface)、`redesign/api/websocket.ts` (useScenario hook + reducer)。
+- **mock mode**: `?mock=active` クエリパラメータで `redesign/scenarios.js` fixture を注入。fixture 内容は M0.15 期間中 untouched (§3.6.14.3 保全規律)。
+
+---
+
 ## 変更履歴
 
 - 2026-04-26: 初版作成（ページ構成 / コンポーネント配置を含むレイアウト記述ベース）
@@ -443,3 +476,4 @@ frontend-design への hint（決定権は frontend-design に委譲）：
 - 2026-04-29: M0.8〜M0.13 feature 反映ブラッシュアップ（Q1 Retro / Q2 Customization Layer / Q3 Worktree / Q4 learned_guidance / Q5 Coexistence Mode / Q6 Process Discipline metrics）。Phase 1 MVP に retro 画面昇格、観測 31 項目 + 介入 27 項目 追加。Visual hint 追加（sub-room / guidance indicator / 経験値ゲージ風）。
 - 2026-04-30: §6.1 ダーク基調制約撤去、配色方針を完全に frontend-design 委譲に。§7.2 Phase 2「ライトテーマ」項目削除（dark/light の dichotomy 自体が消えたため）。SPEC §6.10 `ui.theme` default を `dark` → `system` に変更。
 - 2026-04-30: §6.2 キャラ表現に **「猫の開発室」コンセプト**（猫系 / アニマル系モチーフ）を追加。13 agent それぞれに異なる猫種 / 動物種でキャラ立て、キャラクター愛着強化。SPEC §12 visual 方向性も同期更新。
+- 2026-05-12: M0.15 完了時点の「useScenario shape SSoT (12 画面)」section を追加。各画面の `useScenario()` destructuring / write path / mock mode を索引化 (t19 doc update)。
