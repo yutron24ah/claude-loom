@@ -1130,7 +1130,7 @@ dispatcher: Strategy a × 2 / single mode × 2 / **worktree isolation 必須**
   - SCREEN_REQUIREMENTS.md: 12 画面の useScenario shape (data dependency = 各 screens.jsx 冒頭 destructuring) を SSoT として記述
   - DOC_CONSISTENCY_CHECKLIST.md: M0.15 check items 追加
   - dispatcher: Strategy a / single mode / shared tree
-- [ ] Layer 2.5 dogfood smoke (PM 必須実行、trio reviewer の result audit 含む) <!-- id: m0.15-t20 status: todo reviewer_mode: trio planned_files: docs/smoke-tests/m0.15-dogfood/*.md -->
+- [x] Layer 2.5 dogfood smoke (PM 必須実行、trio reviewer の result audit 含む) <!-- id: m0.15-t20 status: done execution: PM direct (no subagent) finding: auto-build chain gap (retro candidate F-USER-009 後継) report: docs/smoke-tests/m0.15-dogfood/report.md REQ-082 planned_files: docs/smoke-tests/m0.15-dogfood/*.md -->
   - SPEC §3.6.14.5 の 7 step matrix を sequential 実行、結果を docs/smoke-tests/m0.15-dogfood/ に構造化 report 出力
   - 任意 step 失敗 → tag 設置 BLOCK、failed step を user に報告 + fix task を PLAN.md に追加
   - dispatcher: PM 自身 (subagent dispatch せず PM が直接 Bash + curl で実機 verify、loom-ui-smoke skill invoke も併用候補)
