@@ -5,11 +5,13 @@
  * Ported from redesign/screens/consistency.jsx (M0.15 t11).
  * Data source: useScenario().findings + useScenario().consistencyState
  * (replaces M0.11.4 hardcoded MOCK_FINDINGS fixture).
- * Action buttons (ack/fix/dismiss/discuss) are noop; write hookup is Phase 5 t16.
+ * Write hookup (ack/fix/dismiss) wired in M0.15 t16 via useConsistencyMutations.
+ * REQ-073, REQ-077
  */
 import { useState } from 'react';
 import { useScenario } from '@claude-loom/redesign/api/websocket';
 import type { Finding, FindingSeverity, FindingStatus, ConsistencyState } from '@claude-loom/redesign/api/types';
+import { useConsistencyMutations } from '../../live/useConsistencyMutations';
 
 // ---------------------------------------------------------------------------
 // Re-export types for downstream consumers
@@ -40,9 +42,16 @@ function statusDotClass(status: FindingStatus): string {
 
 interface FindingCardProps {
   finding: Finding;
+  // WHY: Finding.id is string in redesign types (e.g. 'F-12').
+  // Callbacks accept string; ConsistencyView translates to number for daemon mutations.
+  onAck: (id: string) => void;
+  onFix: (id: string) => void;
+  onDismiss: (id: string) => void;
+  // WHY: Finding.file (not targetPath) is the field name in redesign Finding type.
+  onOpenEditor: (file: string) => void;
 }
 
-function FindingCard({ finding: f }: FindingCardProps): JSX.Element {
+function FindingCard({ finding: f, onAck, onFix, onDismiss, onOpenEditor }: FindingCardProps): JSX.Element {
   const [expanded, setExpanded] = useState(false);
   const isOpen = f.status === 'open';
   const isAck = f.status === 'ack';
@@ -153,7 +162,7 @@ function FindingCard({ finding: f }: FindingCardProps): JSX.Element {
             </>
           )}
 
-          {/* Action buttons — noop (Phase 5 t16 write hookup) */}
+          {/* Action buttons — wired to useConsistencyMutations (M0.15 t16) */}
           <div style={{ display: 'flex', gap: 4, marginTop: 8, alignItems: 'center' }}>
             {/* Open in Editor — for open and ack (backward compat) */}
             {(isOpen || isAck) && (
@@ -162,7 +171,7 @@ function FindingCard({ finding: f }: FindingCardProps): JSX.Element {
                 data-action="open-editor"
                 className="btn-px ghost"
                 style={{ fontSize: 9, padding: '3px 6px' }}
-                onClick={() => undefined}
+                onClick={() => onOpenEditor(f.file)}
               >
                 Open in Editor
               </button>
@@ -174,7 +183,7 @@ function FindingCard({ finding: f }: FindingCardProps): JSX.Element {
                 data-action="ack"
                 className="btn-px primary"
                 style={{ fontSize: 9, padding: '3px 6px' }}
-                onClick={() => undefined}
+                onClick={() => onAck(f.id)}
               >
                 Acknowledge
               </button>
@@ -186,7 +195,7 @@ function FindingCard({ finding: f }: FindingCardProps): JSX.Element {
                 data-action="fix"
                 className="btn-px ghost"
                 style={{ fontSize: 9, padding: '3px 6px' }}
-                onClick={() => undefined}
+                onClick={() => onFix(f.id)}
               >
                 Mark Fixed
               </button>
@@ -198,7 +207,7 @@ function FindingCard({ finding: f }: FindingCardProps): JSX.Element {
                 data-action="dismiss"
                 className="btn-px ghost"
                 style={{ fontSize: 9, padding: '3px 6px', color: 'var(--p-text-muted)' }}
-                onClick={() => undefined}
+                onClick={() => onDismiss(f.id)}
               >
                 Dismiss
               </button>
@@ -231,6 +240,15 @@ export function ConsistencyView(): JSX.Element {
   const sc = useScenario();
   const findings: Finding[] = sc.findings ?? [];
   const consistencyState: ConsistencyState = sc.consistencyState ?? 'empty';
+  const { acknowledgeFinding, markFindingFixed, dismissFinding, openInEditor } = useConsistencyMutations();
+
+  // WHY: redesign Finding.id is string (e.g. 'F-12'); daemon uses numeric IDs.
+  // parseInt extracts the numeric portion for daemon mutation calls.
+  // Non-numeric IDs (e.g. pure string) will produce NaN — acceptable for M0.15 scope
+  // as all mock IDs follow the 'F-NN' pattern.
+  function handleAck(id: string): void { acknowledgeFinding(parseInt(id.replace(/\D/g, ''), 10)); }
+  function handleFix(id: string): void { markFindingFixed(parseInt(id.replace(/\D/g, ''), 10)); }
+  function handleDismiss(id: string): void { dismissFinding(parseInt(id.replace(/\D/g, ''), 10)); }
 
   // Summary counts
   const openCount = findings.filter((f) => f.status === 'open').length;
@@ -311,7 +329,14 @@ export function ConsistencyView(): JSX.Element {
           {/* Finding cards */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {findings.map((f) => (
-              <FindingCard key={f.id} finding={f} />
+              <FindingCard
+                key={f.id}
+                finding={f}
+                onAck={handleAck}
+                onFix={handleFix}
+                onDismiss={handleDismiss}
+                onOpenEditor={openInEditor}
+              />
             ))}
           </div>
         </>

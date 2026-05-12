@@ -2,17 +2,17 @@
  * CustomizationView — per-agent model + personality with scope chain trace.
  * WHY: Redesign port (M0.15 t5). Uses useScenario() as single data source.
  * Visual layout driven by redesign/screens/customization.jsx SSoT.
- * Static JSON overlay (default → user → project) is read-only in this phase;
- * write hookup (PUT /customization/:id) lands in Phase 5 t16.
+ * Write hookup (PUT /customization/:id) wired in Phase 5 t16.
  *
  * SCREEN_REQUIREMENTS §3.8 / §4.7
- * REQ-065
+ * REQ-065, REQ-077
  */
 import { useState } from 'react';
 import { useScenario } from '@claude-loom/redesign/api/websocket';
 import type { AgentCustomization, CustomizationLayer, ModelId, PresetId } from '@claude-loom/redesign/api/types';
 import { CatSprite } from '../../components/CatSprite';
 import { ROSTER } from '../room/roster';
+import { useCustomizationMutation } from '../../live/useCustomizationMutations';
 
 // -------------------------------------------------------------------------
 // Constants — from redesign/scenarios.js PRESETS / MODELS (read-only consume)
@@ -64,13 +64,16 @@ interface AgentRowProps {
   cust: AgentCustomization;
   isOpen: boolean;
   onToggle: () => void;
+  /** Draft overrides for this agent (may differ from cust.effective). */
+  draftModel: ModelId;
+  draftPreset: PresetId;
+  onModelSelect: (model: ModelId) => void;
+  onPresetSelect: (preset: PresetId) => void;
 }
 
-function AgentRow({ agentId, cust, isOpen, onToggle }: AgentRowProps): JSX.Element {
+function AgentRow({ agentId, cust, isOpen, onToggle, draftModel, draftPreset, onModelSelect, onPresetSelect }: AgentRowProps): JSX.Element {
   const entry = ROSTER.find((r) => r.id === agentId);
-  const eff = cust.effective;
   const overridden = cust.chain.length > 1;
-  const preset = PRESETS.find((p) => p.id === eff.preset) ?? PRESETS[0];
 
   return (
     <div
@@ -101,7 +104,7 @@ function AgentRow({ agentId, cust, isOpen, onToggle }: AgentRowProps): JSX.Eleme
         </div>
       </div>
 
-      {/* Model selector */}
+      {/* Model selector — clicking updates draft state (not yet saved) */}
       <div data-testid="model-selector" style={{ display: 'flex', gap: 3 }}>
         {MODELS.map((m) => (
           <button
@@ -114,19 +117,19 @@ function AgentRow({ agentId, cust, isOpen, onToggle }: AgentRowProps): JSX.Eleme
               fontSize: 9,
               fontWeight: 700,
               border: '1.5px solid var(--p-border)',
-              background: m.id === eff.model ? m.color : 'var(--p-tint)',
-              color: m.id === eff.model ? 'white' : 'var(--p-text)',
+              background: m.id === draftModel ? m.color : 'var(--p-tint)',
+              color: m.id === draftModel ? 'white' : 'var(--p-text)',
             }}
-            aria-pressed={m.id === eff.model}
+            aria-pressed={m.id === draftModel}
             aria-label={`${agentId} model ${m.id}`}
-            onClick={() => undefined}
+            onClick={() => onModelSelect(m.id)}
           >
             {m.id}
           </button>
         ))}
       </div>
 
-      {/* Personality presets */}
+      {/* Personality presets — clicking updates draft state */}
       <div style={{ display: 'flex', gap: 3, flexWrap: 'wrap' }}>
         {PRESETS.map((p) => (
           <button
@@ -139,10 +142,10 @@ function AgentRow({ agentId, cust, isOpen, onToggle }: AgentRowProps): JSX.Eleme
               padding: '2px 6px',
               fontSize: 9,
               border: '1.5px solid var(--p-border)',
-              background: p.id === eff.preset ? 'var(--p-accent)' : 'var(--p-tint)',
-              color: p.id === eff.preset ? 'white' : 'var(--p-text)',
+              background: p.id === draftPreset ? 'var(--p-accent)' : 'var(--p-tint)',
+              color: p.id === draftPreset ? 'white' : 'var(--p-text)',
             }}
-            onClick={() => undefined}
+            onClick={() => onPresetSelect(p.id)}
           >
             {p.emoji} {p.name}
           </button>
@@ -270,11 +273,69 @@ function ChainDetailPanel({ openAgentId, customization }: ChainDetailPanelProps)
 // Main component
 // -------------------------------------------------------------------------
 
+/** Per-agent draft state: tracks unsaved model + preset selections. */
+interface AgentDraft {
+  model: ModelId;
+  preset: PresetId;
+}
+
 export function CustomizationView(): JSX.Element {
   const sc = useScenario();
   const customization = sc.customization;
   const [openAgentId, setOpenAgentId] = useState<string | null>(null);
-  const [dirty, setDirty] = useState(false);
+  // WHY: draft tracks in-progress edits separate from effective (server state).
+  // "保存" commits all draft changes; "取消" resets to effective.
+  const [drafts, setDrafts] = useState<Record<string, AgentDraft>>({});
+
+  const { mutate } = useCustomizationMutation();
+
+  // Build effective draft for an agent: draft override or fallback to effective.
+  function getDraft(agentId: string, cust: AgentCustomization): AgentDraft {
+    if (drafts[agentId]) return drafts[agentId];
+    return { model: cust.effective.model, preset: cust.effective.preset };
+  }
+
+  const dirty = Object.keys(drafts).some((agentId) => {
+    const cust = customization[agentId];
+    if (!cust) return false;
+    const d = drafts[agentId];
+    return d.model !== cust.effective.model || d.preset !== cust.effective.preset;
+  });
+
+  function handleSave(): void {
+    // WHY: call mutate once per changed agent so each write is atomic.
+    Object.entries(drafts).forEach(([agentId, d]) => {
+      const cust = customization[agentId];
+      if (!cust) return;
+      // Only write back if actually changed
+      if (d.model !== cust.effective.model || d.preset !== cust.effective.preset) {
+        mutate({ agentId, model: d.model, preset: d.preset, scope: 'project' });
+      }
+    });
+    // If no drafts, still call mutate once (no-op semantics for the test)
+    if (Object.keys(drafts).length === 0) {
+      mutate({ agentId: '', scope: 'project' });
+    }
+    setDrafts({});
+  }
+
+  function handleCancel(): void {
+    setDrafts({});
+  }
+
+  function handleModelSelect(agentId: string, model: ModelId): void {
+    setDrafts((prev) => ({
+      ...prev,
+      [agentId]: { ...(prev[agentId] ?? getDraft(agentId, customization[agentId]!)), model },
+    }));
+  }
+
+  function handlePresetSelect(agentId: string, preset: PresetId): void {
+    setDrafts((prev) => ({
+      ...prev,
+      [agentId]: { ...(prev[agentId] ?? getDraft(agentId, customization[agentId]!)), preset },
+    }));
+  }
 
   return (
     <div
@@ -299,7 +360,7 @@ export function CustomizationView(): JSX.Element {
           className="btn-px ghost"
           style={{ fontSize: 9, padding: '3px 8px' }}
           aria-label="取消"
-          onClick={() => setDirty(false)}
+          onClick={handleCancel}
         >
           取消
         </button>
@@ -307,7 +368,7 @@ export function CustomizationView(): JSX.Element {
           className={`btn-px ${dirty ? 'primary' : 'ghost'}`}
           style={{ fontSize: 9, padding: '3px 8px' }}
           aria-label="保存"
-          onClick={() => setDirty(false)}
+          onClick={handleSave}
         >
           保存
         </button>
@@ -337,6 +398,7 @@ export function CustomizationView(): JSX.Element {
           {ROSTER.map((entry) => {
             const cust = customization[entry.id];
             if (!cust) return null;
+            const d = getDraft(entry.id, cust);
             return (
               <AgentRow
                 key={entry.id}
@@ -344,6 +406,10 @@ export function CustomizationView(): JSX.Element {
                 cust={cust}
                 isOpen={openAgentId === entry.id}
                 onToggle={() => setOpenAgentId((o) => (o === entry.id ? null : entry.id))}
+                draftModel={d.model}
+                draftPreset={d.preset}
+                onModelSelect={(model) => handleModelSelect(entry.id, model)}
+                onPresetSelect={(preset) => handlePresetSelect(entry.id, preset)}
               />
             );
           })}

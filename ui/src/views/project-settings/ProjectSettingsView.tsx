@@ -26,6 +26,7 @@
 import React from 'react';
 import { useScenario } from '@claude-loom/redesign/api/websocket';
 import type { ProjectSettings } from '@claude-loom/redesign/api/types';
+import { useProjectSettingsMutation } from '../../live/useProjectSettingsMutation';
 
 // WHY: Reviewer options mirror the canonical 3-reviewer set from redesign/screens/settings.jsx.
 // "all" shorthand and custom entries will be displayed as generic toggles.
@@ -369,10 +370,11 @@ export function ProjectSettingsView(): JSX.Element {
   const sc = useScenario();
   const s = sc.settings;
 
-  // WHY: local draft state for controlled form inputs. Write hookup (PUT /settings)
-  // is deferred to Phase 5 t16. Save/cancel buttons are present but noop.
+  // WHY: local draft state for controlled form inputs.
+  // Write hookup (PUT /settings) wired in M0.15 t16 via useProjectSettingsMutation.
   const [draft, setDraft] = React.useState<ProjectSettings>(s);
   const dirty = JSON.stringify(draft) !== JSON.stringify(s);
+  const { mutate: saveMutation } = useProjectSettingsMutation();
 
   return (
     <div
@@ -402,7 +404,7 @@ export function ProjectSettingsView(): JSX.Element {
             未保存
           </span>
         )}
-        {/* WHY: cancel and save are noop — write hookup is Phase 5 t16 */}
+        {/* WHY: cancel resets draft; save calls useProjectSettingsMutation (M0.15 t16) */}
         <button
           className="btn-px ghost"
           onClick={() => setDraft(s)}
@@ -412,7 +414,7 @@ export function ProjectSettingsView(): JSX.Element {
         </button>
         <button
           className={`btn-px ${dirty ? 'primary' : 'ghost'}`}
-          onClick={() => undefined}
+          onClick={() => saveMutation(draft)}
         >
           保存
         </button>

@@ -228,4 +228,7 @@
 
 ## M0.15 Phase 4 t15: Room posters scenario-driven
 
+## M0.15 Phase 5 t16: Write API hookup (6 screens)
+
+- **REQ-077**: M0.15 Phase 5 t16 — 6 redesign-port views (Customization / Guidance / Worktree / Consistency / Plan / ProjectSettings) の noop ボタンが実際の daemon 変更を起動する tRPC mutation hook に接続される。新規 hook: `useCustomizationMutation` (prefs.user.set / prefs.project.set)、`useGuidanceMutations` (learnedGuidance.toggle / learnedGuidance.delete)、`useWorktreeMutations` (worktree.create / worktree.remove / worktree.lock / worktree.unlock)、`useProjectSettingsMutation` (prefs.project.set)。既存 hook: `usePlanMutations` (upsertItem 接続)、`useConsistencyMutations` (acknowledgeFinding / markFindingFixed / dismissFinding / openInEditor)。各 view に `vi.mock` で mutation hook を stub 化した write テスト (6 新規テストファイル `*-write.test.tsx`) を追加し、ボタン click → mutation 呼出 検証。既存テスト (13 ファイル) に `vi.mock` 追加で tRPC provider 要求を回避。`pnpm --filter @claude-loom/ui test` 全 pass (1001 tests、75 test files)。TypeScript TS errors: ConsistencyView `Finding.id: string` / `Finding.file` の型整合を修正、pre-existing errors (usePlanMutations.ts / useProjectSettings.ts / routes.tsx / consistency-live.test.tsx) は t16 scope 外で放置。**rationale**: M0.15 Phase 5 t16 — Phase 2/3/4 で read-only にポートした 6 views の保存・操作ボタンを live daemon 変更に繋げる最終 hookup。
 

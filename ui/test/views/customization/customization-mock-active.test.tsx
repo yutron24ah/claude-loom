@@ -16,6 +16,11 @@ import { describe, it, expect, afterEach, vi } from 'vitest';
 import { render, screen, cleanup, fireEvent } from '@testing-library/react';
 import type { Scenario } from '@claude-loom/redesign/api/types';
 
+// WHY: Mock useCustomizationMutation so tests don't need a tRPC provider (M0.15 t16).
+vi.mock('../../../src/live/useCustomizationMutations', () => ({
+  useCustomizationMutation: () => ({ mutate: vi.fn(), isPending: false }),
+}));
+
 // WHY: Mock useScenario so the component never touches the real WS store.
 // The mock fixture mirrors the scenario.customization shape from scenarios.js.
 vi.mock('@claude-loom/redesign/api/websocket', () => ({

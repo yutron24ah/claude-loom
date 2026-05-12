@@ -17,6 +17,17 @@ import { describe, it, expect, afterEach, vi } from 'vitest';
 import { render, screen, cleanup } from '@testing-library/react';
 import type { Scenario } from '@claude-loom/redesign/api/types';
 
+// WHY: Mock usePlanMutations so tests don't need a tRPC provider (M0.15 t16).
+vi.mock('../../src/live/usePlanMutations', () => ({
+  usePlanMutations: () => ({
+    upsertItem: vi.fn(),
+    updateItemStatus: vi.fn(),
+    deleteItem: vi.fn(),
+    isUpsertPending: false,
+    isUpdateStatusPending: false,
+  }),
+}));
+
 // WHY: mock useScenario so PlanView gets controlled data.
 // Without this mock, useScenario() returns SCENARIOS.idle from the design bundle,
 // which makes test data non-deterministic across scenario changes.
