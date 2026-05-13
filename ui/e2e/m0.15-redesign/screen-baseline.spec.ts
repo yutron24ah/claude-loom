@@ -149,7 +149,9 @@ test.describe('M0.15 — ⑨ AgentDetail overlay baseline', () => {
     await expect(page).toHaveScreenshot('agent-detail.png', {
       // @ts-ignore — maxDiffPixelRatio is supported but typing may lag
       maxDiffPixelRatio: 0.05,
-      fullPage: true,
+      // WHY fullPage: false: CI Linux と local macOS で fullPage 高さ 2px 差
+      // (font line-height + scrollbar)、viewport 1280×720 固定で dimension parity
+      fullPage: false,
     });
   });
 });
@@ -175,7 +177,9 @@ test.describe('M0.15 — PMChat overlay baseline (?mock=active)', () => {
     await expect(page).toHaveScreenshot('pm-chat-overlay.png', {
       // @ts-ignore — maxDiffPixelRatio is supported but typing may lag
       maxDiffPixelRatio: 0.05,
-      fullPage: true,
+      // WHY fullPage: false: CI Linux と local macOS で fullPage 高さ 2px 差
+      // (font line-height + scrollbar)、viewport 1280×720 固定で dimension parity
+      fullPage: false,
     });
   });
 });
