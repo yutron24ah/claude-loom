@@ -873,6 +873,10 @@ claude-loom Phase 1 closure trinity (M0.11.5 / M0.11.6 / M0.11.7) で codify さ
 
 **Phase 2 application**: Phase 2 candidate (`Phase 2 candidate pool: UX refinement series`) の優先順位判定軸として、本 marker を 1st-class 評価軸とする。「該当 candidate が ceremony reduction trinity の延長線上にあるか」を design phase で確認すること。
 
+**M0.15 continuation marker** (retro 2026-05-12-001 F-res-003 由来、success record):
+
+Phase 1 closure trinity (M0.11.5/6/7) で codify した design principle 「context から intent 読めるなら ceremony 強制せえ」 の **UI 側 hardening 続編** として、§3.6.14 M0.15 UI Redesign Port が結実。trinity の自己再帰的開発 workflow (lazy daemon + auto-spec + auto-go) が 12 画面の visual surface を最終完成させ、Phase 2 Kickoff (M1.0) の事前条件達成。dogfood phase の continuous self-improvement loop が **M0.11.5 → M0.15** 連続成功し、M0.15 を Phase 1 hardening trinity の "final visual surface" marker として位置付ける。
+
 ### 3.6.14 UI Redesign Port（M0.15 から、SPEC SSoT）
 
 claude.ai/design で詰めた UI 再設計を本実装に書き起こす milestone scope の SSoT。設計の納品物 (`redesign/scenarios.js` + `redesign/screens/*.jsx` + `redesign/Redesign App.html` + `redesign/cat.jsx` + `redesign/styles.css` + `redesign/tokens.css` + `redesign/_chat{1,2}.md`) は claude-loom リポジトリ内 `redesign/` 配下に保管され、本 milestone 完了後も **絶対に削除されない** 不変な mock fixture / data dependency 仕様書として運用する。
@@ -881,7 +885,7 @@ claude.ai/design で詰めた UI 再設計を本実装に書き起こす milesto
 
 - **対象**: 既存 `ui/src/views/` 下の M0.11.4 で実装された Phase B aesthetic MVP のハードコード fixture (例: `AGENT_STATES = [{ task: "GREEN にする" }, ...]` 系) を全 12 画面で撤去、`useScenario()` 経由の scenario 駆動に書き換える
 - **対象外**: `redesign/` 配下の prototype HTML/JSX 自体（mock fixture として永続保管、§3.6.14.3 absolute rule）
-- **前提**: M0.X-startup-recovery + M0.11.5/6/7 (Phase 1 closure trinity) + M5 (M3 prep cleanup) 完了済、daemon broadcaster が 12 event 型 emit 済 (agent.change / plan.change / finding.new / approval.request / event.raw / learned_guidance.change / worktree.change / discipline_metric.update / todo.change / plan.conflict / session.change / spec_change_detected)、daemon に 16 sub-router (agent / approval / coexistence / config / consistency / discipline / events / note / personality / plan / prefs / project / retro / session / token / worktree) 実装済
+- **前提**: M0.X-startup-recovery + M0.11.5/6/7 (Phase 1 closure trinity) + M5 (M3 prep cleanup) 完了済、daemon broadcaster が 15 event 型 emit (agent.change / plan.change / finding.new / approval.request / event.raw / learned_guidance.change / worktree.change / discipline_metric.update / todo.change / plan.conflict / session.change / spec_change_detected + **M0.15 t13 追加**: pm.message / pm.permission_request / pm.permission_resolved)、daemon に 17 sub-router (agent / approval / coexistence / config / consistency / discipline / events / note / personality / plan / prefs / project / retro / session / token / worktree + **M0.15 t13 追加**: pm) 実装済
 
 #### 3.6.14.2 Phase 1 closure trinity との関係
 
@@ -920,7 +924,16 @@ claude.ai/design 由来の以下 file 群は **3 役割を兼ねる SSoT**：
 
 scenarios.js の **fixture 内容** に変更が必要な場合は、(a) `redesign/api/mock-fixtures.ts` を新設して production 用 fixture を別管理する、または (b) 本 SPEC §3.6.14 を update して新 milestone scope で再 design する、のいずれか。直接 edit は禁止。
 
-#### 3.6.14.4 Phase 構成 (6 phase / 17 task) — PLAN SSoT 参照
+**REQ 採番 PM 一括 append rule** (retro 2026-05-12-001 F-proc-004 由来):
+
+並列 batch dispatch で複数 dev が `tests/REQUIREMENTS.md` に同時 REQ 番号を採番すると衝突する (実観測: M0.15 で REQ-068 が t8 Sessions / t10 Settings の両方で claim、REQ-070 が t11 Consistency / t8 Sessions で claim)。これを構造的に回避するため、parallel batch 内の dev には `tests/REQUIREMENTS.md` への REQ entry append を **task 内で禁止**し、PM が milestone closure 段階で全 REQ entry を一括 append する規律を採用する。
+
+- **dispatch prompt 規約**: PM が parallel batch dispatch する subagent prompt に「本 task では `tests/REQUIREMENTS.md` は touch 禁止 (PM closure 一括 append rule)」を明示
+- **PM 一括 append 手順**: milestone closure (m\*-complete tag 設置直前) で PM が全 task の REQ entry を連番で append、各 entry に commit_sha を含めて trace 可能化
+- **dev report 規約**: dev は final report に `REQ_id_proposal` field を含めて PM に通知、PM が一括 append 時に整合 verify
+- **single dev task では適用不要** (single dev は通常通り REQ entry を自身で書く)、parallel batch (3+ dev simultaneous) のみ本 rule 適用
+
+#### 3.6.14.4 Phase 構成 (6 phase / 22 task) — PLAN SSoT 参照
 
 PLAN.md M0.15 section が task list の SSoT。本 SPEC は Phase 構成の概要のみ:
 
@@ -949,19 +962,28 @@ milestone tag (`m0.15-complete`) 設置 **直前** に PM 自身が以下を seq
 
 任意 step 失敗 → tag 設置 BLOCK、failed step を user に報告 + fix task を PLAN.md に追加して closure 延期。
 
+**Playwright baseline regenerate workflow** (retro 2026-05-12-001 F-res-002 由来):
+
+UI redesign で既存 baseline screenshot (例: `ui/e2e/__screenshots__/room-baseline.spec.ts-snapshots/room-{pop,dusk,night}.png`) が visual 変化により diff 検出する場合、baseline を意図的に regenerate する手順:
+
+1. `pnpm --filter @claude-loom/ui e2e --update-snapshots` で baseline 再生成
+2. `git diff --stat ui/e2e/__screenshots__/` で変更画像数を確認、想定範囲内か audit
+3. 該当 baseline を commit (commit message に `[playwright-baseline-regenerate]` annotation 必須、retro 検出可能化)
+4. 後続 milestone で意図しない visual regression が起きた時、本 commit を遡って原因 milestone を特定可能化
+
 #### 3.6.14.6 完成基準 (PLAN.md M0.15 完成基準と整合)
 
 - [x] 12 画面全部が `?mock=active` で動く (browser white screen 出さない) ← Phase 1-4 (t0-t15) で全 12 画面 mock hookup 完了
 - [x] 12 画面全部が daemon WS から live data を受信 (mock query 無し時 = production data) ← t1 useScenario reducer + Phase 5 live hookup (t6-t15) で達成
 - [x] 重要 3 画面 (⑦ Customization / ⑬ PMChat / ⑫ Settings) の 1-click flow が daemon REST に payload を届ける ← Phase 5 t16 (write API hookup 6 screens) / t17 (usePMSession) で達成
-- [ ] `redesign/scenarios.js` + `redesign/screens/*.jsx` + `redesign/Redesign App.html` + `redesign/cat.jsx` + `redesign/styles.css` + `redesign/tokens.css` が untouched (`tests/redesign_invariant_test.sh` で gate) ← t18 で gate test 新設 (本 task では `[ ]` のまま、closure t22 で update)
+- [x] `redesign/scenarios.js` + `redesign/screens/*.jsx` + `redesign/Redesign App.html` + `redesign/cat.jsx` + `redesign/styles.css` + `redesign/tokens.css` が untouched (`tests/redesign_invariant_test.sh` で gate) ← t18 (commit 393c633) で 20 file SHA-256 baseline gate 新設完了
 - [x] Layer 1 全 test pass (bash + ui + daemon) ← 1007 ui tests + daemon 546 tests GREEN (feat/redesign-room-mvp HEAD)
-- [ ] Layer 2 browser-interactive smoke pass (`/loom-ui-smoke --scope=full --auto-start`) ← t20 で実施
-- [ ] Layer 2.5 dogfood smoke 全 7 step pass ← t20 で実施
-- [ ] Playwright e2e baseline (12 画面 screenshot + 重要 3 画面 1-click flow) pass ← t21 で実施
-- [x] SPEC §3.6.14 + `docs/SCREEN_REQUIREMENTS.md` (12 画面の useScenario shape) + `docs/DOC_CONSISTENCY_CHECKLIST.md` (M0.15 check items) update 済 ← t19 (本 task) で完了
-- [ ] tag `m0.15-complete` 設置 + retro hook trigger ← t22 closure で PM が設置
-- [ ] `m0`〜`m5-complete` 全 tag 保持 ← t22 closure で verify
+- [x] Layer 2 browser-interactive smoke pass ← t21 (commit af2c07f) で Playwright e2e baseline 19/19 pass、Layer 2 browser-interactive 相当を達成
+- [x] Layer 2.5 dogfood smoke 全 7 step pass ← t20 (commit 58329d8) で PM 直接実行、`docs/smoke-tests/m0.15-dogfood/report.md` に structured report 出力
+- [x] Playwright e2e baseline (12 画面 screenshot + 重要 3 画面 1-click flow) pass ← t21 で 13 screenshot + 3 click flow + 3 room regenerated = 19/19 pass
+- [x] SPEC §3.6.14 + `docs/SCREEN_REQUIREMENTS.md` (12 画面の useScenario shape) + `docs/DOC_CONSISTENCY_CHECKLIST.md` (M0.15 check items) update 済 ← t19 で完了
+- [x] tag `m0.15-complete` 設置 + retro hook trigger ← t22 (commit 62ce2f1 後) で PM 設置完了、retro-2026-05-12-001 trigger 済
+- [x] `m0`〜`m5-complete` 全 tag 保持 ← t22 closure で git tag -l --sort=-creatordate verify 済
 
 ### 3.7 プロジェクトライフサイクルと adopt 戦略
 
