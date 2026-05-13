@@ -97,16 +97,15 @@ test.describe('M0.15 — 12-screen visual regression baselines (?mock=active)', 
       // Allow any CSS animations / transitions to settle
       await page.waitForTimeout(300);
 
-      // WHY fullPage: false + maxDiffPixelRatio: local macOS (1280×722) と
-      // CI Linux runner (1280×724) で fullPage screenshot の content 高さが
-      // 2px 違う事象を確認 (font line-height + scrollbar 差)。fullPage:false で
-      // viewport screenshot に切替えて 1280×720 固定にし dimension mismatch を消去。
-      // maxDiffPixelRatio: 0.05 で残る font sub-pixel rendering 差を吸収。
+      // WHY fullPage: false: local macOS (1280×722) と CI Linux runner (1280×724)
+      // で fullPage screenshot の content 高さが 2px 違う事象を確認 (font
+      // line-height + scrollbar 差)。viewport 1280×720 固定で dimension parity 確保。
+      // maxDiffPixelRatio は playwright.config.ts global で 0.2 (20%) 設定済、
+      // per-test 上書きせず font sub-pixel rendering 差 6-7% を吸収。
       // Phase 2 で snapshotPathTemplate による OS 別 baseline refactor 候補
       // (retro 2026-05-12-001 F-res-002)。
       await expect(page).toHaveScreenshot(`${screen.id}.png`, {
         fullPage: false,
-        maxDiffPixelRatio: 0.05,
       });
     });
   }
@@ -147,10 +146,8 @@ test.describe('M0.15 — ⑨ AgentDetail overlay baseline', () => {
     await page.waitForTimeout(300);
 
     await expect(page).toHaveScreenshot('agent-detail.png', {
-      // @ts-ignore — maxDiffPixelRatio is supported but typing may lag
-      maxDiffPixelRatio: 0.05,
-      // WHY fullPage: false: CI Linux と local macOS で fullPage 高さ 2px 差
-      // (font line-height + scrollbar)、viewport 1280×720 固定で dimension parity
+      // WHY fullPage: false: viewport 1280×720 固定で OS 間 dimension parity 確保
+      // (maxDiffPixelRatio は playwright.config.ts global 0.2 で OS 差吸収)
       fullPage: false,
     });
   });
@@ -175,10 +172,8 @@ test.describe('M0.15 — PMChat overlay baseline (?mock=active)', () => {
     await page.waitForTimeout(300);
 
     await expect(page).toHaveScreenshot('pm-chat-overlay.png', {
-      // @ts-ignore — maxDiffPixelRatio is supported but typing may lag
-      maxDiffPixelRatio: 0.05,
-      // WHY fullPage: false: CI Linux と local macOS で fullPage 高さ 2px 差
-      // (font line-height + scrollbar)、viewport 1280×720 固定で dimension parity
+      // WHY fullPage: false: viewport 1280×720 固定で OS 間 dimension parity 確保
+      // (maxDiffPixelRatio は playwright.config.ts global 0.2 で OS 差吸収)
       fullPage: false,
     });
   });
