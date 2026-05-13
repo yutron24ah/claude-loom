@@ -477,3 +477,4 @@ frontend-design への hint（決定権は frontend-design に委譲）：
 - 2026-04-30: §6.1 ダーク基調制約撤去、配色方針を完全に frontend-design 委譲に。§7.2 Phase 2「ライトテーマ」項目削除（dark/light の dichotomy 自体が消えたため）。SPEC §6.10 `ui.theme` default を `dark` → `system` に変更。
 - 2026-04-30: §6.2 キャラ表現に **「猫の開発室」コンセプト**（猫系 / アニマル系モチーフ）を追加。13 agent それぞれに異なる猫種 / 動物種でキャラ立て、キャラクター愛着強化。SPEC §12 visual 方向性も同期更新。
 - 2026-05-12: M0.15 完了時点の「useScenario shape SSoT (12 画面)」section を追加。各画面の `useScenario()` destructuring / write path / mock mode を索引化 (t19 doc update)。
+- 2026-05-13: M0.16 — Playwright e2e baseline が OS-aware 化 (`{arg}-{platform}.png` suffix)、画面要件には影響なし (CI/test infrastructure focus)。

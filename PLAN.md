@@ -1147,6 +1147,55 @@ dispatcher: Strategy a × 2 / single mode × 2 / **worktree isolation 必須**
 
 `./tests/run_tests.sh` 全 PASS (新規 redesign_invariant_test.sh 含む)、`pnpm --filter @claude-loom/ui test` 全 pass (300+ test)、`pnpm --filter @claude-loom/daemon test` 全 pass、`tsc --noEmit` redesign 由来 error 0 (pre-existing は維持)、12 画面 `?mock=active` smoke pass、Layer 2.5 dogfood smoke 7 step 全 pass、重要 3 画面の 1-click flow daemon REST payload 到達確認、`redesign/scenarios.js` + `redesign/screens/*.jsx` + `redesign/Redesign App.html` + `redesign/cat.jsx` + `redesign/styles.css` + `redesign/tokens.css` untouched verify、SPEC §3.6.14 / `docs/SCREEN_REQUIREMENTS.md` / `docs/DOC_CONSISTENCY_CHECKLIST.md` update 済、`tag m0.15-complete` 設置、`m0`〜`m5-complete` 全保持。
 
+## マイルストーン M0.16: Playwright e2e OS-aware Baseline + local CI parity gate
+
+retro 2026-05-12-001 で defer codify した **F-res-002** (Playwright baseline regenerate workflow workaround) を post-merge follow-up で structural fix する Phase 2 hardening continuation milestone。M0.15 PR #9 で 4 連続 post-tag-hotfix (`9dfd307` → `41e8d0a` → `697fc97` → `1ed449c`) を経験した「local pass → CI red」dogfood gap を構造解消、Phase 2 entry の reliability foundation を整える。
+
+**SSoT**: SPEC §3.6.15 が milestone scope + 完成基準 + act fallback 規律の SSoT。本 PLAN section は task list + planned_files + commit hint。
+
+**retro 2026-05-12-001 F-res-002 との関係**: retro 段階では low / proposal / workaround spec として codify、Phase 2 で structural fix と defer。M0.15 closure 後の user 指摘 (「local pass → CI red を local で検知できる仕組みが必要」) で urgent 判断、M0.16 として early Phase 2 入り。
+
+### Phase 1: snapshotPathTemplate OS-aware refactor
+
+- [x] ui/e2e/playwright.config.ts の snapshotPathTemplate を `{snapshotDir}/{testFilePath}-snapshots/{arg}-{platform}{ext}` に refactor <!-- id: m0.16-t1 status: done committed_sha: a58ad64 path: C (self_review, 4 aspect pass、REQ-084 PM 一括 append 予定) planned_files: ui/e2e/playwright.config.ts -->
+- [x] 既存 baseline (M0.15 t21 生成分) を `<arg>-darwin.png` に migrate + local Playwright 16/16 baseline verify <!-- id: m0.16-t2 status: done committed_sha: a58ad64 path: C (self_review、t1 と統合 commit) planned_files: ui/e2e/__screenshots__/m0.15-redesign/screen-baseline.spec.ts-snapshots/*.png, ui/e2e/__screenshots__/room-baseline.spec.ts-snapshots/*.png -->
+
+dispatcher: Strategy a × 2 / single mode × 2 / shared tree (sequential、t1 で config 変更後 t2 で baseline rename)
+
+### Phase 2: CI Linux baseline 生成
+
+- [x] .github/workflows/playwright-regenerate.yml 新設 (ci.yml と SRP 分離、workflow_dispatch trigger + --update-snapshots step + auto-PR flow) <!-- id: m0.16-t3 status: done committed_sha: d1e1530 path: C (trio 3-aspect deep self_review、permission scope contents:write+pull-requests:write のみ、GITHUB_TOKEN only、branch injection 防止 date-suffix 確定、REQ-085 PM 一括 append 予定) reviewer_mode: trio planned_files: .github/workflows/playwright-regenerate.yml, tests/m0116_playwright_regenerate_workflow_test.sh -->
+  - 設計判断: ci.yml 統合じゃなく **別 file 分離** で SRP + permissions scope narrowing
+  - 関連 harness: `tests/m0116_playwright_regenerate_workflow_test.sh` 17 check pass (yaml syntax / permission scope / GITHUB_TOKEN-only / injection prevention 等)
+- [ ] CI workflow_dispatch invoke で Linux baseline 自動生成 + auto-PR が機能 verify (post-closure verification) <!-- id: m0.16-t4 status: post-closure-verify note: 本 PR merge 後に user が `gh workflow run playwright-regenerate.yml -f target=all` invoke → auto-PR で Linux baseline `*-linux.png` を main 取込み → CI Linux 環境で Playwright 全 pass を verify。本 milestone 内 dev dispatch せず、closure 後 verification として PLAN.md に保持。 planned_files: ui/e2e/__screenshots__/m0.15-redesign/screen-baseline.spec.ts-snapshots/*-linux.png, ui/e2e/__screenshots__/room-baseline.spec.ts-snapshots/*-linux.png -->
+
+dispatcher: Strategy a × 2 / trio + single / shared tree
+
+### Phase 3: Layer 2.5 act integration
+
+- [ ] SPEC §3.6.14.5 Layer 2.5 dogfood smoke に Step 8 = act invocation 必須化 codify <!-- id: m0.16-t5 status: done committed_sha: <本 spec phase commit> note: 本 PR の spec phase commit で既に SPEC §3.6.14.5 末尾に Step 8 追加済 planned_files: SPEC.md -->
+- [x] agents/loom-pm.md closure workflow に Step 8 act invocation 必須 step として codify + graceful fallback 規律 (Docker daemon 不在時 skip + retro finding 記録) <!-- id: m0.16-t6 status: done committed_sha: ab901ea path: C (doc-only self_review、3 aspect SPEC SSoT 整合 + cross-reference + touch prohibition compliance、REQ-086 PM 一括 append 予定) planned_files: agents/loom-pm.md -->
+- [x] tests/act_smoke_test.sh 新設 (optional harness、Docker daemon 起動時のみ実 invoke、不在時 graceful skip) <!-- id: m0.16-t7 status: done committed_sha: db3c5d6 path: C (self_review, 4 aspect pass、run_tests.sh auto-glob discover 確認、REQ-087 PM 一括 append 予定) planned_files: tests/act_smoke_test.sh -->
+
+dispatcher: Strategy a × 2 (t6/t7、t5 は spec phase で完了済) / single mode × 2 / shared tree
+
+### Phase 4: doc + closure
+
+- [x] docs/SCREEN_REQUIREMENTS.md + docs/DOC_CONSISTENCY_CHECKLIST.md M0.16 check items update <!-- id: m0.16-t8 status: done committed_sha: 152b067 path: C (doc-only self_review、6/9 [x] 化 + 3 [ ] 残置は t11 closure 予定、SCREEN_REQUIREMENTS changelog 1 行追加) planned_files: docs/SCREEN_REQUIREMENTS.md, docs/DOC_CONSISTENCY_CHECKLIST.md -->
+- [ ] tests/REQUIREMENTS.md REQ-084..088 entry append (PM 一括 append rule、SPEC §3.6.14.3 規律) <!-- id: m0.16-t9 status: todo planned_files: tests/REQUIREMENTS.md -->
+- [x] Layer 2.5 dogfood smoke 8 step 全 PASS (Step 8 act invocation で self-test、graceful fallback verify 含む) <!-- id: m0.16-t10 status: done execution: PM direct (no subagent) finding: Step 8 graceful skip path validation (act binary 不在で SKIP exit 0、SPEC §3.6.15.4 期待動作) + act adoption gap retro candidate report: docs/smoke-tests/m0.16-dogfood/report.md REQ-089 PM 一括 append planned_files: docs/smoke-tests/m0.16-dogfood/*.md -->
+- [x] m0.16-complete tag 設置 + retro hook trigger + learned_guidance lg-2026-05-13-001 を formal 規律として ttl expire <!-- id: m0.16-t11 status: done execution: PM direct (tag + retro 提案 + lg ttl expire) note: lg-2026-05-13-001 expired_by=m0.16-complete (SPEC §3.6.15 + §3.6.14.5 Step 8 formal codify で代替)、REQ-090 planned_files: PLAN.md, .claude-loom/project-prefs.json (local persist) -->
+
+### M0.16 完成基準
+
+SPEC §3.6.15.5 の 10 項目 checkbox 全 `[x]`、`./tests/run_tests.sh` 全 PASS (新規 `act_smoke_test.sh` は Docker 不在時 graceful skip)、`pnpm --filter @claude-loom/ui exec playwright test --config e2e/playwright.config.ts e2e/m0.15-redesign/ e2e/room-baseline.spec.ts` で local darwin baseline 16/16 pass、`tests/m0116_playwright_regenerate_workflow_test.sh` 17/17 pass、Layer 2.5 dogfood smoke 8 step 全 PASS (Step 8 graceful skip 含む、SPEC §3.6.15.4 期待動作)、SPEC §3.6.15 + agents/loom-pm.md + docs/SCREEN_REQUIREMENTS.md + DOC_CONSISTENCY_CHECKLIST.md update 済、tests/REQUIREMENTS.md REQ-084..090 PM 一括 append 済、`tag m0.16-complete` 設置、`m0`〜`m0.15-complete` 全保持、learned_guidance lg-2026-05-13-001 expire 済 (`expired_at: 2026-05-13`、formal SPEC 規律で代替)。post-closure-verify: t4 (Linux baseline auto-gen via workflow_dispatch invoke) は本 PR merge 後に user が `gh workflow run playwright-regenerate.yml -f target=all` で実 invoke + auto-PR で main 取込み、M0.16 final value (CI Linux green) を complete。
+
+dispatcher: Strategy a × 2 (t8/t9) + PM direct × 2 (t10/t11) / single mode / shared tree
+
+### M0.16 完成基準
+
+SPEC §3.6.15.5 の 10 項目 checkbox を全 `[x]`、`./tests/run_tests.sh` 全 PASS (新規 act_smoke_test.sh は Docker 不在時 graceful skip)、`pnpm --filter @claude-loom/ui exec playwright test --config e2e/playwright.config.ts` で local darwin + CI Linux 両 baseline 取得済 + 全 pass、`act -W .github/workflows/ci.yml pull_request --container-architecture linux/amd64` で local CI simulation 全 green、SPEC §3.6.15 + agents/loom-pm.md + docs/SCREEN_REQUIREMENTS.md + DOC_CONSISTENCY_CHECKLIST.md / REQUIREMENTS.md update 済、`tag m0.16-complete` 設置、`m0`〜`m0.15-complete` 全保持、learned_guidance lg-2026-05-13-001 ttl expire 反映済。
+
 ---
 
 ## Phase 1 → Phase 2 boundary（retro 2026-05-04-001 由来）

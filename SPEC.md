@@ -960,9 +960,11 @@ milestone tag (`m0.15-complete`) 設置 **直前** に PM 自身が以下を seq
 | 6 | browser actual で `?mock=active` 付き 12 画面 visit | white screen 出さず claude.ai/design fixture が表示される |
 | 7 | 重要 3 画面の 1-click flow (⑦ Customization 保存 / ⑬ PMChat 送信 / ⑫ Settings 保存) | REST endpoint に payload が届く (daemon event log で confirm) |
 
-任意 step 失敗 → tag 設置 BLOCK、failed step を user に報告 + fix task を PLAN.md に追加して closure 延期。
+**Step 8 (M0.16 から、SPEC §3.6.15 構造昇格)**: `act -W .github/workflows/ci.yml pull_request --container-architecture linux/amd64` で local CI simulation 全 green を確認 (Docker daemon 起動が前提)。M0.16 で codify した push 前 CI red detect gate。Docker daemon 不在時は skip 注記 + retro candidate finding として記録、closure 自体は block しない (graceful fallback、SPEC §3.6.15.4 SSoT)。
 
-**Playwright baseline regenerate workflow** (retro 2026-05-12-001 F-res-002 由来):
+任意 step 失敗 → tag 設置 BLOCK (Step 8 は graceful fallback 例外)、failed step を user に報告 + fix task を PLAN.md に追加して closure 延期。
+
+**Playwright baseline regenerate workflow** (retro 2026-05-12-001 F-res-002 由来、M0.16 で structural fix 完了予定):
 
 UI redesign で既存 baseline screenshot (例: `ui/e2e/__screenshots__/room-baseline.spec.ts-snapshots/room-{pop,dusk,night}.png`) が visual 変化により diff 検出する場合、baseline を意図的に regenerate する手順:
 
@@ -984,6 +986,62 @@ UI redesign で既存 baseline screenshot (例: `ui/e2e/__screenshots__/room-bas
 - [x] SPEC §3.6.14 + `docs/SCREEN_REQUIREMENTS.md` (12 画面の useScenario shape) + `docs/DOC_CONSISTENCY_CHECKLIST.md` (M0.15 check items) update 済 ← t19 で完了
 - [x] tag `m0.15-complete` 設置 + retro hook trigger ← t22 (commit 62ce2f1 後) で PM 設置完了、retro-2026-05-12-001 trigger 済
 - [x] `m0`〜`m5-complete` 全 tag 保持 ← t22 closure で git tag -l --sort=-creatordate verify 済
+
+### 3.6.15 Playwright e2e OS-aware Baseline + local CI parity gate（M0.16 から、retro 2026-05-12-001 F-res-002 構造昇格、SPEC SSoT）
+
+retro 2026-05-12-001 で defer codify した F-res-002 (Playwright baseline regenerate workflow workaround) を post-merge follow-up で Phase 2 hardening continuation milestone として structural fix する。M0.15 PR #9 で 4 連続 post-tag-hotfix (`9dfd307` → `41e8d0a` → `697fc97` → `1ed449c`) を経験した「local pass → CI red」dogfood gap を構造解消し、Phase 2 entry の reliability foundation を整える。
+
+#### 3.6.15.1 Scope と前提
+
+- **対象**: 3 axis structural fix
+  1. `snapshotPathTemplate` を OS-aware に refactor (`{snapshotDir}/{testFilePath}-snapshots/{arg}-{platform}{ext}`)
+  2. CI workflow に `workflow_dispatch` trigger + `--update-snapshots` step + auto-PR で CI Linux baseline 自動生成
+  3. Layer 2.5 dogfood smoke (SPEC §3.6.14.5) に Step 8 = `act` で CI simulation 全 green を必須 step として codify
+- **対象外**: visual regression test 自体の structure (M0.15 t21 で確立済の 13 screen + 3 click flow + 3 room baseline は維持)、`playwright.config.ts` 以外の global config 変更
+- **前提**: M0.15 closure 済 (Phase 1 hardening trinity + UI Redesign Port 完了)、Phase 1 closure trinity continuation marker 成立 (§3.6.13 末尾)、Docker daemon が user 環境で利用可能 (act 依存)
+
+#### 3.6.15.2 retro 2026-05-12-001 F-res-002 との関係
+
+| stage | retro 時 | post-merge follow-up (本 milestone trigger) | M0.16 structural fix |
+|---|---|---|---|
+| status | low / proposal / workaround spec として codify | PR #9 で 4 連続 hotfix iteration、user の dogfood gap 観察を contextual surface | 3 axis 全 structural fix で 90%+ resolved |
+| coverage | Playwright regenerate workflow の手順 doc | per-test threshold + fullPage 戦略の trial & error | snapshotPathTemplate OS-aware + CI workflow + act Step 8 |
+
+retro 段階では「snapshotPathTemplate を OS 別 baseline 別 path に分ける structural fix を Phase 2 で codify」と defer された。M0.15 closure 後の PR #9 hotfix iteration で user の指摘 (「local pass → CI red を local で検知できる仕組みが必要」) を受けて、structural fix の Phase 2 milestone 化が urgent と判断、M0.16 として early Phase 2 入り。
+
+#### 3.6.15.3 Phase 構成 (4 phase / 11 task) — PLAN SSoT 参照
+
+PLAN.md M0.16 section が task list の SSoT。本 SPEC は Phase 構成の概要のみ:
+
+1. **Phase 1**: snapshotPathTemplate OS-aware refactor (2 task) — playwright.config.ts edit + 既存 baseline migrate (`<arg>.png` → `<arg>-darwin.png` rename + local Playwright 19/19 verify)
+2. **Phase 2**: CI Linux baseline 生成 (2 task) — `.github/workflows/ci.yml` に `workflow_dispatch` trigger + `--update-snapshots` step + auto-PR (or auto-commit) 追加、初回 invoke で Linux baseline 自動生成
+3. **Phase 3**: Layer 2.5 act integration (3 task) — SPEC §3.6.14.5 に Step 8 codify + `agents/loom-pm.md` closure workflow 更新 + `tests/act_smoke_test.sh` 新設 (optional harness、Docker daemon 不在時 graceful skip)
+4. **Phase 4**: doc + closure (4 task) — SCREEN_REQUIREMENTS / DOC_CONSISTENCY_CHECKLIST update + REQUIREMENTS REQ append + Layer 2.5 dogfood smoke (Step 8 含む self-test) + tag
+
+reviewer mode: single default、CI workflow 変更 (Phase 2 t3) は security 観点 review で trio opt-in 候補 1 task。
+
+#### 3.6.15.4 act 依存と graceful fallback
+
+`act` (https://github.com/nektos/act) は GitHub Actions を local Docker container で再現するツール。M0.16 で Layer 2.5 Step 8 として必須化するが、以下の graceful fallback 規律を codify:
+
+- **Docker daemon 起動**: `docker info` で daemon 接続確認、不在時 act invocation skip + Layer 2.5 dogfood smoke は Step 8 skip notice を report に記録 (full GREEN とは扱わない、partial GREEN として user 認識可能化)
+- **act install 不在**: `command -v act` で binary 確認、不在時 user に `brew install act` (macOS) / `gh extension install nektos/gh-act` (gh extension) を案内 + skip
+- **platform option**: macOS local で act 起動時は `--container-architecture linux/amd64` flag で qemu emulation (Apple Silicon 上で linux/amd64 image を強制) を推奨、Layer 2.5 Step 8 invocation の standard option として codify
+- **PR closure block ではない警告**: act skip でも Layer 2.5 Step 1-7 + Playwright e2e local pass が達成済なら closure 可、ただし retro 候補 finding として記録 (CI red を push 前検知する gate が欠落している事実)
+
+#### 3.6.15.5 完成基準
+
+- [ ] `ui/e2e/playwright.config.ts` の `snapshotPathTemplate` が `{snapshotDir}/{testFilePath}-snapshots/{arg}-{platform}{ext}` に refactor
+- [ ] 既存 baseline (M0.15 t21 生成分) を `<arg>-darwin.png` に migrate、`pnpm --filter @claude-loom/ui exec playwright test --config e2e/playwright.config.ts e2e/m0.15-redesign/` で 19/19 pass
+- [ ] `.github/workflows/ci.yml` に `workflow_dispatch` trigger + Linux baseline 生成 step 追加
+- [ ] CI workflow_dispatch invoke で `<arg>-linux.png` 自動生成 + auto-PR が機能、main 取込み後 CI Linux + local darwin 両環境で Playwright e2e 全 pass
+- [ ] SPEC §3.6.14.5 Layer 2.5 dogfood smoke に Step 8 = `act` invocation 必須化、Step 7 までと同等 importance
+- [ ] `agents/loom-pm.md` closure workflow に Step 8 `act` invocation 必須 step として codify、graceful fallback (Docker 不在時 skip + retro finding 記録) 規律も明記
+- [ ] `tests/act_smoke_test.sh` 新設 (optional harness)、`bash tests/run_tests.sh` で auto-glob discover、Docker daemon 起動時のみ実 invoke、不在時 skip
+- [ ] `docs/SCREEN_REQUIREMENTS.md` / `docs/DOC_CONSISTENCY_CHECKLIST.md` M0.16 check items update
+- [ ] `learned_guidance lg-2026-05-13-001` (project-prefs.json local persist、ttl: until-m0.16-complete) を SPEC §3.6.15 で formal 規律として昇格、ttl expire
+- [ ] tag `m0.16-complete` 設置 + retro hook trigger
+- [ ] `m0`〜`m0.15-complete` 全 tag 保持
 
 ### 3.7 プロジェクトライフサイクルと adopt 戦略
 
