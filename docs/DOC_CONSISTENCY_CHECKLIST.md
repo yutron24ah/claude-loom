@@ -265,3 +265,17 @@ SPEC §3.6.14 (UI Redesign Port) を編集した時 + M0.15 milestone scope の�
 - [x] **daemon 側 pm.* sub-router 完全性 (t13)**: `daemon/src/routes/pm.ts` (POST /pm/start / /pm/say / /pm/permission/:id / /pm/stop)、`daemon/src/events/types.ts` (pm.message / pm.permission_request / pm.permission_resolved の zod schema 3 個追加)、`daemon/src/events/broadcaster.ts` (emitPmMessage / emitPmPermissionRequest / emitPmPermissionResolved 3 関数追加)、`daemon/src/router.ts` (pm sub-router import + appRouter 統合) が同 commit で揃う (t13 RED+GREEN unified commit 済み)
 - [x] **重要 3 画面 1-click flow の REST 接続**: ⑦ Customization (PUT /customization/:id) / ⑬ PMChat (POST /pm/say) / ⑫ Settings (PUT /settings) が daemon REST に payload を届ける (M0.15 t16 write API hookup 6 screens + t17 usePMSession で hookup 完了)
 - [ ] **closure tag の連鎖保持**: `m0.15-complete` 設置時 `m0`〜`m5-complete` の全 tag が消失/移動してへんこと (`git tag -l --sort=-creatordate | grep -E 'm[0-9]'` で確認) ← t22 closure で verify
+
+## M0.16 Playwright e2e OS-aware Baseline + local CI parity gate 関連 check
+
+SPEC §3.6.15 (M0.16 SSoT) + SPEC §3.6.14.5 Layer 2.5 Step 8 を編集した時 + M0.16 milestone scope の各 task 着手時:
+
+- [ ] **snapshotPathTemplate format**: `ui/e2e/playwright.config.ts` の `snapshotPathTemplate` が `{snapshotDir}/{testFilePath}-snapshots/{arg}-{platform}{ext}` に refactor、SPEC §3.6.15.1 と整合
+- [ ] **baseline OS suffix 一貫性**: `ui/e2e/__screenshots__/m0.15-redesign/screen-baseline.spec.ts-snapshots/*.png` + `ui/e2e/__screenshots__/room-baseline.spec.ts-snapshots/*.png` の全 baseline が `<arg>-darwin.png` + `<arg>-linux.png` の 2 file セットで揃う (count check: darwin × N === linux × N)
+- [ ] **CI workflow_dispatch trigger**: `.github/workflows/ci.yml` に `workflow_dispatch` event trigger + `--update-snapshots` step + auto-PR (or auto-commit + push) flow 実装、token / permission scope review 済 (trio reviewer audit)
+- [ ] **SPEC §3.6.14.5 Step 8 codify**: Layer 2.5 dogfood smoke matrix table に Step 8 = `act -W .github/workflows/ci.yml pull_request --container-architecture linux/amd64` が追加、graceful fallback 規律 (Docker daemon 不在時 skip + retro finding 記録) も SPEC §3.6.15.4 と整合
+- [ ] **agents/loom-pm.md closure workflow**: SPEC §3.6.14.5 Step 8 が agent prompt に反映、graceful fallback path の判断 logic 含む
+- [ ] **tests/act_smoke_test.sh (optional)**: 新設時、`bash tests/run_tests.sh` で auto-glob discover、`command -v act` + `docker info` で graceful skip pattern を踏襲
+- [ ] **learned_guidance ttl expire**: `lg-2026-05-13-001` (project-prefs.json local persist、ttl: `until-m0.16-complete`) が M0.16 closure で expire、SPEC §3.6.15 formal 規律に昇格 (重複防止)
+- [ ] **retro 2026-05-12-001 F-res-002 status update**: pending.json の F-res-002 entry を post-merge structural fix で resolve、`.claude-loom/retro/2026-05-12-001/pending.json` に M0.16 完了 reference 追記
+- [ ] **closure tag chain 保持**: `m0.16-complete` 設置時 `m0` 〜 `m0.15-complete` の全 tag が保持 (`git tag -l --sort=-creatordate | grep -E 'm[0-9]'` で verify)
