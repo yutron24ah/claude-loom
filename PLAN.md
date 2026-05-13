@@ -721,6 +721,12 @@ Phase 2 entry の HARD blocker と soft blocker を 1 箇所に SSoT 化、retro
   - **インパクト**: retro が「面倒な確認 ceremony」から「視覚的に整理された決定 surface」に化ける
   - **note**: M0.11.8 (GUI dispatch trigger) と統合実装可、優先順位再判定時に bundling 検討
 
+- **M0.16 候補: Playwright e2e OS-aware Baseline Refactor + local CI parity gate**（★★、dogfood gap 構造解消、retro 2026-05-12-001 F-res-002 由来）
+  - **現状**: Playwright `toHaveScreenshot` baseline は OS dependent (font sub-pixel rendering + content 高さ + viewport scrollbar 差)。local macOS で取った baseline は CI Linux で必ず diff、M0.15 closure 後 PR #9 で 4 連続 post-tag-hotfix (`9dfd307` → `41e8d0a` → `697fc97` → `1ed449c`) で fullPage 廃止 + global threshold 適用で workaround。`snapshotPathTemplate` も `{snapshotDir}/{testFilePath}-snapshots/{arg}{ext}` で OS suffix 削除済、single baseline で macOS / linux 両対応とする workaround 設計。Layer 2.5 dogfood smoke (SPEC §3.6.14.5) は **CI と同 OS 環境での test 走行 を scope 外** にしとった、「local pass → CI red」の構造 gap が user surface 化 (retro F-res-002 で codify)。
+  - **改善**: (1) `snapshotPathTemplate` を `{snapshotDir}/{testFilePath}-snapshots/{arg}-{platform}{ext}` に refactor し OS 別 baseline 完全分離 (local = darwin、CI = linux suffix で independent 管理)。(2) CI workflow で初回 baseline 自動 generate + auto-PR (`gh workflow run` + `--update-snapshots` step) を整備。(3) Layer 2.5 dogfood smoke に **Step 8 = `act` で CI simulation 全 green** を追加し SPEC §3.6.14.5 codify (push 前に CI red を local 検知する gate)。(4) `agents/loom-pm.md` closure workflow に `act` invocation 必須 step として追加。(5) `learned_guidance lg-2026-05-13-001` を formal 規律として SPEC に昇格 (現状 project-prefs.json local persist のみ)。
+  - **インパクト**: 「local pass → CI red」の dogfood gap を構造解消、retro 2026-05-12-001 で観測した F-res-002 (Playwright regenerate workflow workaround) を Phase 2 で structural fix に格上げ。後続 milestone で UI 変更が増える Phase 2 において CI fail iteration コストを zero に。
+  - **dependency**: `act` install (brew、CI 環境再現には Docker daemon 起動が前提)、CI workflow に snapshot regenerate trigger (`workflow_dispatch` or `--update-snapshots` flag) 追加が必要
+
 ### 注意 / 判定軸
 
 - **罠**: 全候補を一気に走らすと Phase 1 closure が永遠に来ん → trinity (M0.11.5-7) で Phase 1 closure 確定、これら候補は **Phase 2 spec phase で再判定**
