@@ -416,8 +416,16 @@ milestone tag 設置 **直前** に PM が以下を sequential 実行する：
 5. milestone scope の他 user-visible endpoint があれば追加 verify
 6. 任意の失敗を検出 → tag 設置を **block**、failed step を user に報告 + fix task を PLAN.md に追加して closure 延期
 7. pass のみで tag 設置可、後続 retro hook + branch hygiene PR opening trigger に進む
+8. `act -W .github/workflows/ci.yml pull_request --container-architecture linux/amd64` で local CI simulation 全 green を確認 (M0.16 から、SPEC §3.6.14.5 + §3.6.15 SSoT)
+   - **graceful fallback (M0.16 規律、SPEC §3.6.15.4)**:
+     - `docker info` で Docker daemon 起動確認、不在時 act invocation skip + Step 8 を partial GREEN として report 記録 (closure 自体は block しない、ただし retro candidate finding として記録)
+     - `command -v act` で binary 確認、不在時 user に `brew install act` (macOS) 案内 + skip
+     - macOS local 上では `--container-architecture linux/amd64` flag で qemu emulation を強制 (Apple Silicon 互換性)
+   - **why M0.16**: M0.15 PR #9 で 4 連続 post-tag-hotfix を経験した「local pass → CI red」dogfood gap を構造解消、push 前 CI red を local 検知する gate
 
-**rationale**: trust recovery milestone series 3 連続発覚 pattern (F-USER-005/006 + F-USER-007/008 + Bug A) は全て Layer 1 + 2 通過後に user 直接 verify でしか発覚しなかった。Layer 2.5 を milestone closure default 必須 step 化することで開発側の dogfood gap を構造的に塞ぐ。
+**Step 失敗時の扱い**: Step 1-7 の失敗は tag 設置 BLOCK。Step 8 は graceful fallback 例外 — act skip でも Step 1-7 + Playwright e2e local pass が達成済なら closure 可、ただし retro 候補 finding として記録 (CI red を push 前検知する gate が欠落している事実を user 認識可能化)。
+
+**rationale**: trust recovery milestone series 3 連続発覚 pattern (F-USER-005/006 + F-USER-007/008 + Bug A) は全て Layer 1 + 2 通過後に user 直接 verify でしか発覚しなかった。Layer 2.5 を milestone closure default 必須 step 化することで開発側の dogfood gap を構造的に塞ぐ。Step 8 (M0.16) は更に M0.15 PR #9 4 連続 post-tag-hotfix を経験した「local pass → CI red」gap を closure 前 local 検知で構造解消する。
 
 #### Layer 2 / Layer 3 の位置付け
 
