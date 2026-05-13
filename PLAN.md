@@ -1164,9 +1164,10 @@ dispatcher: Strategy a × 2 / single mode × 2 / shared tree (sequential、t1 �
 
 ### Phase 2: CI Linux baseline 生成
 
-- [ ] .github/workflows/ci.yml に workflow_dispatch trigger + --update-snapshots step + auto-PR (or auto-commit) 追加 <!-- id: m0.16-t3 status: todo reviewer_mode: trio planned_files: .github/workflows/ci.yml -->
-  - reviewer_mode: **trio** (CI workflow 変更は security 観点で深く review、token / permission scope 確認必須)
-- [ ] CI workflow_dispatch invoke で Linux baseline 自動生成 + auto-PR が機能、main 取込み後 CI Linux + local darwin 両環境で Playwright e2e 全 pass <!-- id: m0.16-t4 status: todo planned_files: ui/e2e/__screenshots__/m0.15-redesign/screen-baseline.spec.ts-snapshots/*-linux.png, ui/e2e/__screenshots__/room-baseline.spec.ts-snapshots/*-linux.png -->
+- [x] .github/workflows/playwright-regenerate.yml 新設 (ci.yml と SRP 分離、workflow_dispatch trigger + --update-snapshots step + auto-PR flow) <!-- id: m0.16-t3 status: done committed_sha: d1e1530 path: C (trio 3-aspect deep self_review、permission scope contents:write+pull-requests:write のみ、GITHUB_TOKEN only、branch injection 防止 date-suffix 確定、REQ-085 PM 一括 append 予定) reviewer_mode: trio planned_files: .github/workflows/playwright-regenerate.yml, tests/m0116_playwright_regenerate_workflow_test.sh -->
+  - 設計判断: ci.yml 統合じゃなく **別 file 分離** で SRP + permissions scope narrowing
+  - 関連 harness: `tests/m0116_playwright_regenerate_workflow_test.sh` 17 check pass (yaml syntax / permission scope / GITHUB_TOKEN-only / injection prevention 等)
+- [ ] CI workflow_dispatch invoke で Linux baseline 自動生成 + auto-PR が機能 verify (post-closure verification) <!-- id: m0.16-t4 status: post-closure-verify note: 本 PR merge 後に user が `gh workflow run playwright-regenerate.yml -f target=all` invoke → auto-PR で Linux baseline `*-linux.png` を main 取込み → CI Linux 環境で Playwright 全 pass を verify。本 milestone 内 dev dispatch せず、closure 後 verification として PLAN.md に保持。 planned_files: ui/e2e/__screenshots__/m0.15-redesign/screen-baseline.spec.ts-snapshots/*-linux.png, ui/e2e/__screenshots__/room-baseline.spec.ts-snapshots/*-linux.png -->
 
 dispatcher: Strategy a × 2 / trio + single / shared tree
 
