@@ -1157,8 +1157,8 @@ retro 2026-05-12-001 で defer codify した **F-res-002** (Playwright baseline 
 
 ### Phase 1: snapshotPathTemplate OS-aware refactor
 
-- [ ] ui/e2e/playwright.config.ts の snapshotPathTemplate を `{snapshotDir}/{testFilePath}-snapshots/{arg}-{platform}{ext}` に refactor <!-- id: m0.16-t1 status: todo planned_files: ui/e2e/playwright.config.ts -->
-- [ ] 既存 baseline (M0.15 t21 生成分) を `<arg>-darwin.png` に migrate + local Playwright 19/19 verify <!-- id: m0.16-t2 status: todo planned_files: ui/e2e/__screenshots__/m0.15-redesign/screen-baseline.spec.ts-snapshots/*.png, ui/e2e/__screenshots__/room-baseline.spec.ts-snapshots/*.png -->
+- [x] ui/e2e/playwright.config.ts の snapshotPathTemplate を `{snapshotDir}/{testFilePath}-snapshots/{arg}-{platform}{ext}` に refactor <!-- id: m0.16-t1 status: done committed_sha: a58ad64 path: C (self_review, 4 aspect pass、REQ-084 PM 一括 append 予定) planned_files: ui/e2e/playwright.config.ts -->
+- [x] 既存 baseline (M0.15 t21 生成分) を `<arg>-darwin.png` に migrate + local Playwright 16/16 baseline verify <!-- id: m0.16-t2 status: done committed_sha: a58ad64 path: C (self_review、t1 と統合 commit) planned_files: ui/e2e/__screenshots__/m0.15-redesign/screen-baseline.spec.ts-snapshots/*.png, ui/e2e/__screenshots__/room-baseline.spec.ts-snapshots/*.png -->
 
 dispatcher: Strategy a × 2 / single mode × 2 / shared tree (sequential、t1 で config 変更後 t2 で baseline rename)
 
