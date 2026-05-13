@@ -1174,8 +1174,8 @@ dispatcher: Strategy a × 2 / trio + single / shared tree
 ### Phase 3: Layer 2.5 act integration
 
 - [ ] SPEC §3.6.14.5 Layer 2.5 dogfood smoke に Step 8 = act invocation 必須化 codify <!-- id: m0.16-t5 status: done committed_sha: <本 spec phase commit> note: 本 PR の spec phase commit で既に SPEC §3.6.14.5 末尾に Step 8 追加済 planned_files: SPEC.md -->
-- [ ] agents/loom-pm.md closure workflow に Step 8 act invocation 必須 step として codify + graceful fallback 規律 (Docker daemon 不在時 skip + retro finding 記録) <!-- id: m0.16-t6 status: todo planned_files: agents/loom-pm.md -->
-- [ ] tests/act_smoke_test.sh 新設 (optional harness、Docker daemon 起動時のみ実 invoke、不在時 graceful skip) <!-- id: m0.16-t7 status: todo planned_files: tests/act_smoke_test.sh -->
+- [x] agents/loom-pm.md closure workflow に Step 8 act invocation 必須 step として codify + graceful fallback 規律 (Docker daemon 不在時 skip + retro finding 記録) <!-- id: m0.16-t6 status: done committed_sha: ab901ea path: C (doc-only self_review、3 aspect SPEC SSoT 整合 + cross-reference + touch prohibition compliance、REQ-086 PM 一括 append 予定) planned_files: agents/loom-pm.md -->
+- [x] tests/act_smoke_test.sh 新設 (optional harness、Docker daemon 起動時のみ実 invoke、不在時 graceful skip) <!-- id: m0.16-t7 status: done committed_sha: db3c5d6 path: C (self_review, 4 aspect pass、run_tests.sh auto-glob discover 確認、REQ-087 PM 一括 append 予定) planned_files: tests/act_smoke_test.sh -->
 
 dispatcher: Strategy a × 2 (t6/t7、t5 は spec phase で完了済) / single mode × 2 / shared tree
 
