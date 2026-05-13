@@ -37,11 +37,12 @@ export default defineConfig({
   // Screenshot baselines stored in __screenshots__/ alongside specs
   snapshotDir: './__screenshots__',
 
-  // WHY: strip browser+OS suffix from snapshot names so a single baseline file
-  // works across macOS (local dev) and Linux (ubuntu-latest CI).
-  // Without this, Playwright generates 'room-pop-chromium-darwin.png' locally
-  // and 'room-pop-chromium-linux.png' on CI — two different files for the same test.
-  snapshotPathTemplate: '{snapshotDir}/{testFilePath}-snapshots/{arg}{ext}',
+  // WHY (M0.16 OS-aware refactor): use {platform} placeholder so each OS produces
+  // its own baseline file (e.g., 'room-pop-darwin.png' on macOS,
+  // 'room-pop-linux.png' on Linux CI). This gives full OS-level isolation —
+  // the previous single-baseline approach masked platform rendering differences.
+  // Phase 2 (M0.16 t3) will auto-generate the linux baselines in CI.
+  snapshotPathTemplate: '{snapshotDir}/{testFilePath}-snapshots/{arg}-{platform}{ext}',
 
   // Global screenshot diff threshold for toHaveScreenshot()
   // WHY: 0.2 = 20% pixel ratio — tolerates sub-pixel anti-aliasing noise
