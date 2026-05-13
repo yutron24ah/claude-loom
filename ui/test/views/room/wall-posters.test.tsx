@@ -1,18 +1,79 @@
 /**
- * Wall Posters TDD tests — M0.11.4 t7
+ * Wall Posters TDD tests — M0.11.4 t7 (updated M0.15 t15 for scenario-driven)
  *
  * WHY: Verify GanttPoster, PlanPoster, ConsistencyPoster render correctly
  * with correct CSS classes, header text, click callbacks, and body content.
  * Tests behavior (visible DOM structure) not implementation internals.
  *
- * Design source: /tmp/claude-room-handoff/claude-room/project/room.jsx L213-308
+ * Design source: redesign/screens/room.jsx L103-199
  * CSS SSoT: ui/src/styles/tokens.css .room-poster* classes (Phase A, commit ed628af)
+ *
+ * M0.15 t15: posters are now scenario-driven via useScenario(). This test
+ * file mocks useScenario to provide controlled data so assertions remain
+ * deterministic (same shape as before, but sourced from scenario).
  */
 import { describe, it, expect, afterEach, vi } from 'vitest';
 import { render, screen, cleanup, fireEvent } from '@testing-library/react';
+import type { Scenario } from '@claude-loom/redesign/api/types';
 import { GanttPoster } from '../../../src/views/room/wall-posters/GanttPoster';
 import { PlanPoster } from '../../../src/views/room/wall-posters/PlanPoster';
 import { ConsistencyPoster } from '../../../src/views/room/wall-posters/ConsistencyPoster';
+
+// ---------------------------------------------------------------------------
+// Scenario mock — deterministic fixture matching the original hardcoded data
+// so the existing DOM-structure assertions continue to hold after scenario
+// migration (M0.15 t15).
+// ---------------------------------------------------------------------------
+const WALL_POSTERS_SCENARIO = {
+  key: 'active',
+  agents: {},
+
+  gantt: {
+    // WHY: windowLabel used in GanttPoster header title.
+    windowLabel: '直近 1h',
+    nowPct: 95,
+    // WHY: rows ordered to match ROOM_AGENTS (pm/dev/rev-code/rev-test/rev-sec).
+    // Bars replicate the M0.11.4 DEFAULT_ROWS bar values using GanttBarKind.
+    rows: [
+      // pm → ニケ: 1 bar 5-95
+      { worktree: 'main', agentId: 'pm',       label: 'PM',       bars: [{ s: 5,  e: 95, kind: 'busy' }],   live: true },
+      // dev → サバ: 3 bars
+      { worktree: 'main', agentId: 'dev',      label: 'Dev',      bars: [{ s: 12, e: 38, kind: 'busy' }, { s: 44, e: 74, kind: 'review' }, { s: 76, e: 92, kind: 'busy' }], live: false },
+      // rev-code → ペン: 2 bars
+      { worktree: 'main', agentId: 'rev-code', label: 'CodeRev',  bars: [{ s: 40, e: 56, kind: 'busy' }, { s: 70, e: 84, kind: 'fail' }],  live: false },
+      // rev-test → メメ: 2 bars
+      { worktree: 'main', agentId: 'rev-test', label: 'TestRev',  bars: [{ s: 22, e: 48, kind: 'busy' }, { s: 60, e: 80, kind: 'busy' }],  live: false },
+      // rev-sec → シノビ: 1 bar
+      { worktree: 'main', agentId: 'rev-sec',  label: 'SecRev',   bars: [{ s: 86, e: 95, kind: 'busy' }],   live: false },
+    ],
+  },
+
+  todos: [
+    { status: 'in_progress', text: 'user.service.test.ts GREEN' },
+    { status: 'pending',     text: 'freee OAuth callback 確認' },
+    { status: 'completed',   text: 'PR #41 verdict' },
+  ],
+  todosUpdatedAt: '30 Apr',
+
+  milestones: [
+    { id: 'M0.13', title: 'Process Discipline', progress: 0.25, count: '3/7', status: 'doing', children: [] },
+    { id: 'M0.14', title: 'AppShell redesign',  progress: 0.00, count: '0/4', status: 'todo',  children: [] },
+    { id: 'M1.0',  title: 'Phase 1 MVP',        progress: 0.00, count: '0/12', status: 'todo', children: [] },
+  ],
+
+  findings: [
+    { id: 'F-12', sev: 'high',   status: 'open', title: '§3.6 ガント縦軸 矛盾', file: 'SPEC.md', lines: '3:120', detail: '', suggest: '', source: '' },
+    { id: 'F-11', sev: 'high',   status: 'open', title: 'TDD 順序 乖離',        file: 'PLAN.md', lines: '2:50',  detail: '', suggest: '', source: '' },
+    { id: 'F-09', sev: 'medium', status: 'open', title: 'hotfix CLI 古い',       file: 'docs/',   lines: '1:10',  detail: '', suggest: '', source: '' },
+  ],
+
+  stream: [],
+  worktrees: [],
+} as unknown as Scenario;
+
+vi.mock('@claude-loom/redesign/api/websocket', () => ({
+  useScenario: () => WALL_POSTERS_SCENARIO,
+}));
 
 afterEach(() => {
   cleanup();
@@ -36,9 +97,9 @@ describe('GanttPoster — render', () => {
     expect(screen.getByTestId('gantt-poster')).toBeInTheDocument();
   });
 
-  it('renders header title "❖ 進捗 GANTT — 直近 1h"', () => {
+  it('renders header title "❖ GANTT — 直近 1h" (windowLabel from scenario.gantt)', () => {
     render(<GanttPoster {...defaultProps} />);
-    expect(screen.getByText('❖ 進捗 GANTT — 直近 1h')).toBeInTheDocument();
+    expect(screen.getByText('❖ GANTT — 直近 1h')).toBeInTheDocument();
   });
 
   it('renders header hint "now → / クリックで拡大"', () => {
@@ -59,13 +120,14 @@ describe('GanttPoster — render', () => {
     expect(rows.length).toBe(5);
   });
 
-  it('renders row names: ニケ, サバ, ペン, メメ, マル', () => {
+  it('renders row names from ROSTER for ROOM_AGENTS: ニケ, サバ, ペン, メメ, シノビ', () => {
     render(<GanttPoster {...defaultProps} />);
     expect(screen.getByText('ニケ')).toBeInTheDocument();
     expect(screen.getByText('サバ')).toBeInTheDocument();
     expect(screen.getByText('ペン')).toBeInTheDocument();
     expect(screen.getByText('メメ')).toBeInTheDocument();
-    expect(screen.getByText('マル')).toBeInTheDocument();
+    // rev-sec in ROSTER is "シノビ" (not "マル"; マル is retro-agg)
+    expect(screen.getByText('シノビ')).toBeInTheDocument();
   });
 
   it('renders bar-fill elements with inline style width', () => {
@@ -118,14 +180,14 @@ describe('PlanPoster — render', () => {
     expect(screen.getByTestId('plan-poster')).toBeInTheDocument();
   });
 
-  it('renders header title "📋 PLAN BOARD — 30 Apr"', () => {
+  it('renders header title "📋 PLAN — TodoWrite + plan_items" (scenario-driven)', () => {
     render(<PlanPoster {...defaultProps} />);
-    expect(screen.getByText('📋 PLAN BOARD — 30 Apr')).toBeInTheDocument();
+    expect(screen.getByText('📋 PLAN — TodoWrite + plan_items')).toBeInTheDocument();
   });
 
-  it('renders header hint "→ クリックで拡大"', () => {
+  it('renders header hint with todosUpdatedAt from scenario', () => {
     render(<PlanPoster {...defaultProps} />);
-    expect(screen.getByText('→ クリックで拡大')).toBeInTheDocument();
+    expect(screen.getByText('updated: 30 Apr')).toBeInTheDocument();
   });
 
   it('calls onClick when button is clicked', () => {
@@ -141,14 +203,14 @@ describe('PlanPoster — render', () => {
     expect(cols.length).toBe(2);
   });
 
-  it('renders left col section-label "🗺 長期 — milestones"', () => {
+  it('renders left col section-label "🗺 milestones" (scenario-driven)', () => {
     render(<PlanPoster {...defaultProps} />);
-    expect(screen.getByText('🗺 長期 — milestones')).toBeInTheDocument();
+    expect(screen.getByText('🗺 milestones')).toBeInTheDocument();
   });
 
-  it('renders right col section-label "📒 今週 — todos · 5件"', () => {
+  it('renders right col section-label "📒 todos · 3件" (scenario.todos.length)', () => {
     render(<PlanPoster {...defaultProps} />);
-    expect(screen.getByText('📒 今週 — todos · 5件')).toBeInTheDocument();
+    expect(screen.getByText('📒 todos · 3件')).toBeInTheDocument();
   });
 
   it('renders milestone names: M0.13, M0.14, M1.0', () => {

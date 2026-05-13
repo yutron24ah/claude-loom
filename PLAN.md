@@ -1042,6 +1042,111 @@ retro 2026-05-02-002 由来で M3.1 で扱う残 design 分岐:
 - [x] uninstall.sh + ドキュメント完成 <!-- id: m5-t5 status: done -->
 - [x] README + リリース準備 <!-- id: m5-t6 status: done -->
 
+## マイルストーン M0.15: UI Redesign Port
+
+claude.ai/design で詰めた UI 再設計 (12 画面 + scenarios.js + Redesign App.html) を本実装に書き起こす Phase 1 hardening continuation milestone。既存 `ui/src/views/` の M0.11.4 ハードコード fixture (例: `AGENT_STATES = [{ task: "GREEN にする" }, ...]` 系、chat 1 で user が酷いと糾弾した fixture) を全部撤去、`useScenario()` 駆動 (mock=active fallback + daemon WS reduce) に書き換える。
+
+mock fixture (`redesign/scenarios.js` + `redesign/screens/*.jsx` + `redesign/Redesign App.html` + `redesign/cat.jsx` + `redesign/styles.css` + `redesign/tokens.css`) は **絶対消すな** rule、harness test (`tests/redesign_invariant_test.sh`、t18) で構造的 gate (詳細: SPEC §3.6.14.3)。
+
+**SSoT**: SPEC §3.6.14 が milestone scope + 完成基準 + Layer 2.5 smoke matrix の SSoT。本 PLAN section は task list + planned_files + commit hint。
+
+**Phase 1 closure trinity との関係**: M0.11.5/6/7 で codify された 「context から intent 読めるなら ceremony 強制せえ」 design principle の UI 側 hardening 続編。Phase 2 Kickoff (M1.0) の事前条件。
+
+### Phase 1: reducer foundation (sequential)
+
+- [x] redesign port 先行 t0: ① RoomView 駆動 (agent.change WS event のみ wire、本 milestone 着手前の session 内で完了済) <!-- id: m0.15-t0 status: done planned_files: redesign/api/websocket.ts, redesign/api/types.ts, redesign/scenarios.d.ts, ui/src/views/room/RoomView.tsx, ui/test/views/room/room-mock-active.test.tsx -->
+- [x] websocket.ts に 8 event reducer 追加 <!-- id: m0.15-t1 status: done committed_sha: 7b2ca4b path: C (self_review, 4-aspect checklist + file:line refs) planned_files: redesign/api/websocket.ts, redesign/api/types.ts, ui/test/redesign/websocket-reducer.test.ts -->
+  - todo.change / plan.change / worktree.change / learned_guidance.change / discipline_metric.update / approval.request / session.change / finding.new
+  - dispatcher: Strategy a / single mode / shared tree
+
+### Phase 2: parallel screen batches (worktree isolation 必須)
+
+#### batch A — 確信:高 group A (3 dev parallel)
+- [x] ② Gantt redesign port <!-- id: m0.15-t2 status: done committed_sha: 086629b path: C (self_review, 4-aspect checklist + file:line refs) planned_files: ui/src/views/gantt/*.tsx, ui/test/views/gantt/*.test.tsx -->
+- [x] ③ Plan redesign port <!-- id: m0.15-t3 status: done committed_sha: 2b401c5 path: C (self_review, 4-aspect checklist) planned_files: ui/src/views/plan/*.tsx, ui/test/views/plan/*.test.tsx -->
+- [x] ⑥ Worktree redesign port <!-- id: m0.15-t4 status: done committed_sha: cebdbd8 path: C (self_review, 4-aspect checklist) planned_files: ui/src/views/worktree/*.tsx, ui/test/views/worktree/*.test.tsx -->
+
+dispatcher: Strategy a × 3 / single mode × 3 / **worktree isolation 必須** (同 message 内 3 Agent invocation)
+
+#### batch B — 確信:高 group B (3 dev parallel、1 trio)
+- [x] ⑦ Customization redesign port <!-- id: m0.15-t5 status: done committed_sha: da97c03 path: C (trio mode self_review, 4-aspect checklist) reviewer_mode: trio planned_files: ui/src/views/customization/*.tsx, ui/test/views/customization/*.test.tsx -->
+- [x] ⑧ Guidance redesign port <!-- id: m0.15-t6 status: done committed_sha: 5f878f3 path: C (self_review, 4-aspect checklist) planned_files: ui/src/views/guidance/*.tsx, ui/test/views/guidance/*.test.tsx -->
+- [x] ⑨ AgentDetailPanel redesign port <!-- id: m0.15-t7 status: done committed_sha: 002d218 path: C (self_review, 4-aspect checklist) planned_files: ui/src/views/room/AgentDetailPanel.tsx, ui/test/views/room/agent-detail-panel.test.tsx -->
+
+dispatcher: Strategy a × 3 / single + trio + single / **worktree isolation 必須**
+
+#### batch C — 確信:高 group C (3 dev parallel)
+- [x] ⑩ Sessions redesign port <!-- id: m0.15-t8 status: done committed_sha: 13e8dfe path: C (self_review, REQ-070 renumbered from REQ-068 due to merge collision with t10) planned_files: ui/src/views/session-list/*.tsx, ui/test/views/session-list/*.test.tsx -->
+- [x] ⑪ Tokens redesign port <!-- id: m0.15-t9 status: done committed_sha: bcbc55e path: C (self_review, REQ-069) planned_files: ui/src/views/tokens/*.tsx, ui/test/views/tokens/*.test.tsx -->
+- [x] ⑫ Settings redesign port <!-- id: m0.15-t10 status: done committed_sha: 9c8deeb path: C (self_review, REQ-068) planned_files: ui/src/views/project-settings/*.tsx, ui/test/views/project-settings/*.test.tsx -->
+
+dispatcher: Strategy a × 3 / single mode × 3 / **worktree isolation 必須**
+
+### Phase 3: 中信頼 + PMChat
+
+#### batch D — 中信頼 (Consistency + Retro、parallel)
+- [x] ④ Consistency redesign port <!-- id: m0.15-t11 status: done committed_sha: b937f1b path: C (self_review, REQ-073 renamed from REQ-070 due to t8 collision) planned_files: ui/src/views/consistency/*.tsx, ui/test/views/consistency/*.test.tsx -->
+- [x] ⑤ Retro redesign port <!-- id: m0.15-t12 status: done committed_sha: 6f13b16 path: C (self_review, REQ-072) planned_files: ui/src/views/retro/*.tsx, ui/test/views/retro/*.test.tsx -->
+
+dispatcher: Strategy a × 2 / single mode × 2 / **worktree isolation 必須**
+
+#### t-pm — ⑬ PMChat 単独 (trio reviewer、daemon pm.* sub-router 新設含む)
+- [x] ⑬ PMChat 実装 + daemon pm.* sub-router + 3 新 event 型 <!-- id: m0.15-t13 status: done committed_sha: 97922f0 path: C (trio mode self_review, 3 aspect + SPEC cross-check all pass、REQ-074) reviewer_mode: trio planned_files: ui/src/views/pm-chat/*.tsx, ui/src/AppShell.tsx, daemon/src/routes/pm.ts, daemon/src/events/types.ts, daemon/src/events/broadcaster.ts, daemon/src/router.ts, daemon/test/routes/pm.test.ts, daemon/test/events/pm-events.test.ts -->
+  - daemon 側: pm.message / pm.permission_request / pm.permission_resolved の 3 event schema を types.ts に追加、broadcaster に emit 関数 3 つ追加、routes/pm.ts に POST /pm/start / POST /pm/say / POST /pm/permission/:id / POST /pm/stop 実装、router.ts に pm sub-router 統合
+  - frontend 側: ui/src/views/pm-chat/PMChatPanel.tsx + AppShell.tsx 右カラム構造 + risk-based modal/toast routing (high → 中央 modal、med/low → 右上 toast)
+  - dispatcher: Strategy a / **trio mode** / shared tree (単独 task)
+
+### Phase 4: shell + posters
+
+- [x] AppShell.tsx redesign 移植 <!-- id: m0.15-t14 status: done committed_sha: 0c1bcb2 path: C (self_review, 4 aspect + SPEC cross-check pass、REQ-075) planned_files: ui/src/routing/AppShell.tsx, ui/src/routing/routes.tsx, ui/test/AppShell.test.tsx, ui/test/AppShell.redesign.test.tsx -->
+  - drawer 11 nav (OPERATE / MANAGE / SETTINGS の 3 group)、topbar 4 metric (PARALLEL / TASK TOOL / TDD ORDER / VERDICT)、statusbar (scenario label + events seen + project path)、scenario picker (idle/active/failed)、conn 表示
+  - dispatcher: Strategy a / single mode / shared tree
+- [x] Room 3 posters scenario 駆動化 <!-- id: m0.15-t15 status: done committed_sha: 1d9480e path: C (self_review, REQ-076) planned_files: ui/src/views/room/wall-posters/*.tsx, ui/test/views/room/wall-posters/*.test.tsx -->
+  - GanttPoster / PlanPoster / ConsistencyPoster の static 描画を撤去、scenario.todos / scenario.milestones / scenario.findings / scenario.gantt から駆動
+  - dispatcher: Strategy a / single mode / shared tree
+
+### Phase 5: write API hookup
+
+- [x] 既存 daemon REST への button hook (6 画面) <!-- id: m0.15-t16 status: done committed_sha: 50a2a43 path: C (self_review, REQ-077) planned_files: ui/src/views/customization/*.tsx, ui/src/views/guidance/*.tsx, ui/src/views/worktree/*.tsx, ui/src/views/consistency/*.tsx, ui/src/views/plan/*.tsx, ui/src/views/project-settings/*.tsx, ui/src/live/*.ts -->
+  - ⑦ Customization: PUT /customization/:id (既存 prefs router)
+  - ⑧ Guidance: DELETE /guidance/:id (既存 prefs router)
+  - ⑥ Worktree: POST /worktree, DELETE /worktree/:branch, POST /worktree/:branch/lock (既存 worktree router)
+  - ④ Consistency: POST /findings/:id/{ack,fix,dismiss} (既存 consistency router)
+  - ③ Plan: PUT /plan_items (既存 plan router)
+  - ⑫ Settings: PUT /settings (既存 project / config router)
+  - dispatcher: Strategy a / single mode / shared tree
+- [x] PMChat write hookup (POST /pm/say, /permission/:id, /start) <!-- id: m0.15-t17 status: done committed_sha: aa2086e path: C (self_review, REQ-078) planned_files: ui/src/views/pm-chat/*.tsx, ui/src/live/usePMSession.ts, ui/test/views/pm-chat/*.test.tsx -->
+  - ⑬ PMChat: POST /pm/start (起動), POST /pm/say (送信), POST /pm/permission/:id (承認/却下)
+  - dispatcher: Strategy a / single mode / shared tree
+
+### Phase 6: closure gates
+
+- [x] tests/redesign_invariant_test.sh 新設 (mock SCENARIOS 保全 verify) <!-- id: m0.15-t18 status: done committed_sha: 393c633 path: C (self_review, 20 file SHA-256 hash verify、REQ-079 PM 一括 append) planned_files: tests/redesign_invariant_test.sh, tests/.redesign-invariant-baseline.txt -->
+  - `git log -- redesign/scenarios.js redesign/screens/ "redesign/Redesign App.html" redesign/cat.jsx redesign/styles.css redesign/tokens.css redesign/_chat1.md redesign/_chat2.md` で M0.15 期間中 untouched verify
+  - tests/run_tests.sh に redesign_invariant_test.sh を統合
+  - dispatcher: Strategy a / single mode / shared tree
+- [x] doc update (SPEC §3.6.14 + SCREEN_REQUIREMENTS + DOC_CONSISTENCY_CHECKLIST) <!-- id: m0.15-t19 status: done committed_sha: a4501e7 path: C (doc-only self_review、REQ-080 PM 一括 append) planned_files: SPEC.md, docs/SCREEN_REQUIREMENTS.md, docs/DOC_CONSISTENCY_CHECKLIST.md -->
+  - SPEC §3.6.14 完成基準を fulfilled に update
+  - SCREEN_REQUIREMENTS.md: 12 画面の useScenario shape (data dependency = 各 screens.jsx 冒頭 destructuring) を SSoT として記述
+  - DOC_CONSISTENCY_CHECKLIST.md: M0.15 check items 追加
+  - dispatcher: Strategy a / single mode / shared tree
+- [x] Layer 2.5 dogfood smoke (PM 必須実行、trio reviewer の result audit 含む) <!-- id: m0.15-t20 status: done execution: PM direct (no subagent) finding: auto-build chain gap (retro candidate F-USER-009 後継) report: docs/smoke-tests/m0.15-dogfood/report.md REQ-082 planned_files: docs/smoke-tests/m0.15-dogfood/*.md -->
+  - SPEC §3.6.14.5 の 7 step matrix を sequential 実行、結果を docs/smoke-tests/m0.15-dogfood/ に構造化 report 出力
+  - 任意 step 失敗 → tag 設置 BLOCK、failed step を user に報告 + fix task を PLAN.md に追加
+  - dispatcher: PM 自身 (subagent dispatch せず PM が直接 Bash + curl で実機 verify、loom-ui-smoke skill invoke も併用候補)
+- [x] Playwright e2e baseline (12 画面 visual + 重要 3 画面 1-click flow) <!-- id: m0.15-t21 status: done committed_sha: af2c07f path: C (self_review, 13 screenshot baseline + 3 click flow + 3 room regenerated = 19 pass、REQ-081 PM 一括 append) planned_files: ui/e2e/m0.15-redesign/*.spec.ts, ui/e2e/__screenshots__/m0.15-redesign/*.png, ui/e2e/__screenshots__/room-baseline.spec.ts-snapshots/*.png -->
+  - 12 画面の `?mock=active` screenshot baseline + 重要 3 画面 (⑦ Customization 保存 / ⑬ PMChat 送信 / ⑫ Settings 保存) の click flow
+  - dispatcher: Strategy a / single mode / shared tree
+- [x] m0.15-complete tag 設置 + retro hook trigger <!-- id: m0.15-t22 status: done execution: PM direct (tag + retro 提案) REQ-083 planned_files: PLAN.md -->
+  - Layer 1 + Layer 2 + Layer 2.5 + Playwright e2e + harness test 全 PASS 後に PM が tag 設置
+  - tag 設置直後に retro hook trigger (user に「retro しとく？」確認、yes → /loom-retro)
+  - PLAN.md M0.15 全 task を status: done に update
+  - dispatcher: PM 自身 (tag 設置 + PLAN.md update + retro 提案、subagent dispatch 不要)
+
+### M0.15 完成基準
+
+`./tests/run_tests.sh` 全 PASS (新規 redesign_invariant_test.sh 含む)、`pnpm --filter @claude-loom/ui test` 全 pass (300+ test)、`pnpm --filter @claude-loom/daemon test` 全 pass、`tsc --noEmit` redesign 由来 error 0 (pre-existing は維持)、12 画面 `?mock=active` smoke pass、Layer 2.5 dogfood smoke 7 step 全 pass、重要 3 画面の 1-click flow daemon REST payload 到達確認、`redesign/scenarios.js` + `redesign/screens/*.jsx` + `redesign/Redesign App.html` + `redesign/cat.jsx` + `redesign/styles.css` + `redesign/tokens.css` untouched verify、SPEC §3.6.14 / `docs/SCREEN_REQUIREMENTS.md` / `docs/DOC_CONSISTENCY_CHECKLIST.md` update 済、`tag m0.15-complete` 設置、`m0`〜`m5-complete` 全保持。
+
 ---
 
 ## Phase 1 → Phase 2 boundary（retro 2026-05-04-001 由来）

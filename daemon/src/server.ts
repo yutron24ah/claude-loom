@@ -8,6 +8,7 @@ import {
 import { appRouter, type AppRouter } from "./router.js";
 import { createContext } from "./trpc.js";
 import { registerIngestRoute } from "./hooks/ingest.js";
+import { registerPmRoutes } from "./routes/pm.js";
 import { createDBClient, runMigrations } from "./db/client.js";
 import { startIdleShutdown } from "./lifecycle/idle-shutdown.js";
 import { scheduleEventCleanup } from "./lifecycle/event-cleanup.js";
@@ -135,6 +136,7 @@ export async function buildServer() {
   }));
 
   registerIngestRoute(app);
+  registerPmRoutes(app);
 
   return app;
 }

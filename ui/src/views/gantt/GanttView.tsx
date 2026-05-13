@@ -1,236 +1,275 @@
 /**
- * GanttView — SVG-based progress bars showing agent / plan activity.
+ * GanttView — redesign port driven by useScenario() (M0.15 t2).
  *
- * WHY: M3.1 t4 rewrites the M2 Tailwind-div mock to pure SVG so that
- * CSS variable tokens (--color-bar, --color-border etc.) directly control
- * SVG fill/stroke. This makes theme switching (pop/dusk/night) instant
- * with zero JS — the browser re-paints on CSS variable change alone.
+ * WHY this rewrite (SPEC §3.6.14):
+ * The previous implementation used useGanttData() (tRPC hook) with a
+ * hardcoded fixture that predated the redesign bundle.
+ * This port consumes scenario.gantt from the useScenario() WS hook so
+ * the Gantt chart reflects live event-reducer state (same seam as RoomView).
  *
- * SPEC §3.6.9.3 (Gantt γ-3): self-contained SVG, tokens.css var reference,
- * 200-400 LoC, bar click → Agent Detail navigate.
+ * Data shape (redesign/api/types.ts GanttData):
+ *   { windowLabel: string, nowPct: number, rows: GanttRow[] }
+ *   GanttRow: { worktree, agentId, label, bars: GanttBar[], live? }
+ *   GanttBar: { s: number, e: number, kind: 'busy'|'review'|'tdd'|'fail' }
  *
- * Layout constants:
- *   LABEL_WIDTH  — px reserved for row label column
- *   ROW_HEIGHT   — px per agent row
- *   BAR_INSET    — px top/bottom inset from row boundary
- *   TICK_COUNT   — number of vertical grid lines
- *   HEADER_H     — px for top time-axis row
+ * Visual layout (design SSoT: redesign/screens/gantt.jsx):
+ *   - rows grouped by worktree (collapsible section headers)
+ *   - each row: label column + percentage bar track
+ *   - now-line at gantt.nowPct (vertical red line)
+ *   - walking cat sprite on rows where live=true (positioned at nowPct)
+ *   - zoom chip strip (30m/1h/4h/all) — state local
  */
-import { useNavigate } from 'react-router-dom';
-import { useGanttData } from '../../live/useGanttData';
-import type { GanttRow, GanttBar } from '../../live/useGanttData';
+import React, { useState } from 'react';
+import { useScenario } from '@claude-loom/redesign/api/websocket';
+import type { GanttBar, GanttBarKind, GanttRow } from '@claude-loom/redesign/api/types';
 import { CatSprite } from '../../components/CatSprite';
+import { ROSTER } from '../../data/roster';
 
 // ---------------------------------------------------------------------------
-// Layout constants
+// Kind → CSS color map
+// WHY: matches redesign/screens/gantt.jsx KIND_COLOR for visual parity.
 // ---------------------------------------------------------------------------
-const LABEL_WIDTH = 130;
-const ROW_HEIGHT = 44;
-const BAR_INSET = 8;
-const TICK_COUNT = 5;
-const HEADER_H = 24;
-const FONT_MONO = 'ui-monospace, monospace';
-/**
- * Track width in logical SVG units.
- * WHY: module-level constant so TRACK_W and SVG_W are stable references
- * across renders. SVG_H remains in render because it depends on rows.length.
- */
-const TRACK_W = 600;
-const SVG_W = LABEL_WIDTH + TRACK_W;
-
-/**
- * Time tick labels displayed on the time axis.
- * WHY: Hard-coded for M3.1; M3.2 will derive from real session start time.
- */
-const TIME_LABELS = ['13:30', '13:45', '14:00', '14:15', 'now'];
+const KIND_COLOR: Record<GanttBarKind, string> = {
+  busy:   'var(--p-success)',
+  review: 'var(--p-accent)',
+  tdd:    'var(--p-warn)',
+  fail:   'var(--p-error)',
+};
 
 // ---------------------------------------------------------------------------
 // Sub-components
 // ---------------------------------------------------------------------------
 
-/** Renders the time-axis header row with tick labels. */
-function TimeAxis({
-  trackW,
-  y,
-}: {
-  trackW: number;
-  y: number;
-}): JSX.Element {
+/** Single bar segment in a row track. */
+function GanttBarSegment({ bar }: { bar: GanttBar }): JSX.Element {
   return (
-    <g data-testid="gantt-time-axis">
-      {TIME_LABELS.map((label, i) => {
-        const xPos = LABEL_WIDTH + (i / (TIME_LABELS.length - 1)) * trackW;
-        return (
-          <text
-            key={label}
-            x={xPos}
-            y={y + 14}
-            fontSize={9}
-            fontFamily={FONT_MONO}
-            fill="var(--color-muted)"
-            textAnchor="middle"
-          >
-            {label}
-          </text>
-        );
-      })}
-    </g>
-  );
-}
-
-/** Renders vertical grid <line> elements spanning the full chart height. */
-function GridLines({
-  trackW,
-  totalH,
-}: {
-  trackW: number;
-  totalH: number;
-}): JSX.Element {
-  const ticks = Array.from({ length: TICK_COUNT }, (_, i) => i);
-  return (
-    <g>
-      {ticks.map((i) => {
-        const x = LABEL_WIDTH + (i / (TICK_COUNT - 1)) * trackW;
-        return (
-          <line
-            key={i}
-            data-testid="gantt-grid-line"
-            x1={x}
-            y1={HEADER_H}
-            x2={x}
-            y2={totalH}
-            stroke="var(--color-border)"
-            strokeWidth={1}
-            strokeOpacity={0.3}
-          />
-        );
-      })}
-    </g>
+    <div
+      data-kind={bar.kind}
+      title={bar.kind}
+      style={{
+        position: 'absolute',
+        left: `${bar.s}%`,
+        width: `${bar.e - bar.s}%`,
+        top: 4,
+        bottom: 4,
+        background: KIND_COLOR[bar.kind] ?? 'var(--p-stone)',
+        border: '1px solid var(--p-border)',
+        backgroundImage:
+          'repeating-linear-gradient(45deg, rgba(255,255,255,0.18) 0 3px, transparent 3px 6px)',
+        display: 'flex',
+        alignItems: 'center',
+        paddingLeft: 4,
+        fontSize: 8,
+        color: 'white',
+        fontWeight: 700,
+        overflow: 'hidden',
+        whiteSpace: 'nowrap',
+      }}
+    >
+      {bar.kind}
+    </div>
   );
 }
 
 /**
- * Renders a single bar <rect> with label <text>.
- * WHY: fill="var(--color-bar)" is a CSS variable reference that SVG
- * supports natively — theme changes propagate without any JS re-render.
+ * One agent row: label column + bar track with grid guides + optional live cat.
+ *
+ * WHY live cat position: the walking cat sits at `100 - nowPct` from the right
+ * (matching redesign/screens/gantt.jsx L94: right: `${100-gantt.nowPct}%`).
+ * This pins the sprite to the "now" anchor in the bar track.
  */
-function BarRect({
-  bar,
-  agentId,
-  rowY,
-  trackW,
-  onBarClick,
+function GanttAgentRow({
+  row,
+  nowPct,
 }: {
-  bar: GanttBar;
-  agentId: string;
-  rowY: number;
-  trackW: number;
-  onBarClick: (agentId: string) => void;
+  row: GanttRow;
+  nowPct: number;
 }): JSX.Element {
-  const x = LABEL_WIDTH + (bar.startPct / 100) * trackW;
-  const w = ((bar.endPct - bar.startPct) / 100) * trackW;
-  const y = rowY + BAR_INSET;
-  const h = ROW_HEIGHT - BAR_INSET * 2;
+  const agent = ROSTER.find((r) => r.id === row.agentId);
 
   return (
-    <g
-      style={{ cursor: 'pointer' }}
-      onClick={() => onBarClick(agentId)}
+    <div
+      data-testid="gantt-row"
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        height: 36,
+        borderTop: '1px dashed var(--p-border)',
+      }}
     >
-      <rect
-        data-testid="gantt-bar-rect"
-        x={x}
-        y={y}
-        width={w}
-        height={h}
-        fill="var(--color-bar)"
-        stroke="var(--color-border)"
-        strokeWidth={1}
-        rx={2}
-      />
-      {/* Bar label — clipped to bar width; uses foreignObject is avoided per KISS */}
-      <text
-        x={x + 4}
-        y={y + h / 2 + 4}
-        fontSize={9}
-        fontFamily={FONT_MONO}
-        fontWeight="bold"
-        fill="var(--color-bar-text)"
-        style={{ pointerEvents: 'none', userSelect: 'none' }}
+      {/* Label column */}
+      <div
+        style={{
+          width: 200,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 6,
+          padding: '0 10px',
+          flexShrink: 0,
+        }}
       >
-        {bar.label}
-      </text>
-    </g>
+        {agent && (
+          <CatSprite
+            size={22}
+            fur={agent.fur}
+            cheek={agent.cheek}
+            hat={agent.hat}
+            pose="sit"
+          />
+        )}
+        <div style={{ minWidth: 0 }}>
+          <div style={{ fontSize: 10, fontWeight: 700 }}>
+            {agent?.name ?? row.agentId}
+          </div>
+          <div
+            style={{
+              fontSize: 8,
+              color: 'var(--p-text-muted)',
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+            }}
+          >
+            {row.label}
+          </div>
+        </div>
+      </div>
+
+      {/* Bar track */}
+      <div
+        style={{
+          position: 'relative',
+          flex: 1,
+          height: 24,
+          background: 'var(--p-tint)',
+          border: '1px solid var(--p-border)',
+          marginRight: 16,
+        }}
+      >
+        {/* Quarter grid guides */}
+        {[25, 50, 75].map((p) => (
+          <div
+            key={p}
+            style={{
+              position: 'absolute',
+              left: `${p}%`,
+              top: 0,
+              bottom: 0,
+              width: 1,
+              background: 'var(--p-border)',
+              opacity: 0.3,
+            }}
+          />
+        ))}
+
+        {/* Bar segments */}
+        {row.bars.map((bar, j) => (
+          <GanttBarSegment key={j} bar={bar} />
+        ))}
+
+        {/* Walking cat on live rows — pinned to nowPct */}
+        {row.live && (
+          <span
+            data-testid="gantt-live-cat"
+            style={{
+              position: 'absolute',
+              right: `${100 - nowPct}%`,
+              top: -4,
+            }}
+          >
+            <CatSprite
+              size={22}
+              fur={agent?.fur ?? '#aaa'}
+              hat={agent?.hat ?? null}
+              pose="walk"
+            />
+          </span>
+        )}
+
+        {/* Now-line (vertical red line at nowPct) */}
+        <div
+          data-testid="gantt-now-line"
+          style={{
+            position: 'absolute',
+            left: `${nowPct}%`,
+            top: -2,
+            bottom: -2,
+            width: 2,
+            background: 'var(--p-error)',
+          }}
+        />
+      </div>
+    </div>
   );
 }
 
-/** Renders one agent row: label text + bar track background + bars. */
-function AgentRow({
-  row,
-  rowIdx,
-  trackW,
-  onBarClick,
+/**
+ * Worktree group section: collapsible header + agent rows.
+ *
+ * WHY collapse state is per-group: mirrors redesign/screens/gantt.jsx
+ * which uses React.useState({ [wt]: bool }) for independent collapse.
+ */
+function WorktreeGroup({
+  worktree,
+  rows,
+  nowPct,
+  collapsed,
+  onToggle,
 }: {
-  row: GanttRow;
-  rowIdx: number;
-  trackW: number;
-  onBarClick: (agentId: string) => void;
+  worktree: string;
+  rows: GanttRow[];
+  nowPct: number;
+  collapsed: boolean;
+  onToggle: () => void;
 }): JSX.Element {
-  const rowY = HEADER_H + rowIdx * ROW_HEIGHT;
-  const midY = rowY + ROW_HEIGHT / 2;
+  const isLive = rows.some((r) => r.live);
 
   return (
-    <g data-testid="gantt-row">
-      {/* Row separator line */}
-      {rowIdx > 0 && (
-        <line
-          x1={0}
-          y1={rowY}
-          x2={LABEL_WIDTH + trackW}
-          y2={rowY}
-          stroke="var(--color-border)"
-          strokeWidth={1}
-          strokeDasharray="4 2"
-          strokeOpacity={0.4}
-        />
-      )}
-
-      {/* Agent label */}
-      <text
-        x={LABEL_WIDTH - 8}
-        y={midY + 4}
-        fontSize={10}
-        fontFamily={FONT_MONO}
-        fontWeight="bold"
-        fill="var(--color-fg1)"
-        textAnchor="end"
+    <div
+      style={{
+        marginBottom: 8,
+        border: '2px solid var(--p-border)',
+        background: 'var(--p-paper)',
+      }}
+    >
+      {/* Group header */}
+      <div
+        onClick={onToggle}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8,
+          padding: '6px 10px',
+          background: 'var(--p-tint)',
+          borderBottom: collapsed ? 'none' : '1px solid var(--p-border)',
+          cursor: 'pointer',
+          fontSize: 10,
+          fontWeight: 700,
+          fontFamily: 'ui-monospace, monospace',
+        }}
       >
-        {row.label}
-      </text>
+        <span style={{ width: 10 }}>{collapsed ? '▸' : '▾'}</span>
+        <span>⌗ {worktree}</span>
+        <span style={{ color: 'var(--p-text-muted)', fontWeight: 400 }}>
+          ({rows.length} subagent{rows.length > 1 ? 's' : ''})
+        </span>
+        <span
+          style={{
+            marginLeft: 'auto',
+            fontSize: 9,
+            color: 'var(--p-text-muted)',
+          }}
+        >
+          {isLive ? '● LIVE' : '—'}
+        </span>
+      </div>
 
-      {/* Bar track background */}
-      <rect
-        x={LABEL_WIDTH}
-        y={rowY + 2}
-        width={trackW}
-        height={ROW_HEIGHT - 4}
-        fill="var(--color-bg3)"
-        stroke="var(--color-border)"
-        strokeWidth={1}
-      />
-
-      {/* Bars */}
-      {row.bars.map((bar) => (
-        <BarRect
-          key={bar.barKey}
-          bar={bar}
-          agentId={row.agentId}
-          rowY={rowY}
-          trackW={trackW}
-          onBarClick={onBarClick}
-        />
-      ))}
-    </g>
+      {/* Agent rows (hidden when collapsed) */}
+      {!collapsed &&
+        rows.map((row) => (
+          <GanttAgentRow key={row.agentId} row={row} nowPct={nowPct} />
+        ))}
+    </div>
   );
 }
 
@@ -239,147 +278,133 @@ function AgentRow({
 // ---------------------------------------------------------------------------
 
 /**
- * GanttView — renders a Gantt chart as a pure SVG element.
+ * GanttView — renders agent activity Gantt grouped by worktree.
  *
- * Viewport width: fills the container div (100% wide, fixed height).
- * CSS variables are referenced directly in SVG fill/stroke attributes,
- * so [data-theme="pop|dusk|night"] changes on <html> propagate instantly.
+ * Data is consumed from useScenario().gantt so the view reflects
+ * live event-reducer state via the redesign WS hook.
+ *
+ * WHY no useNavigate: The redesign source (gantt.jsx) treats the Gantt
+ * as a read-only history view — no bar-click navigation. The old
+ * useNavigate wiring is removed to avoid requiring a Router wrapper in
+ * tests (aligns with redesign/screens/gantt.jsx behavior).
  */
 export function GanttView(): JSX.Element {
-  const navigate = useNavigate();
-  const { rows, isLoading, error } = useGanttData();
+  const scenario = useScenario();
+  const gantt = scenario.gantt;
 
-  // Loading state
-  if (isLoading) {
-    return (
-      <div
-        data-testid="gantt-loading"
-        className="rpg-frame pixel text-fg2 text-fs-sm"
-        style={{ padding: 16 }}
-      >
-        読み込み中…
-      </div>
-    );
-  }
+  const [zoom, setZoom] = useState<'30m' | '1h' | '4h' | 'all'>('30m');
+  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
 
-  // Error state
-  if (error) {
-    return (
-      <div
-        data-testid="gantt-error"
-        className="rpg-frame pixel text-fs-sm"
-        style={{ padding: 16, color: 'var(--p-error)' }}
-      >
-        接続エラー
-      </div>
-    );
-  }
+  // Group rows by worktree, preserving insertion order
+  const groups: Record<string, GanttRow[]> = {};
+  gantt.rows.forEach((r) => {
+    if (!groups[r.worktree]) groups[r.worktree] = [];
+    groups[r.worktree].push(r);
+  });
+  const worktrees = Object.keys(groups);
 
-  const handleBarClick = (agentId: string) => {
-    navigate(`/agent/${agentId}`);
+  const handleToggle = (wt: string) => {
+    setCollapsed((prev) => ({ ...prev, [wt]: !prev[wt] }));
   };
 
-  // SVG height computed from row count; TRACK_W + SVG_W are module-level constants.
-  const SVG_H = HEADER_H + rows.length * ROW_HEIGHT + 4;
-
   return (
-    <div className="rpg-frame pixel" style={{ padding: 16 }}>
-      {/* Chart title + zoom chips */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-        <h2 className="rpg-title">
-          進捗ガント — 直近 1 時間
-        </h2>
-        <div style={{ display: 'flex', gap: 4 }}>
-          {(['30m', '1h', '4h', 'all'] as const).map((z, i) => (
-            <span
+    <div
+      style={{
+        position: 'absolute',
+        inset: 0,
+        padding: 16,
+        overflow: 'auto',
+        background: 'var(--p-bg-sky)',
+      }}
+    >
+      {/* Header: title + window label + zoom strip */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 10,
+          marginBottom: 12,
+        }}
+      >
+        <div style={{ fontSize: 14, fontWeight: 700 }}>
+          ❖ GANTT — agent_history
+        </div>
+        <span className="chip">{gantt.windowLabel}</span>
+        <div style={{ flex: 1 }} />
+        <div style={{ display: 'flex', border: '2px solid var(--p-border)' }}>
+          {(['30m', '1h', '4h', 'all'] as const).map((z) => (
+            <button
               key={z}
-              className="chip"
-              style={{ background: i === 1 ? 'var(--p-accent)' : undefined, color: i === 1 ? 'white' : undefined }}
+              onClick={() => setZoom(z)}
+              style={{
+                all: 'unset',
+                cursor: 'pointer',
+                padding: '3px 10px',
+                fontSize: 9,
+                fontWeight: 700,
+                background:
+                  z === zoom ? 'var(--p-accent)' : 'var(--p-tint)',
+                color: z === zoom ? 'white' : 'var(--p-text)',
+                borderRight: '1px solid var(--p-border)',
+              }}
             >
               {z}
-            </span>
+            </button>
           ))}
         </div>
       </div>
 
-      {/* Cat sprite strip — one per agent row (RPG design source §screens-a.jsx) */}
-      <div style={{ display: 'flex', paddingLeft: LABEL_WIDTH, gap: 0, marginBottom: 2 }}>
-        {/* spacer row — cats are positioned in the rows below */}
-      </div>
-
-      {/* SVG chart */}
-      <svg
-        data-testid="gantt-svg"
-        viewBox={`0 0 ${SVG_W} ${SVG_H}`}
-        width="100%"
-        height={SVG_H}
-        style={{ display: 'block', overflow: 'visible' }}
-      >
-        {/* Vertical grid lines behind rows */}
-        <GridLines trackW={TRACK_W} totalH={SVG_H} />
-
-        {/* Time axis header */}
-        <TimeAxis trackW={TRACK_W} y={0} />
-
-        {/* Agent rows — each row includes cat sprite via foreignObject */}
-        {rows.map((row, idx) => (
-          <AgentRow
-            key={row.agentId}
-            row={row}
-            rowIdx={idx}
-            trackW={TRACK_W}
-            onBarClick={handleBarClick}
-          />
-        ))}
-
-        {/* "now" indicator — rightmost position */}
-        <line
-          x1={LABEL_WIDTH + TRACK_W * 0.95}
-          y1={HEADER_H}
-          x2={LABEL_WIDTH + TRACK_W * 0.95}
-          y2={SVG_H}
-          stroke="var(--color-error)"
-          strokeWidth={2}
-        />
-      </svg>
-
-      {/* CatSprite legend — per-row cat visible in label column
-          WHY: CatSprites use DOM SVG (not foreignObject) for reliable rendering.
-          Positioned as a separate overlaid strip aligned with SVG rows. */}
+      {/* Time axis labels */}
       <div
         style={{
-          position: 'relative',
-          marginTop: -(SVG_H),
-          height: SVG_H,
-          pointerEvents: 'none',
+          display: 'flex',
+          paddingLeft: 200,
+          marginBottom: 6,
+          fontSize: 9,
+          color: 'var(--p-text-muted)',
         }}
       >
-        {rows.map((row, idx) => {
-          const rowY = HEADER_H + idx * ROW_HEIGHT;
-          return (
-            <div
-              key={row.agentId}
-              data-testid="cat-sprite"
-              style={{
-                position: 'absolute',
-                top: rowY + (ROW_HEIGHT - 28) / 2,
-                left: 4,
-                width: 28,
-                height: 28,
-              }}
-            >
-              <CatSprite size={28} pose="sit" />
-            </div>
-          );
-        })}
+        {['-30m', '-22m', '-15m', '-7m', 'now'].map((t, i, a) => (
+          <div
+            key={t}
+            style={{
+              width: `${100 / (a.length - 1)}%`,
+              textAlign: i === 0 ? 'left' : 'center',
+            }}
+          >
+            {t}
+          </div>
+        ))}
       </div>
 
-      {/* Status legend */}
-      <div style={{ marginTop: 10, display: 'flex', gap: 10, fontSize: 9, color: 'var(--p-text-muted)' }}>
-        <span><span className="dot busy" /> busy</span>
-        <span><span className="dot review" /> review</span>
-        <span><span className="dot tdd" /> TDD red</span>
-        <span><span className="dot fail" /> failed</span>
+      {/* Worktree groups */}
+      {worktrees.map((wt) => (
+        <WorktreeGroup
+          key={wt}
+          worktree={wt}
+          rows={groups[wt]}
+          nowPct={gantt.nowPct}
+          collapsed={collapsed[wt] ?? false}
+          onToggle={() => handleToggle(wt)}
+        />
+      ))}
+
+      {/* Legend */}
+      <div
+        style={{
+          marginTop: 12,
+          padding: '8px 12px',
+          fontSize: 9,
+          color: 'var(--p-text-muted)',
+          background: 'var(--p-paper)',
+          border: '2px dashed var(--p-border)',
+          lineHeight: 1.5,
+        }}
+      >
+        ◆ <b>F-12 解決</b>: row = 1 subagent dispatch、worktree は折りたたみグループ。
+        SPEC §3.6.5 の subagent-row 流儀に統一。
+        <br />◆ live 中の dispatch には歩く猫 🐈 を bar の右端に重ねて、stream/poster
+        と視線を一致させる。
       </div>
     </div>
   );

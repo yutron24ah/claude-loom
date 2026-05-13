@@ -476,6 +476,14 @@ milestone closure 前（`git tag -a m*-complete` 設置 **直前**）に、defau
 
 **rationale**: M0.11.5 で `auto_launch: false → true` 反転と daemon 自動起動 default 化を並行実施したが、`install.sh` に daemon symlink bootstrap step 不在が milestone closure 後に retro F-USER-001 (critical) として surface 化した。本 audit は同 pattern の class を closure 前に構造的に塞ぐ。
 
+**追加義務化 (retro 2026-05-12-001 F-proc-003 由来、M0.15 closure で再発検出)**:
+
+M0.15 Layer 2.5 dogfood smoke で `~/.claude-loom/daemon.js` symlink 不在を再発見 (F-USER-009 後継、auto-build chain gap)。これを構造的に防ぐため、本 Dependency audit を milestone closure workflow の **必須 default step** として codify する:
+
+- **trigger 検出範囲拡張**: 上記 trigger 3 種に加えて「milestone 内に daemon/* or hooks/* or install.sh 編集を含む commit が 1 件以上」も trigger 対象とする (M0.15 では daemon/src/routes/pm.ts 新設が trigger 該当だったが、PM 認識漏れ)
+- **PM 認識漏れ防止**: tag 設置直前の Layer 2.5 dogfood smoke (SPEC §3.6.14.5) で実 `bash hooks/loom-launch-ui.sh` を実行し、Step 1 が `Daemon entry not found` を返す場合は `bash install.sh` re-run を closure 必須 step に追加
+- **harness gate 化候補 (Phase 2)**: 本 audit を bash test (`tests/dependency_audit_test.sh`) に reify するか、Phase 2 で検討
+
 ### Doc consistency duty (constant background responsibility)
 
 Whenever `SPEC.md` is edited (by you or anyone else):

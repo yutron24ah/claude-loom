@@ -1,17 +1,57 @@
 /**
- * SubroomView TDD tests — M0.11.4 t9
- * WHY: verify worktree sub-agent detail modal renders branch identity header,
- * current task section, activity log, mini gantt, and meta panel.
+ * SubroomView TDD tests — M0.11.4 t9 + M0.15 t4 redesign port update
+ *
+ * WHY: M0.15 t4 replaced hardcoded SESSIONS fixture with useScenario() data.
+ * This file retains the M0.11.4 behavioral contract tests but adapts them
+ * to mock useScenario() — the structural sections (NOW / ACTIVITY / THIS BRANCH
+ * / PARENT) remain to ensure the same visual contract is upheld.
+ *
  * Design source: /tmp/claude-room-handoff/claude-room/project/subroom.jsx (179 lines)
  */
-import { describe, it, expect, afterEach } from 'vitest';
+import { describe, it, expect, afterEach, vi } from 'vitest';
 import { render, cleanup } from '@testing-library/react';
-import { SubroomView } from '../../../src/views/worktree/SubroomView';
-import { ROSTER } from '../../../src/data/roster';
+import type { Scenario } from '@claude-loom/redesign/api/types';
 
 afterEach(() => {
   cleanup();
 });
+
+// ---------------------------------------------------------------------------
+// Mock useScenario with worktrees containing feat/oauth and fix/test-flake
+// WHY: SubroomView now derives session data from scenario.worktrees[]
+// ---------------------------------------------------------------------------
+vi.mock('@claude-loom/redesign/api/websocket', () => ({
+  useScenario: () =>
+    ({
+      worktrees: [
+        {
+          branch: 'feat/oauth',
+          path: '~/wt/feat-oauth',
+          use: 'parallel',
+          status: 'busy',
+          parentAgent: 'dev',
+          diskMB: 480,
+          locked: false,
+          createdAt: '2026-04-28',
+          lastCommit: 'test: add duplicate email rejection',
+        },
+        {
+          branch: 'fix/test-flake',
+          path: '~/wt/fix-flake',
+          use: 'parallel',
+          status: 'review',
+          parentAgent: 'rev-test',
+          diskMB: 470,
+          locked: false,
+          createdAt: '2026-04-29',
+          lastCommit: 'wip: investigate flaky test',
+        },
+      ],
+    } as unknown as Scenario),
+}));
+
+import { SubroomView } from '../../../src/views/worktree/SubroomView';
+import { ROSTER } from '../../../src/data/roster';
 
 const devCat = ROSTER.find((r) => r.id === 'dev')!;
 const pmCat = ROSTER.find((r) => r.id === 'pm')!;
@@ -67,7 +107,7 @@ describe('SubroomView — header strip', () => {
 });
 
 // ---------------------------------------------------------------------------
-// NOW section — current task
+// NOW section — current task (from lastCommit via scenario.worktrees)
 // ---------------------------------------------------------------------------
 describe('SubroomView — NOW current task', () => {
   it('contains a NOW section marker', () => {
@@ -127,7 +167,7 @@ describe('SubroomView — PARENT meta', () => {
 });
 
 // ---------------------------------------------------------------------------
-// Unknown branch fallback
+// Unknown branch fallback (scenario has no matching worktree)
 // ---------------------------------------------------------------------------
 describe('SubroomView — unknown branch fallback', () => {
   it('renders gracefully for unknown branch', () => {

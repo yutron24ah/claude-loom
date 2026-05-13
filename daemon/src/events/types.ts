@@ -178,6 +178,50 @@ export const specChangeDetectedEventSchema = z.object({
 });
 export type SpecChangeDetectedEvent = z.infer<typeof specChangeDetectedEventSchema>;
 
+// PM chat message event (M0.15 t13)
+// WHY: Slack-style chat panel requires typed who enum to distinguish PM vs user
+// messages. Illegal states (unknown sender) are rejected at zod boundary (SPEC §6).
+export const pmMessageEventSchema = z.object({
+  type: z.literal("pm.message"),
+  timestamp: z.number(),
+  payload: z.object({
+    who: z.enum(["user", "pm"]),
+    text: z.string(),
+    ts: z.string(), // display string e.g. "14:23"
+  }),
+});
+export type PmMessageEvent = z.infer<typeof pmMessageEventSchema>;
+
+// PM permission request event (M0.15 t13)
+// WHY: risk enum (low/med/high) mirrors frontend risk-routing rules in
+// redesign/api/websocket.ts. Server-side schema validates the broadcast
+// contract before the client dispatches to modal vs toast.
+export const pmPermissionRequestEventSchema = z.object({
+  type: z.literal("pm.permission_request"),
+  timestamp: z.number(),
+  payload: z.object({
+    id: z.string(),
+    tool: z.string(),
+    args: z.string(),
+    risk: z.enum(["low", "med", "high"]),
+    from: z.string(),
+  }),
+});
+export type PmPermissionRequestEvent = z.infer<typeof pmPermissionRequestEventSchema>;
+
+// PM permission resolved event (M0.15 t13)
+// WHY: broadcast after user clicks allow/reject so other subscribers
+// (e.g. future Phase 5 hook script) can react to the decision.
+export const pmPermissionResolvedEventSchema = z.object({
+  type: z.literal("pm.permission_resolved"),
+  timestamp: z.number(),
+  payload: z.object({
+    id: z.string(),
+    allow: z.boolean(),
+  }),
+});
+export type PmPermissionResolvedEvent = z.infer<typeof pmPermissionResolvedEventSchema>;
+
 // Discriminated union for all event types
 export const loomEventSchema = z.discriminatedUnion("type", [
   agentChangeEventSchema,
@@ -192,5 +236,8 @@ export const loomEventSchema = z.discriminatedUnion("type", [
   planConflictEventSchema,
   sessionChangeEventSchema,
   specChangeDetectedEventSchema,
+  pmMessageEventSchema,
+  pmPermissionRequestEventSchema,
+  pmPermissionResolvedEventSchema,
 ]);
 export type LoomEvent = z.infer<typeof loomEventSchema>;

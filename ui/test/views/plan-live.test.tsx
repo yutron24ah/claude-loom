@@ -1,43 +1,43 @@
 /**
- * PlanView live-query TDD tests (RED phase — written before implementation).
+ * PlanView scenario-state TDD tests — updated for redesign port (M0.15 t3).
  *
- * WHY: Verifies that PlanView correctly handles all query states when
- * wired to live tRPC via usePlanItems hook:
- *   - loading state → shows "読み込み中…"
- *   - error state → shows "接続エラー"
- *   - empty data → shows empty state message
- *   - data → renders plan items from daemon response
+ * WHY rewrite: The original tests covered usePlanItems live-query states
+ * (loading / error / empty). The M0.15 redesign port replaces those hooks with
+ * useScenario(); the concept of "loading from tRPC" no longer applies to PlanView.
  *
- * We mock usePlanItems entirely so no WS connection is needed.
- * PlanView still renders short-term todos (mock) but the right pane
- * now shows live plan items. We test the live pane behavior.
+ * These tests now exercise scenario-driven display states:
+ * - empty scenario (no milestones, no todos)
+ * - single milestone with children
+ * - multiple milestones, progress bar widths
+ * - tab switching (active vs done archive)
+ * - todos panel structure
+ *
+ * WHY: Test behavior, not implementation — we assert on visible DOM output,
+ * not internal hook invocations (Principle 8).
  */
 import { describe, it, expect, afterEach, vi, beforeEach } from 'vitest';
-import { render, screen, cleanup } from '@testing-library/react';
-import type { PlanItem } from '@claude-loom/daemon';
+import { render, screen, cleanup, fireEvent } from '@testing-library/react';
+import type { Scenario } from '@claude-loom/redesign/api/types';
 
-// WHY: vi.mock is hoisted to the top of the file, so we use vi.hoisted
-// to create the mock functions before the mock factory executes.
-const { mockUsePlanItems, mockUseTodoWrite, mockUsePlanMutations } = vi.hoisted(() => ({
-  mockUsePlanItems: vi.fn(),
-  mockUseTodoWrite: vi.fn(),
-  mockUsePlanMutations: vi.fn(),
+// WHY: Mock usePlanMutations so tests don't need a tRPC provider (M0.15 t16).
+vi.mock('../../src/live/usePlanMutations', () => ({
+  usePlanMutations: () => ({
+    upsertItem: vi.fn(),
+    updateItemStatus: vi.fn(),
+    deleteItem: vi.fn(),
+    isUpsertPending: false,
+    isUpdateStatusPending: false,
+  }),
 }));
 
-vi.mock('@/live/usePlanItems', () => ({
-  usePlanItems: mockUsePlanItems,
+const { mockUseScenario } = vi.hoisted(() => ({
+  mockUseScenario: vi.fn(),
 }));
 
-vi.mock('@/live/useTodoWrite', () => ({
-  useTodoWrite: mockUseTodoWrite,
+vi.mock('@claude-loom/redesign/api/websocket', () => ({
+  useScenario: mockUseScenario,
 }));
 
-// WHY: PlanView now calls usePlanMutations (M3.1 t2); mock to avoid tRPC context error
-vi.mock('@/live/usePlanMutations', () => ({
-  usePlanMutations: mockUsePlanMutations,
-}));
-
-// Import after mock is set up
 import { PlanView } from '../../src/views/plan/PlanView';
 
 afterEach(() => {
@@ -45,173 +45,175 @@ afterEach(() => {
 });
 
 beforeEach(() => {
-  mockUsePlanItems.mockClear();
-  mockUseTodoWrite.mockClear();
-  mockUsePlanMutations.mockClear();
-  // Default: no todos (empty pane)
-  mockUseTodoWrite.mockReturnValue({ todos: [], isLoading: false });
-  // Default: no-op mutations (M3.1 t2 — PlanView calls usePlanMutations)
-  mockUsePlanMutations.mockReturnValue({
-    upsertItem: vi.fn(),
-    updateItemStatus: vi.fn(),
-    deleteItem: vi.fn(),
-    isUpsertPending: false,
-    isUpdateStatusPending: false,
-  });
+  mockUseScenario.mockReset();
 });
 
-// Helper to create a minimal PlanItem
-function makePlanItem(overrides: Partial<PlanItem> = {}): PlanItem {
-  return {
-    id: 1,
-    projectId: 'claude-loom',
-    source: 'file',
-    sourcePath: null,
-    parentId: null,
-    title: 'Test milestone',
-    body: null,
-    status: 'todo',
-    position: 0,
-    updatedAt: new Date(),
-    ...overrides,
-  };
-}
-
-describe('PlanView (live) — loading state', () => {
-  it('shows "読み込み中…" when isLoading is true', () => {
-    mockUsePlanItems.mockReturnValue({ data: undefined, isLoading: true, error: null });
-    render(<PlanView />);
-    expect(screen.getByText('読み込み中…')).toBeInTheDocument();
-  });
-
-  it('does not show plan items while loading', () => {
-    mockUsePlanItems.mockReturnValue({ data: undefined, isLoading: true, error: null });
+// ---------------------------------------------------------------------------
+// Empty state
+// ---------------------------------------------------------------------------
+describe('PlanView (scenario) — empty state', () => {
+  it('renders with no milestones and no todos', () => {
+    mockUseScenario.mockReturnValue({
+      todos: [],
+      todosUpdatedAt: '—',
+      milestones: [],
+    } as unknown as Scenario);
     const { container } = render(<PlanView />);
-    const planItems = container.querySelectorAll('[data-testid="plan-item"]');
-    expect(planItems.length).toBe(0);
+    expect(container.querySelectorAll('[data-testid="plan-milestone"]').length).toBe(0);
+    expect(container.querySelectorAll('[data-testid="todo-item"]').length).toBe(0);
   });
-});
 
-describe('PlanView (live) — error state', () => {
-  it('shows "接続エラー" when error is set', () => {
-    mockUsePlanItems.mockReturnValue({
-      data: undefined,
-      isLoading: false,
-      error: new Error('WebSocket closed'),
-    });
+  it('shows empty milestone message when no active milestones', () => {
+    mockUseScenario.mockReturnValue({
+      todos: [],
+      todosUpdatedAt: '—',
+      milestones: [],
+    } as unknown as Scenario);
     render(<PlanView />);
-    expect(screen.getByText('接続エラー')).toBeInTheDocument();
-  });
-
-  it('does not show plan items on error', () => {
-    mockUsePlanItems.mockReturnValue({
-      data: undefined,
-      isLoading: false,
-      error: new Error('failed'),
-    });
-    const { container } = render(<PlanView />);
-    const planItems = container.querySelectorAll('[data-testid="plan-item"]');
-    expect(planItems.length).toBe(0);
+    expect(screen.getByText('active な milestone はありません')).toBeInTheDocument();
   });
 });
 
-describe('PlanView (live) — empty state', () => {
-  it('shows empty state message when data is empty array', () => {
-    mockUsePlanItems.mockReturnValue({ data: [], isLoading: false, error: null });
-    render(<PlanView />);
-    expect(screen.getByTestId('plan-empty-state')).toBeInTheDocument();
-  });
-});
-
-describe('PlanView (live) — data state', () => {
-  it('renders plan items returned from daemon', () => {
-    const items = [
-      makePlanItem({ id: 1, title: 'M2 milestone', status: 'doing', parentId: null }),
-      makePlanItem({ id: 2, title: 'Task A', status: 'todo', parentId: 1 }),
-      makePlanItem({ id: 3, title: 'Task B', status: 'done', parentId: 1 }),
-    ];
-    mockUsePlanItems.mockReturnValue({ data: items, isLoading: false, error: null });
+// ---------------------------------------------------------------------------
+// Milestone data display
+// ---------------------------------------------------------------------------
+describe('PlanView (scenario) — milestone display', () => {
+  it('renders plan milestones from scenario data', () => {
+    mockUseScenario.mockReturnValue({
+      todos: [],
+      todosUpdatedAt: '—',
+      milestones: [
+        { id: 'M2', title: 'M2 milestone', progress: 0.5, count: '3/6', status: 'doing', children: [] },
+        { id: 'M3', title: 'M3 todo', progress: 0, count: '0/4', status: 'todo', children: [] },
+      ],
+    } as unknown as Scenario);
     const { container } = render(<PlanView />);
-    const planItems = container.querySelectorAll('[data-testid="plan-item"]');
-    expect(planItems.length).toBe(3);
+    const milestones = container.querySelectorAll('[data-testid="plan-milestone"]');
+    expect(milestones.length).toBe(2);
   });
 
-  it('renders item titles from daemon data', () => {
-    const items = [makePlanItem({ title: 'ライブデータ milestone' })];
-    mockUsePlanItems.mockReturnValue({ data: items, isLoading: false, error: null });
+  it('renders milestone titles from scenario data', () => {
+    mockUseScenario.mockReturnValue({
+      todos: [],
+      todosUpdatedAt: '—',
+      milestones: [
+        { id: 'M1', title: 'ライブデータ milestone', progress: 0.3, count: '1/3', status: 'doing', children: [] },
+      ],
+    } as unknown as Scenario);
     render(<PlanView />);
     expect(screen.getByText('ライブデータ milestone')).toBeInTheDocument();
   });
 
-  it('does not show loading or error state when data is present', () => {
-    const items = [makePlanItem()];
-    mockUsePlanItems.mockReturnValue({ data: items, isLoading: false, error: null });
+  it('renders progress bar for each milestone', () => {
+    mockUseScenario.mockReturnValue({
+      todos: [],
+      todosUpdatedAt: '—',
+      milestones: [
+        { id: 'M1', title: 'A', progress: 0.75, count: '3/4', status: 'doing', children: [] },
+      ],
+    } as unknown as Scenario);
+    const { container } = render(<PlanView />);
+    const bars = container.querySelectorAll('[data-testid="milestone-progress-bar"]');
+    expect(bars.length).toBe(1);
+  });
+
+  it('renders progress fill width reflecting progress fraction', () => {
+    mockUseScenario.mockReturnValue({
+      todos: [],
+      todosUpdatedAt: '—',
+      milestones: [
+        { id: 'M1', title: 'A', progress: 0.75, count: '3/4', status: 'doing', children: [] },
+      ],
+    } as unknown as Scenario);
+    const { container } = render(<PlanView />);
+    const fill = container.querySelector('[data-testid="milestone-progress-fill"]') as HTMLElement;
+    expect(fill).toBeInTheDocument();
+    expect(fill.style.width).toBe('75%');
+  });
+
+  it('does not render milestone loading or error UI (no live query)', () => {
+    mockUseScenario.mockReturnValue({
+      todos: [],
+      todosUpdatedAt: '—',
+      milestones: [],
+    } as unknown as Scenario);
     render(<PlanView />);
+    // WHY: M0.15 redesign port removes tRPC-based loading/error states from PlanView
     expect(screen.queryByText('読み込み中…')).not.toBeInTheDocument();
     expect(screen.queryByText('接続エラー')).not.toBeInTheDocument();
   });
+});
 
-  it('marks child items (parentId != null) with level 1 attribute', () => {
-    const items = [
-      makePlanItem({ id: 1, parentId: null }),
-      makePlanItem({ id: 2, parentId: 1 }),
-    ];
-    mockUsePlanItems.mockReturnValue({ data: items, isLoading: false, error: null });
+// ---------------------------------------------------------------------------
+// Done archive tab
+// ---------------------------------------------------------------------------
+describe('PlanView (scenario) — done archive tab', () => {
+  it('shows done archive milestones when done tab selected', () => {
+    mockUseScenario.mockReturnValue({
+      todos: [],
+      todosUpdatedAt: '—',
+      milestones: [
+        { id: 'M-done', title: '完了 milestone', progress: 1.0, count: '4/4', status: 'done', children: [] },
+        { id: 'M-active', title: 'Active milestone', progress: 0.5, count: '2/4', status: 'doing', children: [] },
+      ],
+    } as unknown as Scenario);
     const { container } = render(<PlanView />);
-    const level1 = container.querySelectorAll('[data-level="1"]');
-    expect(level1.length).toBe(1);
+    // Click '完了 archive' tab
+    fireEvent.click(screen.getByText('完了 archive'));
+    const milestones = container.querySelectorAll('[data-testid="plan-milestone"]');
+    // Only the done milestone (progress >= 1) should show
+    expect(milestones.length).toBe(1);
+    expect(screen.getByText('完了 milestone')).toBeInTheDocument();
   });
 });
 
-describe('PlanView (live) — short-term pane via useTodoWrite', () => {
+// ---------------------------------------------------------------------------
+// Todos panel
+// ---------------------------------------------------------------------------
+describe('PlanView (scenario) — short-term pane via useScenario', () => {
   it('renders the short-term todos pane', () => {
-    mockUsePlanItems.mockReturnValue({ data: [], isLoading: false, error: null });
+    mockUseScenario.mockReturnValue({
+      todos: [],
+      todosUpdatedAt: '—',
+      milestones: [],
+    } as unknown as Scenario);
     render(<PlanView />);
     expect(screen.getByTestId('plan-short-term')).toBeInTheDocument();
   });
 
-  it('renders todo items from useTodoWrite hook', () => {
-    const todos = [
-      { status: 'in_progress' as const, text: 'Task A' },
-      { status: 'pending' as const, text: 'Task B' },
-    ];
-    mockUseTodoWrite.mockReturnValue({ todos, isLoading: false });
-    mockUsePlanItems.mockReturnValue({ data: [], isLoading: false, error: null });
+  it('renders todo items from scenario.todos', () => {
+    mockUseScenario.mockReturnValue({
+      todos: [
+        { status: 'in_progress', text: 'Task A' },
+        { status: 'pending', text: 'Task B' },
+      ],
+      todosUpdatedAt: 'now',
+      milestones: [],
+    } as unknown as Scenario);
     const { container } = render(<PlanView />);
     const todoItems = container.querySelectorAll('[data-testid="todo-item"]');
     expect(todoItems.length).toBe(2);
   });
 
-  it('renders empty short-term pane when useTodoWrite returns empty todos', () => {
-    mockUseTodoWrite.mockReturnValue({ todos: [], isLoading: false });
-    mockUsePlanItems.mockReturnValue({ data: [], isLoading: false, error: null });
+  it('renders no todo items when scenario.todos is empty', () => {
+    mockUseScenario.mockReturnValue({
+      todos: [],
+      todosUpdatedAt: '—',
+      milestones: [],
+    } as unknown as Scenario);
     const { container } = render(<PlanView />);
     const todoItems = container.querySelectorAll('[data-testid="todo-item"]');
     expect(todoItems.length).toBe(0);
   });
 
   it('does NOT show hardcoded session label "session: pm-2026-05-01-am"', () => {
-    // WHY: bug-3 regression guard — the hardcoded mock label must never appear;
-    // session info (if shown) must come from live useTodoWrite data only.
-    mockUseTodoWrite.mockReturnValue({ todos: [], isLoading: false });
-    mockUsePlanItems.mockReturnValue({ data: [], isLoading: false, error: null });
+    // WHY: regression guard — hardcoded mock labels must never appear.
+    mockUseScenario.mockReturnValue({
+      todos: [],
+      todosUpdatedAt: '—',
+      milestones: [],
+    } as unknown as Scenario);
     render(<PlanView />);
     expect(screen.queryByText('session: pm-2026-05-01-am')).not.toBeInTheDocument();
-  });
-
-  it('shows loading indicator in short-term pane when useTodoWrite isLoading is true', () => {
-    // WHY: short-term pane should reflect loading state when hook is loading.
-    mockUseTodoWrite.mockReturnValue({ todos: [], isLoading: true });
-    mockUsePlanItems.mockReturnValue({ data: [], isLoading: false, error: null });
-    render(<PlanView />);
-    expect(screen.getByTestId('todo-loading')).toBeInTheDocument();
-  });
-
-  it('shows empty state message in short-term pane when todos is empty and not loading', () => {
-    // WHY: short-term pane empty state should be explicit (not just blank).
-    mockUseTodoWrite.mockReturnValue({ todos: [], isLoading: false });
-    mockUsePlanItems.mockReturnValue({ data: [], isLoading: false, error: null });
-    render(<PlanView />);
-    expect(screen.getByTestId('todo-empty-state')).toBeInTheDocument();
   });
 });

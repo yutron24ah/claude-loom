@@ -1,283 +1,177 @@
 /**
- * Plan View long-term pane edit TDD tests (RED phase — written before implementation).
+ * PlanView tab interaction TDD tests — updated for redesign port (M0.15 t3).
  *
- * WHY: Verifies that PlanView's long-term pane handles user interactions:
- *   - "+ 追加" button click fires upsert mutation (new item creation)
- *   - status square click fires updateStatus mutation (todo → doing → done cycle)
- *   - title click enters inline edit mode, blur fires upsert mutation
+ * WHY rewrite: The original tests exercised usePlanMutations (upsert / status toggle /
+ * inline edit). The M0.15 redesign port makes PlanView read-only; write API
+ * will be reconnected in Phase 5 t16. This file now covers:
  *
- * We mock usePlanMutations, usePlanItems and useTodoWrite entirely so no
- * WS connection or real tRPC context is needed.
- * Focus: interaction behavior, not rendering details.
+ *   - Tab switching: active → done archive → edit
+ *   - Active tab shows milestones with progress < 1
+ *   - Done tab shows milestones with progress == 1
+ *   - Edit tab shows 'edit' button per milestone
+ *   - Status glyphs on milestone children
+ *
+ * WHY preserved as separate file: The "edit interaction" concern will be revived
+ * in Phase 5 t16 when the write API is re-wired. Preserving the file structure
+ * reduces merge conflict surface.
  */
 import { describe, it, expect, afterEach, vi, beforeEach } from 'vitest';
-import { render, screen, cleanup, fireEvent, act } from '@testing-library/react';
-import type { PlanItem } from '@claude-loom/daemon';
+import { render, screen, cleanup, fireEvent } from '@testing-library/react';
+import type { Scenario } from '@claude-loom/redesign/api/types';
 
-// WHY: vi.hoisted ensures mock fns are available when vi.mock factory runs (hoisting)
-const { mockUsePlanItems, mockUseTodoWrite, mockUsePlanMutations } = vi.hoisted(() => ({
-  mockUsePlanItems: vi.fn(),
-  mockUseTodoWrite: vi.fn(),
-  mockUsePlanMutations: vi.fn(),
+// WHY: Mock usePlanMutations so tests don't need a tRPC provider (M0.15 t16).
+vi.mock('../../src/live/usePlanMutations', () => ({
+  usePlanMutations: () => ({
+    upsertItem: vi.fn(),
+    updateItemStatus: vi.fn(),
+    deleteItem: vi.fn(),
+    isUpsertPending: false,
+    isUpdateStatusPending: false,
+  }),
 }));
 
-vi.mock('@/live/usePlanItems', () => ({
-  usePlanItems: mockUsePlanItems,
+const { mockUseScenario } = vi.hoisted(() => ({
+  mockUseScenario: vi.fn(),
 }));
 
-vi.mock('@/live/useTodoWrite', () => ({
-  useTodoWrite: mockUseTodoWrite,
+vi.mock('@claude-loom/redesign/api/websocket', () => ({
+  useScenario: mockUseScenario,
 }));
 
-vi.mock('@/live/usePlanMutations', () => ({
-  usePlanMutations: mockUsePlanMutations,
-}));
-
-// Import after mocks are set up
 import { PlanView } from '../../src/views/plan/PlanView';
 
 afterEach(() => {
   cleanup();
 });
 
-/** Helper: build a minimal PlanItem. */
-function makePlanItem(overrides: Partial<PlanItem> = {}): PlanItem {
-  return {
-    id: 1,
-    projectId: 'claude-loom',
-    source: 'file',
-    sourcePath: null,
-    parentId: null,
-    title: 'Test milestone',
-    body: null,
-    status: 'todo',
-    position: 0,
-    updatedAt: new Date(),
-    ...overrides,
-  };
-}
-
-/** Default mutation mock — all fns are vi.fn() no-ops with isPending=false. */
-function makeDefaultMutations() {
-  return {
-    upsertItem: vi.fn(),
-    updateItemStatus: vi.fn(),
-    deleteItem: vi.fn(),
-    isUpsertPending: false,
-    isUpdateStatusPending: false,
-  };
-}
-
 beforeEach(() => {
-  mockUsePlanItems.mockClear();
-  mockUseTodoWrite.mockClear();
-  mockUsePlanMutations.mockClear();
-
-  // Default: empty short-term pane
-  mockUseTodoWrite.mockReturnValue({ todos: [], isLoading: false });
-  // Default: one plan item in long-term pane
-  mockUsePlanItems.mockReturnValue({
-    data: [makePlanItem({ id: 1, title: 'M0 milestone', status: 'todo' })],
-    isLoading: false,
-    error: null,
-  });
-  // Default: no-op mutations
-  mockUsePlanMutations.mockReturnValue(makeDefaultMutations());
+  mockUseScenario.mockReset();
 });
 
-// ---------------------------------------------------------------------------
-// "+ 追加" button
-// ---------------------------------------------------------------------------
-describe('PlanView (edit) — "+ 追加" button', () => {
-  it('calls upsertItem when "+ 追加" button is clicked', () => {
-    const upsertItem = vi.fn();
-    mockUsePlanMutations.mockReturnValue({
-      ...makeDefaultMutations(),
-      upsertItem,
-    });
-
-    render(<PlanView />);
-    const addBtn = screen.getByText('+ 追加');
-    act(() => { fireEvent.click(addBtn); });
-
-    expect(upsertItem).toHaveBeenCalledTimes(1);
-  });
-
-  it('calls upsertItem with parentId=null (root item) when adding', () => {
-    const upsertItem = vi.fn();
-    mockUsePlanMutations.mockReturnValue({
-      ...makeDefaultMutations(),
-      upsertItem,
-    });
-
-    render(<PlanView />);
-    act(() => { fireEvent.click(screen.getByText('+ 追加')); });
-
-    expect(upsertItem).toHaveBeenCalledWith(
-      expect.objectContaining({ parentId: null }),
-    );
-  });
-});
+/** Fixture: 1 active + 1 done milestone */
+const MIXED_MILESTONES = {
+  todos: [],
+  todosUpdatedAt: '—',
+  milestones: [
+    {
+      id: 'M0.13',
+      title: 'Active milestone',
+      progress: 0.62,
+      count: '4/7',
+      status: 'doing' as const,
+      children: [
+        { t: 'task alpha', st: 'completed' as const },
+        { t: 'task beta', st: 'in_progress' as const },
+      ],
+    },
+    {
+      id: 'M0.12',
+      title: 'Done milestone',
+      progress: 1.0,
+      count: '5/5',
+      status: 'done' as const,
+      children: [],
+    },
+  ],
+} as unknown as Scenario;
 
 // ---------------------------------------------------------------------------
-// Status square click → updateStatus mutation
+// Active tab (default)
 // ---------------------------------------------------------------------------
-describe('PlanView (edit) — status square click', () => {
-  it('calls updateItemStatus when status square is clicked', () => {
-    const updateItemStatus = vi.fn();
-    mockUsePlanMutations.mockReturnValue({
-      ...makeDefaultMutations(),
-      updateItemStatus,
-    });
-
-    render(<PlanView />);
-    // The status square is the clickable element in the long-term pane
-    const statusSquares = screen.getAllByTestId('plan-item-status');
-    act(() => { fireEvent.click(statusSquares[0]); });
-
-    expect(updateItemStatus).toHaveBeenCalledTimes(1);
+describe('PlanView (tab) — active tab (default)', () => {
+  it('shows active milestones by default (progress < 1)', () => {
+    mockUseScenario.mockReturnValue(MIXED_MILESTONES);
+    const { container } = render(<PlanView />);
+    // Default tab = active: only M0.13 (progress 0.62) is visible
+    const milestones = container.querySelectorAll('[data-testid="plan-milestone"]');
+    expect(milestones.length).toBe(1);
+    expect(screen.getByText('Active milestone')).toBeInTheDocument();
   });
 
-  it('cycles status todo → doing when clicked (first cycle step)', () => {
-    const updateItemStatus = vi.fn();
-    mockUsePlanMutations.mockReturnValue({
-      ...makeDefaultMutations(),
-      updateItemStatus,
-    });
-    mockUsePlanItems.mockReturnValue({
-      data: [makePlanItem({ id: 1, status: 'todo' })],
-      isLoading: false,
-      error: null,
-    });
-
+  it('does not show done milestones on active tab', () => {
+    mockUseScenario.mockReturnValue(MIXED_MILESTONES);
     render(<PlanView />);
-    act(() => { fireEvent.click(screen.getAllByTestId('plan-item-status')[0]); });
-
-    expect(updateItemStatus).toHaveBeenCalledWith({ id: 1, status: 'doing' });
-  });
-
-  it('cycles status doing → done when clicked', () => {
-    const updateItemStatus = vi.fn();
-    mockUsePlanMutations.mockReturnValue({
-      ...makeDefaultMutations(),
-      updateItemStatus,
-    });
-    mockUsePlanItems.mockReturnValue({
-      data: [makePlanItem({ id: 1, status: 'doing' })],
-      isLoading: false,
-      error: null,
-    });
-
-    render(<PlanView />);
-    act(() => { fireEvent.click(screen.getAllByTestId('plan-item-status')[0]); });
-
-    expect(updateItemStatus).toHaveBeenCalledWith({ id: 1, status: 'done' });
-  });
-
-  it('cycles status done → todo when clicked', () => {
-    const updateItemStatus = vi.fn();
-    mockUsePlanMutations.mockReturnValue({
-      ...makeDefaultMutations(),
-      updateItemStatus,
-    });
-    mockUsePlanItems.mockReturnValue({
-      data: [makePlanItem({ id: 1, status: 'done' })],
-      isLoading: false,
-      error: null,
-    });
-
-    render(<PlanView />);
-    act(() => { fireEvent.click(screen.getAllByTestId('plan-item-status')[0]); });
-
-    expect(updateItemStatus).toHaveBeenCalledWith({ id: 1, status: 'todo' });
+    expect(screen.queryByText('Done milestone')).not.toBeInTheDocument();
   });
 });
 
 // ---------------------------------------------------------------------------
-// Inline edit — title click → input mode → blur fires upsert
+// Done archive tab
 // ---------------------------------------------------------------------------
-describe('PlanView (edit) — inline title edit', () => {
-  it('shows input field after clicking plan item title', () => {
-    render(<PlanView />);
-    const titleEl = screen.getByTestId('plan-item-title-1');
-    act(() => { fireEvent.click(titleEl); });
-
-    // Should now show an input element in edit mode
-    const input = screen.getByTestId('plan-item-input-1');
-    expect(input).toBeInTheDocument();
+describe('PlanView (tab) — done archive tab', () => {
+  it('shows done milestones when done tab clicked', () => {
+    mockUseScenario.mockReturnValue(MIXED_MILESTONES);
+    const { container } = render(<PlanView />);
+    fireEvent.click(screen.getByText('完了 archive'));
+    const milestones = container.querySelectorAll('[data-testid="plan-milestone"]');
+    expect(milestones.length).toBe(1);
+    expect(screen.getByText('Done milestone')).toBeInTheDocument();
   });
 
-  it('pre-fills input with current item title', () => {
-    mockUsePlanItems.mockReturnValue({
-      data: [makePlanItem({ id: 1, title: 'My milestone title' })],
-      isLoading: false,
-      error: null,
-    });
-
+  it('shows "完了 archive" section label on done tab', () => {
+    mockUseScenario.mockReturnValue(MIXED_MILESTONES);
     render(<PlanView />);
-    act(() => { fireEvent.click(screen.getByTestId('plan-item-title-1')); });
-
-    const input = screen.getByTestId('plan-item-input-1') as HTMLInputElement;
-    expect(input.value).toBe('My milestone title');
+    fireEvent.click(screen.getByText('完了 archive'));
+    expect(screen.getByText('DONE ARCHIVE')).toBeInTheDocument();
   });
 
-  it('calls upsertItem with updated title on blur', () => {
-    const upsertItem = vi.fn();
-    mockUsePlanMutations.mockReturnValue({
-      ...makeDefaultMutations(),
-      upsertItem,
-    });
-    mockUsePlanItems.mockReturnValue({
-      data: [makePlanItem({ id: 1, title: 'Old title', status: 'todo', position: 0 })],
-      isLoading: false,
-      error: null,
-    });
+  it('switches back to active tab when active clicked after done', () => {
+    mockUseScenario.mockReturnValue(MIXED_MILESTONES);
+    const { container } = render(<PlanView />);
+    fireEvent.click(screen.getByText('完了 archive'));
+    fireEvent.click(screen.getByText('現行'));
+    const milestones = container.querySelectorAll('[data-testid="plan-milestone"]');
+    expect(milestones.length).toBe(1);
+    expect(screen.getByText('Active milestone')).toBeInTheDocument();
+  });
+});
 
-    render(<PlanView />);
-    act(() => { fireEvent.click(screen.getByTestId('plan-item-title-1')); });
-    const input = screen.getByTestId('plan-item-input-1');
+// ---------------------------------------------------------------------------
+// Edit tab
+// ---------------------------------------------------------------------------
+describe('PlanView (tab) — edit tab', () => {
+  it('shows edit buttons per milestone on edit tab', () => {
+    mockUseScenario.mockReturnValue(MIXED_MILESTONES);
+    const { container } = render(<PlanView />);
+    // Edit tab shows active milestones with edit buttons
+    fireEvent.click(screen.getByText('編集'));
+    const editBtns = container.querySelectorAll('button.btn-px.ghost');
+    // WHY: plan.jsx shows edit button per milestone on edit tab
+    expect(editBtns.length).toBeGreaterThanOrEqual(1);
+  });
+});
 
-    // Change value and blur
-    act(() => {
-      fireEvent.change(input, { target: { value: 'New title' } });
-      fireEvent.blur(input);
-    });
+// ---------------------------------------------------------------------------
+// Milestone children with status glyphs
+// ---------------------------------------------------------------------------
+describe('PlanView (milestone children) — status glyphs', () => {
+  it('renders milestone children with completed glyph', () => {
+    mockUseScenario.mockReturnValue(MIXED_MILESTONES);
+    const { container } = render(<PlanView />);
+    const children = container.querySelectorAll('[data-testid="milestone-child"]');
+    // M0.13 has 2 children
+    expect(children.length).toBe(2);
 
-    expect(upsertItem).toHaveBeenCalledWith(
-      expect.objectContaining({ id: 1, title: 'New title' }),
-    );
+    // First child is completed
+    const completedGlyph = children[0].querySelector('[data-status="completed"]');
+    expect(completedGlyph).toBeInTheDocument();
   });
 
-  it('does not call upsertItem if title is unchanged on blur', () => {
-    const upsertItem = vi.fn();
-    mockUsePlanMutations.mockReturnValue({
-      ...makeDefaultMutations(),
-      upsertItem,
-    });
-    mockUsePlanItems.mockReturnValue({
-      data: [makePlanItem({ id: 1, title: 'Same title' })],
-      isLoading: false,
-      error: null,
-    });
-
-    render(<PlanView />);
-    act(() => { fireEvent.click(screen.getByTestId('plan-item-title-1')); });
-    const input = screen.getByTestId('plan-item-input-1');
-
-    // Blur without changing
-    act(() => { fireEvent.blur(input); });
-
-    // Should not call upsert if nothing changed
-    expect(upsertItem).not.toHaveBeenCalled();
+  it('renders milestone children with in_progress glyph', () => {
+    mockUseScenario.mockReturnValue(MIXED_MILESTONES);
+    const { container } = render(<PlanView />);
+    const children = container.querySelectorAll('[data-testid="milestone-child"]');
+    const inProgressGlyph = children[1].querySelector('[data-status="in_progress"]');
+    expect(inProgressGlyph).toBeInTheDocument();
   });
 
-  it('exits edit mode after blur', () => {
-    render(<PlanView />);
-    act(() => { fireEvent.click(screen.getByTestId('plan-item-title-1')); });
-    expect(screen.getByTestId('plan-item-input-1')).toBeInTheDocument();
-
-    act(() => { fireEvent.blur(screen.getByTestId('plan-item-input-1')); });
-
-    expect(screen.queryByTestId('plan-item-input-1')).not.toBeInTheDocument();
+  it('renders completed child with line-through text decoration', () => {
+    mockUseScenario.mockReturnValue(MIXED_MILESTONES);
+    const { container } = render(<PlanView />);
+    const children = container.querySelectorAll('[data-testid="milestone-child"]');
+    // First child (completed) should have line-through text
+    const completedText = children[0].querySelector('span:last-child') as HTMLElement;
+    expect(completedText).toBeInTheDocument();
+    expect(completedText.style.textDecoration).toBe('line-through');
   });
 });

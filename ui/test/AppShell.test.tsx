@@ -1,7 +1,8 @@
 /**
- * AppShell TDD test (Task 5, m2-t3)
- * WHY: verify persistent Room canvas + panel overlay routing behavior.
- * Written FIRST (Red) before AppShell implementation to enforce TDD discipline.
+ * AppShell TDD test (M0.15 t14 redesign, REQ-075)
+ * WHY: verify persistent Room canvas + panel overlay routing behavior,
+ * plus the updated shell structure (Drawer replaces Sidebar, TopBar replaces
+ * DisciplineHeader, drawer has nav-link-{id} testids).
  *
  * Behavior under test:
  * 1. RoomView (data-testid="room-canvas") is always present in DOM regardless of route
@@ -10,10 +11,105 @@
  * 4. Panel background click → navigates to `/`
  * 5. Escape key → navigates to `/`
  * 6. Room canvas is NOT remounted across route changes (same DOM node identity)
+ * 7. Drawer (data-testid="drawer") is always present
+ * 8. TopBar (data-testid="topbar") is always present
+ * 9. Drawer contains nav-link testids for all 11 routes
+ *
+ * WHY mocks: AppShell → RoomView → AgentDetailNotes → trpc/client →
+ * @claude-loom/daemon → constants/consistency.ts → zod fails to resolve
+ * in the UI Vitest env (daemon's node_modules not on path). We mock RoomView
+ * at the seam to keep AppShell behavioral tests isolated.
  */
-import { describe, it, expect, afterEach } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, screen, cleanup, fireEvent, act } from '@testing-library/react';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
+import type { Scenario } from '@claude-loom/redesign/api/types';
+
+// ---------------------------------------------------------------------------
+// Module mocks — hoist before component imports (vitest hoists vi.mock calls)
+// ---------------------------------------------------------------------------
+
+// WHY: mock RoomView to avoid zod/daemon import chain.
+vi.mock('../src/views/room/RoomView', () => ({
+  RoomView: () => <div data-testid="room-canvas">Room Canvas (mock)</div>,
+}));
+
+// WHY: mock PMChatPanel to isolate AppShell layout from pm-chat internals.
+vi.mock('../src/views/pm-chat/PMChatPanel', () => ({
+  PMChatPanel: () => <div data-testid="pm-chat-panel">PM Chat (mock)</div>,
+}));
+
+// WHY: mock ToastContainer to avoid toast bus side effects.
+vi.mock('../src/notifications/ToastContainer', () => ({
+  ToastContainer: () => null,
+}));
+
+// WHY: mock usePMSession to avoid tRPC provider requirement.
+// AppShell layout tests do not exercise PM write mutations.
+vi.mock('../src/live/usePMSession', () => ({
+  usePMSession: () => ({
+    start: () => {},
+    say: () => {},
+    permission: () => {},
+    isLoading: false,
+  }),
+}));
+
+// WHY: mock redesign websocket hook with pm.running:false for baseline tests
+// (PMChatPanel right column not shown by default).
+vi.mock('@claude-loom/redesign/api/websocket', () => ({
+  useScenario: () =>
+    ({
+      key: 'idle',
+      label: 'idle scenario',
+      now: '10:00',
+      conn: 'connected',
+      project: 'test-project',
+      branch: 'main',
+      agents: {},
+      todos: [],
+      todosUpdatedAt: '',
+      milestones: [],
+      findings: [],
+      worktrees: [],
+      stream: [],
+      gantt: { windowLabel: '', nowPct: 0, rows: [] },
+      retroSession: {
+        id: '', title: '', startedAt: '', durationSec: 0, verdict: 'PASS',
+        actionPlan: { immediate: 0, milestone: 0, deferred: 0 },
+        lenses: [], transcript: [], findings: [],
+      },
+      guidance: [],
+      customization: {},
+      disciplineMetrics: {
+        parallel: 0.6,
+        taskTool: 'ok',
+        taskToolLabel: 'OK',
+        tddViolations: 0,
+        verdict: 'PASS',
+      },
+      consistencyState: 'empty',
+      sessions: [],
+      tokens: { period: '', byAgent: [], daily: [] },
+      settings: {
+        daemonPort: 5757,
+        worktreeBase: '',
+        retroSchedule: { enabled: false, cron: '', label: '' },
+        consistencyScope: [],
+        hooks: { preToolUse: false, postToolUse: false, subagentStop: false },
+        logRetention: { days: 7 },
+        defaultReviewers: [],
+        parallelLimit: 3,
+      },
+      pricing: {} as Scenario['pricing'],
+      pm: { running: false, messages: [], pendingApprovals: [] },
+    }) as unknown as Scenario,
+  getScenarioStore: () => ({
+    subscribe: () => () => {},
+    getSnapshot: () => ({}),
+  }),
+}));
+
 import { AppShell } from '../src/routing/AppShell';
 
 // Minimal placeholder views for routing test
@@ -111,7 +207,7 @@ describe('AppShell — panel overlay behavior', () => {
     renderAppShell('/plan');
     const panel = screen.getByTestId('view-panel');
     expect(panel).toBeInTheDocument();
-    // WHY: query within panel — sidebar also has a "Plan" link, so getByText is ambiguous
+    // WHY: query within panel — drawer also has a "Plan" link, so getByText is ambiguous
     expect(panel).toHaveTextContent('Plan');
   });
 });
@@ -168,61 +264,62 @@ describe('AppShell — panel close interactions', () => {
   });
 });
 
-describe('AppShell — discipline-header placeholder', () => {
-  it('renders discipline-header at root route', () => {
+describe('AppShell — TopBar (replaces DisciplineHeader)', () => {
+  it('renders topbar at root route', () => {
     renderAppShell('/');
-    expect(screen.getByTestId('discipline-header')).toBeInTheDocument();
+    expect(screen.getByTestId('topbar')).toBeInTheDocument();
   });
 
-  it('renders discipline-header at /plan route', () => {
+  it('renders topbar at /plan route', () => {
     renderAppShell('/plan');
-    expect(screen.getByTestId('discipline-header')).toBeInTheDocument();
+    expect(screen.getByTestId('topbar')).toBeInTheDocument();
   });
 });
 
 /**
- * Sidebar wire-up assertions — hotfix bug-4
- * WHY: Sidebar.tsx existed but was not imported/rendered in AppShell,
- * making /plan, /sessions, /retro etc. unreachable without URL typing.
+ * Drawer navigation assertions — replaces old Sidebar assertions.
+ * WHY: AppShell redesign replaces Sidebar (data-testid="sidebar") with
+ * Drawer (data-testid="drawer"). Nav links use nav-link-{id} testids
+ * instead of sidebar-link-{id}.
  */
-describe('AppShell — Sidebar navigation', () => {
-  it('renders sidebar at root route', () => {
+describe('AppShell — Drawer navigation (redesign)', () => {
+  it('renders drawer at root route', () => {
     renderAppShell('/');
-    expect(screen.getByTestId('sidebar')).toBeInTheDocument();
+    expect(screen.getByTestId('drawer')).toBeInTheDocument();
   });
 
-  it('renders sidebar at /plan route', () => {
+  it('renders drawer at /plan route', () => {
     renderAppShell('/plan');
-    expect(screen.getByTestId('sidebar')).toBeInTheDocument();
+    expect(screen.getByTestId('drawer')).toBeInTheDocument();
   });
 
-  it('renders sidebar at /retro route', () => {
+  it('renders drawer at /retro route', () => {
     renderAppShell('/retro');
-    expect(screen.getByTestId('sidebar')).toBeInTheDocument();
+    expect(screen.getByTestId('drawer')).toBeInTheDocument();
   });
 
-  it('sidebar contains link to /plan', () => {
+  it('drawer contains nav-link to /plan', () => {
     renderAppShell('/');
-    expect(screen.getByTestId('sidebar-link-plan')).toBeInTheDocument();
+    expect(screen.getByTestId('nav-link-plan')).toBeInTheDocument();
   });
 
-  it('sidebar contains link to /retro', () => {
+  it('drawer contains nav-link to /retro', () => {
     renderAppShell('/');
-    expect(screen.getByTestId('sidebar-link-retro')).toBeInTheDocument();
+    expect(screen.getByTestId('nav-link-retro')).toBeInTheDocument();
   });
 
-  it('sidebar contains link to /sessions', () => {
+  it('drawer contains nav-link to /sessions', () => {
     renderAppShell('/');
-    expect(screen.getByTestId('sidebar-link-sessions')).toBeInTheDocument();
+    expect(screen.getByTestId('nav-link-sessions')).toBeInTheDocument();
   });
 
-  it('sidebar contains link to /tokens', () => {
+  it('drawer contains nav-link to /tokens', () => {
     renderAppShell('/');
-    expect(screen.getByTestId('sidebar-link-tokens')).toBeInTheDocument();
+    expect(screen.getByTestId('nav-link-tokens')).toBeInTheDocument();
   });
 
-  it('sidebar contains link to /project-settings', () => {
+  it('drawer contains nav-link to /project-settings', () => {
     renderAppShell('/');
-    expect(screen.getByTestId('sidebar-link-project-settings')).toBeInTheDocument();
+    expect(screen.getByTestId('nav-link-project-settings')).toBeInTheDocument();
   });
 });
