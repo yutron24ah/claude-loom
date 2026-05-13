@@ -1183,7 +1183,7 @@ dispatcher: Strategy a × 2 (t6/t7、t5 は spec phase で完了済) / single mo
 
 - [x] docs/SCREEN_REQUIREMENTS.md + docs/DOC_CONSISTENCY_CHECKLIST.md M0.16 check items update <!-- id: m0.16-t8 status: done committed_sha: 152b067 path: C (doc-only self_review、6/9 [x] 化 + 3 [ ] 残置は t11 closure 予定、SCREEN_REQUIREMENTS changelog 1 行追加) planned_files: docs/SCREEN_REQUIREMENTS.md, docs/DOC_CONSISTENCY_CHECKLIST.md -->
 - [ ] tests/REQUIREMENTS.md REQ-084..088 entry append (PM 一括 append rule、SPEC §3.6.14.3 規律) <!-- id: m0.16-t9 status: todo planned_files: tests/REQUIREMENTS.md -->
-- [ ] Layer 2.5 dogfood smoke 8 step 全 PASS (Step 8 act invocation で self-test、graceful fallback verify 含む) <!-- id: m0.16-t10 status: todo execution: PM direct planned_files: docs/smoke-tests/m0.16-dogfood/*.md -->
+- [x] Layer 2.5 dogfood smoke 8 step 全 PASS (Step 8 act invocation で self-test、graceful fallback verify 含む) <!-- id: m0.16-t10 status: done execution: PM direct (no subagent) finding: Step 8 graceful skip path validation (act binary 不在で SKIP exit 0、SPEC §3.6.15.4 期待動作) + act adoption gap retro candidate report: docs/smoke-tests/m0.16-dogfood/report.md REQ-089 PM 一括 append planned_files: docs/smoke-tests/m0.16-dogfood/*.md -->
 - [ ] m0.16-complete tag 設置 + retro hook trigger + learned_guidance lg-2026-05-13-001 を formal 規律として ttl expire <!-- id: m0.16-t11 status: todo execution: PM direct planned_files: PLAN.md -->
 
 dispatcher: Strategy a × 2 (t8/t9) + PM direct × 2 (t10/t11) / single mode / shared tree
