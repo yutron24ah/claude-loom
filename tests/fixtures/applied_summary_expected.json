@@ -2,7 +2,7 @@
   "schema_version": 1,
   "retro_id": "test-dry-run",
   "generated_at": 1778025600,
-  "total_retro_sessions": 6,
+  "total_retro_sessions": 7,
   "applied_findings": [
     {
       "finding_id": "F-pj-001",
