@@ -39,18 +39,20 @@ describe('DeskStation — basic render', () => {
     expect(container.firstChild).not.toBeNull();
   });
 
-  it('root div has absolute position with correct left and top from x/y props', () => {
+  it('root div has correct left and top from x/y props', () => {
+    // WHY: M0.17 t9 class-based port — position/width come from .desk-station CSS class.
+    // Only left/top remain as inline styles (dynamic, driven by RoomView positions table).
     const { container } = render(<DeskStation x={42} y={88} cat={testCat} />);
     const root = container.firstChild as HTMLElement;
-    expect(root.style.position).toBe('absolute');
     expect(root.style.left).toBe('42px');
     expect(root.style.top).toBe('88px');
   });
 
-  it('root div has width 100px', () => {
+  it('root div has .desk-station class (position/sizing via CSS)', () => {
+    // WHY: M0.17 t9 — position:absolute and width are now set by .desk-station class in room.css
     const { container } = render(<DeskStation x={0} y={0} cat={testCat} />);
     const root = container.firstChild as HTMLElement;
-    expect(root.style.width).toBe('100px');
+    expect(root.classList.contains('desk-station')).toBe(true);
   });
 });
 
@@ -88,34 +90,35 @@ describe('DeskStation — status dot', () => {
     expect(dot).not.toBeNull();
   });
 
-  it('status=busy uses success color', () => {
+  it('status=busy applies --busy modifier class on status-dot', () => {
+    // WHY: M0.17 t9 class-based port — color from .desk-station__status-dot--{status} modifier.
     const { container } = render(<DeskStation x={0} y={0} cat={testCat} status="busy" />);
     const dot = container.querySelector('[data-testid="status-dot"]') as HTMLElement;
-    expect(dot.style.background).toBe('var(--p-success)');
+    expect(dot.classList.contains('desk-station__status-dot--busy')).toBe(true);
   });
 
-  it('status=idle uses stone color', () => {
+  it('status=idle applies --idle modifier class on status-dot', () => {
     const { container } = render(<DeskStation x={0} y={0} cat={testCat} status="idle" />);
     const dot = container.querySelector('[data-testid="status-dot"]') as HTMLElement;
-    expect(dot.style.background).toBe('var(--p-stone)');
+    expect(dot.classList.contains('desk-station__status-dot--idle')).toBe(true);
   });
 
-  it('status=review uses accent color', () => {
+  it('status=review applies --review modifier class on status-dot', () => {
     const { container } = render(<DeskStation x={0} y={0} cat={testCat} status="review" />);
     const dot = container.querySelector('[data-testid="status-dot"]') as HTMLElement;
-    expect(dot.style.background).toBe('var(--p-accent)');
+    expect(dot.classList.contains('desk-station__status-dot--review')).toBe(true);
   });
 
-  it('status=fail uses error color', () => {
+  it('status=fail applies --fail modifier class on status-dot', () => {
     const { container } = render(<DeskStation x={0} y={0} cat={testCat} status="fail" />);
     const dot = container.querySelector('[data-testid="status-dot"]') as HTMLElement;
-    expect(dot.style.background).toBe('var(--p-error)');
+    expect(dot.classList.contains('desk-station__status-dot--fail')).toBe(true);
   });
 
-  it('status=tdd uses warn color', () => {
+  it('status=tdd applies --tdd modifier class on status-dot', () => {
     const { container } = render(<DeskStation x={0} y={0} cat={testCat} status="tdd" />);
     const dot = container.querySelector('[data-testid="status-dot"]') as HTMLElement;
-    expect(dot.style.background).toBe('var(--p-warn)');
+    expect(dot.classList.contains('desk-station__status-dot--tdd')).toBe(true);
   });
 });
 
@@ -123,16 +126,18 @@ describe('DeskStation — status dot', () => {
 // Monitor screen — fail vs normal
 // ---------------------------------------------------------------------------
 describe('DeskStation — monitor screen', () => {
-  it('monitor screen has screen bg when status is not fail', () => {
+  it('monitor screen has .desk-station__monitor class (screen bg via CSS)', () => {
+    // WHY: M0.17 t9 class-based port — background color from CSS class, not inline style.
     const { container } = render(<DeskStation x={0} y={0} cat={testCat} status="busy" />);
-    const screen = container.querySelector('[data-testid="monitor-screen"]') as HTMLElement;
-    expect(screen.style.background).toBe('var(--p-screen)');
+    const monitor = container.querySelector('[data-testid="monitor-screen"]') as HTMLElement;
+    expect(monitor.classList.contains('desk-station__monitor')).toBe(true);
   });
 
-  it('monitor screen has error bg when status=fail', () => {
+  it('monitor screen has --fail modifier class when status=fail', () => {
+    // WHY: fail state applies .desk-station__monitor--fail modifier for red background.
     const { container } = render(<DeskStation x={0} y={0} cat={testCat} status="fail" />);
     const monitorScreen = container.querySelector('[data-testid="monitor-screen"]') as HTMLElement;
-    expect(monitorScreen.style.background).toBe('var(--p-error)');
+    expect(monitorScreen.classList.contains('desk-station__monitor--fail')).toBe(true);
   });
 });
 
@@ -140,16 +145,18 @@ describe('DeskStation — monitor screen', () => {
 // selected prop — outline
 // ---------------------------------------------------------------------------
 describe('DeskStation — selected prop', () => {
-  it('button has no outline when selected=false (default)', () => {
+  it('button has .desk-station__btn class without --selected modifier when selected=false (default)', () => {
+    // WHY: M0.17 t9 class-based port — outline via .desk-station__btn--selected CSS modifier.
     const { container } = render(<DeskStation x={0} y={0} cat={testCat} />);
     const btn = container.querySelector('button') as HTMLButtonElement;
-    expect(btn.style.outline).toBe('none');
+    expect(btn.classList.contains('desk-station__btn')).toBe(true);
+    expect(btn.classList.contains('desk-station__btn--selected')).toBe(false);
   });
 
-  it('button has accent outline when selected=true', () => {
+  it('button has .desk-station__btn--selected modifier when selected=true', () => {
     const { container } = render(<DeskStation x={0} y={0} cat={testCat} selected={true} />);
     const btn = container.querySelector('button') as HTMLButtonElement;
-    expect(btn.style.outline).toBe('3px solid var(--p-accent)');
+    expect(btn.classList.contains('desk-station__btn--selected')).toBe(true);
   });
 });
 
@@ -193,10 +200,11 @@ describe('DeskStation — TDD tag', () => {
     expect(screen.getByText('RED')).toBeInTheDocument();
   });
 
-  it('TDD tag has warn background', () => {
+  it('TDD tag has .desk-station__tdd class (background via CSS)', () => {
+    // WHY: M0.17 t9 — background now set by .desk-station__tdd CSS class in room.css.
     const { container } = render(<DeskStation x={0} y={0} cat={testCat} tdd="GREEN" />);
     const tag = container.querySelector('[data-testid="tdd-tag"]') as HTMLElement;
-    expect(tag.style.background).toBe('var(--p-warn)');
+    expect(tag.classList.contains('desk-station__tdd')).toBe(true);
   });
 });
 
@@ -222,21 +230,16 @@ describe('DeskStation — nameplate', () => {
 });
 
 // ---------------------------------------------------------------------------
-// deskColor prop — desk top background
+// desk-top class — desk top element (M0.17 t9: deskColor prop removed)
 // ---------------------------------------------------------------------------
-describe('DeskStation — deskColor prop', () => {
-  it('desk top uses var(--p-wood) by default', () => {
+describe('DeskStation — desk-top element', () => {
+  it('desk top element renders with .desk-station__top class', () => {
+    // WHY: M0.17 t9 — deskColor prop removed; desk background is now --desk-surface
+    // CSS variable set in room.css. data-testid preserved for regression detection.
     const { container } = render(<DeskStation x={0} y={0} cat={testCat} />);
     const desk = container.querySelector('[data-testid="desk-top"]') as HTMLElement;
-    expect(desk.style.background).toBe('var(--p-wood)');
-  });
-
-  it('desk top uses custom deskColor when provided', () => {
-    const { container } = render(
-      <DeskStation x={0} y={0} cat={testCat} deskColor="var(--p-accent)" />,
-    );
-    const desk = container.querySelector('[data-testid="desk-top"]') as HTMLElement;
-    expect(desk.style.background).toBe('var(--p-accent)');
+    expect(desk).not.toBeNull();
+    expect(desk.classList.contains('desk-station__top')).toBe(true);
   });
 });
 

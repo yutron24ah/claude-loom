@@ -81,6 +81,11 @@ vi.mock('../src/views/room/RoomView', () => ({
   RoomView: () => <div data-testid="room-canvas">Room Canvas (mock)</div>,
 }));
 
+// WHY: mock LiveRail to avoid StreamEvent type resolution in jsdom test env.
+vi.mock('../src/views/room/LiveRail', () => ({
+  LiveRail: () => <div data-testid="live-rail">LiveRail (mock)</div>,
+}));
+
 // WHY: mock PMChatPanel to avoid its internal trpc deps and focus on mount logic.
 vi.mock('../src/views/pm-chat/PMChatPanel', () => ({
   PMChatPanel: () => <div data-testid="pm-chat-panel">PM Chat Panel (mock)</div>,
@@ -290,31 +295,33 @@ describe('AppShell × redesign: ScenarioPicker', () => {
 });
 
 // ---------------------------------------------------------------------------
-// 7. Nav-link click navigates to corresponding route
+// 7. Nav-link click navigates to corresponding route (M0.17 t8: sibling routing)
 // ---------------------------------------------------------------------------
 describe('AppShell × redesign: nav-link routing', () => {
-  it('clicking nav-link-plan shows plan content', async () => {
+  it('clicking nav-link-plan shows plan content directly (no view-panel wrapper)', async () => {
+    // WHY: M0.17 t8 — sibling routing. <Outlet> renders content directly, no view-panel.
     renderShell('/');
 
     await act(async () => {
       fireEvent.click(screen.getByTestId('nav-link-plan'));
     });
 
-    expect(screen.getByTestId('view-panel')).toBeInTheDocument();
-    expect(screen.getByTestId('view-panel')).toHaveTextContent('Plan Content');
+    // Content renders directly without view-panel wrapper
+    expect(screen.queryByTestId('view-panel')).not.toBeInTheDocument();
+    expect(screen.getByText('Plan Content')).toBeInTheDocument();
   });
 
-  it('room canvas remains mounted across nav changes', async () => {
+  it('room canvas unmounts when navigating to /plan (isRoom routing)', async () => {
+    // WHY: M0.17 t8 — isRoom ? <RoomView/> : <Outlet/>. At /plan, RoomView is NOT mounted.
     renderShell('/');
-    const roomCanvas = screen.getByTestId('room-canvas');
+    expect(screen.getByTestId('room-canvas')).toBeInTheDocument();
 
     await act(async () => {
       fireEvent.click(screen.getByTestId('nav-link-plan'));
     });
 
-    // Room canvas still in DOM after nav to plan
-    expect(screen.getByTestId('room-canvas')).toBeInTheDocument();
-    // Same node (not remounted)
-    expect(screen.getByTestId('room-canvas')).toBe(roomCanvas);
+    // Room canvas is replaced by Outlet content
+    expect(screen.queryByTestId('room-canvas')).not.toBeInTheDocument();
+    expect(screen.getByText('Plan Content')).toBeInTheDocument();
   });
 });

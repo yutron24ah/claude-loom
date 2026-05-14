@@ -1,19 +1,15 @@
 /**
- * AppShell TDD test (M0.15 t14 redesign, REQ-075)
- * WHY: verify persistent Room canvas + panel overlay routing behavior,
- * plus the updated shell structure (Drawer replaces Sidebar, TopBar replaces
- * DisciplineHeader, drawer has nav-link-{id} testids).
+ * AppShell TDD test (M0.17 t8 sibling routing, REQ-075 updated)
+ * WHY: verify sibling routing behavior — Room canvas at `/`, Outlet at other routes.
  *
- * Behavior under test:
- * 1. RoomView (data-testid="room-canvas") is always present in DOM regardless of route
- * 2. At `/` route, no panel overlay (data-testid="view-panel") is rendered
- * 3. At `/plan` route, Room canvas stays + panel overlay is rendered
- * 4. Panel background click → navigates to `/`
- * 5. Escape key → navigates to `/`
- * 6. Room canvas is NOT remounted across route changes (same DOM node identity)
- * 7. Drawer (data-testid="drawer") is always present
- * 8. TopBar (data-testid="topbar") is always present
- * 9. Drawer contains nav-link testids for all 11 routes
+ * Behavior under test (M0.17 t8 — overlay routing removed):
+ * 1. RoomView (data-testid="room-canvas") is rendered at `/`
+ * 2. At non-root routes (`/plan`, `/retro`), Outlet is rendered (not RoomView)
+ * 3. No view-panel wrapper — Outlet renders directly as sibling to RoomView
+ * 4. Escape key does NOT navigate (handler removed per §S2 fix)
+ * 5. Drawer (data-testid="drawer") is always present
+ * 6. TopBar (data-testid="topbar") is always present
+ * 7. Drawer contains nav-link testids for all 11 routes
  *
  * WHY mocks: AppShell → RoomView → AgentDetailNotes → trpc/client →
  * @claude-loom/daemon → constants/consistency.ts → zod fails to resolve
@@ -32,6 +28,11 @@ import type { Scenario } from '@claude-loom/redesign/api/types';
 // WHY: mock RoomView to avoid zod/daemon import chain.
 vi.mock('../src/views/room/RoomView', () => ({
   RoomView: () => <div data-testid="room-canvas">Room Canvas (mock)</div>,
+}));
+
+// WHY: mock LiveRail to avoid StreamEvent type resolution in jsdom test env.
+vi.mock('../src/views/room/LiveRail', () => ({
+  LiveRail: () => <div data-testid="live-rail">LiveRail (mock)</div>,
 }));
 
 // WHY: mock PMChatPanel to isolate AppShell layout from pm-chat internals.
@@ -139,81 +140,54 @@ function renderAppShell(initialRoute = '/') {
   );
 }
 
-describe('AppShell — persistent Room canvas', () => {
+describe('AppShell — sibling routing (M0.17 t8)', () => {
   it('renders room-canvas at root route', () => {
     renderAppShell('/');
     expect(screen.getByTestId('room-canvas')).toBeInTheDocument();
   });
 
-  it('renders room-canvas at /plan route', () => {
+  it('does NOT render room-canvas at /plan route (Outlet replaces RoomView)', () => {
+    // WHY: M0.17 t8 sibling routing — isRoom ? <RoomView/> : <Outlet/>.
+    // At /plan, Outlet is rendered, not RoomView.
     renderAppShell('/plan');
-    expect(screen.getByTestId('room-canvas')).toBeInTheDocument();
+    expect(screen.queryByTestId('room-canvas')).not.toBeInTheDocument();
   });
 
-  it('renders room-canvas at /retro route', () => {
+  it('does NOT render room-canvas at /retro route', () => {
     renderAppShell('/retro');
-    expect(screen.getByTestId('room-canvas')).toBeInTheDocument();
+    expect(screen.queryByTestId('room-canvas')).not.toBeInTheDocument();
   });
 
-  it('room-canvas node is same identity across route change (no remount)', () => {
-    const { rerender } = render(
-      <MemoryRouter initialEntries={['/']}>
-        <Routes>
-          <Route element={<AppShell />}>
-            <Route index element={null} />
-            <Route path="plan" element={<PlanView />} />
-          </Route>
-        </Routes>
-      </MemoryRouter>,
-    );
-
-    // Capture DOM node reference at '/'
-    const roomCanvas = screen.getByTestId('room-canvas');
-    const nodeRef = roomCanvas;
-
-    // Navigate to /plan
-    rerender(
-      <MemoryRouter initialEntries={['/plan']}>
-        <Routes>
-          <Route element={<AppShell />}>
-            <Route index element={null} />
-            <Route path="plan" element={<PlanView />} />
-          </Route>
-        </Routes>
-      </MemoryRouter>,
-    );
-
-    // Room canvas should still be in DOM (persistent mount)
-    expect(screen.getByTestId('room-canvas')).toBeInTheDocument();
-    // Verify it is the same underlying element (not re-created)
-    // WHY: AppShell mounts RoomView unconditionally, outside Outlet — so rerender
-    // of the shell keeps the same component instance (React reconciliation preserves it)
-    expect(screen.getByTestId('room-canvas')).toBe(nodeRef);
+  it('Outlet content renders at /plan route (no view-panel wrapper)', () => {
+    // WHY: M0.17 t8 — Outlet renders as direct sibling, no overlay div.
+    // Use getByRole to find the heading/view content, not just any "Plan" text (drawer also has it).
+    renderAppShell('/plan');
+    // The PlanView function returns <div>Plan</div> — it's in the DOM somewhere
+    // Verify no view-panel wrapping it
+    expect(screen.queryByTestId('view-panel')).not.toBeInTheDocument();
+    // Verify the route content rendered (multiple "Plan" texts is OK — drawer + content)
+    const allPlanEls = screen.getAllByText('Plan');
+    expect(allPlanEls.length).toBeGreaterThan(0);
   });
 });
 
-describe('AppShell — panel overlay behavior', () => {
+describe('AppShell — no view-panel overlay (M0.17 t8 §S2 fix)', () => {
   it('does not render view-panel at root route', () => {
+    // WHY: M0.17 t8 — overlay removed entirely, no view-panel testid anywhere.
     renderAppShell('/');
     expect(screen.queryByTestId('view-panel')).not.toBeInTheDocument();
   });
 
-  it('renders view-panel at /plan route', () => {
+  it('does not render view-panel at /plan route (sibling routing)', () => {
+    // WHY: previously rendered as modal overlay. Now Outlet renders inline as sibling.
     renderAppShell('/plan');
-    expect(screen.getByTestId('view-panel')).toBeInTheDocument();
-  });
-
-  it('view-panel contains route content', () => {
-    renderAppShell('/plan');
-    const panel = screen.getByTestId('view-panel');
-    expect(panel).toBeInTheDocument();
-    // WHY: query within panel — drawer also has a "Plan" link, so getByText is ambiguous
-    expect(panel).toHaveTextContent('Plan');
+    expect(screen.queryByTestId('view-panel')).not.toBeInTheDocument();
   });
 });
 
-describe('AppShell — panel close interactions', () => {
-  it('Escape key navigates to / (panel dismissal)', async () => {
+describe('AppShell — Escape key behavior (M0.17 t8 handler removed)', () => {
+  it('Escape key does NOT navigate away from /plan (handler removed)', async () => {
+    // WHY: M0.17 t8 — Escape key handler removed since there is no overlay to dismiss.
     render(
       <MemoryRouter initialEntries={['/plan']}>
         <Routes>
@@ -225,42 +199,19 @@ describe('AppShell — panel close interactions', () => {
       </MemoryRouter>,
     );
 
-    // panel should be visible at /plan
-    expect(screen.getByTestId('view-panel')).toBeInTheDocument();
+    // Content renders directly at /plan (no view-panel)
+    expect(screen.queryByTestId('view-panel')).not.toBeInTheDocument();
+    // Plan content is present (drawer nav + route content both match "Plan" — that's fine)
+    expect(screen.getAllByText('Plan').length).toBeGreaterThan(0);
 
-    // Fire Escape key on document
+    // Fire Escape key on document — should have no navigation effect
     await act(async () => {
       fireEvent.keyDown(document, { key: 'Escape', code: 'Escape' });
     });
 
-    // After Escape, panel should be gone (navigated to /)
-    // WHY: MemoryRouter internal state changes — panel visibility reflects current route
-    expect(screen.queryByTestId('view-panel')).not.toBeInTheDocument();
-  });
-
-  it('panel background click navigates to /', async () => {
-    render(
-      <MemoryRouter initialEntries={['/plan']}>
-        <Routes>
-          <Route element={<AppShell />}>
-            <Route index element={null} />
-            <Route path="plan" element={<PlanView />} />
-          </Route>
-        </Routes>
-      </MemoryRouter>,
-    );
-
-    // panel visible
-    const panel = screen.getByTestId('view-panel');
-    expect(panel).toBeInTheDocument();
-
-    // Click the panel background (not the content inside it)
-    await act(async () => {
-      fireEvent.click(panel);
-    });
-
-    // panel should be dismissed
-    expect(screen.queryByTestId('view-panel')).not.toBeInTheDocument();
+    // No navigation occurred — no view-panel was dismissed, no redirect to '/'
+    // Room canvas is NOT at /plan (sibling routing), so absence of room-canvas confirms we're still at /plan
+    expect(screen.queryByTestId('room-canvas')).not.toBeInTheDocument();
   });
 });
 

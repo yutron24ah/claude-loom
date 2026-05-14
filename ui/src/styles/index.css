@@ -12,6 +12,8 @@
 @import './tokens.css';
 /* Shell layout: TopBar / Drawer / StatusBar / ScenarioPicker / pm-chat / rail / coldstart */
 @import './shell.css';
+/* Room-level surfaces: .desk-station* / .subroom-clone* / .room-poster* / .room-sign / .agent-detail-panel */
+@import './room.css';
 
 @tailwind base;
 @tailwind components;

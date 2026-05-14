@@ -202,8 +202,8 @@ describe('RoomView — agent click → AgentDetailPanel overlay', () => {
 
   it('clicking a DeskStation renders AgentDetailPanel', () => {
     const { container } = render(<RoomView />);
-    // DeskStation renders a button with style="all: unset" wrapping the desk content
-    const deskBtns = container.querySelectorAll('button[style*="all: unset"]');
+    // DeskStation renders a button with class "desk-station__btn" (M0.17 t9: class-based port)
+    const deskBtns = container.querySelectorAll('button.desk-station__btn');
     expect(deskBtns.length).toBeGreaterThan(0);
     fireEvent.click(deskBtns[0]);
     expect(screen.getByTestId('agent-detail-panel')).toBeInTheDocument();
@@ -211,7 +211,7 @@ describe('RoomView — agent click → AgentDetailPanel overlay', () => {
 
   it('close button on AgentDetailPanel clears selection', () => {
     const { container } = render(<RoomView />);
-    const deskBtns = container.querySelectorAll('button[style*="all: unset"]');
+    const deskBtns = container.querySelectorAll('button.desk-station__btn');
     expect(deskBtns.length).toBeGreaterThan(0);
     fireEvent.click(deskBtns[0]);
     expect(screen.getByTestId('agent-detail-panel')).toBeInTheDocument();

@@ -61,6 +61,12 @@ vi.mock('../src/live/usePMSession', () => ({
   }),
 }));
 
+// WHY: mock LiveRail to avoid StreamEvent type resolution in jsdom smoke test.
+// AppShell renders LiveRail at '/' when pm.running is false.
+vi.mock('../src/views/room/LiveRail', () => ({
+  LiveRail: () => <div data-testid="live-rail">LiveRail (mock)</div>,
+}));
+
 import { AppShell } from '../src/routing/AppShell';
 
 afterEach(() => {
