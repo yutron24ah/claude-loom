@@ -10,6 +10,8 @@
 
 /* Design tokens (CSS variables — theme-aware via [data-theme] attribute) */
 @import './tokens.css';
+/* Shell layout: TopBar / Drawer / StatusBar / ScenarioPicker / pm-chat / rail / coldstart */
+@import './shell.css';
 
 @tailwind base;
 @tailwind components;
