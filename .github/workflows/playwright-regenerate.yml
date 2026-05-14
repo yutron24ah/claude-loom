@@ -60,8 +60,13 @@ jobs:
 
       - name: Detect changes
         id: changes
+        # WHY git status --porcelain (not git diff --quiet):
+        # First-time *-linux.png generation creates UNTRACKED files. git diff only
+        # tracks modifications to known files, so untracked baselines were silently
+        # skipped, causing the workflow to no-op without creating the auto-PR.
+        # git status --porcelain catches both modified and untracked changes.
         run: |
-          if git diff --quiet ui/e2e/__screenshots__/; then
+          if [ -z "$(git status --porcelain ui/e2e/__screenshots__/)" ]; then
             echo "has-changes=false" >> $GITHUB_OUTPUT
           else
             echo "has-changes=true" >> $GITHUB_OUTPUT
