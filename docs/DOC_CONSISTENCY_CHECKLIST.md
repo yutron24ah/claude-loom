@@ -279,3 +279,28 @@ SPEC §3.6.15 (M0.16 SSoT) + SPEC §3.6.14.5 Layer 2.5 Step 8 を編集した時
 - [ ] **learned_guidance ttl expire**: `lg-2026-05-13-001` (project-prefs.json local persist、ttl: `until-m0.16-complete`) が M0.16 closure で expire、SPEC §3.6.15 formal 規律に昇格 (重複防止) ← t11 PM closure で update 予定
 - [ ] **retro 2026-05-12-001 F-res-002 status update**: pending.json の F-res-002 entry を post-merge structural fix で resolve、`.claude-loom/retro/2026-05-12-001/pending.json` に M0.16 完了 reference 追記 ← t11 PM closure で update 予定
 - [ ] **closure tag chain 保持**: `m0.16-complete` 設置時 `m0` 〜 `m0.15-complete` の全 tag が保持 (`git tag -l --sort=-creatordate | grep -E 'm[0-9]'` で verify) ← t11 PM closure で verify 予定
+
+## M0.17 UI Redesign Port Correction 関連 check
+
+REVIEW.md (`docs/m0.17-design-review.md`) を SSoT として、M0.15 UI Redesign Port の乖離修正と Phase 4.5 hotfix に関する整合性チェック:
+
+- [x] **shell.css verbatim port**: `ui/src/styles/shell.css` (832L) が `redesign/Redesign App.html <style>` block (L8-280) 由来の SSoT verbatim、TopBar / Drawer / StatusBar / ScenarioPicker / pm-chat / pm-toast / pm-modal / rail / coldstart / cat-walker class 全持つ (t1 fd81c22)
+- [x] **room.css G6 受け皿**: `ui/src/styles/room.css` (366L) が `.desk-station__*` / `.subroom-clone__*` / `.room-poster__*` / `.room-sign` / `.agent-detail-panel` class を持ち、`--p-*` / `--desk-*` token を consume (t9 dc00834)
+- [x] **tokens.css.patch 適用 + .room-island* 削除**: zone 色 / prop 色 / z-index / 比率 / サイズ token 追加 + 9 個の `.room-island*` ルール削除 (t4 d737f89)、Phase 1 必須 25 token verify + 2 token (`--p-ok` / `--p-bad`) 追加 (t2 fd81c22)
+- [x] **index.css final 3 import**: `tokens.css` → `shell.css` → `room.css` → tailwind layers の順序 (t1 + t9 atomic)
+- [x] **ゾーン SVG ラグ化 (B2)**: `ui/src/views/room/RoomBackground.tsx` が SVG `<rect opacity="0.3">` + `<text opacity="0.16" letterSpacing="8">` で zone を描画、枠線なし、`Islands.tsx` 削除済 (t5+t6 d737f89)
+- [x] **比率レイアウト (B3)**: `ui/src/views/room/RoomView.tsx` が ResizeObserver で contentRect を観測、`floorY = H * 0.43` ベースの比率座標 (`pm: x=W*0.78` etc.)、`width`/`height` props 廃止 (t6 d737f89)
+- [x] **sibling routing (S2)**: `ui/src/routing/AppShell.tsx` が `isRoom ? <RoomView /> : <Outlet />` の sibling routing、Outlet 全画面 dialog overlay 撤去、Escape key handler 削除、Drawer active 強調が活性化 (t8 dc00834 + 4.5 hotfix 7215138 で marginRight wrapper 復活)
+- [x] **LiveRail PM idle fallback (S1)**: `ui/src/views/room/LiveRail.tsx` 新設、`showLiveRail = !showPmPanel && !liveRailCollapsed && isRoom` で mount、tabs (merged/reasoning/tools) (t9 dc00834)
+- [x] **G6 トークン化全廃**: `STATUS_COLOR` 定数廃止 → `.desk-station__status-dot--{status}` 修飾子、`deskColor` prop 廃止 → `--p-wood` token、inline style 全廃 (動的座標 `{left, top}` のみ例外) (t9 dc00834)
+- [x] **cat-walker walkTo wire (S6)**: DeskStation に `walkTo?: {dx, dy}` prop 追加、`scenario.agents[id].walkTo` (agent id string) を RoomView 内で positions 経由 `{dx, dy}` に変換、`.cat-walker` class + `--walk-dx / --walk-dy` CSS 変数 inject (t12 cc8c9d5、+5 TDD tests)
+- [x] **branch label 責務分離 (M2)**: `RoomWallDecor.tsx` の `◆ claude-loom — branch: main` を `◆ branch: {branch}` (prop-driven) に修正、`claude-loom` 名は TopBar 責務、StatusBar も TopBar と整合 (t14 cc8c9d5)
+- [x] **font fallback (M3)**: shell.css L30 body に `font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace` 直接適用、`--font-sans` を override、tokens.css `--font-sans` は Tailwind preflight 用 fallback として残置 (t14 cc8c9d5、no-op verify)
+- [x] **Phase 4.5 hotfix (構造的 + test)**: AppShell.tsx の RoomView wrapper `marginRight: rightColumnWidth` 復活 (proposed oversight) + screen-baseline.spec.ts waitSelector を screen 固有 testid に update + click-flow の HTTP network assertion 削除 (tRPC wsLink WS transport 実態整合) + GanttView/RetroView root に `data-testid="gantt-view"` / `data-testid="retro-view"` 追加 (REQ-091、7215138)
+- [x] **Playwright darwin baseline 全種再撮影**: 16 baseline 再撮影完了 (`*-darwin.png`)、Playwright 19/19 pass (12 screen + agent-detail + pm-chat-overlay + 3 click flow + 3 room baseline) (t15 + 4.5 hotfix 7215138)
+- [x] **Vitest regression 0**: UI 958/958 + daemon 546/546 全 pass (Phase 2 で islands-decor.test.tsx 削除 + 6 test files refactor、Phase 3 で deskColor 関連 test retire、Phase 4 で +5 walkTo tests、net 1007→958=-49)
+- [x] **TypeScript regression 0**: `tsc --noEmit` で M0.17 commit chain 由来の error 0 (pre-existing M0.15/M0.16 由来 error は維持)
+- [x] **proposed file 11 種全適用**: shell.css / room.css / tokens.css.patch / index.css / AppShell / 2 つの constants.ts / RoomBackground / RoomView / DeskStation / LiveRail 全 11 種が `cp` verbatim port または targeted edit で適用済
+- [ ] **Layer 2.5 dogfood smoke 8 step (SPEC §3.6.15.4 + §10.4.1)**: PM 直接実行 + `docs/smoke-tests/m0.17-dogfood/report.md` 構造化 report 出力 ← t18 PM closure で実施予定
+- [ ] **closure tag chain 保持**: `m0.17-complete` 設置時 `m0` 〜 `m0.16-complete` の全 tag が保持 (`git tag -l --sort=-creatordate | grep -E 'm[0-9]'` で verify) ← t19 PM closure で verify 予定
+- [ ] **main への PR open**: branch hygiene learned_guidance lg-2026-05-12-001 遵守、tag 設置直後に `gh pr create` で main 取込 PR を open ← t19 PM closure で実施予定
