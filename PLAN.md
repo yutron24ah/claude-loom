@@ -1303,8 +1303,20 @@ Phase 4 完了後 PM が Playwright baseline retake (t15) を実行、19 test �
 - [x] Layer 2.5 dogfood smoke 8 step (SPEC §3.6.15.4 + §10.4.1) PM 直接実行、`docs/smoke-tests/m0.17-dogfood/report.md` に structured report 出力 + fixture bump 6→7 carryover (pre-existing M0.16 retro 2026-05-12-001 反映漏れ) <!-- id: m0.17-t18 status: done committed_sha: edd4a79 path: PM direct (8/8 PASS + Step 8 graceful skip + fixture bump carryover) planned_files: docs/smoke-tests/m0.17-dogfood/*.md, tests/fixtures/applied_summary_expected.json -->
   - dispatcher: PM direct (no subagent)
 
-- [x] m0.17-complete tag 設置 + retro hook trigger + main への PR open trigger (branch hygiene learned_guidance lg-2026-05-12-001 遵守) <!-- id: m0.17-t19 status: done committed_sha: <本 commit> note: tag は本 commit 上に annotated tag として設置、main 取込 PR を gh pr create で open、retro hook で user 判断、REQ-099 PM 一括 append 済 (78abd00) planned_files: PLAN.md -->
+- [x] m0.17-complete tag 設置 + retro hook trigger + main への PR open trigger (branch hygiene learned_guidance lg-2026-05-12-001 遵守) <!-- id: m0.17-t19 status: done committed_sha: 170d323 note: tag は 170d323 上に annotated tag として設置、PR #12 (https://github.com/yutron24ah/claude-loom/pull/12) を gh pr create で open、retro hook で user 承認 → loom-retro-pm dispatch 予定、REQ-099 PM 一括 append 済 (78abd00) planned_files: PLAN.md -->
   - dispatcher: PM direct (tag + PR + retro 提案)
+
+### Phase 4.6: post-tag-hotfix series (M0.16 latent bug 解消、SPEC §3.6.8.11)
+
+m0.17-complete tag 設置後 (170d323)、PR #12 push で CI Linux Playwright baseline 不在で 16 failures 検出。M0.16 codify 時の playwright-regenerate.yml workflow が parse 不全 + detect-changes 不備 + repo setting 制約で 0/2 milestone で実 active 化しとらん事象を post-tag-hotfix 3 件で構造解消、M0.17 CI green 達成。tag 不変保持、commit message 全 `[post-tag-hotfix m0.17-complete]` annotation、同 branch 継続、retro scope 必須 inclusion 確約。
+
+- [x] playwright-regenerate.yml YAML 全面 simplify (147L→92L、GH Actions parser registration 修正、`pr-title` input 廃止 + leading 24 行 comment block 整理 + `--update-snapshots=all` 構文整合 + `github.ref_name` で base branch dynamic 化) <!-- id: m0.17-pth-1 status: done committed_sha: a50f0a9 path: PM direct (M0.16 latent bug fix、REQ-100 append 予定) planned_files: .github/workflows/playwright-regenerate.yml -->
+
+- [x] playwright-regenerate.yml detect-changes step を `git diff --quiet` → `git status --porcelain` に変更 (untracked file 検出修正、初回 Linux baseline 16 枚生成 が silent skip されとった logic bug 修正) <!-- id: m0.17-pth-2 status: done committed_sha: 84af3f3 path: PM direct (M0.16 latent bug fix 2、REQ-101 append 予定) planned_files: .github/workflows/playwright-regenerate.yml -->
+
+- [x] Linux baseline auto-generated branch `chore/playwright-linux-baseline-20260514-135845` を `--no-ff` merge で取込 (16 *-linux.png file、`gh pr create` が repo setting "Allow GitHub Actions to create or approve PRs" 無効で fail した workaround、direct branch merge で admin access 不要に解消) <!-- id: m0.17-pth-3 status: done committed_sha: 6ed212b path: PM direct (M0.16 codify と repo setting 乖離 workaround、REQ-102 append 予定) planned_files: ui/e2e/__screenshots__/m0.15-redesign/screen-baseline.spec.ts-snapshots/*-linux.png, ui/e2e/__screenshots__/room-baseline.spec.ts-snapshots/*-linux.png -->
+
+**Phase 4.6 verification**: PR #12 CI 全 green (vitest UI 958 + daemon 546 + Playwright 19/19 darwin baseline + 19/19 linux baseline = 双方 platform pass)、mergeable 状態到達。Linux baseline auto-PR infrastructure が初めて実 active 化 (M0.16 codify から 2 milestone 経て first usage)。
 
 ### M0.17 完成基準
 
