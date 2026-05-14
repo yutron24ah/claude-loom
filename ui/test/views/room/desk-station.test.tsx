@@ -268,3 +268,49 @@ describe('DeskStation — CatSprite integration', () => {
     expect(idleRects).toBeGreaterThan(busyRects);
   });
 });
+
+// ---------------------------------------------------------------------------
+// walkTo prop — cat-walker animation wiring [REQ-091]
+// WHY: M0.17 t12 — DeskStation must accept walkTo prop and inject .cat-walker
+// class + --walk-dx / --walk-dy CSS vars on the root element so shell.css
+// @keyframes cat-walk-trip can drive the animation. Design source:
+// redesign/screens/room.jsx L51-52 (Desk component, cat-walker class injection).
+// ---------------------------------------------------------------------------
+describe('DeskStation — walkTo prop', () => {
+  it('does NOT add .cat-walker class when walkTo is undefined', () => {
+    const { container } = render(<DeskStation x={0} y={0} cat={testCat} />);
+    const root = container.firstChild as HTMLElement;
+    expect(root.classList.contains('cat-walker')).toBe(false);
+  });
+
+  it('adds .cat-walker class to root when walkTo is provided', () => {
+    const { container } = render(
+      <DeskStation x={0} y={0} cat={testCat} walkTo={{ dx: 100, dy: 50 }} />,
+    );
+    const root = container.firstChild as HTMLElement;
+    expect(root.classList.contains('cat-walker')).toBe(true);
+  });
+
+  it('injects --walk-dx CSS variable when walkTo is provided', () => {
+    const { container } = render(
+      <DeskStation x={0} y={0} cat={testCat} walkTo={{ dx: 100, dy: 50 }} />,
+    );
+    const root = container.firstChild as HTMLElement;
+    expect(root.style.getPropertyValue('--walk-dx')).toBe('100px');
+  });
+
+  it('injects --walk-dy CSS variable when walkTo is provided', () => {
+    const { container } = render(
+      <DeskStation x={0} y={0} cat={testCat} walkTo={{ dx: 100, dy: 50 }} />,
+    );
+    const root = container.firstChild as HTMLElement;
+    expect(root.style.getPropertyValue('--walk-dy')).toBe('50px');
+  });
+
+  it('does NOT inject --walk-dx / --walk-dy when walkTo is undefined', () => {
+    const { container } = render(<DeskStation x={0} y={0} cat={testCat} />);
+    const root = container.firstChild as HTMLElement;
+    expect(root.style.getPropertyValue('--walk-dx')).toBe('');
+    expect(root.style.getPropertyValue('--walk-dy')).toBe('');
+  });
+});

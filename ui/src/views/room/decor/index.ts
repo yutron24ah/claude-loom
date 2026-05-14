@@ -6,4 +6,3 @@ export { Plant } from './Plant';
 export { Whiteboard } from './Whiteboard';
 export { Sign } from './Sign';
 export { RoomWallDecor } from './RoomWallDecor';
-export { RoomModeToggle } from './RoomModeToggle';

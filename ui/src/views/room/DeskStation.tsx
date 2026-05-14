@@ -21,6 +21,7 @@
  * 5. Public API unchanged (same DeskStationProps). Drop-in replacement for
  *    the current DeskStation.tsx.
  */
+import type React from 'react';
 import { CatSprite } from '../../components/CatSprite';
 import type { RosterEntry } from '../../data/roster';
 
@@ -43,6 +44,13 @@ export interface DeskStationProps {
   onClick?: () => void;
   /** outline the desk to indicate selection */
   selected?: boolean;
+  /**
+   * Walk animation target — pixel offset to the destination desk.
+   * WHY: shell.css @keyframes cat-walk-trip uses --walk-dx / --walk-dy CSS vars.
+   * RoomView computes the offset from state.walkTo (agent id) + positions table,
+   * matching redesign/screens/room.jsx L460-462 (wt → target → {dx,dy}).
+   */
+  walkTo?: { dx: number; dy: number };
 }
 
 export function DeskStation({
@@ -56,6 +64,7 @@ export function DeskStation({
   label,
   onClick,
   selected = false,
+  walkTo,
 }: DeskStationProps) {
   const sleeping = status === 'idle';
 
@@ -66,8 +75,17 @@ export function DeskStation({
       ? 'desk-station__monitor--idle'
       : '';
 
+  // WHY: cat-walker animation is driven by CSS vars --walk-dx / --walk-dy.
+  // When walkTo is defined, inject the class + vars onto the root element.
+  const walkStyle = walkTo
+    ? ({ '--walk-dx': `${walkTo.dx}px`, '--walk-dy': `${walkTo.dy}px` } as React.CSSProperties)
+    : {};
+
   return (
-    <div className="desk-station" style={{ left: x, top: y }}>
+    <div
+      className={`desk-station${walkTo ? ' cat-walker' : ''}`}
+      style={{ left: x, top: y, ...walkStyle }}
+    >
       {/* === Speech bubble === */}
       {task && (
         <div data-testid="speech-bubble" className="desk-station__bubble">

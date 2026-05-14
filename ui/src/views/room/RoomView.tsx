@@ -156,7 +156,7 @@ export function RoomView(): JSX.Element {
       <RoomBackground width={W} height={H} />
 
       {/* === Wall decor (branch sign + clock) === */}
-      <RoomWallDecor width={W} />
+      <RoomWallDecor width={W} branch={scenario.branch} />
 
       {/* === Wall posters — clicking navigates via React Router === */}
       {!retroMode && (
@@ -192,6 +192,13 @@ export function RoomView(): JSX.Element {
           if (!cat) return null;
           const p = positions[id];
           const state = scenario.agents[id];
+          // WHY: state.walkTo is an agent id (string). Convert to pixel offset
+          // by looking up the target desk position, matching redesign room.jsx L460-462.
+          const walkTargetId = state?.walkTo as string | undefined;
+          const walkTarget = walkTargetId ? positions[walkTargetId as RoomAgentId] : undefined;
+          const walkTo = walkTarget
+            ? { dx: walkTarget.x - p.x, dy: walkTarget.y - p.y }
+            : undefined;
           return (
             <DeskStation
               key={id}
@@ -207,6 +214,7 @@ export function RoomView(): JSX.Element {
                   : cat.role
               }
               selected={sel === id}
+              walkTo={walkTo}
               onClick={() => {
                 const next = sel === id ? null : id;
                 setSel(next);

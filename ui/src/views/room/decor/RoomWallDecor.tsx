@@ -1,22 +1,25 @@
 /**
  * RoomWallDecor — fixed wall decoration elements (branch sign, clock sign, window).
  * WHY: encapsulates the static upper-wall decor layer per SPEC §3.6.9.1 α-2.
- * Design source: /tmp/claude-room-handoff/claude-room/project/room.jsx L207-211.
+ * Design source: redesign/screens/room.jsx L443 — branch sign shows only
+ * "◆ branch: {scenario.branch}"; "claude-loom" brand is TopBar's responsibility (M2 fix).
  */
 
 interface RoomWallDecorProps {
   width: number;
+  /** Active git branch from scenario.branch. Default "main" for cold-start. */
+  branch?: string;
 }
 
-export function RoomWallDecor({ width }: RoomWallDecorProps) {
+export function RoomWallDecor({ width, branch = 'main' }: RoomWallDecorProps) {
   return (
     <>
-      {/* Branch sign — top left */}
+      {/* Branch sign — top left. WHY: brand "claude-loom" belongs to TopBar per M2 review. */}
       <div
         className="room-sign room-sign--branch"
         style={{ position: 'absolute', left: 20, top: 14 }}
       >
-        ◆ claude-loom — branch: main
+        ◆ branch: {branch}
       </div>
 
       {/* Clock sign — top right */}
