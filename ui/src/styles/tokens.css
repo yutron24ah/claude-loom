@@ -113,6 +113,76 @@
   --container-max: 480px;
 }
 
+/* =============================================================
+ * tokens.css.patch — additive diff to ui/src/styles/tokens.css
+ *
+ * Add these blocks at the bottom of tokens.css (before any [data-theme]
+ * overrides). They define every magic value that currently lives as a
+ * hard-coded number / hex / string in TSX components.
+ *
+ * WHY: G1+G6 — single source of truth for visual surface.
+ *   - No hex codes outside this file
+ *   - No raw pixel numbers in TSX (sizes/positions stay; tokens for paint)
+ *   - Theme switch flips one file
+ * ============================================================= */
+
+:root {
+  /* === Zone rugs (DEV / PM / REVIEW floor tints) ============== */
+  /* tint: low-opacity fill painted on the floor */
+  --p-zone-dev:        #e8d8c0;
+  --p-zone-pm:         #d8e0e8;
+  --p-zone-review:     #d8e8da;
+  /* fg: matching label color, used at opacity 0.16 as floor stencil */
+  --p-zone-dev-fg:     #7a4a1a;
+  --p-zone-pm-fg:      #1a4a7a;
+  --p-zone-review-fg:  #1a6a3a;
+
+  /* === Decorative props (potted plant + shelf + water cooler) === */
+  --p-prop-plant-leaf:   #5a7d3a;
+  --p-prop-plant-leaf-2: #7aa050;
+  --p-prop-plant-pot:    #8b6f3e;
+  --p-prop-shelf:        #9a7a4a;
+  --p-prop-shelf-band:   #6a4a2a;
+  --p-prop-cooler-body:  #c8d8e0;
+  --p-prop-cooler-water: #7ab0d8;
+
+  /* === Z-index scale (replaces magic numbers) ================= */
+  --z-room-base:       0;
+  --z-room-decor:      1;   /* posters, signs */
+  --z-room-agents:     2;   /* desks, clones */
+  --z-room-walkers:    4;   /* moving cats (cat-walker animation) */
+  --z-rail:            4;
+  --z-pm-chat:         5;
+  --z-pm-handle:       6;
+  --z-pm-toast:        6;
+  --z-agent-detail:   10;
+  --z-pm-modal:       20;
+  --z-toast:          50;
+
+  /* === Room layout ratios (used by RoomView buildPositions) === */
+  /* WHY tokens: when we re-tune the office layout we touch one place. */
+  --room-floor-ratio:      0.43;   /* floorY = H * this */
+  --room-pm-x-ratio:       0.78;
+  --room-dev-x-ratio:      0.18;
+  --room-rev-code-x-ratio: 0.62;
+  --room-rev-test-x-ratio: 0.74;
+  --room-rev-sec-x-ratio:  0.86;
+  --room-zone-dev-w-ratio: 0.55;  /* DEV pit takes 55% of width */
+  --room-zone-pm-h-ratio:  0.45;  /* PM corner is 45% of floor height */
+
+  /* === Speech bubble ========================================== */
+  --bubble-bg:     var(--p-paper);
+  --bubble-border: var(--p-border);
+  --bubble-shadow: 2px 2px 0 0 var(--p-shadow);
+
+  /* === Desk dimensions ======================================== */
+  --desk-width:           96px;
+  --desk-monitor-w:       64px;
+  --desk-monitor-h:       36px;
+  --desk-cat-size:        48px;
+  --subroom-clone-size:   32px;
+}
+
 /* ============================================================
    Section 1 cont.: Kintai DS theme overrides (rgb integers — no hex)
    ============================================================ */
@@ -464,7 +534,7 @@ code, .mono {
    .room-window                (the iconic 田-shaped window)
    .room-sign                  (small badge variants)
    .room-poster                (clickable info poster)
-   .room-island                (rug area — pm/dev/review)
+   .room-island                (DELETED — zones now SVG rects in RoomBackground)
    .room-floor-cushion         (retro-mode bottom strip)
    .room-mode-toggle           (top-right control)
    .room-modal                 (overlay dialog)
@@ -506,9 +576,7 @@ code, .mono {
 }
 .room-sign--branch { background: var(--p-accent); }
 .room-sign--clock  { background: var(--p-success); }
-.room-sign--island--pm     { background: var(--p-accent); }
-.room-sign--island--dev    { background: var(--p-warn); }
-.room-sign--island--review { background: var(--p-success); }
+
 .room-sign--retro  { background: var(--p-accent); font-size: 10px; padding: 4px 14px; letter-spacing: 0.06em; }
 
 /* room poster — clickable info panels on wall */
@@ -592,21 +660,7 @@ code, .mono {
   margin-top: auto;
 }
 
-/* room islands — rug areas on floor */
-.room-island {
-  position: absolute;
-  border: 3px solid var(--p-border);
-  z-index: 0;
-}
-.room-island::before {
-  content: ""; position: absolute; inset: 5px;
-  border: 2px solid var(--p-border);
-}
-.room-island--pm     { background: var(--p-rug); }
-.room-island--pm::before     { border-color: var(--p-rug-2); }
-.room-island--dev    { background: var(--p-rug-2); opacity: 0.75; }
-.room-island--review { background: var(--p-rug); opacity: 0.85; }
-.room-island--review::before { border-color: var(--p-rug-2); }
+/* room islands — rug areas on floor (DELETED: zones now rendered as SVG rects in RoomBackground) */
 
 /* retro mode bottom strip */
 .room-floor-cushion {

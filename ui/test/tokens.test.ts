@@ -421,12 +421,8 @@ describe('tokens.css Room BEM primitives', () => {
     expect(tokensContent).toContain('.room-poster__check--in_progress');
     expect(tokensContent).toContain('.room-poster__check--completed');
   });
-  it('contains .room-island class with variants', () => {
-    expect(tokensContent).toMatch(/\.room-island\s*\{/);
-    expect(tokensContent).toContain('.room-island--pm');
-    expect(tokensContent).toContain('.room-island--dev');
-    expect(tokensContent).toContain('.room-island--review');
-  });
+  // WHY: .room-island* rules deleted (M0.17 t4) — zones now rendered as SVG rects in RoomBackground.
+  // Zone tint tokens now tested separately (see room-background.test.tsx).
   it('contains .room-floor-cushion class', () => {
     expect(tokensContent).toMatch(/\.room-floor-cushion\s*\{/);
   });

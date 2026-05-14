@@ -11,6 +11,46 @@ import { describe, it, expect, afterEach, vi } from 'vitest';
 import { render, screen, cleanup } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 
+// WHY: ResizeObserver not available in jsdom — new RoomView uses it internally.
+global.ResizeObserver = class ResizeObserver {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+};
+
+// WHY: useScenario connects to WebSocket daemon — mock to avoid network in smoke test.
+vi.mock('@claude-loom/redesign/api/websocket', () => ({
+  useScenario: () => ({
+    key: 'idle',
+    label: 'idle',
+    now: '00:00',
+    conn: 'disconnected',
+    project: 'test',
+    branch: 'main',
+    agents: {},
+    gantt: { windowLabel: '', nowPct: 0, rows: [] },
+    todos: [],
+    milestones: [],
+    todosUpdatedAt: '—',
+    findings: [],
+    pm: { running: false, pendingApprovals: [] },
+    worktrees: [],
+    disciplineMetrics: { tdd: 0, doc: 0, review: 0, retro: 0 },
+  }),
+  useScenarioMockKey: () => 'idle' as const,
+  getScenarioStore: () => ({
+    getSnapshot: () => ({
+      agents: {},
+      worktrees: [],
+      pm: { running: false, pendingApprovals: [] },
+    }),
+    subscribe: () => () => {},
+    applyAgentChange: () => {},
+    connect: () => {},
+  }),
+  SCENARIO_KEYS: ['idle', 'active', 'failed'] as const,
+}));
+
 // WHY: mock usePMSession to avoid tRPC provider requirement in smoke test.
 vi.mock('../src/live/usePMSession', () => ({
   usePMSession: () => ({
