@@ -254,7 +254,15 @@ export function AppShell(): JSX.Element {
         <Drawer collapsed={drawerCollapsed} pathname={location.pathname} />
         <div className="content">
           {/* Route-driven content — Room or any other screen, *never* both */}
-          {isRoom ? <RoomView /> : <Outlet />}
+          {/* WHY wrapper: RoomView ResizeObserver observes the wrapper's contentRect;
+              marginRight reserves space for the right column (PMChat / LiveRail)
+              so LiveRail/PMChatPanel overlay (right: 0) does not cover PM desk
+              (positions.pm.x = W*0.78). Dropped accidentally in proposed port. */}
+          {isRoom ? (
+            <div style={{ position: 'absolute', inset: 0, marginRight: rightColumnWidth }}>
+              <RoomView />
+            </div>
+          ) : <Outlet />}
 
           {/* Right column: PMChat or LiveRail (Room only) */}
           {showPmPanel && (

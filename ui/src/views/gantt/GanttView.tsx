@@ -309,6 +309,7 @@ export function GanttView(): JSX.Element {
 
   return (
     <div
+      data-testid="gantt-view"
       style={{
         position: 'absolute',
         inset: 0,
