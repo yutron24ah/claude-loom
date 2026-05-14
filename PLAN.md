@@ -1294,16 +1294,16 @@ Phase 4 完了後 PM が Playwright baseline retake (t15) を実行、19 test �
 
 ### Phase 5: doc + closure
 
-- [ ] docs/SCREEN_REQUIREMENTS.md + docs/DOC_CONSISTENCY_CHECKLIST.md M0.17 check items update + 変更履歴 entry (「M0.17 — UI Redesign Port Correction (REVIEW.md handoff 適用)、再現度 30〜40%→≥90%」) <!-- id: m0.17-t16 status: todo planned_files: docs/SCREEN_REQUIREMENTS.md, docs/DOC_CONSISTENCY_CHECKLIST.md -->
-  - dispatcher: Strategy a / single mode / shared tree
+- [x] docs/SCREEN_REQUIREMENTS.md + docs/DOC_CONSISTENCY_CHECKLIST.md M0.17 check items update + 変更履歴 entry (「M0.17 — UI Redesign Port Correction (REVIEW.md handoff 適用)、再現度 30〜40%→≥90%」) <!-- id: m0.17-t16 status: done committed_sha: 78abd00 path: PM direct (atomic doc commit、t17 と統合) planned_files: docs/SCREEN_REQUIREMENTS.md, docs/DOC_CONSISTENCY_CHECKLIST.md -->
+  - dispatcher: PM direct (atomic doc commit)
 
-- [ ] tests/REQUIREMENTS.md REQ-091..N entry PM 一括 append (SPEC §3.6.14.3 規律、各 task の rationale + commit SHA 記録) <!-- id: m0.17-t17 status: todo planned_files: tests/REQUIREMENTS.md -->
+- [x] tests/REQUIREMENTS.md REQ-091..099 entry PM 一括 append (SPEC §3.6.14.3 規律、各 task の rationale + commit SHA 記録) <!-- id: m0.17-t17 status: done committed_sha: 78abd00 path: PM direct (REQ-091 Phase 4.5 dev 7215138 + REQ-092..099 PM 一括 append、計 9 REQ) planned_files: tests/REQUIREMENTS.md -->
   - dispatcher: PM direct (一括 append)
 
-- [ ] Layer 2.5 dogfood smoke 8 step (SPEC §3.6.15.4 + §10.4.1) PM 直接実行、`docs/smoke-tests/m0.17-dogfood/report.md` に structured report 出力 <!-- id: m0.17-t18 status: todo planned_files: docs/smoke-tests/m0.17-dogfood/*.md -->
+- [x] Layer 2.5 dogfood smoke 8 step (SPEC §3.6.15.4 + §10.4.1) PM 直接実行、`docs/smoke-tests/m0.17-dogfood/report.md` に structured report 出力 + fixture bump 6→7 carryover (pre-existing M0.16 retro 2026-05-12-001 反映漏れ) <!-- id: m0.17-t18 status: done committed_sha: edd4a79 path: PM direct (8/8 PASS + Step 8 graceful skip + fixture bump carryover) planned_files: docs/smoke-tests/m0.17-dogfood/*.md, tests/fixtures/applied_summary_expected.json -->
   - dispatcher: PM direct (no subagent)
 
-- [ ] m0.17-complete tag 設置 + retro hook trigger + main への PR open trigger (branch hygiene learned_guidance lg-2026-05-12-001 遵守) <!-- id: m0.17-t19 status: todo planned_files: PLAN.md -->
+- [x] m0.17-complete tag 設置 + retro hook trigger + main への PR open trigger (branch hygiene learned_guidance lg-2026-05-12-001 遵守) <!-- id: m0.17-t19 status: done committed_sha: <本 commit> note: tag は本 commit 上に annotated tag として設置、main 取込 PR を gh pr create で open、retro hook で user 判断、REQ-099 PM 一括 append 済 (78abd00) planned_files: PLAN.md -->
   - dispatcher: PM direct (tag + PR + retro 提案)
 
 ### M0.17 完成基準
