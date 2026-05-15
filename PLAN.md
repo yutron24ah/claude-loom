@@ -1345,6 +1345,66 @@ M0.17 milestone retro は user 判断 (2026-05-15 closure session) により ski
 
 **rationale**: Phase boundary retro covering rule (CLAUDE.md M0.8 retro 規律 + retro 2026-05-04-001 F-pj-005 解消) により、M0.15/M0.16/M0.17 連続 unrun-retro 状態を Phase boundary で一括 covering。dogfood phase の柔軟運用、`.claude-loom/project-prefs.json` `last_retro` は m0.15-complete のまま (実 retro 未実行のため更新せず、carryover state を明示)。
 
+---
+
+## M0.17 Round 2 Review Followup (2026-05-16、user Round 2 review 由来)
+
+design review 第 2 巡 (`docs/m0.17-round2-review.md` SSoT、2026-05-16 user 実施) で M0.17 closure 直後の状態に対し 15 finding (P0 動かないボタン 8 件 / P1 構造的ズレ 4 件 / P2 雑多 5 件) を検出。**体感再現度: Room 70% / その他 35% / 全体 50%** と評価、Phase B (12 screens G6 トークン化) が最 ROI と指摘。
+
+**戦略**: user 推奨に従い 3 branch 分割 + 順次 (A → B → C) 実行。各 phase で別 PR、parallel review 可能。現 `fix/m0.17-ui-redesign-correction` HEAD (`2b297ba`) をベースに分岐、PR #12 は user 判断で任意 merge。
+
+**branch 構成**:
+- `fix/m0.17-phase-a-buttons` — Phase A (B4-B11 動かないボタン掃除、半日想定)
+- `fix/m0.17-phase-b-tokens` — Phase B (12 screens G6 トークン化、1-2 day 想定、最 ROI)
+- `fix/m0.17-phase-c-cleanup` — Phase C (S7-S9 + M3-M5 misc cleanup、半日、任意)
+
+### Round 2 Phase A: 動かないボタン掃除
+
+- [ ] B4: `RoomView.tsx` ColdStart 「▶ PM を起動」`onClick={() => alert('POST /pm/start')}` → `usePMSession().start()` 配線 <!-- id: m0.17-r2-A4 status: todo branch: fix/m0.17-phase-a-buttons planned_files: ui/src/views/room/RoomView.tsx -->
+- [ ] B5: `RoomView.tsx` の `retroMode` state UI 復活 (Drawer MANAGE グループ移行 OR Room 右上小 CTA) または状態ごと削除判断 <!-- id: m0.17-r2-A5 status: todo branch: fix/m0.17-phase-a-buttons planned_files: ui/src/views/room/RoomView.tsx -->
+- [ ] B6: `RoomView.tsx` `<RetroGathering><div>RetroView placeholder</div></RetroGathering>` → 実 `<RetroView />` import or `children` prop 撤去 <!-- id: m0.17-r2-A6 status: todo branch: fix/m0.17-phase-a-buttons planned_files: ui/src/views/room/RoomView.tsx -->
+- [ ] B7: `AppShell.tsx` TopBar project button noop → `navigate('/project-settings')` 最低限配線 (将来的 dropdown 化候補) <!-- id: m0.17-r2-A7 status: todo branch: fix/m0.17-phase-a-buttons planned_files: ui/src/routing/AppShell.tsx -->
+- [ ] B8: `PlanView.tsx` `edit` ボタン noop → `upsertItem` mutation 経由の milestone editor 配線 <!-- id: m0.17-r2-A8 status: todo branch: fix/m0.17-phase-a-buttons planned_files: ui/src/views/plan/PlanView.tsx -->
+- [ ] B9: `LiveRail.tsx` `if (collapsed) { return <button .../>; }` 分岐デッドコード削除 (AppShell 側 `<button className="rail-toggle">` に一本化、責務明確化) <!-- id: m0.17-r2-A9 status: todo branch: fix/m0.17-phase-a-buttons planned_files: ui/src/views/room/LiveRail.tsx -->
+- [ ] B10: `AppShell.tsx` TopBar 4 metrics drill-down navigation (PARALLEL→/gantt、TASK TOOL→/sessions、TDD ORDER→/consistency?filter=tdd、VERDICT→/consistency) <!-- id: m0.17-r2-A10 status: todo branch: fix/m0.17-phase-a-buttons planned_files: ui/src/routing/AppShell.tsx -->
+- [ ] B11: `AppShell.tsx` ScenarioPicker `activate(key)` を `window.history.replaceState` + `popstate` から `useNavigate` + `useSearchParams` (React Router 経由) に統一、NavLink active 同期確保 <!-- id: m0.17-r2-A11 status: todo branch: fix/m0.17-phase-a-buttons planned_files: ui/src/routing/AppShell.tsx -->
+
+**Phase A 完了基準**: `grep -rn "onClick" ui/src | grep -v "=>"` で素朴な noop が 0 件、`alert(` 0 件、Vitest UI 958/958 + daemon 546/546 + Playwright 19/19 全 pass、`tsc --noEmit` new error 0、PR open + CI green。
+
+### Round 2 Phase B: トークン化を screens に降ろす (最 ROI)
+
+12 screens の inline style 全廃 → `ui/src/styles/screens/<screen>.css` クラス置換。`screens/plan.css` を雛形として手で詰め、他 11 screens は同パターンで mass-production。
+
+- [ ] B-template: `ui/src/styles/screens/plan.css` 新設 + `PlanView.tsx` の inline 全廃 (雛形確立) <!-- id: m0.17-r2-B-template status: todo branch: fix/m0.17-phase-b-tokens planned_files: ui/src/styles/screens/plan.css, ui/src/views/plan/PlanView.tsx -->
+- [ ] B-gantt: `screens/gantt.css` + `GanttView.tsx` <!-- id: m0.17-r2-B-gantt status: todo branch: fix/m0.17-phase-b-tokens planned_files: ui/src/styles/screens/gantt.css, ui/src/views/gantt/GanttView.tsx -->
+- [ ] B-consistency: `screens/consistency.css` + `ConsistencyView.tsx` / `ConsistencyViewLive.tsx` <!-- id: m0.17-r2-B-consistency status: todo branch: fix/m0.17-phase-b-tokens planned_files: ui/src/styles/screens/consistency.css, ui/src/views/consistency/ConsistencyView.tsx, ui/src/views/consistency/ConsistencyViewLive.tsx -->
+- [ ] B-customization: `screens/customization.css` + `CustomizationView.tsx` <!-- id: m0.17-r2-B-customization status: todo branch: fix/m0.17-phase-b-tokens planned_files: ui/src/styles/screens/customization.css, ui/src/views/customization/CustomizationView.tsx -->
+- [ ] B-retro: `screens/retro.css` + `RetroView.tsx` <!-- id: m0.17-r2-B-retro status: todo branch: fix/m0.17-phase-b-tokens planned_files: ui/src/styles/screens/retro.css, ui/src/views/retro/RetroView.tsx -->
+- [ ] B-sessions: `screens/sessions.css` + `SessionListView.tsx` <!-- id: m0.17-r2-B-sessions status: todo branch: fix/m0.17-phase-b-tokens planned_files: ui/src/styles/screens/sessions.css, ui/src/views/session-list/SessionListView.tsx -->
+- [ ] B-settings: `screens/project-settings.css` + `ProjectSettingsView.tsx` <!-- id: m0.17-r2-B-settings status: todo branch: fix/m0.17-phase-b-tokens planned_files: ui/src/styles/screens/project-settings.css, ui/src/views/project-settings/ProjectSettingsView.tsx -->
+- [ ] B-tokens: `screens/tokens.css` + `TokenMeterView.tsx` / `TokensView.tsx` <!-- id: m0.17-r2-B-tokens status: todo branch: fix/m0.17-phase-b-tokens planned_files: ui/src/styles/screens/tokens.css, ui/src/views/tokens/TokenMeterView.tsx, ui/src/views/tokens/TokensView.tsx -->
+- [ ] B-worktree: `screens/worktree.css` + `WorktreeView.tsx` / `SubroomView.tsx` <!-- id: m0.17-r2-B-worktree status: todo branch: fix/m0.17-phase-b-tokens planned_files: ui/src/styles/screens/worktree.css, ui/src/views/worktree/WorktreeView.tsx, ui/src/views/worktree/SubroomView.tsx -->
+- [ ] B-guidance: `screens/guidance.css` + `GuidanceView.tsx` / `LearnedGuidanceView.tsx` <!-- id: m0.17-r2-B-guidance status: todo branch: fix/m0.17-phase-b-tokens planned_files: ui/src/styles/screens/guidance.css, ui/src/views/guidance/GuidanceView.tsx, ui/src/views/guidance/LearnedGuidanceView.tsx -->
+- [ ] B-agent-detail: `screens/agent-detail.css` + `AgentDetailPanel.tsx` / `AgentDetailNotes.tsx` <!-- id: m0.17-r2-B-agent-detail status: todo branch: fix/m0.17-phase-b-tokens planned_files: ui/src/styles/screens/agent-detail.css, ui/src/views/room/AgentDetailPanel.tsx, ui/src/views/room/AgentDetailNotes.tsx -->
+- [ ] B-pm-approval: `screens/pm-approval.css` + `PMApprovalModal.tsx` / `PMApprovalToast.tsx` <!-- id: m0.17-r2-B-pm-approval status: todo branch: fix/m0.17-phase-b-tokens planned_files: ui/src/styles/screens/pm-approval.css, ui/src/views/pm-chat/PMApprovalModal.tsx, ui/src/views/pm-chat/PMApprovalToast.tsx -->
+
+**Phase B 完了基準**: `grep -rn "style={{" ui/src/views | wc -l` が動的値 (progress bar `width: ${n}%` 等) 以外 0 に近づく、Vitest + daemon + Playwright 全 pass、再現度 50%→80% (Room 70%→80% + その他 35%→80%) target、PR open + CI green。
+
+### Round 2 Phase C: 細部 cleanup (任意)
+
+- [ ] S7: `AppShell.tsx` `<div style={{marginRight: rightColumnWidth}}><RoomView /></div>` wrapper 撤去、右カラム absolute overlay 化、RoomView は full width で ResizeObserver は `.content` 直観測 <!-- id: m0.17-r2-C-S7 status: todo branch: fix/m0.17-phase-c-cleanup planned_files: ui/src/routing/AppShell.tsx, ui/src/views/room/RoomView.tsx -->
+- [ ] S8: `AppShell.tsx` TopBar に branch chip 追加 (`◆ branch: {scenario.branch}` 常時表示)、project は StatusBar `~/work/{project}` で十分 <!-- id: m0.17-r2-C-S8 status: todo branch: fix/m0.17-phase-c-cleanup planned_files: ui/src/routing/AppShell.tsx -->
+- [ ] S9: z-index 生数値撲滅 (`grep -rn "zIndex: [0-9]" ui/src` で全数洗い、`--z-*` トークン置換) <!-- id: m0.17-r2-C-S9 status: todo branch: fix/m0.17-phase-c-cleanup planned_files: ui/src/views/room/RoomView.tsx, ui/src/routing/AppShell.tsx -->
+- [ ] M3: `shell.css` の `@keyframes cat-walk-trip` + `.cat-walker` class の `--walk-dx/--walk-dy` 配線確認 (Phase 4 t12 で DeskStation 側完了、CSS side 健全性 verify) <!-- id: m0.17-r2-C-M3 status: todo branch: fix/m0.17-phase-c-cleanup planned_files: ui/src/styles/shell.css -->
+- [ ] M4: `routes.tsx` のコメント「Panel overlay routes」→「Sibling screen routes」書き換え (S2 sibling routing 化で文言不整合) <!-- id: m0.17-r2-C-M4 status: todo branch: fix/m0.17-phase-c-cleanup planned_files: ui/src/routing/routes.tsx -->
+- [ ] M5: ScenarioPicker の `'live'` ボタンを `SCENARIO_KEYS` に含めて統一実装、`activate('')` 別実装の不一貫解消 <!-- id: m0.17-r2-C-M5 status: todo branch: fix/m0.17-phase-c-cleanup planned_files: ui/src/routing/constants.ts, ui/src/routing/AppShell.tsx -->
+
+**Phase C 完了基準**: 上記 6 item check、Vitest + daemon + Playwright 全 pass、PR open + CI green。
+
+### Round 2 完成基準 (Phase A + B + C 全完遂)
+
+`grep -rn "style={{" ui/src/views | wc -l` が動的値以外 0、`grep -rn "onClick" ui/src | grep -v "=>"` noop 0 件、`alert(` 0 件、`grep -rn "zIndex: [0-9]" ui/src` 0 件、Vitest UI 958+ / daemon 546+ / Playwright 19/19 全 pass、tsc new error 0、再現度 50%→**87%** (Room 70%→90% + その他 35%→85% target、review Phase C 後見積もり)、PR Phase A/B/C 3 件 mergeable + CI green、retro 候補は M0.18 / Phase boundary retro に carryover。
+
 ### M0.17 完成基準
 
 REVIEW.md Phase 1+2+3+4 完了、proposed file 11 種全適用 (shell.css / room.css / tokens.css.patch / index.css / AppShell / 2 つの constants.ts / RoomBackground / RoomView / DeskStation / LiveRail)、`ui/src/views/room/Islands.tsx` 削除済、再現度 30〜40% → ≥90% 達成 (Playwright visual diff 確認)、Outlet 全画面オーバーレイ撤去 (S2 — sibling routing 化、Drawer active 強調活性化)、ゾーン箱化解消 (B2 — SVG ラグ化、枠線なし)、ResizeObserver による比率レイアウト (B3 — `width=1080` 固定座標廃止)、LiveRail PM idle 時表示 (S1)、cat-walker walkTo 配線 (S6)、G6 トークン化全廃 (`STATUS_COLOR` 等の literal 定数廃止 + inline style → class 移行 + 構造化テーブル constants.ts 化)、`./tests/run_tests.sh` 全 PASS、`pnpm --filter @claude-loom/ui test` 全 pass (regression 0)、`pnpm --filter @claude-loom/daemon test` 全 pass (regression 0)、`tsc --noEmit` redesign 由来 error 0 (pre-existing は維持)、Layer 2.5 dogfood smoke 8 step 全 PASS (Step 8 graceful skip 可)、Playwright darwin baseline 全 16 picture 再撮影済 + 16/16 pass、SPEC §3.6.14 / docs/SCREEN_REQUIREMENTS.md / DOC_CONSISTENCY_CHECKLIST.md update 済、tests/REQUIREMENTS.md REQ-091..N PM 一括 append 済、`tag m0.17-complete` 設置、`m0`〜`m0.16-complete` 全保持、main への PR open 済 (branch hygiene 遵守)。
