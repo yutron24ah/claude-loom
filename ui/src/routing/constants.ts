@@ -59,8 +59,13 @@ export const NAV_GROUPS: readonly NavGroup[] = [
 /** Convenience flat list — useful for breadcrumbs / search. */
 export const ALL_NAV_ITEMS: readonly NavItem[] = NAV_GROUPS.flatMap((g) => g.items);
 
-/** Dev/QA scenario picker keys. */
-export const SCENARIO_KEYS = ['idle', 'active', 'failed'] as const;
+/** Dev/QA scenario picker keys.
+ * WHY 'live' included: previously hardcoded as a separate button in ScenarioPicker.
+ * Unifying into the array lets the component render all 4 via a single map loop.
+ * 'live' maps to activate('') internally (mock= param deleted → real daemon mode).
+ * M0.17 Phase C M5 fix.
+ */
+export const SCENARIO_KEYS = ['idle', 'active', 'failed', 'live'] as const;
 export type ScenarioKey = (typeof SCENARIO_KEYS)[number];
 
 /** App-level copy. */

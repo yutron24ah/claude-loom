@@ -43,7 +43,9 @@ function PerimeterCat({ cat, x, y, talking, selected, onClick, flip }: Perimeter
         top: y,
         width: 44,
         textAlign: 'center',
-        zIndex: 4,
+        /* WHY --z-room-walkers (4): perimeter cats sit at walker level,
+           same z as cat-walker animation. S9 token fix, M0.17 Phase C. */
+        zIndex: 'var(--z-room-walkers)' as unknown as number,
         outline: selected ? '3px solid var(--p-accent)' : 'none',
         outlineOffset: 2,
       }}
@@ -63,7 +65,8 @@ function PerimeterCat({ cat, x, y, talking, selected, onClick, flip }: Perimeter
             fontWeight: 700,
             whiteSpace: 'nowrap',
             boxShadow: '2px 2px 0 0 var(--p-shadow)',
-            zIndex: 5,
+            /* WHY --z-pm-chat (5): talk bubble floats above walker (4). S9 token fix. */
+            zIndex: 'var(--z-pm-chat)' as unknown as number,
           }}
         >
           {talking}
@@ -210,7 +213,9 @@ export function RetroGathering({ width, height, sel, setSel, children }: RetroGa
           left: boardLeft,
           top: boardTop,
           width: boardW,
-          zIndex: 2,
+          /* WHY --z-room-agents (2): whiteboard sits at agent/desk level.
+             S9 token fix, M0.17 Phase C. */
+          zIndex: 'var(--z-room-agents)' as unknown as number,
           boxShadow: '5px 5px 0 0 var(--p-shadow)',
           border: '4px solid var(--p-border)',
         }}

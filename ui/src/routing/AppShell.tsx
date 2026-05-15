@@ -41,6 +41,7 @@ const LIVE_RAIL_W = 280;
 // ---------------------------------------------------------------------------
 interface TopBarProps {
   project: string;
+  branch: string;
   conn: ConnectionStatus;
   metrics: DisciplineMetrics;
   onDrawerToggle: () => void;
@@ -48,7 +49,7 @@ interface TopBarProps {
   navigate: (to: string) => void;
 }
 
-function TopBar({ project, conn, metrics, onDrawerToggle, navigate }: TopBarProps): JSX.Element {
+function TopBar({ project, branch, conn, metrics, onDrawerToggle, navigate }: TopBarProps): JSX.Element {
   const metricClass = (ok: boolean, warn?: boolean) => (warn ? 'warn' : ok ? 'ok' : 'err');
   return (
     <div data-testid="topbar" className="top">
@@ -74,6 +75,11 @@ function TopBar({ project, conn, metrics, onDrawerToggle, navigate }: TopBarProp
       >
         ◆ {project} <span className="top__pj-caret">▾</span>
       </button>
+      {/* WHY: branch chip shows current git branch for context (Round 2 review S8).
+          Display-only alongside project chip (B7 navigate preserved). M0.17 Phase C. */}
+      <div data-testid="topbar-branch" className="top__branch">
+        ◆ branch: {branch}
+      </div>
       <div className="top__metrics">
         {/* WHY: <div> → <button> for semantic interactivity + a11y (B10). */}
         <button
@@ -228,21 +234,18 @@ function ScenarioPicker({ rightOffset }: ScenarioPickerProps): JSX.Element {
       style={{ right: rightOffset }} /* WHY inline: depends on right-column width */
     >
       <span className="scenario-picker__label">SCENARIO</span>
+      {/* WHY: SCENARIO_KEYS now includes 'live' (M0.17 Phase C M5).
+          'live' maps to activate('') — deletes mock= param (real daemon mode).
+          Unified loop eliminates the separate hardcoded 'live' button. */}
       {SCENARIO_KEYS.map((k) => (
         <button
           key={k}
-          className={`scenario-picker__btn${current === k ? ' on' : ''}`}
-          onClick={() => activate(k)}
+          className={`scenario-picker__btn${current === (k === 'live' ? '' : k) ? ' on' : ''}`}
+          onClick={() => activate(k === 'live' ? '' : k)}
         >
           {k}
         </button>
       ))}
-      <button
-        className={`scenario-picker__btn${current === '' ? ' on' : ''}`}
-        onClick={() => activate('')}
-      >
-        live
-      </button>
     </div>
   );
 }
@@ -275,6 +278,7 @@ export function AppShell(): JSX.Element {
     <div className="shell">
       <TopBar
         project={scenario.project}
+        branch={scenario.branch}
         conn={scenario.conn}
         metrics={scenario.disciplineMetrics}
         onDrawerToggle={() => setDrawerCollapsed((c) => !c)}

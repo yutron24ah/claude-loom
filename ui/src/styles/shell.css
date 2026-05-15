@@ -71,6 +71,20 @@ body {
   font-size: 10px;
   font-weight: 700;
 }
+/* WHY: branch chip mirrors top__pj visual but is display-only (no cursor: pointer).
+ * Shows current git branch alongside project chip (Round 2 review S8, M0.17 Phase C).
+ * Not a button — semantic distinction from clickable project chip. */
+.top__branch {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 8px;
+  border: 2px solid var(--p-border);
+  background: var(--p-paper);
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--p-text-muted);
+}
 .top__metrics {
   display: flex;
   gap: 6px;
