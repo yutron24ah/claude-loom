@@ -176,6 +176,10 @@
   --bubble-shadow: 2px 2px 0 0 var(--p-shadow);
 
   /* === Desk dimensions ======================================== */
+  /* WHY: --desk-container-width 110px matches redesign/screens/room.jsx L29
+     (container div style={{ width: 110 }}). --desk-width 96px remains for
+     inner desk top/front visuals (L74-75: width 96 for both pieces). */
+  --desk-container-width: 110px;
   --desk-width:           96px;
   --desk-monitor-w:       64px;
   --desk-monitor-h:       36px;

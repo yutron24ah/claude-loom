@@ -259,6 +259,9 @@ export function AppShell(): JSX.Element {
   const scenario = useScenario();
   const [drawerCollapsed, setDrawerCollapsed] = useState(false);
   const [liveRailCollapsed, setLiveRailCollapsed] = useState(false);
+  // WHY: pmChatCollapsed matches redesign collapsed handle (R-5).
+  // Default false — panel open by default when PM is running.
+  const [pmChatCollapsed, setPmChatCollapsed] = useState(false);
 
   const pmSession = usePMSession();
   const showPmPanel =
@@ -303,7 +306,7 @@ export function AppShell(): JSX.Element {
             <div
               data-testid="pm-chat-right-column"
               className="right-column"
-              style={{ width: PM_PANEL_W }}
+              style={{ width: pmChatCollapsed ? 0 : PM_PANEL_W }}
             >
               <PMChatPanel
                 pm={scenario.pm}
@@ -311,6 +314,8 @@ export function AppShell(): JSX.Element {
                 onSend={(t) => pmSession.say(t)}
                 onStart={() => pmSession.start()}
                 onPermission={(id, allow) => pmSession.permission(id, allow)}
+                collapsed={pmChatCollapsed}
+                onToggle={() => setPmChatCollapsed((c) => !c)}
               />
             </div>
           )}

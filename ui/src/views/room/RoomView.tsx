@@ -43,7 +43,7 @@ import { RoomWallDecor } from './decor/RoomWallDecor';
 import { GanttPoster } from './wall-posters/GanttPoster';
 import { PlanPoster } from './wall-posters/PlanPoster';
 import { ConsistencyPoster } from './wall-posters/ConsistencyPoster';
-import { DeskStation, type DeskStatus } from './DeskStation';
+import { DeskStation, type DeskStatus, type BubbleShape } from './DeskStation';
 import { SubroomClone } from './SubroomClone';
 import { AgentDetailPanel } from './AgentDetailPanel';
 import { ROSTER } from '../../data/roster';
@@ -99,10 +99,13 @@ function truncate(s: string, n: number): string {
   return s.length > n ? `${s.slice(0, n - 1)}…` : s;
 }
 
-function toBubble(state: AgentState | undefined): string | undefined {
+// WHY: typed bubble shape matches redesign source room.jsx L23-27 (R-3).
+// kind='tool'   → yellow label + optional sub (currentReasoning)
+// kind='reason' → italic quoted text (truncated to 38 chars)
+function toBubble(state: AgentState | undefined): BubbleShape | undefined {
   if (!state) return undefined;
-  if (state.currentTool) return state.currentTool;
-  if (state.currentReasoning) return truncate(state.currentReasoning, 28);
+  if (state.currentTool) return { kind: 'tool', text: state.currentTool, sub: state.currentReasoning };
+  if (state.currentReasoning) return { kind: 'reason', text: truncate(state.currentReasoning, 38) };
   return undefined;
 }
 
@@ -156,7 +159,7 @@ export function RoomView(): JSX.Element {
       <RoomBackground width={W} height={H} />
 
       {/* === Wall decor (branch sign + clock) === */}
-      <RoomWallDecor width={W} branch={scenario.branch} />
+      <RoomWallDecor branch={scenario.branch} now={scenario.now} />
 
       {/* === Wall posters — clicking navigates via React Router === */}
       <GanttPoster
@@ -201,7 +204,7 @@ export function RoomView(): JSX.Element {
               y={p.y}
               cat={cat}
               status={toDeskStatus(state)}
-              task={toBubble(state)}
+              bubble={toBubble(state)}
               scroll={state?.status !== 'idle'}
               label={
                 state?.status === 'idle' && state?.lastSeenAt

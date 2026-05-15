@@ -24,6 +24,16 @@ export interface PMChatPanelProps {
   onSend: (text: string) => void;
   onStart: () => void;
   onPermission: (id: string, allow: boolean) => void;
+  /**
+   * Collapsed state — when true, renders a vertical handle button instead
+   * of the full panel. Matches redesign/screens/room.jsx L303-308 (R-5).
+   */
+  collapsed?: boolean;
+  /**
+   * Toggle collapse/expand. Required when collapsed prop is used.
+   * Wired to AppShell pmChatCollapsed state (R-5).
+   */
+  onToggle?: () => void;
 }
 
 export function PMChatPanel({
@@ -32,6 +42,8 @@ export function PMChatPanel({
   onSend,
   onStart,
   onPermission,
+  collapsed = false,
+  onToggle,
 }: PMChatPanelProps): JSX.Element {
   const [draft, setDraft] = useState('');
   const [tab, setTab] = useState<'chat' | 'stream'>('chat');
@@ -54,6 +66,16 @@ export function PMChatPanel({
   const highRisk = pm.pendingApprovals.find((a) => a.risk === 'high');
   const nonHighRisk = pm.pendingApprovals.filter((a) => a.risk !== 'high');
 
+  // WHY: collapsed handle — matches redesign/screens/room.jsx L303-308 (R-5).
+  // When collapsed, renders a vertical tab handle instead of the full panel.
+  if (collapsed) {
+    return (
+      <button className="pm-chat-handle" onClick={onToggle} title="PM チャットを開く">
+        ◆ PM <span style={{ fontSize: 9 }}>{stream.length > 0 && `· ${stream.length}`}</span>
+      </button>
+    );
+  }
+
   return (
     <div
       data-testid="pm-chat-panel"
@@ -67,7 +89,7 @@ export function PMChatPanel({
         position: 'relative',
       }}
     >
-      {/* Tab bar */}
+      {/* Tab bar — matches redesign L313-321: tabs + close button */}
       <div
         style={{
           display: 'flex',
@@ -113,6 +135,25 @@ export function PMChatPanel({
             </span>
           )}
         </button>
+        {/* WHY: close button matches redesign L320 (▶ 折り畳む). R-4+R-5. */}
+        {onToggle && (
+          <button
+            data-testid="pm-chat-close"
+            onClick={onToggle}
+            title="折り畳む"
+            style={{
+              marginLeft: 'auto',
+              padding: '8px 10px',
+              fontSize: 11,
+              background: 'none',
+              border: 'none',
+              color: 'var(--p-text-muted, #888)',
+              cursor: 'pointer',
+            }}
+          >
+            ▶
+          </button>
+        )}
       </div>
 
       {/* CHAT tab content */}
@@ -261,7 +302,7 @@ export function PMChatPanel({
         </>
       )}
 
-      {/* STREAM tab content */}
+      {/* STREAM tab content — uses rail__line classes matching redesign L344-356 (R-4). */}
       {tab === 'stream' && (
         <div
           data-testid="pm-stream-log"
@@ -279,13 +320,13 @@ export function PMChatPanel({
             </div>
           ) : (
             stream.map((s, i) => (
-              <div key={i} style={{ marginBottom: 4, display: 'flex', gap: 6 }}>
-                <span style={{ color: 'var(--p-text-muted, #888)' }}>{s.ts}</span>
-                <span style={{ color: 'var(--p-accent, #4a8fc4)' }}>{s.who}</span>
+              <div key={i} className={`rail__line ${s.kind}`}>
+                <span className="ts">{s.ts}</span>
+                <span className="who">{s.who}</span>
                 {s.kind === 'tool' && s.tool && (
-                  <span style={{ color: 'var(--p-ok, #4caf50)' }}>{s.tool}</span>
+                  <span className="tool">{s.tool}</span>
                 )}
-                <span style={{ color: 'var(--p-text, #ccc)' }}>{s.text}</span>
+                <span className="text">{s.text}</span>
               </div>
             ))
           )}
