@@ -1318,6 +1318,15 @@ m0.17-complete tag 設置後 (170d323)、PR #12 push で CI Linux Playwright bas
 
 **Phase 4.6 verification**: PR #12 CI 全 green (vitest UI 958 + daemon 546 + Playwright 19/19 darwin baseline + 19/19 linux baseline = 双方 platform pass)、mergeable 状態到達。Linux baseline auto-PR infrastructure が初めて実 active 化 (M0.16 codify から 2 milestone 経て first usage)。
 
+### Phase 4.8: Production mock= scaffolding gate (post-closure user 指摘契機、2026-05-15)
+
+Phase 4.7 real daemon verify で「ScenarioPicker が production 表示 + useScenario が `?mock=` URL param で fixture fallback」logic が production bundle に含まれとる事実を surface 化。user 指摘「production code に mock= 残っとる」を契機に dev/QA scaffolding を `import.meta.env.DEV` で gate、production build (Vite minifier + daemon-served ui/dist) では tree-shake で完全除去、dev/test (Vite dev server / Vitest) では従来動作維持の dual-mode design。
+
+- [x] redesign/api/websocket.ts `useScenario()` mock fallback block を `if (import.meta.env.DEV)` で gate + ui/src/routing/AppShell.tsx の ScenarioPicker render を `{isRoom && import.meta.env.DEV && <ScenarioPicker .../>}` で gate + ui/tsconfig.json に `"types": ["vite/client"]` 追加 (ImportMeta.env 型解決の collateral) <!-- id: m0.17-phase-4.8-mock-gate status: done committed_sha: 559549e path: C (Strategy a single dev、Vitest 958/958 + daemon 546/546 + bash 42/42 PASS、tsc -1 net (M0.15 由来 ImportMeta error 1 件副次解消)、0 regression、production bundle で SCENARIOS / ScenarioPicker / readMockKey が Vite DCE で tree-shake、URL param 経由 mock bypass 不能化) planned_files: redesign/api/websocket.ts, ui/src/routing/AppShell.tsx, ui/tsconfig.json -->
+  - rationale: SCREEN_REQUIREMENTS 「mock mode: ?mock=active で fixture 注入」は M0.15 redesign 期間中の design 前提、production release では dev/QA 限定にすべき
+  - build-time gate (Vite `import.meta.env.DEV` 静的置換): production user が `DEV=true` を runtime で書き換える方法は存在しない構造的 security 改善
+  - dispatcher: Strategy a / single mode / shared tree
+
 ### Phase 4.7: Real daemon mock-less verify (post-closure user 指摘契機、2026-05-15)
 
 closure 判断が全 layer mock pass のみで成立した dogfood gap を user 指摘で post-closure 検出、Playwright MCP browser_* tool で `http://127.0.0.1:5757/` を mock パラメータ無しで navigate + snapshot し real scenario data で M0.17 全実装を実機 verify。
