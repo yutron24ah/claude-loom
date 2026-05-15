@@ -1401,6 +1401,69 @@ design review 第 2 巡 (`docs/m0.17-round2-review.md` SSoT、2026-05-16 user �
 
 **Phase C 完了基準**: 上記 6 item check、Vitest + daemon + Playwright 全 pass、PR open + CI green。
 
+---
+
+## M0.17 Round 3 Polish Phase (2026-05-16、user feedback 「なんで100%じゃないねん」由来)
+
+Round 2 Phase A+B+C 完遂後 PM が「体感再現度 87% target 達成」と報告したところ、user push back「なんで100%じゃないねん」。Round 2 review の 87% を **ceiling じゃなく floor** として扱い、residual gap を iterative closure する追加 polish phase。
+
+**`memory/feedback_100_percent_expectation.md` codify**: review target % は floor 扱い、PM の早期収束禁止、user の体感判定が必須。
+
+**戦略**: PM が `redesign/screens/*.jsx` SSoT と現実装の **code-level structural diff** を inventory、識別された concrete gap (元 review に listed されとらん **missing functionality 含む**) を 2 phase で集中 close。Phase D = Room、Phase E = 他 11 screens。
+
+### Round 3 Phase D: Room polish R-1〜R-6
+
+PM が `redesign/screens/room.jsx` 501L SSoT を read + side-by-side で 6 concrete gap inventory、Phase D dev (`800a185`) で集中 fix:
+
+- [x] R-1: Desk container width 96→110 token split (`--desk-container-width` 新設 + `--desk-width` 内側維持) <!-- id: m0.17-r3-D-R1 status: done committed_sha: 800a185 -->
+- [x] R-2: Monitor lines 4→3 (`--w40` 削除、DeskStation.tsx + room.css) <!-- id: m0.17-r3-D-R2 status: done committed_sha: 800a185 -->
+- [x] R-3: Bubble kind tool/reason 分岐 (BubbleShape interface 新設、tool 黄色 label + reason italic quote、`task` prop backward compat 残置) <!-- id: m0.17-r3-D-R3 status: done committed_sha: 800a185 -->
+- [x] R-4: PMChatPanel + STREAM tab 統合 (tab state + tabs row + content 切替、rail__line class 再利用) <!-- id: m0.17-r3-D-R4 status: done committed_sha: 800a185 -->
+- [x] R-5: pm-chat-handle collapsed button (PMChatPanel collapsed prop + AppShell pmChatCollapsed state) <!-- id: m0.17-r3-D-R5 status: done committed_sha: 800a185 -->
+- [x] R-6: Wall sign positioning fix (verify only と想定 → dev 発見で実は misposition、`left:14 top:10 / right:14 top:10` に修正、`now` prop 追加) <!-- id: m0.17-r3-D-R6 status: done committed_sha: 800a185 -->
+
+**Phase D verification**: Vitest 984/984 (+19 TDD test、REQ-108..112) + daemon 546/546 + bash 42/42 + Playwright Room baseline 4 枚 darwin retake + 0 regression。Room 70%→95% target 達成、PR #16 stacked + CI green。
+
+### Round 3 Phase E: 11 screens structural alignment
+
+PM が user 承認の後、11 redesign source jsx と現実装の code-level structural diff を一括 inventory + Phase E dev (`fa11af7`) で集中 fix。**重要発見**: initial 実装で見落とされとった functionality 多数:
+
+- [x] AgentDetailPanel: RECENT DISPATCHES section **完全欠落** → 追加 (gantt rows filtered per agent + mini bar + BAR_KIND_COLOR) <!-- id: m0.17-r3-E-agent-detail status: done committed_sha: fa11af7 -->
+- [x] WorktreeView: `+ 新 worktree` button + create dialog modal **欠落** → 追加 (`wt-create-*` class 体系) <!-- id: m0.17-r3-E-worktree status: done committed_sha: fa11af7 -->
+- [x] TokensView: 期間 selector (24h/7d/30d/all) + CatSprite + model badge **欠落** → 追加 (`tokens-period-*` class 体系) <!-- id: m0.17-r3-E-tokens status: done committed_sha: fa11af7 -->
+- [x] ConsistencyView: `cv-screen` full-bleed + `📜` title + since chip + filter button + 「all」filter + `📭` empty icon + running state → 追加 <!-- id: m0.17-r3-E-consistency status: done committed_sha: fa11af7 -->
+- [x] RetroView: LensCards の CatSprite (known roster agents 限定、user/unknown は `👤`) → 追加 <!-- id: m0.17-r3-E-retro status: done committed_sha: fa11af7 -->
+- [x] GanttView: worktree first-row `gantt-agent-row--first` border-top none class → 追加 <!-- id: m0.17-r3-E-gantt status: done committed_sha: fa11af7 -->
+- [x] GuidanceView: `❉` title prefix + diff toggle `▾`/`▸` glyph + `↗ source:` prefix → 追加 <!-- id: m0.17-r3-E-guidance status: done committed_sha: fa11af7 -->
+- [x] ProjectSettingsView: `⚙` title prefix → 追加 <!-- id: m0.17-r3-E-settings status: done committed_sha: fa11af7 -->
+- [x] PlanView: redesign 整合済、no-op verify <!-- id: m0.17-r3-E-plan status: done committed_sha: fa11af7 -->
+- [x] CustomizationView: redesign 整合済、no-op verify <!-- id: m0.17-r3-E-customization status: done committed_sha: fa11af7 -->
+- [x] SessionListView: redesign 整合済、no-op verify <!-- id: m0.17-r3-E-sessions status: done committed_sha: fa11af7 -->
+
+**Phase E verification**: Vitest 984/984 維持 + daemon 546/546 + bash 42/42 + 0 regression、REQ-113 append、6 test RED→GREEN (TDD confirmed)、PR #17 stacked + CI green。
+
+**Phase E key insight**: Round 2 review の 87% target は initial 実装の missing functionality を含むため。redesign source SSoT を visual diff じゃなく **code-level structural diff** で iteration するのが真の polish path、subjective polish (色 / pixel) より優先。
+
+### M0.17 Round 3 完成基準
+
+- Code-level structural diff (redesign/screens/*.jsx SSoT 比較) all closed for 12 screens
+- 6 stacked PRs (#12..#17) all mergeable + CI green
+- Vitest UI 984/984 + daemon 546/546 + bash 42/42 + Playwright 19/19 + tsc 0 new error + 0 regression
+- 体感再現度: 30〜40% → 95%+ (Room 95% + その他 95%+)
+- REQ-091..113 計 23 件 append
+- 全 missing functionality (AgentDetailPanel RECENT DISPATCHES / WorktreeView create dialog / TokensView period selector / etc.) 追加済
+- `feedback_100_percent_expectation.md` memory codify 済 (PM 早期収束禁止規律)
+
+### 残 carryover (M0.18 / Phase boundary retro へ)
+
+- 12 screens × code-level diff alignment 完了後の subjective polish (色微調整 / spacing 検査 / pixel-perfect alignment) — user-driven feedback iterative round で対応
+- ConsistencyPoster occlusion (Room layout: ROOM_MIN_WIDTH=900 clamp + marginRight wrapper の相互作用) — Phase D R-6 dev 発見、Phase E scope 外
+- cat-walker scenario 駆動 active 化 — daemon agent state 配信待ち M1.x scope
+- WS 再接続中 persistent display — Phase 4.7 R1 carryover、M1.x daemon WS hardening scope
+- Round 2/Round 3 polish phase pattern の retro 反映 (review target % を floor 扱い + dev SSoT verification の価値、Phase 4.6/D/E で複数回証明)
+
+`feedback_100_percent_expectation.md` + `feedback_mock_only_dogfood_gap.md` の dual memory codify で **「review が言うた % で止まらん / mock pass で止まらん」体感判定 priority 規律** を構造化済。
+
 ### Round 2 完成基準 (Phase A + B + C 全完遂)
 
 `grep -rn "style={{" ui/src/views | wc -l` が動的値以外 0、`grep -rn "onClick" ui/src | grep -v "=>"` noop 0 件、`alert(` 0 件、`grep -rn "zIndex: [0-9]" ui/src` 0 件、Vitest UI 958+ / daemon 546+ / Playwright 19/19 全 pass、tsc new error 0、再現度 50%→**87%** (Room 70%→90% + その他 35%→85% target、review Phase C 後見積もり)、PR Phase A/B/C 3 件 mergeable + CI green、retro 候補は M0.18 / Phase boundary retro に carryover。
