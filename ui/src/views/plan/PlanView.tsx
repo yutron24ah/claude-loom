@@ -190,10 +190,14 @@ export function PlanView(): JSX.Element {
                   {m.count}
                 </span>
                 {tab === 'edit' && (
+                  /* WHY: disabled+title is honest UX (B8). Milestone editor is
+                     Phase B/M1.x scope; a fake-active button misleads users. */
                   <button
                     type="button"
                     className="btn-px ghost"
                     style={{ fontSize: 9, padding: '2px 6px' }}
+                    disabled
+                    title="milestone editor not yet implemented"
                   >
                     edit
                   </button>

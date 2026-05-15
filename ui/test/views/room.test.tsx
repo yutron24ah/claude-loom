@@ -51,6 +51,17 @@ vi.mock('../../src/store/view', () => ({
   },
 }));
 
+// WHY: RoomView now calls usePMSession() for the ColdStart button (B4).
+// Mock to avoid tRPC context requirement in room-focused tests.
+vi.mock('../../src/live/usePMSession', () => ({
+  usePMSession: () => ({
+    start: vi.fn(),
+    say: vi.fn(),
+    permission: vi.fn(),
+    isLoading: false,
+  }),
+}));
+
 import { render, screen, cleanup } from '@testing-library/react';
 import { RoomView } from '../../src/views/room/RoomView';
 

@@ -33,8 +33,8 @@
  * 6. LIVE RAIL: when PM is not running, mount <LiveRail/> (new file) so
  *    the right column always has *something* showing instead of empty space.
  *
- * 7. RETRO MODE TOGGLE: kept but moved to drawer (Manage group) eventually.
- *    For this iteration we leave the in-room toggle but reduce its prominence.
+ * 7. RETRO MODE: dormant retroMode state removed (B5/B6). The /retro route
+ *    in the Drawer MANAGE group provides retro access. No in-room toggle.
  */
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -45,17 +45,17 @@ import { PlanPoster } from './wall-posters/PlanPoster';
 import { ConsistencyPoster } from './wall-posters/ConsistencyPoster';
 import { DeskStation, type DeskStatus } from './DeskStation';
 import { SubroomClone } from './SubroomClone';
-import { RetroGathering } from './RetroGathering';
 import { AgentDetailPanel } from './AgentDetailPanel';
 import { ROSTER } from '../../data/roster';
 import type { RosterEntry } from '../../data/roster';
 import { useViewStore } from '../../store/view';
 import { useScenario } from '@claude-loom/redesign/api/websocket';
 import type { AgentState } from '@claude-loom/redesign/api/types';
+import { usePMSession } from '../../live/usePMSession';
 
 // ---------------------------------------------------------------------------
 // The 5 agents that have a *desk* in the open office.
-// retro/* agents are introduced via RetroGathering when retroMode is on.
+// retro agents are accessed via the /retro route (Drawer MANAGE group).
 // ---------------------------------------------------------------------------
 const ROOM_AGENT_IDS = ['pm', 'dev', 'rev-code', 'rev-test', 'rev-sec'] as const;
 type RoomAgentId = (typeof ROOM_AGENT_IDS)[number];
@@ -112,10 +112,10 @@ function toBubble(state: AgentState | undefined): string | undefined {
 export function RoomView(): JSX.Element {
   const scenario = useScenario();
   const navigate = useNavigate();
+  const pm = usePMSession();
   const ref = useRef<HTMLDivElement | null>(null);
   const [size, setSize] = useState<Size>({ w: 1200, h: 700 });
   const [sel, setSel] = useState<string | null>(null);
-  const [retroMode, setRetroMode] = useState(false);
 
   // Subscribe to container size — fills whatever the AppShell content gives us.
   useEffect(() => {
@@ -159,35 +159,30 @@ export function RoomView(): JSX.Element {
       <RoomWallDecor width={W} branch={scenario.branch} />
 
       {/* === Wall posters — clicking navigates via React Router === */}
-      {!retroMode && (
-        <>
-          <GanttPoster
-            x={Math.max(14, W * 0.02)}
-            y={wallTop}
-            width={360}
-            height={125}
-            onClick={() => navigate('/gantt')}
-          />
-          <PlanPoster
-            x={Math.max(390, W * 0.32)}
-            y={wallTop}
-            width={350}
-            height={125}
-            onClick={() => navigate('/plan')}
-          />
-          <ConsistencyPoster
-            x={Math.min(W - 220, W * 0.78)}
-            y={wallTop}
-            width={200}
-            height={125}
-            onClick={() => navigate('/consistency')}
-          />
-        </>
-      )}
+      <GanttPoster
+        x={Math.max(14, W * 0.02)}
+        y={wallTop}
+        width={360}
+        height={125}
+        onClick={() => navigate('/gantt')}
+      />
+      <PlanPoster
+        x={Math.max(390, W * 0.32)}
+        y={wallTop}
+        width={350}
+        height={125}
+        onClick={() => navigate('/plan')}
+      />
+      <ConsistencyPoster
+        x={Math.min(W - 220, W * 0.78)}
+        y={wallTop}
+        width={200}
+        height={125}
+        onClick={() => navigate('/consistency')}
+      />
 
       {/* === DeskStation agents === */}
-      {!retroMode &&
-        ROOM_AGENT_IDS.map((id) => {
+      {ROOM_AGENT_IDS.map((id) => {
           const cat = ROSTER.find((r) => r.id === id);
           if (!cat) return null;
           const p = positions[id];
@@ -225,36 +220,20 @@ export function RoomView(): JSX.Element {
         })}
 
       {/* === Worktree clones — sit *above* the dev desk === */}
-      {!retroMode &&
-        scenario.worktrees
-          .filter((w) => w.parentAgent === 'dev')
-          .slice(0, 4)
-          .map((w, i) => (
-            <SubroomClone
-              key={i}
-              x={positions.dev.x + 60 + i * 56}
-              y={positions.dev.y - 60}
-              cat={devCat}
-              branch={w.branch}
-              status={w.status === 'failed' ? 'review' : (w.status as 'busy' | 'review' | 'idle')}
-              onClick={() => navigate(`/worktree?branch=${encodeURIComponent(w.branch)}`)}
-            />
-          ))}
-
-      {/* === Retro mode === */}
-      {retroMode && (
-        <RetroGathering
-          width={W}
-          height={H}
-          sel={sel}
-          setSel={(id) => {
-            setSel(id);
-            useViewStore.getState().setSelectedAgentId(id);
-          }}
-        >
-          <div>RetroView placeholder</div>
-        </RetroGathering>
-      )}
+      {scenario.worktrees
+        .filter((w) => w.parentAgent === 'dev')
+        .slice(0, 4)
+        .map((w, i) => (
+          <SubroomClone
+            key={i}
+            x={positions.dev.x + 60 + i * 56}
+            y={positions.dev.y - 60}
+            cat={devCat}
+            branch={w.branch}
+            status={w.status === 'failed' ? 'review' : (w.status as 'busy' | 'review' | 'idle')}
+            onClick={() => navigate(`/worktree?branch=${encodeURIComponent(w.branch)}`)}
+          />
+        ))}
 
       {/* === ColdStart card — shown when everyone is idle and PM is off === */}
       {isIdleAll && !scenario.pm.running && (
@@ -266,7 +245,8 @@ export function RoomView(): JSX.Element {
             前回の値は壁に貼ってあります。
           </p>
           <div className="row">
-            <button className="btn-px primary" onClick={() => alert('POST /pm/start')}>
+            {/* WHY: usePMSession().start() replaces alert() placeholder (B4). */}
+            <button className="btn-px primary" onClick={() => pm.start()}>
               ▶ PM を起動
             </button>
             <span style={{ fontSize: 9, color: 'var(--p-text-muted)' }}>

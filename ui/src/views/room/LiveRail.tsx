@@ -29,13 +29,12 @@ type Tab = 'merged' | 'reasoning' | 'tools';
 export function LiveRail({ stream, collapsed, onToggle }: LiveRailProps): JSX.Element {
   const [tab, setTab] = useState<Tab>('merged');
 
-  if (collapsed) {
-    return (
-      <button className="rail-toggle" onClick={onToggle}>
-        ⚡ LIVE
-      </button>
-    );
-  }
+  // WHY: collapsed=true case is dead code — AppShell controls mount with
+  // showLiveRail (false when collapsed), and renders its own rail-toggle button
+  // (AppShell L~291). Returning null here instead of duplicating the toggle
+  // removes the dead branch while keeping the prop for backwards compatibility.
+  // The canonical toggle lives in AppShell to maintain single responsibility.
+  if (collapsed) return null as unknown as JSX.Element;
 
   const filtered =
     tab === 'tools'

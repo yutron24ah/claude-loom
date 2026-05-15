@@ -22,7 +22,7 @@
  *    instead of leaving the right column empty.
  */
 import { useState } from 'react';
-import { Outlet, useLocation, NavLink } from 'react-router-dom';
+import { Outlet, useLocation, useNavigate, useSearchParams, NavLink } from 'react-router-dom';
 import { RoomView } from '../views/room/RoomView';
 import { LiveRail } from '../views/room/LiveRail';
 import { ToastContainer } from '../notifications/ToastContainer';
@@ -44,9 +44,11 @@ interface TopBarProps {
   conn: ConnectionStatus;
   metrics: DisciplineMetrics;
   onDrawerToggle: () => void;
+  /** navigate() from AppShell — passed down to avoid multiple useNavigate calls. */
+  navigate: (to: string) => void;
 }
 
-function TopBar({ project, conn, metrics, onDrawerToggle }: TopBarProps): JSX.Element {
+function TopBar({ project, conn, metrics, onDrawerToggle, navigate }: TopBarProps): JSX.Element {
   const metricClass = (ok: boolean, warn?: boolean) => (warn ? 'warn' : ok ? 'ok' : 'err');
   return (
     <div data-testid="topbar" className="top">
@@ -63,31 +65,58 @@ function TopBar({ project, conn, metrics, onDrawerToggle }: TopBarProps): JSX.El
         <div className="logo" />
         {APP_COPY.brand}
       </div>
-      <button data-testid="topbar-project" className="top__pj" title={APP_COPY.projectSwitcherTitle}>
+      {/* WHY: navigate('/project-settings') wired (B7). Future dropdown is Phase C. */}
+      <button
+        data-testid="topbar-project"
+        className="top__pj"
+        title={APP_COPY.projectSwitcherTitle}
+        onClick={() => navigate('/project-settings')}
+      >
         ◆ {project} <span className="top__pj-caret">▾</span>
       </button>
       <div className="top__metrics">
-        <div data-testid="metric-parallel" className="m">
+        {/* WHY: <div> → <button> for semantic interactivity + a11y (B10). */}
+        <button
+          type="button"
+          data-testid="metric-parallel"
+          className="m"
+          onClick={() => navigate('/gantt')}
+        >
           PARALLEL{' '}
           <span className={`v ${metricClass(metrics.parallel >= 0.5)}`}>
             {Math.round(metrics.parallel * 100)}%
           </span>
-        </div>
-        <div data-testid="metric-task-tool" className="m">
+        </button>
+        <button
+          type="button"
+          data-testid="metric-task-tool"
+          className="m"
+          onClick={() => navigate('/sessions')}
+        >
           TASK TOOL <span className={`v ${metrics.taskTool}`}>{metrics.taskToolLabel}</span>
-        </div>
-        <div data-testid="metric-tdd-order" className="m">
+        </button>
+        <button
+          type="button"
+          data-testid="metric-tdd-order"
+          className="m"
+          onClick={() => navigate('/consistency?filter=tdd')}
+        >
           TDD ORDER{' '}
           <span className={`v ${metricClass(!metrics.tddViolations)}`}>
             {metrics.tddViolations} VIOLATIONS
           </span>
-        </div>
-        <div data-testid="metric-verdict" className="m">
+        </button>
+        <button
+          type="button"
+          data-testid="metric-verdict"
+          className="m"
+          onClick={() => navigate('/consistency')}
+        >
           VERDICT{' '}
           <span className={`v ${metrics.verdict === 'PASS' ? 'ok' : 'err'}`}>
             {metrics.verdict}
           </span>
-        </div>
+        </button>
       </div>
       <div data-testid="topbar-conn" className="top__conn">
         <span className={`dot ${conn === 'connected' ? 'busy' : 'fail'}`} />
@@ -179,18 +208,17 @@ interface ScenarioPickerProps {
 }
 
 function ScenarioPicker({ rightOffset }: ScenarioPickerProps): JSX.Element {
-  const current =
-    typeof window !== 'undefined'
-      ? (new URLSearchParams(window.location.search).get('mock') ?? '')
-      : '';
+  // WHY: useSearchParams replaces window.history.replaceState + manual popstate
+  // dispatch (B11). React Router's setSearchParams triggers a re-render and keeps
+  // the Drawer NavLink active state in sync without manual DOM event hacks.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const current = searchParams.get('mock') ?? '';
 
   function activate(key: string): void {
-    if (typeof window === 'undefined') return;
-    const url = new URL(window.location.href);
-    if (key) url.searchParams.set('mock', key);
-    else url.searchParams.delete('mock');
-    window.history.replaceState(null, '', url.toString());
-    window.dispatchEvent(new Event('popstate'));
+    const next = new URLSearchParams(searchParams);
+    if (key) next.set('mock', key);
+    else next.delete('mock');
+    setSearchParams(next, { replace: true });
   }
 
   return (
@@ -224,6 +252,7 @@ function ScenarioPicker({ rightOffset }: ScenarioPickerProps): JSX.Element {
 // ---------------------------------------------------------------------------
 export function AppShell(): JSX.Element {
   const location = useLocation();
+  const navigate = useNavigate();
   const scenario = useScenario();
   const [drawerCollapsed, setDrawerCollapsed] = useState(false);
   const [liveRailCollapsed, setLiveRailCollapsed] = useState(false);
@@ -249,6 +278,7 @@ export function AppShell(): JSX.Element {
         conn={scenario.conn}
         metrics={scenario.disciplineMetrics}
         onDrawerToggle={() => setDrawerCollapsed((c) => !c)}
+        navigate={navigate}
       />
       <div className="main">
         <Drawer collapsed={drawerCollapsed} pathname={location.pathname} />

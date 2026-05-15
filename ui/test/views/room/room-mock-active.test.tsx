@@ -38,6 +38,17 @@ vi.mock('../../../src/views/room/AgentDetailNotes', () => ({
   AgentDetailNotes: () => null,
 }));
 
+// WHY: RoomView now calls usePMSession() for the ColdStart button (B4).
+// Mock to avoid tRPC context requirement in room-focused tests.
+vi.mock('../../../src/live/usePMSession', () => ({
+  usePMSession: () => ({
+    start: vi.fn(),
+    say: vi.fn(),
+    permission: vi.fn(),
+    isLoading: false,
+  }),
+}));
+
 import { RoomView } from '../../../src/views/room/RoomView';
 
 // WHY: mock the redesign hook directly. This is the seam scenarios.js → daemon
