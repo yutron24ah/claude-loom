@@ -120,6 +120,11 @@
   border-top: 1px dashed var(--p-border);
 }
 
+/* WHY: first row in a group has no top border (mirrors redesign borderTop: i ? "1px dashed..." : "none") */
+.gantt-agent-row--first {
+  border-top: none;
+}
+
 /* Label column (fixed 200px) */
 .gantt-agent-row__label {
   width: 200px;

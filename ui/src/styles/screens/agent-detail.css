@@ -188,6 +188,58 @@
 }
 
 /* ---------------------------------------------------------------------------
+ * Recent dispatches panel (gantt rows per agent — matches redesign agent-detail.jsx)
+ * WHY: redesign shows "RECENT DISPATCHES" section with mini gantt bars
+ * --------------------------------------------------------------------------- */
+
+.ad-dispatches-panel {
+  margin-bottom: 14px;
+}
+
+.ad-dispatch-row {
+  padding: 5px 8px;
+  border: 1px solid var(--p-border);
+  background: var(--p-bg-sky);
+  font-size: 10px;
+  margin-bottom: 4px;
+}
+
+.ad-dispatch-row__meta {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.ad-dispatch-row__worktree {
+  font-family: ui-monospace, monospace;
+  color: var(--p-text-muted);
+}
+
+.ad-dispatch-row__label {
+  flex: 1;
+}
+
+.ad-dispatch-row__live {
+  color: var(--p-success);
+  font-weight: 700;
+  font-size: 9px;
+}
+
+.ad-dispatch-row__bar-track {
+  position: relative;
+  height: 6px;
+  background: var(--p-tint);
+  border: 1px solid var(--p-border);
+}
+
+/* WHY: left/width/bg are dynamic (bar.s, bar.e, BAR_KIND_COLOR[b.kind]), stay inline */
+.ad-dispatch-row__bar-fill {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+}
+
+/* ---------------------------------------------------------------------------
  * Stream tail panel
  * --------------------------------------------------------------------------- */
 

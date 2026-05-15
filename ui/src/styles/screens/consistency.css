@@ -10,9 +10,18 @@
  * =========================================================================== */
 
 /* ---------------------------------------------------------------------------
- * Root container
- * Note: ConsistencyView uses .rpg-frame .pixel on the root; padding stays inline
+ * Root container — full-bleed absolute (matches redesign position:absolute,inset:0)
+ * WHY: redesign/screens/consistency.jsx uses position:absolute,inset:0,padding:16
+ * not rpg-frame. Using cv-screen for proper full-bleed layout.
  * --------------------------------------------------------------------------- */
+
+.cv-screen {
+  position: absolute;
+  inset: 0;
+  padding: 16px;
+  overflow: auto;
+  background: var(--p-bg-sky);
+}
 
 /* ---------------------------------------------------------------------------
  * Header row
@@ -74,6 +83,12 @@
   background: var(--p-paper);
 }
 
+/* WHY: 📭 icon row above title (matches redesign) */
+.cv-empty__icon {
+  font-size: 32px;
+  margin-bottom: 6px;
+}
+
 .cv-empty__title {
   font-size: 12px;
   font-weight: 700;
@@ -87,19 +102,29 @@
 
 /* ---------------------------------------------------------------------------
  * Summary strip (4 stat cards: OPEN / ACK / FIXED / DISMISSED)
+ * WHY: cards are now clickable buttons (matches redesign onClick filter behavior)
  * --------------------------------------------------------------------------- */
 
 .cv-summary {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 10px;
-  margin-bottom: 16px;
+  gap: 8px;
+  margin-bottom: 12px;
 }
 
+/* WHY: all:unset lets the button element take on the card appearance */
 .cv-summary-card {
-  background: var(--p-tint);
-  border: 2px solid var(--p-border);
+  all: unset;
+  cursor: pointer;
   padding: 10px;
+  /* background and border are dynamic (selected vs default), stay inline */
+  display: block;
+}
+
+.cv-summary-card__lbl {
+  font-size: 9px;
+  color: var(--p-text-muted);
+  letter-spacing: 0.06em;
 }
 
 /* WHY: count color is dynamic (s.color from color array), stays inline */
@@ -107,6 +132,21 @@
   font-size: 20px;
   font-weight: 800;
   font-family: ui-monospace, monospace;
+}
+
+/* ---------------------------------------------------------------------------
+ * "all" filter button row (matches redesign button for filter="all")
+ * --------------------------------------------------------------------------- */
+
+.cv-filter-row {
+  margin-bottom: 8px;
+  display: flex;
+  gap: 4px;
+}
+
+.cv-filter-all-btn {
+  font-size: 9px;
+  padding: 3px 8px;
 }
 
 /* ---------------------------------------------------------------------------

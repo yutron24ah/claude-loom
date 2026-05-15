@@ -15,9 +15,19 @@
  *
  * REQ-068: M0.15 t9 acceptance criteria.
  */
+import { useState } from 'react';
 import { useScenario } from '@claude-loom/redesign/api/websocket';
 import type { TokensByAgent, Pricing, ModelId } from '@claude-loom/redesign/api/types';
+import { CatSprite } from '../../components/CatSprite';
+import { ROSTER } from '../room/roster';
 import '../../styles/screens/tokens.css';
+
+// WHY: model color map matches redesign/screens/tokens.jsx M_COLOR pattern
+const MODELS_COLOR: Record<string, string> = {
+  opus:   'var(--p-accent)',
+  sonnet: 'var(--p-success)',
+  haiku:  'var(--p-stone)',
+};
 
 // ---------------------------------------------------------------------------
 // Pure helpers (no side effects)
@@ -89,6 +99,9 @@ export function TokensView(): JSX.Element {
   const sc = useScenario();
   const t = sc.tokens;
   const pricing = sc.pricing;
+  // WHY: period selector matches redesign/screens/tokens.jsx period state
+  const [period, setPeriod] = useState<'24h' | '7d' | '30d' | 'all'>('7d');
+  const rosterById = Object.fromEntries(ROSTER.map((r) => [r.id, r]));
 
   // Compute per-row derived metrics
   const rows = t.byAgent.map(r => {
@@ -127,10 +140,27 @@ export function TokensView(): JSX.Element {
       data-testid="tokens-view"
       className="tokens-screen"
     >
-      {/* Header */}
+      {/* Header — matches redesign: title + period chip + spacer + period selector strip + hint */}
       <div className="tokens-header">
         <div className="tokens-header__title">$ TOKENS — usage + 効率分析</div>
         <span className="chip">{t.period}</span>
+        <div className="tokens-header__spacer" />
+        {/* Period selector strip — matches redesign/screens/tokens.jsx period buttons */}
+        <div className="tokens-period-strip">
+          {(['24h', '7d', '30d', 'all'] as const).map((p) => (
+            <button
+              key={p}
+              onClick={() => setPeriod(p)}
+              className="tokens-period-btn"
+              style={{
+                background: p === period ? 'var(--p-accent)' : 'var(--p-tint)',
+                color: p === period ? 'white' : 'var(--p-text)',
+              }}
+            >
+              {p}
+            </button>
+          ))}
+        </div>
         <span className="tokens-header__period-hint">
           pricing: Anthropic公式 (1h cache)
         </span>
@@ -219,16 +249,33 @@ export function TokensView(): JSX.Element {
         {/* Rows sorted by cost descending */}
         {[...rows].sort((a, b) => b.cost - a.cost).map(r => {
           const lowHit = r.cacheHit < 0.5;
+          const agentEntry = rosterById[r.agentId];
           return (
             <div
               key={r.agentId}
               data-testid={`agent-row-${r.agentId}`}
               className="tokens-agent-row"
             >
-              {/* Agent ID */}
-              <div className="tokens-agent-row__name">{r.agentId}</div>
-              {/* Model badge */}
-              <span className="tokens-agent-row__model-badge">{r.model}</span>
+              {/* Agent name with CatSprite — matches redesign/screens/tokens.jsx agent cell */}
+              <div className="tokens-agent-row__name">
+                {agentEntry && (
+                  <CatSprite
+                    size={20}
+                    fur={agentEntry.fur}
+                    cheek={agentEntry.cheek}
+                    hat={agentEntry.hat}
+                    pose="sit"
+                  />
+                )}
+                <span>{agentEntry?.name ?? r.agentId}</span>
+              </div>
+              {/* Model badge — dynamic bg color (M_COLOR) matches redesign */}
+              <span
+                className="tokens-agent-row__model-badge"
+                style={{ background: MODELS_COLOR[r.model] ?? 'var(--p-stone)', color: 'white' }}
+              >
+                {r.model}
+              </span>
               {/* Input */}
               <span className="tokens-agent-row__cell--right">{fmtN(r.input)}</span>
               {/* Output */}

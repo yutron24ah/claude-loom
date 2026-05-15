@@ -290,7 +290,7 @@ export function ProjectSettingsView(): JSX.Element {
     >
       {/* Header */}
       <div className="ps-header">
-        <div className="ps-header__title">PROJECT SETTINGS</div>
+        <div className="ps-header__title">⚙ PROJECT SETTINGS</div>
         <span className="chip ps-chip--mono">
           {sc.project}/.claude/loom/project.json
         </span>
