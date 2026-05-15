@@ -12,6 +12,11 @@
  * Left pane:  milestones (active tab by default, done archive tab, edit tab).
  * Right pane: TodoWrite mirror (read-only, sticky).
  *
+ * M0.17 Round 2 Phase B: inline styles replaced with screens/plan.css classes.
+ * Dynamic values (progress bar width/color, status glyph color, strikethrough)
+ * remain inline — they are computed at runtime and cannot be expressed as
+ * static CSS class rules.
+ *
  * REQ-077
  */
 import { useState } from 'react';
@@ -51,25 +56,15 @@ export function PlanView(): JSX.Element {
   const displayedMs = tab === 'done' ? archive : activeMs;
 
   return (
-    <div
-      style={{
-        position: 'absolute',
-        inset: 0,
-        padding: 16,
-        overflow: 'auto',
-        background: 'var(--p-bg-sky)',
-      }}
-    >
+    <div className="plan-screen">
       {/* ---- Header bar ---- */}
-      <div
-        style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}
-      >
-        <div style={{ fontSize: 14, fontWeight: 700 }}>
+      <div className="plan-header">
+        <div className="plan-header__title">
           ≡ PLAN — plan_items.json + TodoWrite
         </div>
-        <div style={{ flex: 1 }} />
+        <div className="plan-header__spacer" />
         {/* Tab switcher */}
-        <div style={{ display: 'flex', border: '2px solid var(--p-border)' }}>
+        <div className="plan-tab-group">
           {(['active', 'done', 'edit'] as PlanTab[]).map((k) => {
             const label = k === 'active' ? '現行' : k === 'done' ? '完了 archive' : '編集';
             return (
@@ -77,16 +72,7 @@ export function PlanView(): JSX.Element {
                 key={k}
                 type="button"
                 onClick={() => setTab(k)}
-                style={{
-                  all: 'unset',
-                  cursor: 'pointer',
-                  padding: '3px 10px',
-                  fontSize: 9,
-                  fontWeight: 700,
-                  background: tab === k ? 'var(--p-accent)' : 'var(--p-tint)',
-                  color: tab === k ? 'white' : 'var(--p-text)',
-                  borderRight: '1px solid var(--p-border)',
-                }}
+                className={`plan-tab${tab === k ? ' plan-tab--active' : ''}`}
               >
                 {label}
               </button>
@@ -97,7 +83,6 @@ export function PlanView(): JSX.Element {
         <button
           type="button"
           className="btn-px primary"
-          style={{ fontSize: 9, padding: '3px 8px' }}
           onClick={() => upsertItem({
             title: '新しい milestone',
             status: 'pending',
@@ -109,46 +94,20 @@ export function PlanView(): JSX.Element {
       </div>
 
       {/* ---- Two-column body ---- */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: '1fr 320px',
-          gap: 14,
-          alignItems: 'flex-start',
-        }}
-      >
+      <div className="plan-body">
         {/* ==== LEFT: milestones ==== */}
         <div
           data-testid="plan-long-term"
-          className="rpg-frame"
-          style={{ padding: 0 }}
+          className="rpg-frame plan-milestones"
         >
-          <div
-            style={{
-              fontSize: 9,
-              color: 'var(--p-text-muted)',
-              letterSpacing: '0.06em',
-              marginBottom: 6,
-              padding: '10px 12px 0',
-            }}
-          >
+          <div className="plan-milestones__label">
             <span className="rpg-title">
               {tab === 'done' ? 'DONE ARCHIVE' : 'ACTIVE MILESTONES'}
             </span>
           </div>
 
           {displayedMs.length === 0 && (
-            <div
-              style={{
-                padding: 30,
-                textAlign: 'center',
-                border: '2px dashed var(--p-border)',
-                background: 'var(--p-paper)',
-                fontSize: 10,
-                color: 'var(--p-text-muted)',
-                margin: '0 12px 12px',
-              }}
-            >
+            <div className="plan-milestones__empty">
               {tab === 'done' ? '完了 milestone はまだありません' : 'active な milestone はありません'}
             </div>
           )}
@@ -157,36 +116,15 @@ export function PlanView(): JSX.Element {
             <div
               key={m.id}
               data-testid="plan-milestone"
-              style={{
-                padding: 12,
-                marginBottom: 8,
-                background: 'var(--p-paper)',
-                border: '2px solid var(--p-border)',
-                boxShadow: '3px 3px 0 0 var(--p-shadow)',
-                margin: '0 12px 8px',
-              }}
+              className="plan-milestone"
             >
               {/* Milestone header */}
-              <div
-                style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 6 }}
-              >
-                <span
-                  style={{
-                    fontSize: 10,
-                    fontFamily: 'ui-monospace, monospace',
-                    color: 'var(--p-text-muted)',
-                  }}
-                >
+              <div className="plan-milestone__header">
+                <span className="plan-milestone__id">
                   {m.id}
                 </span>
-                <span style={{ fontSize: 13, fontWeight: 700, flex: 1 }}>{m.title}</span>
-                <span
-                  style={{
-                    fontSize: 10,
-                    fontFamily: 'ui-monospace, monospace',
-                    color: 'var(--p-text-muted)',
-                  }}
-                >
+                <span className="plan-milestone__title">{m.title}</span>
+                <span className="plan-milestone__count">
                   {m.count}
                 </span>
                 {tab === 'edit' && (
@@ -194,8 +132,7 @@ export function PlanView(): JSX.Element {
                      Phase B/M1.x scope; a fake-active button misleads users. */
                   <button
                     type="button"
-                    className="btn-px ghost"
-                    style={{ fontSize: 9, padding: '2px 6px' }}
+                    className="btn-px ghost plan-tab--ghost"
                     disabled
                     title="milestone editor not yet implemented"
                   >
@@ -207,18 +144,13 @@ export function PlanView(): JSX.Element {
               {/* Progress bar */}
               <div
                 data-testid="milestone-progress-bar"
-                style={{
-                  height: 6,
-                  background: 'var(--p-tint)',
-                  border: '1px solid var(--p-border)',
-                  marginBottom: 8,
-                }}
+                className="plan-milestone__progress"
               >
                 <div
                   data-testid="milestone-progress-fill"
+                  className="plan-milestone__progress-fill"
                   style={{
                     width: `${m.progress * 100}%`,
-                    height: '100%',
                     background:
                       m.progress >= 1 ? 'var(--p-success)' : 'var(--p-accent)',
                   }}
@@ -230,27 +162,18 @@ export function PlanView(): JSX.Element {
                 <div
                   key={i}
                   data-testid="milestone-child"
-                  style={{
-                    display: 'flex',
-                    gap: 6,
-                    fontSize: 10,
-                    padding: '2px 0',
-                    alignItems: 'center',
-                  }}
+                  className="plan-child"
                 >
                   <span
                     data-status={c.st}
-                    style={{
-                      color: STATUS_COLOR_VAR[c.st],
-                      fontFamily: 'ui-monospace, monospace',
-                      width: 12,
-                    }}
+                    className="plan-child__glyph"
+                    style={{ color: STATUS_COLOR_VAR[c.st] }}
                   >
                     {STATUS_GLYPH[c.st]}
                   </span>
                   <span
+                    className="plan-child__text"
                     style={{
-                      flex: 1,
                       textDecoration: c.st === 'completed' ? 'line-through' : 'none',
                       color:
                         c.st === 'completed' ? 'var(--p-text-muted)' : 'var(--p-text)',
@@ -267,27 +190,17 @@ export function PlanView(): JSX.Element {
         {/* ==== RIGHT: TodoWrite mirror (sticky) ==== */}
         <div
           data-testid="plan-short-term"
-          className="rpg-frame"
-          style={{
-            background: 'var(--p-paper)',
-            border: '2px solid var(--p-border)',
-            padding: 10,
-            position: 'sticky',
-            top: 16,
-          }}
+          className="rpg-frame plan-todos"
         >
-          <div
-            style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}
-          >
+          <div className="plan-todos__header">
             <div
-              className="rpg-title"
-              style={{ fontSize: 9, color: 'var(--p-text-muted)', flex: 1 }}
+              className="rpg-title plan-todos__title"
             >
               TODOS — TodoWrite mirror
             </div>
             <span
               data-testid="todos-updated-at"
-              style={{ fontSize: 8, color: 'var(--p-text-muted)' }}
+              className="plan-todos__updated-at"
             >
               {todosUpdatedAt}
             </span>
@@ -297,33 +210,20 @@ export function PlanView(): JSX.Element {
             <div
               key={i}
               data-testid="todo-item"
-              style={{
-                display: 'flex',
-                gap: 6,
-                fontSize: 11,
-                padding: '5px 0',
-                borderBottom: i < todos.length - 1 ? '1px dashed var(--p-border)' : 'none',
-                alignItems: 'flex-start',
-              }}
+              className={`plan-todo-item${i < todos.length - 1 ? ' plan-todo-item--not-last' : ''}`}
             >
               {/* Status glyph */}
               <span
                 data-status={t.status}
-                style={{
-                  color: STATUS_COLOR_VAR[t.status],
-                  fontFamily: 'ui-monospace, monospace',
-                  width: 14,
-                  flexShrink: 0,
-                  paddingTop: 1,
-                }}
+                className="plan-todo-item__glyph"
+                style={{ color: STATUS_COLOR_VAR[t.status] }}
               >
                 {STATUS_GLYPH[t.status]}
               </span>
               {/* Text */}
               <span
+                className="plan-todo-item__text"
                 style={{
-                  flex: 1,
-                  lineHeight: 1.4,
                   textDecoration: t.status === 'completed' ? 'line-through' : 'none',
                   color: t.status === 'completed' ? 'var(--p-text-muted)' : 'var(--p-text)',
                 }}
@@ -333,17 +233,7 @@ export function PlanView(): JSX.Element {
             </div>
           ))}
 
-          <div
-            style={{
-              marginTop: 10,
-              padding: 6,
-              fontSize: 9,
-              color: 'var(--p-text-muted)',
-              background: 'var(--p-tint)',
-              border: '1px dashed var(--p-border)',
-              lineHeight: 1.5,
-            }}
-          >
+          <div className="plan-todos__hint">
             ◆ TodoWrite tool が呼ばれる度に上書き同期。
             <br />
             ◆ ここは read-only mirror、編集は milestone 側で。

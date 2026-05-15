@@ -1,0 +1,12 @@
+/* ===========================================================================
+ * screens/index.css — Screen-level CSS aggregator (M0.17 Round 2 Phase B).
+ *
+ * WHY aggregator: follow-up devs (dev-9, etc.) add new screen CSS files here
+ * with a single @import line. ui/src/styles/index.css only imports this file,
+ * keeping the top-level manifest clean.
+ *
+ * Pattern: @import './<screen>.css'; — one line per screen, alphabetical.
+ * Naming convention: <screen>.css maps to views/<screen>/*.tsx namespace.
+ * =========================================================================== */
+
+@import './plan.css';
