@@ -1,0 +1,414 @@
+/* ===========================================================================
+ * agent-detail.css — Agent Detail screen styles (M0.17 Round 2 Phase B mass-production)
+ * Owns: .ad-* classes for views/room/AgentDetailPanel.tsx
+ *       and .adn-* classes for views/room/AgentDetailNotes.tsx
+ *
+ * Note: AgentDetailPanel uses .rpg-frame .pixel on root (existing global CSS).
+ * These classes add drawer layout + internal section styles.
+ *
+ * Tokens consumed: --p-paper, --p-tint, --p-border, --p-shadow,
+ *   --p-text, --p-text-muted, --p-bg-sky, --p-warn, --p-accent, --p-stone
+ * =========================================================================== */
+
+/* ---------------------------------------------------------------------------
+ * Root overlay — fixed inset, pointer-events on
+ * --------------------------------------------------------------------------- */
+
+.ad-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  pointer-events: auto;
+}
+
+/* ---------------------------------------------------------------------------
+ * Backdrop
+ * --------------------------------------------------------------------------- */
+
+.ad-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.3);
+}
+
+/* ---------------------------------------------------------------------------
+ * Drawer panel (right-side slide-in)
+ * --------------------------------------------------------------------------- */
+
+.ad-drawer {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 420px;
+  background: var(--p-paper);
+  border-left: 3px solid var(--p-border);
+  box-shadow: -4px 0 0 0 var(--p-shadow);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ---------------------------------------------------------------------------
+ * Header section (cat sprite + name + jp + quote)
+ * --------------------------------------------------------------------------- */
+
+.ad-header {
+  padding: 10px 14px;
+  border-bottom: 2px solid var(--p-border);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--p-tint);
+  flex-shrink: 0;
+}
+
+.ad-header__identity {
+  flex: 1;
+  min-width: 0;
+}
+
+.ad-header__name {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--p-text);
+}
+
+.ad-header__jp {
+  margin-top: 2px;
+  font-size: 10px;
+}
+
+.ad-header__role {
+  margin-top: 2px;
+  font-size: 10px;
+}
+
+.ad-header__quote {
+  font-size: 10px;
+  font-style: italic;
+  color: var(--p-text-muted);
+  margin-top: 4px;
+}
+
+/* ---------------------------------------------------------------------------
+ * Status + close row
+ * --------------------------------------------------------------------------- */
+
+.ad-status-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  background: var(--p-tint);
+  border-bottom: 1px solid var(--p-border);
+  flex-shrink: 0;
+}
+
+/* WHY: status badge background is dynamic (STATUS_LABEL_COLOR[status]), stays inline */
+.ad-status-badge {
+  font-size: 9px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border: 1.5px solid var(--p-border);
+  color: white;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.ad-status-row__spacer {
+  flex: 1;
+}
+
+.ad-close-btn {
+  all: unset;
+  cursor: pointer;
+  font-size: 12px;
+  padding: 2px 8px;
+  border: 1px solid var(--p-border);
+  background: var(--p-tint);
+  color: var(--p-text);
+}
+
+/* ---------------------------------------------------------------------------
+ * Body — scrollable content area
+ * --------------------------------------------------------------------------- */
+
+.ad-body {
+  flex: 1;
+  overflow: auto;
+  padding: 12px;
+}
+
+/* ---------------------------------------------------------------------------
+ * Section label (NOW / STREAM TAIL / TOKEN — TODAY / DISPATCH HISTORY)
+ * --------------------------------------------------------------------------- */
+
+.ad-section-label {
+  font-size: 9px;
+  color: var(--p-text-muted);
+  letter-spacing: 0.06em;
+  margin-bottom: 6px;
+}
+
+/* ---------------------------------------------------------------------------
+ * NOW panel
+ * --------------------------------------------------------------------------- */
+
+.ad-now-panel {
+  padding: 10px;
+  background: var(--p-bg-sky);
+  border: 1.5px solid var(--p-border);
+  margin-bottom: 14px;
+  font-size: 11px;
+}
+
+.ad-now-panel__tool-row {
+  margin-bottom: 4px;
+}
+
+/* WHY: current-tool badge background (warn) is a static default but kept consistent */
+.ad-tool-badge {
+  background: var(--p-warn);
+  color: white;
+  padding: 1px 5px;
+  font-size: 8px;
+  font-weight: 700;
+  margin-right: 4px;
+}
+
+.ad-now-panel__reasoning {
+  font-style: italic;
+  color: var(--p-text);
+  line-height: 1.5;
+}
+
+.ad-now-panel__idle {
+  color: var(--p-text-muted);
+}
+
+/* ---------------------------------------------------------------------------
+ * Stream tail panel
+ * --------------------------------------------------------------------------- */
+
+.ad-stream-panel {
+  margin-bottom: 14px;
+  background: var(--p-bg-sky);
+  border: 1.5px solid var(--p-border);
+  padding: 8px;
+}
+
+.ad-stream-entry {
+  font-size: 10px;
+  padding: 3px 0;
+  /* WHY: border-bottom is dynamic (last item has none), stays inline */
+}
+
+.ad-stream-entry__ts {
+  color: var(--p-text-muted);
+  font-size: 8px;
+  margin-right: 4px;
+  font-family: ui-monospace, monospace;
+}
+
+/* WHY: tool badge bg (warn) is consistent across tool occurrences */
+.ad-stream-tool-badge {
+  background: var(--p-warn);
+  color: white;
+  padding: 0 4px;
+  font-size: 8px;
+  font-weight: 700;
+  margin-right: 4px;
+}
+
+/* WHY: italic/normal is dynamic (kind === 'reason'), stays inline */
+
+/* ---------------------------------------------------------------------------
+ * Token usage panel
+ * --------------------------------------------------------------------------- */
+
+.ad-token-panel {
+  margin-bottom: 14px;
+  padding: 8px;
+  background: var(--p-bg-sky);
+  border: 1.5px solid var(--p-border);
+  font-size: 10px;
+  font-family: ui-monospace, monospace;
+}
+
+.ad-token-row {
+  display: flex;
+  gap: 8px;
+}
+
+.ad-token-empty {
+  color: var(--p-text-muted);
+}
+
+/* ---------------------------------------------------------------------------
+ * Dispatch history section
+ * --------------------------------------------------------------------------- */
+
+.ad-dispatch-history {
+  margin-top: 14px;
+}
+
+.ad-dispatch-entry {
+  display: flex;
+  gap: 8px;
+  font-size: 10px;
+  padding: 3px 0;
+  font-family: ui-monospace, monospace;
+  border-bottom: 1px solid var(--p-tint);
+}
+
+.ad-dispatch-entry__time {
+  color: var(--p-text-muted);
+  min-width: 40px;
+}
+
+.ad-dispatch-entry__type {
+  flex: 1;
+}
+
+/* WHY: status color (success/error/muted) is dynamic, stays inline */
+
+.ad-dispatch-empty {
+  font-size: 10px;
+  color: var(--p-text-muted);
+  font-style: italic;
+}
+
+.ad-dispatch__section-label {
+  margin-bottom: 4px;
+  font-size: 9px;
+}
+
+/* ---------------------------------------------------------------------------
+ * Actions row (bottom buttons)
+ * --------------------------------------------------------------------------- */
+
+.ad-actions {
+  margin-top: 14px;
+  display: flex;
+  gap: 6px;
+}
+
+.ad-actions__btn {
+  flex: 1;
+}
+
+/* ===========================================================================
+ * AgentDetailNotes — .adn-* namespace
+ * =========================================================================== */
+
+.adn-section {
+  margin-top: 14px;
+}
+
+.adn-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.adn-header__label {
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  color: var(--p-text-muted);
+  text-transform: uppercase;
+}
+
+.adn-add-btn {
+  all: unset;
+  cursor: pointer;
+  font-size: 9px;
+  padding: 1px 5px;
+  background: var(--p-tint);
+  border: 1px solid var(--p-border);
+  color: var(--p-text);
+  font-family: ui-monospace, monospace;
+}
+
+/* ---------------------------------------------------------------------------
+ * Inline add form
+ * --------------------------------------------------------------------------- */
+
+.adn-form {
+  margin-bottom: 6px;
+}
+
+.adn-textarea {
+  width: 100%;
+  font-size: 10px;
+  font-family: ui-monospace, monospace;
+  background: var(--p-tint);
+  border: 1px solid var(--p-border);
+  color: var(--p-text);
+  padding: 4px;
+  box-sizing: border-box;
+  resize: vertical;
+}
+
+.adn-form-actions {
+  display: flex;
+  gap: 4px;
+  margin-top: 3px;
+}
+
+.adn-save-btn {
+  all: unset;
+  cursor: pointer;
+  font-size: 9px;
+  padding: 2px 6px;
+  background: var(--p-accent);
+  border: 1px solid var(--p-border);
+  color: white;
+  font-family: ui-monospace, monospace;
+  font-weight: 700;
+}
+
+.adn-cancel-btn {
+  all: unset;
+  cursor: pointer;
+  font-size: 9px;
+  padding: 2px 6px;
+  background: transparent;
+  border: 1px solid var(--p-border);
+  color: var(--p-text);
+  font-family: ui-monospace, monospace;
+}
+
+/* ---------------------------------------------------------------------------
+ * Notes list
+ * --------------------------------------------------------------------------- */
+
+.adn-loading {
+  font-size: 9px;
+  color: var(--p-text-muted);
+}
+
+.adn-note-item {
+  display: flex;
+  gap: 4px;
+  align-items: flex-start;
+  padding: 3px 0;
+  border-bottom: 1px solid var(--p-tint);
+}
+
+.adn-note-item__text {
+  flex: 1;
+  font-size: 10px;
+  color: var(--p-text);
+  word-break: break-word;
+}
+
+.adn-note-item__delete {
+  all: unset;
+  cursor: pointer;
+  font-size: 8px;
+  padding: 0 3px;
+  color: var(--p-text-muted);
+  flex-shrink: 0;
+}

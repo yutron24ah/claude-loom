@@ -1,0 +1,577 @@
+/* ===========================================================================
+ * worktree.css — Worktree + Subroom screen styles (M0.17 Round 2 Phase B mass-production)
+ * Owns: .wt-* classes for views/worktree/WorktreeView.tsx
+ *       and .sr-* classes for views/worktree/SubroomView.tsx
+ *
+ * Note: Both components use .rpg-frame .pixel on their root divs.
+ * These classes add layout + section content styles.
+ *
+ * Tokens consumed: --p-paper, --p-tint, --p-border, --p-text, --p-text-muted,
+ *   --p-accent, --p-success, --p-error, --p-warn, --p-stone
+ * =========================================================================== */
+
+/* ===========================================================================
+ * WorktreeView — .wt-* namespace
+ * =========================================================================== */
+
+/* ---------------------------------------------------------------------------
+ * Root container (rpg-frame pixel applies on root; padding stays inline)
+ * --------------------------------------------------------------------------- */
+
+/* ---------------------------------------------------------------------------
+ * Header row
+ * --------------------------------------------------------------------------- */
+
+.wt-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+/* ---------------------------------------------------------------------------
+ * Branch graph panel
+ * --------------------------------------------------------------------------- */
+
+.wt-graph {
+  background: var(--p-paper);
+  border: 2px solid var(--p-border);
+  padding: 10px;
+  margin-bottom: 14px;
+}
+
+.wt-graph__label {
+  font-size: 9px;
+  color: var(--p-text-muted);
+  letter-spacing: 0.06em;
+  margin-bottom: 6px;
+}
+
+.wt-graph__tree {
+  position: relative;
+  padding-left: 80px;
+  font-family: ui-monospace, monospace;
+  font-size: 10px;
+}
+
+/* Main vertical branch line — WHY: color (--p-accent) is static */
+.wt-graph__main-line {
+  position: absolute;
+  left: 8px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--p-accent);
+}
+
+/* Branch row */
+.wt-graph__branch-row {
+  position: relative;
+  padding: 4px 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* WHY: dot background is dynamic (USE_COLOR[w.use]), stays inline */
+.wt-graph__branch-dot {
+  position: absolute;
+  left: -76px;
+  width: 16px;
+  height: 16px;
+  top: 50%;
+  margin-top: -8px;
+  border: 2px solid var(--p-border);
+}
+
+/* Horizontal connector for non-main branches */
+.wt-graph__branch-connector {
+  position: absolute;
+  left: -60px;
+  top: 50%;
+  width: 50px;
+  height: 2px;
+  background: var(--p-border);
+}
+
+.wt-graph__branch-name {
+  font-weight: 700;
+}
+
+.wt-graph__branch-commit {
+  color: var(--p-text-muted);
+}
+
+/* ---------------------------------------------------------------------------
+ * Worktree table
+ * --------------------------------------------------------------------------- */
+
+.wt-table {
+  background: var(--p-paper);
+  border: 2px solid var(--p-border);
+}
+
+/* Table header */
+.wt-table__header {
+  display: grid;
+  grid-template-columns: 1.4fr 80px 1fr 1.2fr 80px 80px;
+  font-size: 9px;
+  color: var(--p-text-muted);
+  letter-spacing: 0.06em;
+  padding: 6px 10px;
+  border-bottom: 2px solid var(--p-border);
+  background: var(--p-tint);
+}
+
+.wt-table__header-disk {
+  text-align: right;
+}
+
+.wt-table__header-actions {
+  text-align: right;
+}
+
+/* Table row */
+.wt-table__row {
+  display: grid;
+  grid-template-columns: 1.4fr 80px 1fr 1.2fr 80px 80px;
+  align-items: center;
+  padding: 8px 10px;
+  border-bottom: 1px dashed var(--p-border);
+  font-size: 10px;
+  gap: 6px;
+}
+
+/* BRANCH/PATH column */
+.wt-table__branch-cell {
+  min-width: 0;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+/* WHY: status indicator background is dynamic (ST_COLOR[w.status] or warn for locked), stays inline */
+.wt-table__status-dot {
+  width: 7px;
+  height: 7px;
+  border: 1px solid var(--p-border);
+  flex-shrink: 0;
+}
+
+.wt-table__branch-info {
+  min-width: 0;
+}
+
+.wt-table__branch-name-row {
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* WHY: locked badge uses static warn color — can be a class */
+.wt-table__lock-badge {
+  font-size: 8px;
+  font-weight: 700;
+  padding: 1px 4px;
+  background: var(--p-warn);
+  color: white;
+  border: 1px solid var(--p-border);
+  margin-left: 4px;
+}
+
+.wt-table__branch-path {
+  font-size: 8px;
+  color: var(--p-text-muted);
+  font-family: ui-monospace, monospace;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* WHY: use badge bg is dynamic (USE_COLOR[w.use]), stays inline on the chip element */
+.wt-table__use-badge {
+  font-size: 8px;
+  font-weight: 700;
+  padding: 1px 5px;
+  color: white;
+  border: 1.5px solid var(--p-border);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  width: fit-content;
+}
+
+/* PARENT AGENT column */
+.wt-table__agent-cell {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+}
+
+/* LAST COMMIT column */
+.wt-table__commit {
+  font-size: 9px;
+  font-family: ui-monospace, monospace;
+  color: var(--p-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* DISK column */
+.wt-table__disk {
+  font-size: 9px;
+  font-family: ui-monospace, monospace;
+  text-align: right;
+  color: var(--p-text-muted);
+}
+
+/* ACTIONS column */
+.wt-table__actions {
+  display: flex;
+  gap: 3px;
+  justify-content: flex-end;
+}
+
+/* WHY: destroy button uses error color — kept inline for single occurrence */
+.wt-table__action-btn {
+  font-size: 10px;
+  padding: 1px 4px;
+}
+
+/* ---------------------------------------------------------------------------
+ * Legend
+ * --------------------------------------------------------------------------- */
+
+.wt-legend {
+  margin-top: 10px;
+  padding: 8px 10px;
+  font-size: 9px;
+  color: var(--p-text-muted);
+  background: var(--p-paper);
+  border: 2px dashed var(--p-border);
+  line-height: 1.6;
+}
+
+/* ===========================================================================
+ * SubroomView — .sr-* namespace
+ * =========================================================================== */
+
+/* ---------------------------------------------------------------------------
+ * Root container
+ * WHY: width is dynamic (passed as prop), stays inline
+ * --------------------------------------------------------------------------- */
+
+.sr-root {
+  padding: 0;
+  font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+}
+
+/* ---------------------------------------------------------------------------
+ * Header strip — branch + clone identity
+ * WHY: background (--p-accent) is static, but it's the identity color of the component
+ * --------------------------------------------------------------------------- */
+
+.sr-header {
+  background: var(--p-accent);
+  color: white;
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 3px solid var(--p-border);
+}
+
+.sr-header__left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.sr-header__cat-wrap {
+  filter: drop-shadow(0 0 0 2px white);
+}
+
+.sr-header__subtitle {
+  font-size: 9px;
+  opacity: 0.85;
+  letter-spacing: 0.06em;
+}
+
+.sr-header__branch {
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.sr-header__status-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* WHY: status dot bg (statusColor) is dynamic, stays inline */
+/* WHY: animation (busy → pulse, else none) is dynamic, stays inline */
+.sr-header__status-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border: 2px solid white;
+}
+
+.sr-header__status-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* ---------------------------------------------------------------------------
+ * Body grid (2 columns)
+ * --------------------------------------------------------------------------- */
+
+.sr-body {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 0;
+}
+
+/* ---------------------------------------------------------------------------
+ * Left column
+ * --------------------------------------------------------------------------- */
+
+.sr-left {
+  padding: 16px;
+  border-right: 2px dashed var(--p-border);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Section label (NOW / ACTIVITY) */
+.sr-section-label {
+  font-size: 9px;
+  color: var(--p-text-muted);
+  letter-spacing: 0.06em;
+  margin-bottom: 4px;
+}
+
+/* NOW section */
+.sr-now__task {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--p-text);
+  line-height: 1.4;
+}
+
+.sr-now__badges {
+  margin-top: 6px;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+/* TDD badge — static warn bg */
+.sr-now__tdd-badge {
+  font-size: 9px;
+  font-weight: 700;
+  padding: 2px 6px;
+  background: var(--p-warn);
+  color: white;
+  border: 2px solid var(--p-border);
+}
+
+.sr-now__tdd-detail {
+  font-size: 10px;
+  color: var(--p-text-muted);
+}
+
+/* Path/disk info panel */
+.sr-path-panel {
+  background: var(--p-tint);
+  border: 2px solid var(--p-border);
+  padding: 8px 10px;
+}
+
+.sr-path-panel__label {
+  font-size: 9px;
+  color: var(--p-text-muted);
+  letter-spacing: 0.04em;
+  margin-bottom: 3px;
+}
+
+.sr-path-panel__path {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--p-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sr-path-panel__disk {
+  margin-top: 4px;
+  font-size: 10px;
+  display: flex;
+  gap: 10px;
+}
+
+.sr-path-panel__disk-label {
+  color: var(--p-text-muted);
+}
+
+/* Activity section */
+.sr-activity-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sr-activity-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  font-size: 11px;
+}
+
+.sr-activity-row__ts {
+  font-size: 9px;
+  color: var(--p-text-muted);
+  width: 36px;
+  flex-shrink: 0;
+}
+
+/* WHY: kind badge bg is dynamic (KIND_BG[a.k]), stays inline */
+.sr-activity-row__kind {
+  font-size: 8px;
+  font-weight: 700;
+  padding: 1px 5px;
+  color: white;
+  border: 1.5px solid var(--p-border);
+  width: 50px;
+  text-align: center;
+  flex-shrink: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.sr-activity-row__msg {
+  flex: 1;
+  color: var(--p-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sr-activity-empty {
+  font-size: 10px;
+  color: var(--p-text-muted);
+}
+
+/* ---------------------------------------------------------------------------
+ * Right column
+ * --------------------------------------------------------------------------- */
+
+.sr-right {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* THIS BRANCH mini gantt */
+.sr-gantt__label {
+  font-size: 9px;
+  color: var(--p-text-muted);
+  letter-spacing: 0.06em;
+  margin-bottom: 6px;
+}
+
+.sr-gantt__bars {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.sr-gantt__bar-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.sr-gantt__bar-label {
+  font-size: 8px;
+  color: var(--p-text-muted);
+  width: 60px;
+  flex-shrink: 0;
+  text-align: right;
+}
+
+.sr-gantt__bar-track {
+  flex: 1;
+  height: 10px;
+  background: var(--p-tint);
+  border: 1px solid var(--p-border);
+  position: relative;
+}
+
+/* WHY: bar fill left/width/bg/backgroundImage are all dynamic, stay inline */
+
+/* current-time marker at 95% */
+.sr-gantt__now-line {
+  position: absolute;
+  left: 95%;
+  top: -1px;
+  bottom: -1px;
+  width: 1px;
+  background: var(--p-error);
+}
+
+/* PARENT meta panel */
+.sr-parent-panel {
+  background: var(--p-tint);
+  border: 2px solid var(--p-border);
+  padding: 8px 10px;
+}
+
+.sr-parent-panel__label {
+  font-size: 9px;
+  color: var(--p-text-muted);
+  letter-spacing: 0.04em;
+  margin-bottom: 3px;
+}
+
+.sr-parent-panel__name {
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.sr-parent-panel__suffix {
+  font-weight: 400;
+  color: var(--p-text-muted);
+  font-size: 10px;
+}
+
+.sr-parent-panel__desc {
+  margin-top: 6px;
+  font-size: 10px;
+  color: var(--p-text-muted);
+  line-height: 1.4;
+}
+
+/* worktree path footer */
+.sr-path-footer {
+  font-size: 9px;
+  color: var(--p-text-muted);
+  line-height: 1.4;
+  padding-top: 4px;
+  border-top: 1px dashed var(--p-border);
+}
+
+.sr-path-footer__value {
+  font-weight: 700;
+  color: var(--p-text);
+}

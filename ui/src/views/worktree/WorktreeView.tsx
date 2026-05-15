@@ -17,6 +17,7 @@ import type { WorktreeUse, WorktreeStatus } from '@claude-loom/redesign/api/type
 import { CatSprite } from '../../components/CatSprite';
 import { ROSTER } from '../../data/roster';
 import { useWorktreeMutations } from '../../live/useWorktreeMutations';
+import '../../styles/screens/worktree.css';
 
 // -------------------------------------------------------------------------
 // Design-source color maps (mirrors redesign/screens/worktree.jsx USE_COLOR / ST_COLOR)
@@ -54,14 +55,7 @@ export function WorktreeView(): JSX.Element {
       style={{ padding: 16 }}
     >
       {/* Header */}
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 10,
-          marginBottom: 12,
-        }}
-      >
+      <div className="wt-header">
         <div
           data-testid="worktree-title"
           className="rpg-title"
@@ -73,86 +67,33 @@ export function WorktreeView(): JSX.Element {
       </div>
 
       {/* Branch graph (simplified) */}
-      <div
-        style={{
-          background: 'var(--p-paper)',
-          border: '2px solid var(--p-border)',
-          padding: 10,
-          marginBottom: 14,
-        }}
-      >
-        <div
-          style={{
-            fontSize: 9,
-            color: 'var(--p-text-muted)',
-            letterSpacing: '0.06em',
-            marginBottom: 6,
-          }}
-        >
+      <div className="wt-graph">
+        <div className="wt-graph__label">
           BRANCH GRAPH (relative to main)
         </div>
-        <div
-          style={{
-            position: 'relative',
-            paddingLeft: 80,
-            fontFamily: 'ui-monospace, monospace',
-            fontSize: 10,
-          }}
-        >
-          <div
-            style={{
-              position: 'absolute',
-              left: 8,
-              top: 0,
-              bottom: 0,
-              width: 2,
-              background: 'var(--p-accent)',
-            }}
-          />
+        <div className="wt-graph__tree">
+          <div className="wt-graph__main-line" />
           {worktrees.map((w) => {
             const isMain = w.branch === 'main';
             return (
               <div
                 key={w.branch}
-                style={{
-                  position: 'relative',
-                  padding: '4px 0',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 6,
-                }}
+                className="wt-graph__branch-row"
               >
                 <span
-                  style={{
-                    position: 'absolute',
-                    left: -76,
-                    width: 16,
-                    height: 16,
-                    top: '50%',
-                    marginTop: -8,
-                    background: USE_COLOR[w.use] ?? 'var(--p-stone)',
-                    border: '2px solid var(--p-border)',
-                  }}
+                  className="wt-graph__branch-dot"
+                  style={{ background: USE_COLOR[w.use] ?? 'var(--p-stone)' }}
                 />
                 {!isMain && (
-                  <span
-                    style={{
-                      position: 'absolute',
-                      left: -60,
-                      top: '50%',
-                      width: 50,
-                      height: 2,
-                      background: 'var(--p-border)',
-                    }}
-                  />
+                  <span className="wt-graph__branch-connector" />
                 )}
                 <span
                   data-testid="worktree-branch"
-                  style={{ fontWeight: 700 }}
+                  className="wt-graph__branch-name"
                 >
                   {w.branch}
                 </span>
-                <span style={{ color: 'var(--p-text-muted)' }}>
+                <span className="wt-graph__branch-commit">
                   · {w.lastCommit}
                 </span>
               </div>
@@ -162,31 +103,15 @@ export function WorktreeView(): JSX.Element {
       </div>
 
       {/* Table */}
-      <div
-        style={{
-          background: 'var(--p-paper)',
-          border: '2px solid var(--p-border)',
-        }}
-      >
+      <div className="wt-table">
         {/* Table header */}
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: '1.4fr 80px 1fr 1.2fr 80px 80px',
-            fontSize: 9,
-            color: 'var(--p-text-muted)',
-            letterSpacing: '0.06em',
-            padding: '6px 10px',
-            borderBottom: '2px solid var(--p-border)',
-            background: 'var(--p-tint)',
-          }}
-        >
+        <div className="wt-table__header">
           <span>BRANCH / PATH</span>
           <span>USE</span>
           <span>PARENT AGENT</span>
           <span>LAST COMMIT</span>
-          <span style={{ textAlign: 'right' }}>DISK</span>
-          <span style={{ textAlign: 'right' }}>ACTIONS</span>
+          <span className="wt-table__header-disk">DISK</span>
+          <span className="wt-table__header-actions">ACTIONS</span>
         </div>
 
         {/* Table rows */}
@@ -196,89 +121,34 @@ export function WorktreeView(): JSX.Element {
             <div
               key={w.branch}
               data-testid="worktree-item"
-              style={{
-                display: 'grid',
-                gridTemplateColumns: '1.4fr 80px 1fr 1.2fr 80px 80px',
-                alignItems: 'center',
-                padding: '8px 10px',
-                borderBottom: '1px dashed var(--p-border)',
-                fontSize: 10,
-                gap: 6,
-              }}
+              className="wt-table__row"
             >
               {/* BRANCH / PATH column */}
-              <div
-                style={{
-                  minWidth: 0,
-                  display: 'flex',
-                  gap: 6,
-                  alignItems: 'center',
-                }}
-              >
+              <div className="wt-table__branch-cell">
                 {/* WHY: worktree.test.tsx legacy tests check worktree-status-active / worktree-status-locked */}
                 {w.locked ? (
                   <span
                     data-testid="worktree-status-locked"
-                    style={{
-                      width: 7,
-                      height: 7,
-                      background: 'var(--p-warn)',
-                      border: '1px solid var(--p-border)',
-                      flexShrink: 0,
-                    }}
+                    className="wt-table__status-dot"
+                    style={{ background: 'var(--p-warn)' }}
                   />
                 ) : (
                   <span
                     data-testid="worktree-status-active"
-                    style={{
-                      width: 7,
-                      height: 7,
-                      background: ST_COLOR[w.status] ?? 'var(--p-stone)',
-                      border: '1px solid var(--p-border)',
-                      flexShrink: 0,
-                    }}
+                    className="wt-table__status-dot"
+                    style={{ background: ST_COLOR[w.status] ?? 'var(--p-stone)' }}
                   />
                 )}
-                <div style={{ minWidth: 0 }}>
-                  <div
-                    style={{
-                      fontWeight: 700,
-                      whiteSpace: 'nowrap',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 4,
-                    }}
-                  >
+                <div className="wt-table__branch-info">
+                  <div className="wt-table__branch-name-row">
                     {w.branch}
                     {w.locked && (
-                      <span
-                        data-testid="worktree-locked-badge"
-                        style={{
-                          fontSize: 8,
-                          fontWeight: 700,
-                          padding: '1px 4px',
-                          background: 'var(--p-warn)',
-                          color: 'white',
-                          border: '1px solid var(--p-border)',
-                          marginLeft: 4,
-                        }}
-                      >
+                      <span data-testid="worktree-locked-badge" className="wt-table__lock-badge">
                         LOCK
                       </span>
                     )}
                   </div>
-                  <div
-                    style={{
-                      fontSize: 8,
-                      color: 'var(--p-text-muted)',
-                      fontFamily: 'ui-monospace, monospace',
-                      whiteSpace: 'nowrap',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                    }}
-                  >
+                  <div className="wt-table__branch-path">
                     {w.path}
                   </div>
                 </div>
@@ -286,24 +156,14 @@ export function WorktreeView(): JSX.Element {
 
               {/* USE column */}
               <span
-                className="chip"
-                style={{
-                  fontSize: 8,
-                  fontWeight: 700,
-                  padding: '1px 5px',
-                  background: USE_COLOR[w.use] ?? 'var(--p-stone)',
-                  color: 'white',
-                  border: '1.5px solid var(--p-border)',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.04em',
-                  width: 'fit-content',
-                }}
+                className="chip wt-table__use-badge"
+                style={{ background: USE_COLOR[w.use] ?? 'var(--p-stone)' }}
               >
                 {w.use}
               </span>
 
               {/* PARENT AGENT column */}
-              <div style={{ display: 'flex', gap: 5, alignItems: 'center' }}>
+              <div className="wt-table__agent-cell">
                 {agent && (
                   <CatSprite
                     size={18}
@@ -319,37 +179,20 @@ export function WorktreeView(): JSX.Element {
               </div>
 
               {/* LAST COMMIT column */}
-              <span
-                style={{
-                  fontSize: 9,
-                  fontFamily: 'ui-monospace, monospace',
-                  color: 'var(--p-text-muted)',
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                }}
-              >
+              <span className="wt-table__commit">
                 {w.lastCommit}
               </span>
 
               {/* DISK column */}
-              <span
-                style={{
-                  fontSize: 9,
-                  fontFamily: 'ui-monospace, monospace',
-                  textAlign: 'right',
-                  color: 'var(--p-text-muted)',
-                }}
-              >
+              <span className="wt-table__disk">
                 {w.diskMB} MB
               </span>
 
               {/* ACTIONS column — wired to useWorktreeMutations (M0.15 t16) */}
-              <div style={{ display: 'flex', gap: 3, justifyContent: 'flex-end' }}>
+              <div className="wt-table__actions">
                 <button
-                  className="btn-px ghost"
+                  className="btn-px ghost wt-table__action-btn"
                   title={w.locked ? 'unlock' : 'lock'}
-                  style={{ fontSize: 10, padding: '1px 4px' }}
                   onClick={() => {
                     if (w.locked) {
                       unlockWorktree({ path: w.path, branch: w.branch });
@@ -361,9 +204,9 @@ export function WorktreeView(): JSX.Element {
                   {w.locked ? '🔓' : '🔒'}
                 </button>
                 <button
-                  className="btn-px ghost"
+                  className="btn-px ghost wt-table__action-btn"
                   title="destroy"
-                  style={{ fontSize: 10, padding: '1px 4px', color: 'var(--p-error)' }}
+                  style={{ color: 'var(--p-error)' }}
                   onClick={() => destroyWorktree({ path: w.path })}
                 >
                   ✕
@@ -375,17 +218,7 @@ export function WorktreeView(): JSX.Element {
       </div>
 
       {/* Legend */}
-      <div
-        style={{
-          marginTop: 10,
-          padding: '8px 10px',
-          fontSize: 9,
-          color: 'var(--p-text-muted)',
-          background: 'var(--p-paper)',
-          border: '2px dashed var(--p-border)',
-          lineHeight: 1.6,
-        }}
-      >
+      <div className="wt-legend">
         ◆ <strong>USE</strong>: primary (本番), parallel (並列開発), experiment
         (実験), hotfix (緊急修正)
         <br />

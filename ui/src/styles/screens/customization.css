@@ -1,0 +1,255 @@
+/* ===========================================================================
+ * customization.css — Customization screen styles (M0.17 Round 2 Phase B mass-production)
+ * Owns: .cust-* classes for views/customization/CustomizationView.tsx
+ *
+ * Tokens consumed: --p-bg-sky, --p-paper, --p-tint, --p-border,
+ *   --p-text, --p-text-muted, --p-accent, --p-accent-soft, --p-warn
+ * =========================================================================== */
+
+/* ---------------------------------------------------------------------------
+ * Root container — full-bleed absolute, scrollable
+ * --------------------------------------------------------------------------- */
+
+.cust-screen {
+  position: absolute;
+  inset: 0;
+  padding: 16px;
+  overflow: auto;
+  background: var(--p-bg-sky);
+}
+
+/* ---------------------------------------------------------------------------
+ * Header row
+ * --------------------------------------------------------------------------- */
+
+.cust-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.cust-header__title {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.cust-header__spacer {
+  flex: 1;
+}
+
+.cust-header__unsaved {
+  font-size: 9px;
+  color: var(--p-warn);
+  font-weight: 700;
+}
+
+/* WHY: btn-px ghost/primary class applied to the save/cancel buttons themselves */
+.cust-header__btn {
+  font-size: 9px;
+  padding: 3px 8px;
+}
+
+/* ---------------------------------------------------------------------------
+ * 2-column layout grid (left: table, right: scope chain)
+ * --------------------------------------------------------------------------- */
+
+.cust-layout {
+  display: grid;
+  grid-template-columns: 1fr 280px;
+  gap: 14px;
+  align-items: flex-start;
+}
+
+/* ---------------------------------------------------------------------------
+ * Agent table (left column)
+ * --------------------------------------------------------------------------- */
+
+.cust-table {
+  background: var(--p-paper);
+  border: 2px solid var(--p-border);
+}
+
+/* Table header row (column labels) */
+.cust-table__header {
+  display: grid;
+  grid-template-columns: 200px 1fr 1.4fr 60px;
+  font-size: 9px;
+  color: var(--p-text-muted);
+  letter-spacing: 0.06em;
+  padding: 6px 10px;
+  border-bottom: 2px solid var(--p-border);
+  background: var(--p-tint);
+}
+
+.cust-table__header-chain {
+  text-align: right;
+}
+
+/* ---------------------------------------------------------------------------
+ * Agent row — data row in the table
+ * WHY: isOpen background is dynamic, stays inline
+ * --------------------------------------------------------------------------- */
+
+.cust-agent-row {
+  display: grid;
+  grid-template-columns: 200px 1fr 1.4fr 60px;
+  align-items: center;
+  padding: 6px 10px;
+  border-bottom: 1px dashed var(--p-border);
+}
+
+/* Agent identity cell */
+.cust-agent-row__identity {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.cust-agent-row__name {
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cust-agent-row__id {
+  font-size: 8px;
+  color: var(--p-text-muted);
+  font-family: ui-monospace, monospace;
+}
+
+/* Model selector cell */
+.cust-model-selector {
+  display: flex;
+  gap: 3px;
+}
+
+/* WHY: model button bg/color are dynamic (active model vs tint), stays inline */
+.cust-model-btn {
+  all: unset;
+  cursor: pointer;
+  padding: 2px 8px;
+  font-size: 9px;
+  font-weight: 700;
+  border: 1.5px solid var(--p-border);
+}
+
+/* Preset selector cell */
+.cust-preset-selector {
+  display: flex;
+  gap: 3px;
+  flex-wrap: wrap;
+}
+
+/* WHY: preset button bg/color are dynamic (active preset vs tint), stays inline */
+.cust-preset-btn {
+  all: unset;
+  cursor: pointer;
+  padding: 2px 6px;
+  font-size: 9px;
+  border: 1.5px solid var(--p-border);
+}
+
+/* Chain expand button */
+/* WHY: chain expand color is dynamic (overridden → warn, else muted), stays inline */
+.cust-chain-btn {
+  all: unset;
+  cursor: pointer;
+  text-align: right;
+  font-size: 9px;
+  font-weight: 700;
+}
+
+/* ---------------------------------------------------------------------------
+ * Chain detail panel (right column)
+ * --------------------------------------------------------------------------- */
+
+.cust-chain-panel {
+  background: var(--p-paper);
+  border: 2px solid var(--p-border);
+  padding: 10px;
+  position: sticky;
+  top: 16px;
+}
+
+.cust-chain-panel__label {
+  font-size: 9px;
+  color: var(--p-text-muted);
+  letter-spacing: 0.06em;
+  margin-bottom: 8px;
+}
+
+.cust-chain-panel__hint {
+  font-size: 10px;
+  color: var(--p-text-muted);
+  line-height: 1.5;
+}
+
+.cust-chain-panel__agent-name {
+  font-size: 11px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+/* Chain step (relative positioned container for dot + line) */
+.cust-chain-step {
+  position: relative;
+  padding-left: 14px;
+  padding-bottom: 12px;
+}
+
+.cust-chain-step--last {
+  padding-bottom: 0;
+}
+
+/* WHY: dot background is dynamic (scopeColor(step.scope)), stays inline */
+.cust-chain-step__dot {
+  position: absolute;
+  left: 0;
+  top: 4px;
+  width: 8px;
+  height: 8px;
+  border: 1.5px solid var(--p-border);
+}
+
+.cust-chain-step__line {
+  position: absolute;
+  left: 3px;
+  top: 14px;
+  bottom: 0;
+  width: 2px;
+  background: var(--p-border);
+}
+
+/* WHY: scope tag color is dynamic (scopeColor), stays inline */
+.cust-chain-step__scope-tag {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+
+.cust-chain-step__values {
+  font-size: 10px;
+  color: var(--p-text);
+  margin-top: 2px;
+}
+
+.cust-chain-step__note {
+  font-size: 9px;
+  font-style: italic;
+  color: var(--p-text-muted);
+  margin-top: 2px;
+}
+
+/* Footer info box */
+.cust-chain-panel__footer {
+  margin-top: 10px;
+  padding: 6px;
+  font-size: 9px;
+  color: var(--p-text-muted);
+  background: var(--p-tint);
+  border: 1px dashed var(--p-border);
+  line-height: 1.5;
+}

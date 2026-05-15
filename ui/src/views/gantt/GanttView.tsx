@@ -24,6 +24,7 @@ import { useScenario } from '@claude-loom/redesign/api/websocket';
 import type { GanttBar, GanttBarKind, GanttRow } from '@claude-loom/redesign/api/types';
 import { CatSprite } from '../../components/CatSprite';
 import { ROSTER } from '../../data/roster';
+import '../../styles/screens/gantt.css';
 
 // ---------------------------------------------------------------------------
 // Kind → CSS color map
@@ -46,24 +47,11 @@ function GanttBarSegment({ bar }: { bar: GanttBar }): JSX.Element {
     <div
       data-kind={bar.kind}
       title={bar.kind}
+      className="gantt-bar-segment"
       style={{
-        position: 'absolute',
         left: `${bar.s}%`,
         width: `${bar.e - bar.s}%`,
-        top: 4,
-        bottom: 4,
         background: KIND_COLOR[bar.kind] ?? 'var(--p-stone)',
-        border: '1px solid var(--p-border)',
-        backgroundImage:
-          'repeating-linear-gradient(45deg, rgba(255,255,255,0.18) 0 3px, transparent 3px 6px)',
-        display: 'flex',
-        alignItems: 'center',
-        paddingLeft: 4,
-        fontSize: 8,
-        color: 'white',
-        fontWeight: 700,
-        overflow: 'hidden',
-        whiteSpace: 'nowrap',
       }}
     >
       {bar.kind}
@@ -90,24 +78,10 @@ function GanttAgentRow({
   return (
     <div
       data-testid="gantt-row"
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        height: 36,
-        borderTop: '1px dashed var(--p-border)',
-      }}
+      className="gantt-agent-row"
     >
       {/* Label column */}
-      <div
-        style={{
-          width: 200,
-          display: 'flex',
-          alignItems: 'center',
-          gap: 6,
-          padding: '0 10px',
-          flexShrink: 0,
-        }}
-      >
+      <div className="gantt-agent-row__label">
         {agent && (
           <CatSprite
             size={22}
@@ -117,48 +91,24 @@ function GanttAgentRow({
             pose="sit"
           />
         )}
-        <div style={{ minWidth: 0 }}>
-          <div style={{ fontSize: 10, fontWeight: 700 }}>
+        <div>
+          <div className="gantt-agent-row__name">
             {agent?.name ?? row.agentId}
           </div>
-          <div
-            style={{
-              fontSize: 8,
-              color: 'var(--p-text-muted)',
-              whiteSpace: 'nowrap',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-            }}
-          >
+          <div className="gantt-agent-row__role">
             {row.label}
           </div>
         </div>
       </div>
 
       {/* Bar track */}
-      <div
-        style={{
-          position: 'relative',
-          flex: 1,
-          height: 24,
-          background: 'var(--p-tint)',
-          border: '1px solid var(--p-border)',
-          marginRight: 16,
-        }}
-      >
+      <div className="gantt-bar-track">
         {/* Quarter grid guides */}
         {[25, 50, 75].map((p) => (
           <div
             key={p}
-            style={{
-              position: 'absolute',
-              left: `${p}%`,
-              top: 0,
-              bottom: 0,
-              width: 1,
-              background: 'var(--p-border)',
-              opacity: 0.3,
-            }}
+            className="gantt-bar-track__guide"
+            style={{ left: `${p}%` }}
           />
         ))}
 
@@ -171,11 +121,8 @@ function GanttAgentRow({
         {row.live && (
           <span
             data-testid="gantt-live-cat"
-            style={{
-              position: 'absolute',
-              right: `${100 - nowPct}%`,
-              top: -4,
-            }}
+            className="gantt-live-cat"
+            style={{ right: `${100 - nowPct}%` }}
           >
             <CatSprite
               size={22}
@@ -189,14 +136,8 @@ function GanttAgentRow({
         {/* Now-line (vertical red line at nowPct) */}
         <div
           data-testid="gantt-now-line"
-          style={{
-            position: 'absolute',
-            left: `${nowPct}%`,
-            top: -2,
-            bottom: -2,
-            width: 2,
-            background: 'var(--p-error)',
-          }}
+          className="gantt-now-line"
+          style={{ left: `${nowPct}%` }}
         />
       </div>
     </div>
@@ -225,41 +166,21 @@ function WorktreeGroup({
   const isLive = rows.some((r) => r.live);
 
   return (
-    <div
-      style={{
-        marginBottom: 8,
-        border: '2px solid var(--p-border)',
-        background: 'var(--p-paper)',
-      }}
-    >
+    <div className="gantt-group">
       {/* Group header */}
       <div
         onClick={onToggle}
+        className="gantt-group__header"
         style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 8,
-          padding: '6px 10px',
-          background: 'var(--p-tint)',
           borderBottom: collapsed ? 'none' : '1px solid var(--p-border)',
-          cursor: 'pointer',
-          fontSize: 10,
-          fontWeight: 700,
-          fontFamily: 'ui-monospace, monospace',
         }}
       >
-        <span style={{ width: 10 }}>{collapsed ? '▸' : '▾'}</span>
+        <span className="gantt-group__chevron">{collapsed ? '▸' : '▾'}</span>
         <span>⌗ {worktree}</span>
-        <span style={{ color: 'var(--p-text-muted)', fontWeight: 400 }}>
+        <span className="gantt-group__subagent-count">
           ({rows.length} subagent{rows.length > 1 ? 's' : ''})
         </span>
-        <span
-          style={{
-            marginLeft: 'auto',
-            fontSize: 9,
-            color: 'var(--p-text-muted)',
-          }}
-        >
+        <span className="gantt-group__live-badge">
           {isLive ? '● LIVE' : '—'}
         </span>
       </div>
@@ -310,43 +231,24 @@ export function GanttView(): JSX.Element {
   return (
     <div
       data-testid="gantt-view"
-      style={{
-        position: 'absolute',
-        inset: 0,
-        padding: 16,
-        overflow: 'auto',
-        background: 'var(--p-bg-sky)',
-      }}
+      className="gantt-screen"
     >
       {/* Header: title + window label + zoom strip */}
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 10,
-          marginBottom: 12,
-        }}
-      >
-        <div style={{ fontSize: 14, fontWeight: 700 }}>
+      <div className="gantt-header">
+        <div className="gantt-header__title">
           ❖ GANTT — agent_history
         </div>
         <span className="chip">{gantt.windowLabel}</span>
-        <div style={{ flex: 1 }} />
-        <div style={{ display: 'flex', border: '2px solid var(--p-border)' }}>
+        <div className="gantt-header__spacer" />
+        <div className="gantt-header__zoom-strip">
           {(['30m', '1h', '4h', 'all'] as const).map((z) => (
             <button
               key={z}
               onClick={() => setZoom(z)}
+              className="gantt-zoom-btn"
               style={{
-                all: 'unset',
-                cursor: 'pointer',
-                padding: '3px 10px',
-                fontSize: 9,
-                fontWeight: 700,
-                background:
-                  z === zoom ? 'var(--p-accent)' : 'var(--p-tint)',
+                background: z === zoom ? 'var(--p-accent)' : 'var(--p-tint)',
                 color: z === zoom ? 'white' : 'var(--p-text)',
-                borderRight: '1px solid var(--p-border)',
               }}
             >
               {z}
@@ -356,15 +258,7 @@ export function GanttView(): JSX.Element {
       </div>
 
       {/* Time axis labels */}
-      <div
-        style={{
-          display: 'flex',
-          paddingLeft: 200,
-          marginBottom: 6,
-          fontSize: 9,
-          color: 'var(--p-text-muted)',
-        }}
-      >
+      <div className="gantt-time-axis">
         {['-30m', '-22m', '-15m', '-7m', 'now'].map((t, i, a) => (
           <div
             key={t}
@@ -391,17 +285,7 @@ export function GanttView(): JSX.Element {
       ))}
 
       {/* Legend */}
-      <div
-        style={{
-          marginTop: 12,
-          padding: '8px 12px',
-          fontSize: 9,
-          color: 'var(--p-text-muted)',
-          background: 'var(--p-paper)',
-          border: '2px dashed var(--p-border)',
-          lineHeight: 1.5,
-        }}
-      >
+      <div className="gantt-legend">
         ◆ <b>F-12 解決</b>: row = 1 subagent dispatch、worktree は折りたたみグループ。
         SPEC §3.6.5 の subagent-row 流儀に統一。
         <br />◆ live 中の dispatch には歩く猫 🐈 を bar の右端に重ねて、stream/poster

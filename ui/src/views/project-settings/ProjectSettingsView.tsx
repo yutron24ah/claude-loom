@@ -27,6 +27,7 @@ import React from 'react';
 import { useScenario } from '@claude-loom/redesign/api/websocket';
 import type { ProjectSettings } from '@claude-loom/redesign/api/types';
 import { useProjectSettingsMutation } from '../../live/useProjectSettingsMutation';
+import '../../styles/screens/project-settings.css';
 
 // WHY: Reviewer options mirror the canonical 3-reviewer set from redesign/screens/settings.jsx.
 // "all" shorthand and custom entries will be displayed as generic toggles.
@@ -44,30 +45,10 @@ interface RowProps {
 
 function Row({ label, hint, children }: RowProps): JSX.Element {
   return (
-    <div
-      style={{
-        display: 'grid',
-        gridTemplateColumns: '200px 1fr',
-        gap: 14,
-        alignItems: 'center',
-        padding: '10px 0',
-        borderBottom: '1px dashed var(--p-border)',
-      }}
-    >
+    <div className="ps-row">
       <div>
-        <div style={{ fontSize: 11, fontWeight: 700 }}>{label}</div>
-        {hint && (
-          <div
-            style={{
-              fontSize: 9,
-              color: 'var(--p-text-muted)',
-              marginTop: 2,
-              lineHeight: 1.4,
-            }}
-          >
-            {hint}
-          </div>
-        )}
+        <div className="ps-row__label">{label}</div>
+        {hint && <div className="ps-row__hint">{hint}</div>}
       </div>
       <div>{children}</div>
     </div>
@@ -87,15 +68,7 @@ function SettingsForm({ draft, setDraft }: SettingsFormProps): JSX.Element {
   // WHY: Generic deep-setter mirrors the path-based set() in redesign/screens/settings.jsx.
   // Using explicit field setters here keeps TypeScript types sound (no string indexing).
   return (
-    <div
-      style={{
-        maxWidth: 720,
-        background: 'var(--p-paper)',
-        border: '2px solid var(--p-border)',
-        padding: '0 16px',
-        boxShadow: '3px 3px 0 0 var(--p-shadow)',
-      }}
-    >
+    <div className="ps-form">
       {/* Daemon Port */}
       <Row label="Daemon Port" hint="loom daemon が listen する port。WS + REST 共用。">
         <input
@@ -106,14 +79,7 @@ function SettingsForm({ draft, setDraft }: SettingsFormProps): JSX.Element {
             setDraft((d) => ({ ...d, daemonPort: +e.target.value }))
           }
           // WHY: noop onClick per Phase 5 t16 write hookup deferral
-          style={{
-            width: 100,
-            padding: '4px 8px',
-            fontSize: 11,
-            border: '1.5px solid var(--p-border)',
-            background: 'var(--p-tint)',
-            fontFamily: 'ui-monospace, monospace',
-          }}
+          className="ps-input ps-input--number"
         />
       </Row>
 
@@ -126,31 +92,14 @@ function SettingsForm({ draft, setDraft }: SettingsFormProps): JSX.Element {
           onChange={(e) =>
             setDraft((d) => ({ ...d, worktreeBase: e.target.value }))
           }
-          style={{
-            width: '100%',
-            maxWidth: 360,
-            padding: '4px 8px',
-            fontSize: 11,
-            boxSizing: 'border-box',
-            border: '1.5px solid var(--p-border)',
-            background: 'var(--p-tint)',
-            fontFamily: 'ui-monospace, monospace',
-          }}
+          className="ps-input ps-input--text"
         />
       </Row>
 
       {/* Retro Schedule */}
       <Row label="Retro Schedule" hint="自動 retro の cron。enable=off で手動のみ。">
-        <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-          <label
-            style={{
-              display: 'inline-flex',
-              gap: 4,
-              alignItems: 'center',
-              fontSize: 10,
-              cursor: 'pointer',
-            }}
-          >
+        <div className="ps-retro-row">
+          <label className="ps-retro-label">
             <input
               type="checkbox"
               data-testid="setting-retroSchedule-enabled"
@@ -175,19 +124,12 @@ function SettingsForm({ draft, setDraft }: SettingsFormProps): JSX.Element {
                 retroSchedule: { ...d.retroSchedule, cron: e.target.value },
               }))
             }
-            style={{
-              width: 140,
-              padding: '4px 8px',
-              fontSize: 11,
-              opacity: draft.retroSchedule.enabled ? 1 : 0.4,
-              border: '1.5px solid var(--p-border)',
-              background: 'var(--p-tint)',
-              fontFamily: 'ui-monospace, monospace',
-            }}
+            className="ps-input ps-input--cron"
+            style={{ opacity: draft.retroSchedule.enabled ? 1 : 0.4 }}
           />
           <span
             data-testid="setting-retroSchedule-label"
-            style={{ fontSize: 9, color: 'var(--p-text-muted)' }}
+            className="ps-retro-cron-label"
           >
             {draft.retroSchedule.label}
           </span>
@@ -206,17 +148,7 @@ function SettingsForm({ draft, setDraft }: SettingsFormProps): JSX.Element {
               consistencyScope: e.target.value.split('\n').filter(Boolean),
             }))
           }
-          style={{
-            width: '100%',
-            maxWidth: 360,
-            padding: '6px 8px',
-            fontSize: 10,
-            boxSizing: 'border-box',
-            border: '1.5px solid var(--p-border)',
-            background: 'var(--p-tint)',
-            fontFamily: 'ui-monospace, monospace',
-            resize: 'vertical',
-          }}
+          className="ps-input ps-input--textarea"
         />
       </Row>
 
@@ -225,7 +157,7 @@ function SettingsForm({ draft, setDraft }: SettingsFormProps): JSX.Element {
         label="Hooks"
         hint="Claude Code hook の有効/無効。OFF にすると stream/gantt が止まる。"
       >
-        <div style={{ display: 'flex', gap: 12, fontSize: 10 }}>
+        <div className="ps-hooks-row">
           {(
             [
               ['preToolUse', 'PreToolUse'],
@@ -235,12 +167,7 @@ function SettingsForm({ draft, setDraft }: SettingsFormProps): JSX.Element {
           ).map(([k, l]) => (
             <label
               key={k}
-              style={{
-                display: 'inline-flex',
-                gap: 4,
-                alignItems: 'center',
-                cursor: 'pointer',
-              }}
+              className="ps-hooks-label"
             >
               <input
                 type="checkbox"
@@ -264,7 +191,7 @@ function SettingsForm({ draft, setDraft }: SettingsFormProps): JSX.Element {
         label="Default Reviewers"
         hint="PR review で自動 dispatch される reviewer の既定セット。"
       >
-        <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+        <div className="ps-reviewers-row">
           {KNOWN_REVIEWERS.map((r) => {
             const on = draft.defaultReviewers.includes(r);
             return (
@@ -280,13 +207,8 @@ function SettingsForm({ draft, setDraft }: SettingsFormProps): JSX.Element {
                       : [...d.defaultReviewers, r],
                   }))
                 }
+                className="ps-reviewer-btn"
                 style={{
-                  all: 'unset',
-                  cursor: 'pointer',
-                  padding: '3px 8px',
-                  fontSize: 9,
-                  fontWeight: 700,
-                  border: '1.5px solid var(--p-border)',
                   background: on ? 'var(--p-accent)' : 'var(--p-tint)',
                   color: on ? 'white' : 'var(--p-text)',
                 }}
@@ -304,7 +226,7 @@ function SettingsForm({ draft, setDraft }: SettingsFormProps): JSX.Element {
         label="Parallel Limit"
         hint="同時 dispatch 可能な subagent 数の上限。超えると queue 待ち。"
       >
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+        <div className="ps-parallel-row">
           <input
             type="range"
             data-testid="setting-parallelLimit"
@@ -314,17 +236,9 @@ function SettingsForm({ draft, setDraft }: SettingsFormProps): JSX.Element {
             onChange={(e) =>
               setDraft((d) => ({ ...d, parallelLimit: +e.target.value }))
             }
-            style={{ width: 200 }}
+            className="ps-input--range"
           />
-          <span
-            style={{
-              fontSize: 14,
-              fontWeight: 700,
-              fontFamily: 'ui-monospace, monospace',
-              color: 'var(--p-accent)',
-              width: 30,
-            }}
-          >
+          <span className="ps-parallel-value">
             {draft.parallelLimit}
           </span>
         </div>
@@ -335,7 +249,7 @@ function SettingsForm({ draft, setDraft }: SettingsFormProps): JSX.Element {
         label="Log Retention"
         hint="agent_history.jsonl と stream tail の保持日数。古いものは zip archive。"
       >
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+        <div className="ps-log-row">
           <input
             type="number"
             data-testid="setting-logRetention-days"
@@ -346,16 +260,9 @@ function SettingsForm({ draft, setDraft }: SettingsFormProps): JSX.Element {
                 logRetention: { ...d.logRetention, days: +e.target.value },
               }))
             }
-            style={{
-              width: 80,
-              padding: '4px 8px',
-              fontSize: 11,
-              border: '1.5px solid var(--p-border)',
-              background: 'var(--p-tint)',
-              fontFamily: 'ui-monospace, monospace',
-            }}
+            className="ps-input ps-input--log-days"
           />
-          <span style={{ fontSize: 10, color: 'var(--p-text-muted)' }}>日</span>
+          <span className="ps-log-unit">日</span>
         </div>
       </Row>
     </div>
@@ -379,28 +286,17 @@ export function ProjectSettingsView(): JSX.Element {
   return (
     <div
       data-testid="project-settings-view"
-      style={{
-        position: 'absolute',
-        inset: 0,
-        padding: 16,
-        overflow: 'auto',
-        background: 'var(--p-bg-sky)',
-      }}
+      className="ps-screen"
     >
       {/* Header */}
-      <div
-        style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}
-      >
-        <div style={{ fontSize: 14, fontWeight: 700 }}>PROJECT SETTINGS</div>
-        <span
-          className="chip"
-          style={{ fontFamily: 'ui-monospace, monospace' }}
-        >
+      <div className="ps-header">
+        <div className="ps-header__title">PROJECT SETTINGS</div>
+        <span className="chip ps-chip--mono">
           {sc.project}/.claude/loom/project.json
         </span>
-        <div style={{ flex: 1 }} />
+        <div className="ps-header__spacer" />
         {dirty && (
-          <span style={{ fontSize: 9, color: 'var(--p-warn)', fontWeight: 700 }}>
+          <span className="ps-header__unsaved">
             未保存
           </span>
         )}
@@ -423,18 +319,7 @@ export function ProjectSettingsView(): JSX.Element {
       <SettingsForm draft={draft} setDraft={setDraft} />
 
       {/* Footer note */}
-      <div
-        style={{
-          marginTop: 14,
-          maxWidth: 720,
-          padding: 12,
-          fontSize: 9,
-          color: 'var(--p-text-muted)',
-          background: 'var(--p-paper)',
-          border: '2px dashed var(--p-border)',
-          lineHeight: 1.6,
-        }}
-      >
+      <div className="ps-footer">
         user-prefs (~/.claude/loom/user-prefs.json) は CLI からのみ編集。
         <br />
         ここでの保存は project.json の write のみ — daemon が fs.watch で即反映。

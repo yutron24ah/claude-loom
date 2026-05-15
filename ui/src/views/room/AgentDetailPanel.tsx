@@ -26,6 +26,7 @@ import { CatSprite } from '../../components/CatSprite';
 import { AgentDetailNotes } from './AgentDetailNotes';
 import { useScenario } from '@claude-loom/redesign/api/websocket';
 import type { StreamMsg, TokensByAgent } from '@claude-loom/redesign/api/types';
+import '../../styles/screens/agent-detail.css';
 
 // ---------------------------------------------------------------------------
 // Status color mapping (no inline string literals — SPEC §3.6.10)
@@ -119,52 +120,15 @@ export function AgentDetailPanel({
   return (
     <div
       data-testid="agent-detail-panel"
-      className="rpg-frame pixel"
-      style={{
-        position: 'fixed',
-        inset: 0,
-        zIndex: 200,
-        pointerEvents: 'auto',
-      }}
+      className="rpg-frame pixel ad-overlay"
     >
       {/* Backdrop — click to close */}
-      <div
-        onClick={onClose}
-        style={{
-          position: 'absolute',
-          inset: 0,
-          background: 'rgba(0,0,0,0.3)',
-        }}
-      />
+      <div onClick={onClose} className="ad-backdrop" />
 
       {/* Drawer panel */}
-      <div
-        style={{
-          position: 'absolute',
-          top: 0,
-          right: 0,
-          bottom: 0,
-          width: 420,
-          background: 'var(--p-paper, #faf7f0)',
-          borderLeft: '3px solid var(--p-border, #2a2a35)',
-          boxShadow: '-4px 0 0 0 var(--p-shadow, rgba(0,0,0,0.2))',
-          display: 'flex',
-          flexDirection: 'column',
-          overflow: 'hidden',
-        }}
-      >
+      <div className="ad-drawer">
         {/* ---- HEADER ---- */}
-        <div
-          style={{
-            padding: '10px 14px',
-            borderBottom: '2px solid var(--p-border, #2a2a35)',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 10,
-            background: 'var(--p-tint, #e8e0d0)',
-            flexShrink: 0,
-          }}
-        >
+        <div className="ad-header">
           <CatSprite
             size={64}
             fur={agent.fur}
@@ -172,144 +136,58 @@ export function AgentDetailPanel({
             hat={agent.hat ?? null}
             pose="sit"
           />
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div
-              style={{
-                fontSize: 14,
-                fontWeight: 700,
-                color: 'var(--p-text, #1a1a2e)',
-              }}
-            >
-              {agent.name}
-            </div>
+          <div className="ad-header__identity">
+            <div className="ad-header__name">{agent.name}</div>
             {/* jp: Japanese role name — design source + backward compat */}
-            <div
-              className="rpg-label"
-              style={{ marginTop: 2, fontSize: 10 }}
-            >
-              {agent.jp}
-            </div>
-            <div
-              className="rpg-label"
-              style={{ marginTop: 2, fontSize: 10 }}
-            >
-              {agent.role} · {agent.breed}
-            </div>
+            <div className="rpg-label ad-header__jp">{agent.jp}</div>
+            <div className="rpg-label ad-header__role">{agent.role} · {agent.breed}</div>
             {/* quote with Japanese quotation marks */}
-            <div
-              style={{
-                fontSize: 10,
-                fontStyle: 'italic',
-                color: 'var(--p-text-muted, #64748b)',
-                marginTop: 4,
-              }}
-            >
-              「{agent.quote}」
-            </div>
+            <div className="ad-header__quote">「{agent.quote}」</div>
           </div>
         </div>
 
         {/* ---- STATUS + CLOSE row ---- */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-            padding: '6px 14px',
-            background: 'var(--p-tint, #e8e0d0)',
-            borderBottom: '1px solid var(--p-border, #2a2a35)',
-            flexShrink: 0,
-          }}
-        >
+        <div className="ad-status-row">
           <span
             data-testid="agent-detail-status"
+            className="ad-status-badge"
             style={{
-              fontSize: 9,
-              fontWeight: 700,
-              padding: '2px 6px',
-              border: '1.5px solid var(--p-border, #2a2a35)',
               background:
-                STATUS_LABEL_COLOR[state.status] ??
-                'var(--p-stone, #78716c)',
-              color: 'white',
-              textTransform: 'uppercase',
-              letterSpacing: '0.06em',
+                STATUS_LABEL_COLOR[state.status] ?? 'var(--p-stone, #78716c)',
             }}
           >
             {state.status}
           </span>
-          <div style={{ flex: 1 }} />
+          <div className="ad-status-row__spacer" />
           <button
             data-testid="agent-detail-close"
             onClick={onClose}
-            style={{
-              all: 'unset',
-              cursor: 'pointer',
-              fontSize: 12,
-              padding: '2px 8px',
-              border: '1px solid var(--p-border, #2a2a35)',
-              background: 'var(--p-tint, #e8e0d0)',
-              color: 'var(--p-text, #1a1a2e)',
-            }}
+            className="ad-close-btn"
           >
             ✕
           </button>
         </div>
 
         {/* ---- BODY (scrollable) ---- */}
-        <div style={{ flex: 1, overflow: 'auto', padding: 12 }}>
+        <div className="ad-body">
 
           {/* NOW — current tool + reasoning (redesign §agent-detail.jsx) */}
-          <div
-            style={{
-              fontSize: 9,
-              color: 'var(--p-text-muted, #64748b)',
-              letterSpacing: '0.06em',
-              marginBottom: 6,
-            }}
-          >
-            NOW
-          </div>
-          <div
-            style={{
-              padding: 10,
-              background: 'var(--p-bg-sky, #f0f4f8)',
-              border: '1.5px solid var(--p-border, #2a2a35)',
-              marginBottom: 14,
-              fontSize: 11,
-            }}
-          >
+          <div className="ad-section-label">NOW</div>
+          <div className="ad-now-panel">
             {state.currentTool && (
-              <div style={{ marginBottom: 4 }}>
-                <span
-                  data-testid="agent-detail-current-tool"
-                  style={{
-                    background: 'var(--p-warn, #f59e0b)',
-                    color: 'white',
-                    padding: '1px 5px',
-                    fontSize: 8,
-                    fontWeight: 700,
-                    marginRight: 4,
-                  }}
-                >
+              <div className="ad-now-panel__tool-row">
+                <span data-testid="agent-detail-current-tool" className="ad-tool-badge">
                   {state.currentTool}
                 </span>
               </div>
             )}
             {state.currentReasoning && (
-              <div
-                data-testid="agent-detail-current-reasoning"
-                style={{
-                  fontStyle: 'italic',
-                  color: 'var(--p-text, #1a1a2e)',
-                  lineHeight: 1.5,
-                }}
-              >
+              <div data-testid="agent-detail-current-reasoning" className="ad-now-panel__reasoning">
                 "{state.currentReasoning}"
               </div>
             )}
             {!state.currentTool && !state.currentReasoning && (
-              <div style={{ color: 'var(--p-text-muted, #64748b)' }}>
+              <div className="ad-now-panel__idle">
                 idle. last seen: {state.lastSeenAt ?? '—'}
               </div>
             )}
@@ -318,65 +196,24 @@ export function AgentDetailPanel({
           {/* STREAM TAIL — filtered by agent name */}
           {streamForAgent.length > 0 && (
             <>
-              <div
-                style={{
-                  fontSize: 9,
-                  color: 'var(--p-text-muted, #64748b)',
-                  letterSpacing: '0.06em',
-                  marginBottom: 6,
-                }}
-              >
-                STREAM TAIL
-              </div>
-              <div
-                style={{
-                  marginBottom: 14,
-                  background: 'var(--p-bg-sky, #f0f4f8)',
-                  border: '1.5px solid var(--p-border, #2a2a35)',
-                  padding: 8,
-                }}
-              >
+              <div className="ad-section-label">STREAM TAIL</div>
+              <div className="ad-stream-panel">
                 {streamForAgent.map((s, i) => (
                   <div
                     key={i}
+                    className="ad-stream-entry"
                     style={{
-                      fontSize: 10,
-                      padding: '3px 0',
                       borderBottom:
                         i < streamForAgent.length - 1
                           ? '1px dashed var(--p-border, #2a2a35)'
                           : 'none',
                     }}
                   >
-                    <span
-                      style={{
-                        color: 'var(--p-text-muted, #64748b)',
-                        fontSize: 8,
-                        marginRight: 4,
-                        fontFamily: 'ui-monospace, monospace',
-                      }}
-                    >
-                      {s.ts}
-                    </span>
+                    <span className="ad-stream-entry__ts">{s.ts}</span>
                     {s.tool && (
-                      <span
-                        style={{
-                          background: 'var(--p-warn, #f59e0b)',
-                          color: 'white',
-                          padding: '0 4px',
-                          fontSize: 8,
-                          fontWeight: 700,
-                          marginRight: 4,
-                        }}
-                      >
-                        {s.tool}
-                      </span>
+                      <span className="ad-stream-tool-badge">{s.tool}</span>
                     )}
-                    <span
-                      style={{
-                        fontStyle: s.kind === 'reason' ? 'italic' : 'normal',
-                      }}
-                    >
+                    <span style={{ fontStyle: s.kind === 'reason' ? 'italic' : 'normal' }}>
                       {s.text}
                     </span>
                   </div>
@@ -386,84 +223,33 @@ export function AgentDetailPanel({
           )}
 
           {/* TOKEN USAGE */}
-          <div
-            style={{
-              fontSize: 9,
-              color: 'var(--p-text-muted, #64748b)',
-              letterSpacing: '0.06em',
-              marginBottom: 6,
-            }}
-          >
-            TOKEN — TODAY
-          </div>
-          <div
-            data-testid="agent-detail-tokens"
-            style={{
-              marginBottom: 14,
-              padding: 8,
-              background: 'var(--p-bg-sky, #f0f4f8)',
-              border: '1.5px solid var(--p-border, #2a2a35)',
-              fontSize: 10,
-              fontFamily: 'ui-monospace, monospace',
-            }}
-          >
+          <div className="ad-section-label">TOKEN — TODAY</div>
+          <div data-testid="agent-detail-tokens" className="ad-token-panel">
             {tokenEntry ? (
-              <div style={{ display: 'flex', gap: 8 }}>
-                <div>
-                  in <b>{fmtTokens(tokenEntry.input)}</b>
-                </div>
-                <div>
-                  out <b>{fmtTokens(tokenEntry.output)}</b>
-                </div>
-                <div>
-                  cache <b>{fmtTokens(tokenEntry.cacheRead)}</b>
-                </div>
+              <div className="ad-token-row">
+                <div>in <b>{fmtTokens(tokenEntry.input)}</b></div>
+                <div>out <b>{fmtTokens(tokenEntry.output)}</b></div>
+                <div>cache <b>{fmtTokens(tokenEntry.cacheRead)}</b></div>
               </div>
             ) : (
-              <div style={{ color: 'var(--p-text-muted, #64748b)' }}>—</div>
+              <div className="ad-token-empty">—</div>
             )}
           </div>
 
           {/* DISPATCH HISTORY — M3.2 t2 backward compat */}
-          <div data-testid="agent-dispatch-history" style={{ marginTop: 14 }}>
-            <div
-              className="rpg-label"
-              style={{ marginBottom: 4, fontSize: 9 }}
-            >
+          <div data-testid="agent-dispatch-history" className="ad-dispatch-history">
+            <div className="rpg-label ad-dispatch__section-label">
               DISPATCH HISTORY
             </div>
             {!dispatchHistory || dispatchHistory.length === 0 ? (
-              <div
-                style={{
-                  fontSize: 10,
-                  color: 'var(--p-text-muted, #64748b)',
-                  fontStyle: 'italic',
-                }}
-              >
-                No dispatches yet
-              </div>
+              <div className="ad-dispatch-empty">No dispatches yet</div>
             ) : (
               dispatchHistory.map((entry) => (
-                <div
-                  key={entry.subagentId}
-                  style={{
-                    display: 'flex',
-                    gap: 8,
-                    fontSize: 10,
-                    padding: '3px 0',
-                    fontFamily: 'ui-monospace, monospace',
-                    borderBottom: '1px solid var(--p-tint, #e8e0d0)',
-                  }}
-                >
-                  <span
-                    style={{
-                      color: 'var(--p-text-muted, #64748b)',
-                      minWidth: 40,
-                    }}
-                  >
+                <div key={entry.subagentId} className="ad-dispatch-entry">
+                  <span className="ad-dispatch-entry__time">
                     {formatTime(entry.startedAt)}
                   </span>
-                  <span style={{ flex: 1 }}>{entry.agentType}</span>
+                  <span className="ad-dispatch-entry__type">{entry.agentType}</span>
                   <span
                     style={{
                       fontSize: 9,
@@ -486,20 +272,14 @@ export function AgentDetailPanel({
           <AgentDetailNotes agentId={agent.id} />
 
           {/* ACTIONS — attention toggle (M3.2 t2 backward compat) */}
-          <div style={{ marginTop: 14, display: 'flex', gap: 6 }}>
-            <button
-              className="btn-px ghost"
-              style={{ flex: 1 }}
-            >
-              メモ
-            </button>
+          <div className="ad-actions">
+            <button className="btn-px ghost ad-actions__btn">メモ</button>
             <button
               data-testid="agent-attention-toggle"
               aria-pressed={localAttention}
               data-attention={String(localAttention)}
               onClick={handleAttentionToggle}
-              className={localAttention ? 'btn-px primary' : 'btn-px ghost'}
-              style={{ flex: 1 }}
+              className={`${localAttention ? 'btn-px primary' : 'btn-px ghost'} ad-actions__btn`}
             >
               ★ 注目
             </button>

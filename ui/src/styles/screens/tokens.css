@@ -1,0 +1,276 @@
+/* ===========================================================================
+ * tokens.css — Tokens screen styles (M0.17 Round 2 Phase B mass-production)
+ * Owns: .tokens-* classes for views/tokens/TokensView.tsx
+ *       and minor .token-meter-* helper for TokenMeterView.tsx
+ *
+ * Tokens consumed: --p-bg-sky, --p-text, --p-text-muted, --p-paper,
+ *   --p-tint, --p-border, --p-shadow, --p-accent, --p-success, --p-warn, --p-stone
+ * =========================================================================== */
+
+/* ---------------------------------------------------------------------------
+ * Root wrapper (TokensView)
+ * --------------------------------------------------------------------------- */
+
+.tokens-screen {
+  position: absolute;
+  inset: 0;
+  padding: 16px;
+  overflow: auto;
+  background: var(--p-bg-sky);
+}
+
+/* ---------------------------------------------------------------------------
+ * Header
+ * --------------------------------------------------------------------------- */
+
+.tokens-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.tokens-header__title {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.tokens-header__period-hint {
+  margin-left: auto;
+  font-size: 9px;
+  color: var(--p-text-muted);
+}
+
+/* ---------------------------------------------------------------------------
+ * Stat cards grid (4 columns)
+ * --------------------------------------------------------------------------- */
+
+.tokens-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.tokens-stat-card {
+  padding: 12px;
+  background: var(--p-paper);
+  border: 2px solid var(--p-border);
+  box-shadow: 3px 3px 0 0 var(--p-shadow);
+}
+
+.tokens-stat-card__label {
+  font-size: 8px;
+  color: var(--p-text-muted);
+  letter-spacing: 0.08em;
+}
+
+/* WHY: value color is dynamic (success/warn/accent/text based on metric), stays inline */
+.tokens-stat-card__value {
+  font-size: 22px;
+  font-weight: 800;
+  font-family: ui-monospace, monospace;
+  margin-top: 2px;
+}
+
+.tokens-stat-card__sub {
+  font-size: 9px;
+  color: var(--p-text-muted);
+}
+
+/* ---------------------------------------------------------------------------
+ * Daily trend chart panel
+ * --------------------------------------------------------------------------- */
+
+.tokens-chart-panel {
+  background: var(--p-paper);
+  border: 2px solid var(--p-border);
+  padding: 12px;
+  margin-bottom: 14px;
+}
+
+.tokens-chart__label {
+  font-size: 9px;
+  color: var(--p-text-muted);
+  letter-spacing: 0.06em;
+  margin-bottom: 8px;
+}
+
+.tokens-chart__bars {
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
+  height: 120px;
+}
+
+.tokens-chart__legend {
+  margin-top: 8px;
+  font-size: 9px;
+  color: var(--p-text-muted);
+  display: flex;
+  gap: 16px;
+}
+
+/* ---------------------------------------------------------------------------
+ * Daily bar sub-component
+ * --------------------------------------------------------------------------- */
+
+.tokens-daily-bar {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.tokens-daily-bar__cost {
+  font-size: 9px;
+  color: var(--p-text-muted);
+  font-family: ui-monospace, monospace;
+}
+
+.tokens-daily-bar__track {
+  position: relative;
+  width: 100%;
+  flex: 1;
+  display: flex;
+  align-items: flex-end;
+}
+
+/* WHY: height is dynamic (heightPct%), stays inline */
+.tokens-daily-bar__fill {
+  width: 100%;
+  background: var(--p-accent);
+  border: 1.5px solid var(--p-border);
+  position: relative;
+  min-height: 2px;
+}
+
+/* WHY: top position is dynamic ((1-cacheRatio)*100%), stays inline */
+.tokens-daily-bar__cache-marker {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--p-success);
+}
+
+.tokens-daily-bar__day {
+  font-size: 9px;
+  font-weight: 700;
+  font-family: ui-monospace, monospace;
+}
+
+/* Chart legend color swatches */
+.tokens-legend-swatch--cost {
+  display: inline-block;
+  width: 12px;
+  height: 8px;
+  background: var(--p-accent);
+  margin-right: 4px;
+  vertical-align: middle;
+}
+
+.tokens-legend-swatch--cache {
+  display: inline-block;
+  width: 12px;
+  height: 2px;
+  background: var(--p-success);
+  margin-right: 4px;
+  vertical-align: middle;
+}
+
+/* ---------------------------------------------------------------------------
+ * Per-agent table
+ * --------------------------------------------------------------------------- */
+
+.tokens-agent-table {
+  background: var(--p-paper);
+  border: 2px solid var(--p-border);
+}
+
+/* WHY: shared 7-column grid template for header + rows */
+.tokens-agent-table__header,
+.tokens-agent-row {
+  display: grid;
+  grid-template-columns: 1.4fr 80px 90px 90px 100px 90px 90px;
+}
+
+.tokens-agent-table__header {
+  font-size: 9px;
+  color: var(--p-text-muted);
+  letter-spacing: 0.06em;
+  padding: 6px 10px;
+  border-bottom: 2px solid var(--p-border);
+  background: var(--p-tint);
+}
+
+.tokens-agent-row {
+  align-items: center;
+  padding: 8px 10px;
+  border-bottom: 1px dashed var(--p-border);
+  font-size: 10px;
+  font-family: ui-monospace, monospace;
+}
+
+.tokens-agent-row__name {
+  font-weight: 700;
+  font-family: system-ui;
+}
+
+.tokens-agent-row__model-badge {
+  display: inline-block;
+  padding: 1px 6px;
+  font-size: 9px;
+  font-weight: 700;
+  border: 1px solid var(--p-border);
+  width: fit-content;
+}
+
+.tokens-agent-row__cell--right {
+  text-align: right;
+}
+
+/* WHY: cache-hit color (warn/success) is dynamic based on hit ratio, stays inline */
+.tokens-agent-row__cache-hit {
+  text-align: right;
+  font-weight: 700;
+}
+
+.tokens-agent-row__cost {
+  text-align: right;
+  font-weight: 700;
+}
+
+/* ---------------------------------------------------------------------------
+ * Efficiency hints panel
+ * --------------------------------------------------------------------------- */
+
+.tokens-hints {
+  margin-top: 12px;
+  padding: 12px;
+  background: var(--p-paper);
+  border: 2px dashed var(--p-warn);
+  font-size: 10px;
+  line-height: 1.6;
+}
+
+.tokens-hints__label {
+  font-size: 9px;
+  color: var(--p-warn);
+  letter-spacing: 0.06em;
+  margin-bottom: 6px;
+  font-weight: 700;
+}
+
+.tokens-hints__no-hints {
+  color: var(--p-text-muted);
+}
+
+/* ---------------------------------------------------------------------------
+ * TokenMeterView — sparkline SVG helper
+ * --------------------------------------------------------------------------- */
+
+.token-meter-sparkline {
+  display: block;
+}

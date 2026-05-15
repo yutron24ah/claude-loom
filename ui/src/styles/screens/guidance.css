@@ -1,0 +1,365 @@
+/* ===========================================================================
+ * guidance.css — Guidance screen styles (M0.17 Round 2 Phase B mass-production)
+ * Owns: .guidance-* classes for views/guidance/GuidanceView.tsx
+ *       and .lg-* classes for views/guidance/LearnedGuidanceView.tsx
+ *
+ * Tokens consumed: --p-bg-sky, --p-text, --p-text-muted, --p-paper,
+ *   --p-tint, --p-border, --p-accent, --p-success, --p-warn, --p-error,
+ *   --p-stone
+ * =========================================================================== */
+
+/* ===========================================================================
+ * GuidanceView (redesign-driven, useScenario) — .guidance-* namespace
+ * =========================================================================== */
+
+/* ---------------------------------------------------------------------------
+ * Root wrapper
+ * --------------------------------------------------------------------------- */
+
+.guidance-screen {
+  position: absolute;
+  inset: 0;
+  padding: 16px;
+  overflow: auto;
+  background: var(--p-bg-sky);
+}
+
+/* ---------------------------------------------------------------------------
+ * Header
+ * --------------------------------------------------------------------------- */
+
+.guidance-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.guidance-header__title {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.guidance-header__spacer {
+  flex: 1;
+}
+
+/* ---------------------------------------------------------------------------
+ * Filter bar
+ * --------------------------------------------------------------------------- */
+
+.guidance-filter-bar {
+  display: flex;
+  gap: 8px;
+  padding: 8px;
+  margin-bottom: 12px;
+  background: var(--p-paper);
+  border: 2px solid var(--p-border);
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.guidance-search-input {
+  flex: 1;
+  min-width: 180px;
+  padding: 4px 8px;
+  font-size: 10px;
+  border: 1.5px solid var(--p-border);
+  background: var(--p-tint);
+  font-family: ui-monospace, monospace;
+}
+
+.guidance-agent-select {
+  padding: 4px 6px;
+  font-size: 10px;
+  border: 1.5px solid var(--p-border);
+  background: var(--p-tint);
+}
+
+.guidance-filter-label {
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+  font-size: 10px;
+  cursor: pointer;
+}
+
+/* ---------------------------------------------------------------------------
+ * Empty state
+ * --------------------------------------------------------------------------- */
+
+.guidance-empty {
+  padding: 30px;
+  text-align: center;
+  border: 2px dashed var(--p-border);
+  background: var(--p-paper);
+  font-size: 10px;
+  color: var(--p-text-muted);
+}
+
+/* ---------------------------------------------------------------------------
+ * GuidanceItemCard (redesign version)
+ * --------------------------------------------------------------------------- */
+
+.guidance-item {
+  margin-bottom: 10px;
+  background: var(--p-paper);
+  border: 2px solid var(--p-border);
+  padding: 10px;
+  /* WHY: opacity is dynamic (active ? 1 : 0.55), stays inline */
+}
+
+.guidance-item__header {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.guidance-item__identity {
+  min-width: 0;
+  flex: 1;
+}
+
+.guidance-item__name {
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.guidance-item__meta {
+  font-size: 9px;
+  color: var(--p-text-muted);
+  font-family: ui-monospace, monospace;
+}
+
+.guidance-item__category {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+/* WHY: scope chip background (warn/default) is dynamic, stays inline */
+.guidance-item__scope {
+  font-size: 8px;
+}
+
+.guidance-item__expired-badge {
+  font-size: 8px;
+  font-weight: 700;
+  padding: 1px 5px;
+  background: var(--p-stone);
+  color: white;
+  border: 1px solid var(--p-border);
+}
+
+.guidance-item__text {
+  font-size: 11px;
+  padding: 8px;
+  background: var(--p-tint);
+  border: 1.5px solid var(--p-border);
+  line-height: 1.5;
+  margin-bottom: 6px;
+}
+
+.guidance-item__actions {
+  display: flex;
+  gap: 6px;
+  font-size: 9px;
+  align-items: center;
+}
+
+.guidance-item__spacer {
+  flex: 1;
+}
+
+/* Shared small action button size — used by source, diff-toggle, retire */
+.guidance-action-btn {
+  font-size: 9px;
+  padding: 2px 6px;
+}
+
+/* WHY: retire btn has muted color; retire is visually de-emphasized */
+.guidance-retire-btn {
+  font-size: 9px;
+  padding: 2px 6px;
+  color: var(--p-text-muted);
+}
+
+/* WHY: delete btn has error color to signal destructive action */
+.guidance-delete-btn {
+  font-size: 9px;
+  padding: 2px 6px;
+  color: var(--p-error);
+}
+
+/* inactive chip text color — muted to de-emphasize non-active state */
+.lg-chip--inactive {
+  color: var(--p-text-muted);
+}
+
+/* ---------------------------------------------------------------------------
+ * GuidanceDiffPanel
+ * --------------------------------------------------------------------------- */
+
+.guidance-diff-panel {
+  margin-top: 8px;
+  font-size: 10px;
+  font-family: ui-monospace, monospace;
+}
+
+.guidance-diff__before {
+  padding: 6px;
+  background: rgba(220, 80, 80, 0.12);
+  border: 1px solid var(--p-error);
+  margin-bottom: 4px;
+}
+
+.guidance-diff__after {
+  padding: 6px;
+  background: rgba(80, 180, 120, 0.12);
+  border: 1px solid var(--p-success);
+}
+
+.guidance-diff__minus {
+  color: var(--p-error);
+  font-weight: 700;
+}
+
+.guidance-diff__plus {
+  color: var(--p-success);
+  font-weight: 700;
+}
+
+/* ===========================================================================
+ * LearnedGuidanceView (legacy mock, rpg-frame) — .lg-* namespace
+ * =========================================================================== */
+
+/* ---------------------------------------------------------------------------
+ * Root wrapper — rpg-frame is applied by class in TSX; padding stays inline
+ * to remain consistent with the existing rpg-frame padding convention
+ * --------------------------------------------------------------------------- */
+
+.lg-root {
+  padding: 18px;
+}
+
+/* ---------------------------------------------------------------------------
+ * Header
+ * --------------------------------------------------------------------------- */
+
+.lg-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.lg-header__badge-active {
+  margin-left: 4px;
+}
+
+.lg-header__audit-hint {
+  margin-left: auto;
+  font-size: 10px;
+  color: var(--p-text-muted);
+}
+
+/* ---------------------------------------------------------------------------
+ * Guidance item card (LearnedGuidanceView)
+ * --------------------------------------------------------------------------- */
+
+.lg-item {
+  background: var(--p-paper);
+  border: 2px solid var(--p-border);
+  padding: 10px 12px;
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  /* WHY: opacity is dynamic (active ? 1 : 0.5), stays inline */
+}
+
+.lg-item__sprite-wrapper {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.lg-item__body {
+  flex: 1;
+  min-width: 0;
+}
+
+.lg-item__meta-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin-bottom: 4px;
+  flex-wrap: wrap;
+}
+
+.lg-item__agent-name {
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.lg-item__category {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.lg-item__from-source {
+  font-size: 9px;
+  font-family: ui-monospace, monospace;
+  color: var(--p-text-muted);
+}
+
+/* WHY: scope chip background (warn/default) is dynamic, stays inline */
+
+.lg-item__text {
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--p-text);
+  padding: 6px 8px;
+  background: var(--p-tint);
+  border-left: 3px solid var(--p-accent);
+}
+
+.lg-item__stat-row {
+  display: flex;
+  gap: 12px;
+  margin-top: 6px;
+  font-size: 9px;
+  color: var(--p-text-muted);
+  font-family: ui-monospace, monospace;
+  align-items: center;
+}
+
+.lg-item__btn-group {
+  margin-left: auto;
+  display: flex;
+  gap: 4px;
+}
+
+/* ---------------------------------------------------------------------------
+ * List container
+ * --------------------------------------------------------------------------- */
+
+.lg-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* ---------------------------------------------------------------------------
+ * Footer hint
+ * --------------------------------------------------------------------------- */
+
+.lg-footer {
+  margin-top: 12px;
+  font-size: 10px;
+  color: var(--p-text-muted);
+  padding: 8px 12px;
+  background: var(--p-tint);
+  border: 2px dashed var(--p-border);
+  line-height: 1.5;
+}

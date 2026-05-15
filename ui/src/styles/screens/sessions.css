@@ -1,0 +1,324 @@
+/* ===========================================================================
+ * sessions.css — Sessions screen styles (M0.17 Round 2 Phase B mass-production)
+ * Owns: .sess-* classes for views/session-list/SessionListView.tsx
+ *
+ * Tokens consumed: --p-bg-sky, --p-text, --p-text-muted, --p-paper,
+ *   --p-tint, --p-border, --p-accent, --p-accent-soft,
+ *   --p-success, --p-error, --p-warn
+ * =========================================================================== */
+
+/* ---------------------------------------------------------------------------
+ * Root — 2-column split layout (list | detail)
+ * --------------------------------------------------------------------------- */
+
+.sess-screen {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: minmax(380px, 1fr) 1.4fr;
+  gap: 0;
+  background: var(--p-bg-sky);
+}
+
+/* ---------------------------------------------------------------------------
+ * Left panel — list + filter controls
+ * --------------------------------------------------------------------------- */
+
+.sess-list-panel {
+  border-right: 3px solid var(--p-border);
+  background: var(--p-paper);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.sess-list-header {
+  padding: 10px 12px;
+  border-bottom: 2px solid var(--p-border);
+  flex-shrink: 0;
+}
+
+.sess-list-header__title-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.sess-list-header__title {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+/* ---------------------------------------------------------------------------
+ * Filter inputs
+ * --------------------------------------------------------------------------- */
+
+.sess-search-input {
+  width: 100%;
+  padding: 5px 8px;
+  font-size: 10px;
+  margin-bottom: 6px;
+  border: 1.5px solid var(--p-border);
+  background: var(--p-tint);
+  font-family: ui-monospace, monospace;
+  box-sizing: border-box;
+}
+
+.sess-filter-bar {
+  display: flex;
+  gap: 4px;
+}
+
+.sess-filter-select {
+  flex: 1;
+  padding: 3px;
+  font-size: 9px;
+  border: 1.5px solid var(--p-border);
+  background: var(--p-tint);
+}
+
+/* ---------------------------------------------------------------------------
+ * Scrollable list body
+ * --------------------------------------------------------------------------- */
+
+.sess-list-body {
+  flex: 1;
+  overflow: auto;
+}
+
+.sess-list-empty {
+  padding: 30px;
+  text-align: center;
+  font-size: 10px;
+  color: var(--p-text-muted);
+}
+
+/* ---------------------------------------------------------------------------
+ * Session entry row button
+ * WHY: dynamic background/border-left (isSelected state) stays inline
+ * --------------------------------------------------------------------------- */
+
+.sess-entry {
+  all: unset;
+  cursor: pointer;
+  display: block;
+  width: 100%;
+  padding: 10px 12px;
+  border-bottom: 1px dashed var(--p-border);
+  box-sizing: border-box;
+  /* background and borderLeft are dynamic, stay inline */
+}
+
+.sess-entry__row1 {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.sess-entry__time {
+  font-size: 9px;
+  font-family: ui-monospace, monospace;
+  color: var(--p-text-muted);
+}
+
+.sess-entry__spacer {
+  flex: 1;
+}
+
+/* WHY: verdict badge background (success/error) is dynamic, stays inline */
+.sess-entry__verdict {
+  font-size: 8px;
+  font-weight: 700;
+  padding: 0 4px;
+  color: white;
+  border: 1px solid var(--p-border);
+}
+
+.sess-entry__duration {
+  font-size: 9px;
+  color: var(--p-text-muted);
+  font-family: ui-monospace, monospace;
+}
+
+.sess-entry__summary {
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.4;
+  margin-bottom: 4px;
+}
+
+.sess-entry__chips {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  font-size: 8px;
+}
+
+.sess-entry__file-chip {
+  padding: 1px 4px;
+  background: var(--p-tint);
+  border: 1px solid var(--p-border);
+  font-family: ui-monospace, monospace;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 140px;
+}
+
+.sess-entry__more {
+  color: var(--p-text-muted);
+}
+
+.sess-entry__finding-chip {
+  padding: 1px 4px;
+  background: var(--p-warn);
+  color: white;
+  border: 1px solid var(--p-border);
+}
+
+.sess-entry__retro-chip {
+  padding: 1px 4px;
+  background: var(--p-tint);
+  border: 1px solid var(--p-accent);
+  color: var(--p-accent);
+}
+
+/* ---------------------------------------------------------------------------
+ * Right panel — detail view
+ * --------------------------------------------------------------------------- */
+
+.sess-detail-panel {
+  min-height: 0;
+  overflow: auto;
+  padding: 16px;
+}
+
+/* Empty state */
+.sess-detail-empty {
+  display: grid;
+  place-items: center;
+  height: 100%;
+  font-size: 11px;
+  color: var(--p-text-muted);
+  text-align: center;
+}
+
+.sess-detail-empty__icon {
+  font-size: 32px;
+  margin-bottom: 8px;
+}
+
+/* ---------------------------------------------------------------------------
+ * Detail: header row
+ * --------------------------------------------------------------------------- */
+
+.sess-detail__header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.sess-detail__header-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.sess-detail__title {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.sess-detail__meta {
+  font-size: 9px;
+  font-family: ui-monospace, monospace;
+  color: var(--p-text-muted);
+}
+
+/* WHY: verdict badge background is dynamic, stays inline */
+.sess-detail__verdict {
+  font-size: 9px;
+  font-weight: 700;
+  padding: 2px 6px;
+  color: white;
+  border: 1.5px solid var(--p-border);
+}
+
+/* ---------------------------------------------------------------------------
+ * Detail: files + related grid
+ * --------------------------------------------------------------------------- */
+
+.sess-detail__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.sess-detail__card {
+  padding: 10px;
+  background: var(--p-paper);
+  border: 2px solid var(--p-border);
+}
+
+.sess-detail__card-label {
+  font-size: 9px;
+  color: var(--p-text-muted);
+  letter-spacing: 0.06em;
+  margin-bottom: 6px;
+}
+
+.sess-detail__file-row {
+  font-size: 10px;
+  font-family: ui-monospace, monospace;
+  padding: 2px 0;
+  color: var(--p-accent);
+}
+
+.sess-detail__related-row {
+  font-size: 10px;
+  padding: 2px 0;
+}
+
+.sess-detail__related-link {
+  color: var(--p-accent);
+  cursor: pointer;
+}
+
+.sess-detail__related-empty {
+  font-size: 10px;
+  color: var(--p-text-muted);
+}
+
+/* ---------------------------------------------------------------------------
+ * Detail: transcript replay placeholder
+ * --------------------------------------------------------------------------- */
+
+.sess-detail__replay {
+  padding: 14px;
+  background: var(--p-paper);
+  border: 2px solid var(--p-border);
+  text-align: center;
+  font-size: 11px;
+  color: var(--p-text-muted);
+  line-height: 1.6;
+}
+
+.sess-detail__replay-label {
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  margin-bottom: 8px;
+}
+
+.sess-detail__replay-hint {
+  margin-top: 8px;
+  font-size: 9px;
+}
+
+/* WHY: replay button overrides base btn-px size for the transcript placeholder */
+.sess-detail__replay-btn {
+  font-size: 10px;
+  padding: 5px 12px;
+}

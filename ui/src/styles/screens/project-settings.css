@@ -1,0 +1,242 @@
+/* ===========================================================================
+ * project-settings.css — Project Settings screen styles (M0.17 Round 2 Phase B mass-production)
+ * Owns: .ps-* classes for views/project-settings/ProjectSettingsView.tsx
+ *
+ * Tokens consumed: --p-bg-sky, --p-text, --p-text-muted, --p-paper,
+ *   --p-tint, --p-border, --p-shadow, --p-warn, --p-accent
+ * =========================================================================== */
+
+/* ---------------------------------------------------------------------------
+ * Root wrapper
+ * --------------------------------------------------------------------------- */
+
+.ps-screen {
+  position: absolute;
+  inset: 0;
+  padding: 16px;
+  overflow: auto;
+  background: var(--p-bg-sky);
+}
+
+/* ---------------------------------------------------------------------------
+ * Chip modifier — monospace font for path chips
+ * --------------------------------------------------------------------------- */
+
+.ps-chip--mono {
+  font-family: ui-monospace, monospace;
+}
+
+/* ---------------------------------------------------------------------------
+ * Header bar (title + chip + spacer + unsaved indicator + buttons)
+ * --------------------------------------------------------------------------- */
+
+.ps-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.ps-header__title {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.ps-header__spacer {
+  flex: 1;
+}
+
+.ps-header__unsaved {
+  font-size: 9px;
+  color: var(--p-warn);
+  font-weight: 700;
+}
+
+/* ---------------------------------------------------------------------------
+ * Settings form card
+ * --------------------------------------------------------------------------- */
+
+.ps-form {
+  max-width: 720px;
+  background: var(--p-paper);
+  border: 2px solid var(--p-border);
+  padding: 0 16px;
+  box-shadow: 3px 3px 0 0 var(--p-shadow);
+}
+
+/* ---------------------------------------------------------------------------
+ * Row layout (label + control)
+ * --------------------------------------------------------------------------- */
+
+.ps-row {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  gap: 14px;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px dashed var(--p-border);
+}
+
+.ps-row__label {
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.ps-row__hint {
+  font-size: 9px;
+  color: var(--p-text-muted);
+  margin-top: 2px;
+  line-height: 1.4;
+}
+
+/* ---------------------------------------------------------------------------
+ * Form input baseline (shared by all input/select/textarea controls)
+ * --------------------------------------------------------------------------- */
+
+.ps-input {
+  padding: 4px 8px;
+  font-size: 11px;
+  border: 1.5px solid var(--p-border);
+  background: var(--p-tint);
+  font-family: ui-monospace, monospace;
+}
+
+.ps-input--number {
+  width: 100px;
+}
+
+.ps-input--text {
+  width: 100%;
+  max-width: 360px;
+  box-sizing: border-box;
+}
+
+.ps-input--cron {
+  width: 140px;
+  /* WHY: dynamic opacity (enabled/disabled) stays inline — runtime value */
+}
+
+.ps-input--textarea {
+  width: 100%;
+  max-width: 360px;
+  padding: 6px 8px;
+  font-size: 10px;
+  box-sizing: border-box;
+  resize: vertical;
+}
+
+.ps-input--range {
+  width: 200px;
+}
+
+.ps-input--log-days {
+  width: 80px;
+}
+
+/* ---------------------------------------------------------------------------
+ * Retro schedule row (inline flex of checkbox + cron + label)
+ * --------------------------------------------------------------------------- */
+
+.ps-retro-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.ps-retro-label {
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+  font-size: 10px;
+  cursor: pointer;
+}
+
+.ps-retro-cron-label {
+  font-size: 9px;
+  color: var(--p-text-muted);
+}
+
+/* ---------------------------------------------------------------------------
+ * Hooks row (inline flex of checkbox labels)
+ * --------------------------------------------------------------------------- */
+
+.ps-hooks-row {
+  display: flex;
+  gap: 12px;
+  font-size: 10px;
+}
+
+.ps-hooks-label {
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+  cursor: pointer;
+}
+
+/* ---------------------------------------------------------------------------
+ * Reviewers toggle buttons
+ * --------------------------------------------------------------------------- */
+
+.ps-reviewers-row {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+/* WHY: dynamic active state (background/color) stays inline — per-reviewer state */
+.ps-reviewer-btn {
+  all: unset;
+  cursor: pointer;
+  padding: 3px 8px;
+  font-size: 9px;
+  font-weight: 700;
+  border: 1.5px solid var(--p-border);
+}
+
+/* ---------------------------------------------------------------------------
+ * Parallel limit row
+ * --------------------------------------------------------------------------- */
+
+.ps-parallel-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.ps-parallel-value {
+  font-size: 14px;
+  font-weight: 700;
+  font-family: ui-monospace, monospace;
+  color: var(--p-accent);
+  width: 30px;
+}
+
+/* ---------------------------------------------------------------------------
+ * Log retention row
+ * --------------------------------------------------------------------------- */
+
+.ps-log-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.ps-log-unit {
+  font-size: 10px;
+  color: var(--p-text-muted);
+}
+
+/* ---------------------------------------------------------------------------
+ * Footer note
+ * --------------------------------------------------------------------------- */
+
+.ps-footer {
+  margin-top: 14px;
+  max-width: 720px;
+  padding: 12px;
+  font-size: 9px;
+  color: var(--p-text-muted);
+  background: var(--p-paper);
+  border: 2px dashed var(--p-border);
+  line-height: 1.6;
+}

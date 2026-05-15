@@ -1,0 +1,182 @@
+/* ===========================================================================
+ * pm-approval.css — PM Approval screen styles (M0.17 Round 2 Phase B mass-production)
+ * Owns: .pma-* classes for views/pm-chat/PMApprovalModal.tsx
+ *       and .pmt-* classes for views/pm-chat/PMApprovalToast.tsx
+ *
+ * Note: These components use a dark-mode dark-surface color palette
+ * (--p-bg2, --p-bg1) which is distinct from the main RPG pixel palette.
+ * Screen-local tokens are used to stay faithful to the design source.
+ *
+ * Tokens consumed: --p-bg2, --p-bg1, --p-border, --p-text-muted,
+ *   --p-error, --p-warn, --p-stone, --p-accent, --p-text
+ * =========================================================================== */
+
+/* ===========================================================================
+ * PMApprovalModal — .pma-* namespace
+ * =========================================================================== */
+
+/* ---------------------------------------------------------------------------
+ * Overlay backdrop
+ * --------------------------------------------------------------------------- */
+
+.pma-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.72);
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ---------------------------------------------------------------------------
+ * Modal card
+ * --------------------------------------------------------------------------- */
+
+.pma-card {
+  background: var(--p-bg2, #1e2128);
+  border: 1px solid var(--p-error, #e53e3e);
+  border-radius: 8px;
+  padding: 24px 28px;
+  min-width: 340px;
+  max-width: 480px;
+}
+
+.pma-risk-badge {
+  color: var(--p-error, #e53e3e);
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: 1px;
+  margin-bottom: 8px;
+}
+
+.pma-from {
+  font-size: 12px;
+  color: var(--p-text-muted, #888);
+  margin-bottom: 12px;
+}
+
+.pma-tool {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.pma-args {
+  font-size: 11px;
+  background: var(--p-bg1, #0d1117);
+  padding: 8px 12px;
+  border-radius: 4px;
+  margin-bottom: 12px;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.pma-confirm-msg {
+  font-size: 12px;
+  color: var(--p-text-muted, #888);
+  margin-bottom: 16px;
+}
+
+.pma-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+/* WHY: reject is visually prominent (accidental clicks should reject) */
+.pma-btn-reject {
+  padding: 6px 18px;
+  background: var(--p-error, #e53e3e);
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.pma-btn-allow {
+  padding: 6px 18px;
+  background: transparent;
+  color: var(--p-text, #ccc);
+  border: 1px solid var(--p-border, #444);
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+/* ===========================================================================
+ * PMApprovalToast — .pmt-* namespace
+ * =========================================================================== */
+
+.pmt-toast {
+  background: var(--p-bg2, #1e2128);
+  border: 1px solid var(--p-border, #333);
+  border-radius: 6px;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  min-width: 240px;
+  max-width: 320px;
+}
+
+.pmt-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+/* WHY: risk level color (warn/stone) is dynamic, stays inline */
+.pmt-risk {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.pmt-from {
+  font-size: 11px;
+  color: var(--p-text-muted, #888);
+}
+
+.pmt-tool {
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.pmt-args {
+  display: block;
+  font-size: 10px;
+  background: var(--p-bg1, #0d1117);
+  padding: 2px 6px;
+  border-radius: 3px;
+  margin-bottom: 8px;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.pmt-actions {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+.pmt-btn-reject {
+  font-size: 11px;
+  padding: 3px 10px;
+  background: var(--p-error, #e53e3e);
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.pmt-btn-allow {
+  font-size: 11px;
+  padding: 3px 10px;
+  background: var(--p-accent, #4a8fc4);
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}

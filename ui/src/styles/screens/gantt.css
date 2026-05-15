@@ -1,0 +1,223 @@
+/* ===========================================================================
+ * gantt.css — Gantt screen styles (M0.17 Round 2 Phase B mass-production)
+ * Owns: .gantt-* classes for views/gantt/GanttView.tsx
+ *
+ * Tokens consumed: --p-bg-sky, --p-paper, --p-tint, --p-border,
+ *   --p-text, --p-text-muted, --p-accent, --p-error, --p-stone
+ * =========================================================================== */
+
+/* ---------------------------------------------------------------------------
+ * Root container — full-bleed, scrollable
+ * --------------------------------------------------------------------------- */
+
+.gantt-screen {
+  position: absolute;
+  inset: 0;
+  padding: 16px;
+  overflow: auto;
+  background: var(--p-bg-sky);
+}
+
+/* ---------------------------------------------------------------------------
+ * Header row
+ * --------------------------------------------------------------------------- */
+
+.gantt-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.gantt-header__title {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.gantt-header__spacer {
+  flex: 1;
+}
+
+/* Zoom strip container */
+.gantt-header__zoom-strip {
+  display: flex;
+  border: 2px solid var(--p-border);
+}
+
+/* WHY: zoom button bg/color are dynamic (selected → accent/white, else tint/text), stays inline */
+.gantt-zoom-btn {
+  all: unset;
+  cursor: pointer;
+  padding: 3px 10px;
+  font-size: 9px;
+  font-weight: 700;
+  border-right: 1px solid var(--p-border);
+}
+
+/* ---------------------------------------------------------------------------
+ * Time axis labels
+ * --------------------------------------------------------------------------- */
+
+.gantt-time-axis {
+  display: flex;
+  padding-left: 200px;
+  margin-bottom: 6px;
+  font-size: 9px;
+  color: var(--p-text-muted);
+}
+
+/* WHY: time axis item width is dynamic (100 / (length-1)%), stays inline */
+/* WHY: text-align is dynamic (first item = left, else center), stays inline */
+
+/* ---------------------------------------------------------------------------
+ * Worktree group
+ * --------------------------------------------------------------------------- */
+
+.gantt-group {
+  margin-bottom: 8px;
+  border: 2px solid var(--p-border);
+  background: var(--p-paper);
+}
+
+/* Group header — clickable toggle */
+.gantt-group__header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  background: var(--p-tint);
+  cursor: pointer;
+  font-size: 10px;
+  font-weight: 700;
+  font-family: ui-monospace, monospace;
+}
+
+/* WHY: border-bottom of group header is dynamic (collapsed → none, else border), stays inline */
+
+.gantt-group__chevron {
+  width: 10px;
+}
+
+.gantt-group__subagent-count {
+  color: var(--p-text-muted);
+  font-weight: 400;
+}
+
+.gantt-group__live-badge {
+  margin-left: auto;
+  font-size: 9px;
+  color: var(--p-text-muted);
+}
+
+/* ---------------------------------------------------------------------------
+ * Agent row
+ * --------------------------------------------------------------------------- */
+
+.gantt-agent-row {
+  display: flex;
+  align-items: center;
+  height: 36px;
+  border-top: 1px dashed var(--p-border);
+}
+
+/* Label column (fixed 200px) */
+.gantt-agent-row__label {
+  width: 200px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 10px;
+  flex-shrink: 0;
+}
+
+.gantt-agent-row__name {
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.gantt-agent-row__role {
+  font-size: 8px;
+  color: var(--p-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Bar track */
+.gantt-bar-track {
+  position: relative;
+  flex: 1;
+  height: 24px;
+  background: var(--p-tint);
+  border: 1px solid var(--p-border);
+  margin-right: 16px;
+}
+
+/* Quarter grid guide line */
+/* WHY: left position is dynamic (25%, 50%, 75%), stays inline */
+.gantt-bar-track__guide {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: var(--p-border);
+  opacity: 0.3;
+}
+
+/* ---------------------------------------------------------------------------
+ * Bar segment
+ * WHY: left/width/bg are dynamic (bar.s, bar.e, KIND_COLOR[bar.kind]), stay inline
+ * --------------------------------------------------------------------------- */
+
+.gantt-bar-segment {
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  border: 1px solid var(--p-border);
+  background-image: repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.18) 0 3px, transparent 3px 6px);
+  display: flex;
+  align-items: center;
+  padding-left: 4px;
+  font-size: 8px;
+  color: white;
+  font-weight: 700;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+/* ---------------------------------------------------------------------------
+ * Live cat (walking sprite on live rows)
+ * WHY: right position is dynamic (100 - nowPct)%, stays inline
+ * --------------------------------------------------------------------------- */
+
+.gantt-live-cat {
+  position: absolute;
+  top: -4px;
+}
+
+/* ---------------------------------------------------------------------------
+ * Now-line (vertical red marker at nowPct)
+ * WHY: left position is dynamic (nowPct%), stays inline
+ * --------------------------------------------------------------------------- */
+
+.gantt-now-line {
+  position: absolute;
+  top: -2px;
+  bottom: -2px;
+  width: 2px;
+  background: var(--p-error);
+}
+
+/* ---------------------------------------------------------------------------
+ * Legend
+ * --------------------------------------------------------------------------- */
+
+.gantt-legend {
+  margin-top: 12px;
+  padding: 8px 12px;
+  font-size: 9px;
+  color: var(--p-text-muted);
+  background: var(--p-paper);
+  border: 2px dashed var(--p-border);
+  line-height: 1.5;
+}

@@ -9,4 +9,15 @@
  * Naming convention: <screen>.css maps to views/<screen>/*.tsx namespace.
  * =========================================================================== */
 
+@import './agent-detail.css';
+@import './consistency.css';
+@import './customization.css';
+@import './gantt.css';
+@import './guidance.css';
 @import './plan.css';
+@import './pm-approval.css';
+@import './project-settings.css';
+@import './retro.css';
+@import './sessions.css';
+@import './tokens.css';
+@import './worktree.css';

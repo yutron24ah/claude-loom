@@ -16,6 +16,7 @@ import type { GuidanceItem, GuidanceCategory } from '@claude-loom/redesign/api/t
 import { CatSprite } from '../../components/CatSprite';
 import { ROSTER } from '../room/roster';
 import { useGuidanceMutations } from '../../live/useGuidanceMutations';
+import '../../styles/screens/guidance.css';
 
 // -------------------------------------------------------------------------
 // Helpers — typed constants avoid string literal scatter (Principle: avoid string literals)
@@ -40,25 +41,13 @@ interface GuidanceDiffPanelProps {
 
 function GuidanceDiffPanel({ diff }: GuidanceDiffPanelProps): JSX.Element {
   return (
-    <div
-      data-testid="guidance-diff-panel"
-      style={{ marginTop: 8, fontSize: 10, fontFamily: 'ui-monospace, monospace' }}
-    >
-      <div style={{
-        padding: 6,
-        background: 'rgba(220,80,80,0.12)',
-        border: '1px solid var(--p-error)',
-        marginBottom: 4,
-      }}>
-        <span style={{ color: 'var(--p-error)', fontWeight: 700 }}>- </span>
+    <div data-testid="guidance-diff-panel" className="guidance-diff-panel">
+      <div className="guidance-diff__before">
+        <span className="guidance-diff__minus">- </span>
         {diff.before}
       </div>
-      <div style={{
-        padding: 6,
-        background: 'rgba(80,180,120,0.12)',
-        border: '1px solid var(--p-success)',
-      }}>
-        <span style={{ color: 'var(--p-success)', fontWeight: 700 }}>+ </span>
+      <div className="guidance-diff__after">
+        <span className="guidance-diff__plus">+ </span>
         {diff.after}
       </div>
     </div>
@@ -79,16 +68,11 @@ function GuidanceItemCard({ item, diffOpen, onToggleDiff, onRetire }: GuidanceIt
     <div
       data-testid="guidance-item"
       data-active={item.active}
-      style={{
-        marginBottom: 10,
-        background: 'var(--p-paper)',
-        border: '2px solid var(--p-border)',
-        padding: 10,
-        opacity: item.active ? 1 : 0.55,
-      }}
+      className="guidance-item"
+      style={{ opacity: item.active ? 1 : 0.55 }}
     >
       {/* Header row: agent sprite + identity + category + scope */}
-      <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 6 }}>
+      <div className="guidance-item__header">
         {rosterEntry && (
           <CatSprite
             size={26}
@@ -98,27 +82,23 @@ function GuidanceItemCard({ item, diffOpen, onToggleDiff, onRetire }: GuidanceIt
             pose="sit"
           />
         )}
-        <div style={{ minWidth: 0, flex: 1 }}>
-          <div style={{ fontSize: 11, fontWeight: 700 }}>
+        <div className="guidance-item__identity">
+          <div className="guidance-item__name">
             {rosterEntry?.name ?? item.agentId}
           </div>
-          <div style={{
-            fontSize: 9,
-            color: 'var(--p-text-muted)',
-            fontFamily: 'ui-monospace, monospace',
-          }}>
+          <div className="guidance-item__meta">
             {item.addedAt} · category:{' '}
-            <span data-testid="guidance-category" style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+            <span data-testid="guidance-category" className="guidance-item__category">
               <span className={CATEGORY_DOT_CLASS[item.category]} />
               <b>{item.category}</b>
             </span>
             {' · '}scope:{' '}
             <span
               data-testid="guidance-scope"
-              className="chip"
+              className="chip guidance-item__scope"
               style={item.scope === 'project'
-                ? { background: 'var(--p-warn)', color: 'white', borderColor: 'var(--p-warn)', fontSize: 8 }
-                : { fontSize: 8 }}
+                ? { background: 'var(--p-warn)', color: 'white', borderColor: 'var(--p-warn)' }
+                : undefined}
             >
               {item.scope}
             </span>
@@ -126,37 +106,18 @@ function GuidanceItemCard({ item, diffOpen, onToggleDiff, onRetire }: GuidanceIt
           </div>
         </div>
         {!item.active && (
-          <span style={{
-            fontSize: 8,
-            fontWeight: 700,
-            padding: '1px 5px',
-            background: 'var(--p-stone)',
-            color: 'white',
-            border: '1px solid var(--p-border)',
-          }}>
-            EXPIRED
-          </span>
+          <span className="guidance-item__expired-badge">EXPIRED</span>
         )}
       </div>
 
       {/* Guidance text */}
-      <div style={{
-        fontSize: 11,
-        padding: 8,
-        background: 'var(--p-tint)',
-        border: '1.5px solid var(--p-border)',
-        lineHeight: 1.5,
-        marginBottom: 6,
-      }}>
-        {item.text}
-      </div>
+      <div className="guidance-item__text">{item.text}</div>
 
       {/* Action row: source link + diff toggle + retire */}
-      <div style={{ display: 'flex', gap: 6, fontSize: 9, alignItems: 'center' }}>
+      <div className="guidance-item__actions">
         <button
           data-testid="guidance-source"
-          className="btn-px ghost"
-          style={{ fontSize: 9, padding: '2px 6px' }}
+          className="btn-px ghost guidance-action-btn"
           onClick={() => undefined}
         >
           source: {item.from}
@@ -164,19 +125,17 @@ function GuidanceItemCard({ item, diffOpen, onToggleDiff, onRetire }: GuidanceIt
         {item.diff && (
           <button
             data-testid="guidance-diff-toggle"
-            className="btn-px ghost"
-            style={{ fontSize: 9, padding: '2px 6px' }}
+            className="btn-px ghost guidance-action-btn"
             onClick={onToggleDiff}
           >
             {diffOpen ? '' : ''} 前 version との diff
           </button>
         )}
-        <span style={{ flex: 1 }} />
+        <span className="guidance-item__spacer" />
         {item.active && (
           <button
             data-testid="guidance-toggle"
-            className="btn-px ghost"
-            style={{ fontSize: 9, padding: '2px 6px', color: 'var(--p-text-muted)' }}
+            className="btn-px ghost guidance-retire-btn"
             onClick={onRetire}
           >
             retire
@@ -220,65 +179,31 @@ export function GuidanceView(): JSX.Element {
   const agentIds = Array.from(new Set(all.map((g) => g.agentId)));
 
   return (
-    <div
-      data-testid="guidance-view"
-      style={{
-        position: 'absolute',
-        inset: 0,
-        padding: 16,
-        overflow: 'auto',
-        background: 'var(--p-bg-sky)',
-      }}
-    >
+    <div data-testid="guidance-view" className="guidance-screen">
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-        <div
-          data-testid="guidance-title"
-          style={{ fontSize: 14, fontWeight: 700 }}
-        >
+      <div className="guidance-header">
+        <div data-testid="guidance-title" className="guidance-header__title">
           GUIDANCE — learned-guidance.md
         </div>
-        <div style={{ flex: 1 }} />
+        <div className="guidance-header__spacer" />
         <span className="chip">
           {filtered.length} / {all.length} entries
         </span>
       </div>
 
       {/* Filter bar — matches redesign/screens/guidance.jsx */}
-      <div style={{
-        display: 'flex',
-        gap: 8,
-        padding: 8,
-        marginBottom: 12,
-        background: 'var(--p-paper)',
-        border: '2px solid var(--p-border)',
-        alignItems: 'center',
-        flexWrap: 'wrap',
-      }}>
+      <div className="guidance-filter-bar">
         <input
           type="text"
           placeholder="search guidance text..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          style={{
-            flex: 1,
-            minWidth: 180,
-            padding: '4px 8px',
-            fontSize: 10,
-            border: '1.5px solid var(--p-border)',
-            background: 'var(--p-tint)',
-            fontFamily: 'ui-monospace, monospace',
-          }}
+          className="guidance-search-input"
         />
         <select
           value={agentFilter}
           onChange={(e) => setAgentFilter(e.target.value)}
-          style={{
-            padding: '4px 6px',
-            fontSize: 10,
-            border: '1.5px solid var(--p-border)',
-            background: 'var(--p-tint)',
-          }}
+          className="guidance-agent-select"
         >
           <option value="all">全 agent</option>
           {agentIds.map((id) => (
@@ -287,13 +212,7 @@ export function GuidanceView(): JSX.Element {
             </option>
           ))}
         </select>
-        <label style={{
-          display: 'inline-flex',
-          gap: 4,
-          alignItems: 'center',
-          fontSize: 10,
-          cursor: 'pointer',
-        }}>
+        <label className="guidance-filter-label">
           <input
             type="checkbox"
             data-testid="filter-active-only"
@@ -306,14 +225,7 @@ export function GuidanceView(): JSX.Element {
 
       {/* Empty state */}
       {filtered.length === 0 && (
-        <div style={{
-          padding: 30,
-          textAlign: 'center',
-          border: '2px dashed var(--p-border)',
-          background: 'var(--p-paper)',
-          fontSize: 10,
-          color: 'var(--p-text-muted)',
-        }}>
+        <div className="guidance-empty">
           条件にマッチする guidance はありません
         </div>
       )}
