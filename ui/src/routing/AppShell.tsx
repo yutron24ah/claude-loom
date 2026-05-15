@@ -293,7 +293,7 @@ export function AppShell(): JSX.Element {
             </button>
           )}
 
-          {isRoom && <ScenarioPicker rightOffset={rightColumnWidth + 8} />}
+          {isRoom && import.meta.env.DEV && <ScenarioPicker rightOffset={rightColumnWidth + 8} />}
           <ToastContainer />
         </div>
       </div>
