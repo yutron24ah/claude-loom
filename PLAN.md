@@ -1318,6 +1318,24 @@ m0.17-complete tag 設置後 (170d323)、PR #12 push で CI Linux Playwright bas
 
 **Phase 4.6 verification**: PR #12 CI 全 green (vitest UI 958 + daemon 546 + Playwright 19/19 darwin baseline + 19/19 linux baseline = 双方 platform pass)、mergeable 状態到達。Linux baseline auto-PR infrastructure が初めて実 active 化 (M0.16 codify から 2 milestone 経て first usage)。
 
+### Phase 4.7: Real daemon mock-less verify (post-closure user 指摘契機、2026-05-15)
+
+closure 判断が全 layer mock pass のみで成立した dogfood gap を user 指摘で post-closure 検出、Playwright MCP browser_* tool で `http://127.0.0.1:5757/` を mock パラメータ無しで navigate + snapshot し real scenario data で M0.17 全実装を実機 verify。
+
+- [x] real daemon mock-less verification + report 作成 + 2 screenshots commit <!-- id: m0.17-real-daemon status: done committed_sha: 24b3ab0 path: PM direct (Playwright MCP browser_navigate / browser_snapshot / browser_take_screenshot / browser_click 経由、AppShell sibling routing + Drawer active toggling + LiveRail conditional mount + ColdStart card + M2 branch label + Wall posters + DeskStations + SubroomClone 全項目 real scenario で動作確認、Finding R1 WS 再接続中 persistent display と R2 cat-walker real verify deferred を M0.17 scope 外 retro candidate 化) planned_files: docs/smoke-tests/m0.17-real-daemon/report.md, docs/smoke-tests/m0.17-real-daemon/*.png -->
+
+### M0.17 retro status: deferred to M0.18 / Phase boundary retro (user 判断 2026-05-15)
+
+M0.17 milestone retro は user 判断 (2026-05-15 closure session) により skip、`retro-debt: m0.17-carryover` 状態として M0.18 または Phase 2 entry の Phase boundary retro で covering scope 一括検討。
+
+**accumulated finding candidates (次回 retro が scan で参照する SoT 一覧)**:
+- `docs/smoke-tests/m0.17-dogfood/report.md` — Layer 2.5 dogfood smoke 由来 6 候補 (act adoption gap / proposed file SSoT oversight / stale test selector / type name stale / fixture drift CI gate / dogfood 成功 record)
+- `docs/smoke-tests/m0.17-real-daemon/report.md` — real daemon mock-less verify 由来 4 候補 (mock-only dogfood gap structural / WS 再接続中 persistent display / cat-walker real daemon active verify deferred / loom-ui-smoke mandate 格上げ提案)
+- `tests/REQUIREMENTS.md` REQ-100..102 — M0.16 latent bug class 由来 implicit candidates (CI parity gate adoption gap / codify→next milestone usage gate)
+- Phase 4.5 hotfix (REQ-091) — proposed file SSoT oversight + stale test selector + tRPC WS transport の 3 root cause、design handoff bundle review gate 強化候補
+
+**rationale**: Phase boundary retro covering rule (CLAUDE.md M0.8 retro 規律 + retro 2026-05-04-001 F-pj-005 解消) により、M0.15/M0.16/M0.17 連続 unrun-retro 状態を Phase boundary で一括 covering。dogfood phase の柔軟運用、`.claude-loom/project-prefs.json` `last_retro` は m0.15-complete のまま (実 retro 未実行のため更新せず、carryover state を明示)。
+
 ### M0.17 完成基準
 
 REVIEW.md Phase 1+2+3+4 完了、proposed file 11 種全適用 (shell.css / room.css / tokens.css.patch / index.css / AppShell / 2 つの constants.ts / RoomBackground / RoomView / DeskStation / LiveRail)、`ui/src/views/room/Islands.tsx` 削除済、再現度 30〜40% → ≥90% 達成 (Playwright visual diff 確認)、Outlet 全画面オーバーレイ撤去 (S2 — sibling routing 化、Drawer active 強調活性化)、ゾーン箱化解消 (B2 — SVG ラグ化、枠線なし)、ResizeObserver による比率レイアウト (B3 — `width=1080` 固定座標廃止)、LiveRail PM idle 時表示 (S1)、cat-walker walkTo 配線 (S6)、G6 トークン化全廃 (`STATUS_COLOR` 等の literal 定数廃止 + inline style → class 移行 + 構造化テーブル constants.ts 化)、`./tests/run_tests.sh` 全 PASS、`pnpm --filter @claude-loom/ui test` 全 pass (regression 0)、`pnpm --filter @claude-loom/daemon test` 全 pass (regression 0)、`tsc --noEmit` redesign 由来 error 0 (pre-existing は維持)、Layer 2.5 dogfood smoke 8 step 全 PASS (Step 8 graceful skip 可)、Playwright darwin baseline 全 16 picture 再撮影済 + 16/16 pass、SPEC §3.6.14 / docs/SCREEN_REQUIREMENTS.md / DOC_CONSISTENCY_CHECKLIST.md update 済、tests/REQUIREMENTS.md REQ-091..N PM 一括 append 済、`tag m0.17-complete` 設置、`m0`〜`m0.16-complete` 全保持、main への PR open 済 (branch hygiene 遵守)。
