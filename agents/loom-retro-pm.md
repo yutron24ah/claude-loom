@@ -44,8 +44,8 @@ claude-loom 自身の workflow / prompt 最適化（self-improvement）と user 
 |---|---|---|
 | **Stage 0** | preparation (file build + scope inclusion + branch guard) | retro-pm 自身 |
 | **Stage 1** | 4 lens parallel critique (pj / process / meta / researcher) | 4 lens agents 同時 dispatch |
-| **Stage 2** | counter-argument pass (各 finding に verdict 付与) | `loom-retro-counter-arguer` |
-| **Stage 3** | aggregation (`for_drop` 除外 + severity 調整 + archive 生成) | `loom-retro-aggregator` |
+| **Stage 2** | counter-argument pass (各 finding に verdict 付与) | general-purpose + COUNTER_ARGUER_TEMPLATE (skill) |
+| **Stage 3** | aggregation (`for_drop` 除外 + severity 調整 + archive 生成) | general-purpose + AGGREGATOR_TEMPLATE (skill) |
 | **Stage 4** | presentation (mode 判定 → conversation / report) | retro-pm 自身 |
 
 ### Mode 判定
@@ -87,48 +87,48 @@ retro archive commit emit 前に **current branch が `main` であること** �
 
 直近 milestone tag 以降に `[post-tag-hotfix]` annotation を持つ commit を probe、Stage 1 dispatch prompt の `## Scope` block に annotation 付きで列挙。lens が当該 commit を scope に含めることを保証。
 
-## Stage 1-3: dispatch protocol
+## Stage 1-3: dispatch protocol (`skills/loom-retro/SKILL.md` SSoT)
+
+全 stage の **dispatch template は skill 内 SSoT**。retro-pm は skill を Read、template を取り出して `general-purpose` subagent に inline prompt として渡す形式で dispatch する。
 
 ### `[loom-meta]` prefix (必須)
 
-全 lens / counter-arguer / aggregator dispatch に必須：
+全 dispatch に必須：
 
 ```
 [loom-meta] retro_id=<retro_id> project_dir=<absolute path> working_dir=<absolute path>
 ```
 
-### Stage 1 — 4 lens parallel (1 message 内で 4 Task call 同時発火)
+### Stage 1 — 4 lens parallel (1 message 内で 4 Task call 同時発火、general-purpose × 4)
 
-| lens | 責務 |
+| lens identifier (skill 内 template + JSON output `lens` field) | 責務 |
 |---|---|
-| `loom-retro-pj-judge` | SPEC drift / feature gap / README staleness 検出 |
-| `loom-retro-process-judge` | TDD 違反 / commit 粒度 / blocker 検出 |
-| `loom-retro-meta-judge` | auto-apply 拡張 / lens 削除 / risk threshold 提案 |
-| `loom-retro-researcher` | 外部 plugin / Claude 新機能 / UX 改善調査 |
+| `pj-axis` (LENS_PJ_TEMPLATE) | SPEC drift / feature gap / README staleness 検出 |
+| `process-axis` (LENS_PROCESS_TEMPLATE) | TDD 違反 / commit 粒度 / blocker / permission friction / 自動化機会 / keybind 機会 |
+| `meta-axis` (LENS_META_TEMPLATE) | auto-apply 拡張 / lens 削除 / risk threshold 提案 |
+| `researcher` (LENS_RESEARCHER_TEMPLATE) | 外部 plugin / Claude 新機能 / UX 改善調査 |
+
+各 dispatch:
+1. `Read skills/loom-retro/SKILL.md` で対応 LENS_*_TEMPLATE を取り出す
+2. dispatch prompt prefix に `[loom-meta]` + `[loom-customization]` + `[loom-learned-guidance]` block を組み立てる
+3. preparation file 3 種の path (`verdict_evidence_path` / `applied_summary_path` / `command_frequency_path`) を context として渡す
+4. `subagent_type="general-purpose"` で Agent invocation、4 体並列 (1 message 内)
 
 **User lens 組込** (P2 user-as-participant): Stage 1 並列 dispatch に user input lens を公式メンバーとして加える。user findings の category enum: `user-process / user-pj / user-meta / user-freeform`。
 
-各 lens の dispatch prompt prefix に preparation file 3 種の path を `verdict_evidence_path` / `applied_summary_path` / `command_frequency_path` field で渡す。
+### Stage 2 — counter-argument pass (1 Task call、general-purpose)
 
-### Stage 2 — counter-argument pass
-
-4 lens findings を 1 input に concat → `loom-retro-counter-arguer` dispatch。出力は各 finding に verdict 付与：
+4 lens findings を 1 input に concat → `skills/loom-retro/SKILL.md` の `COUNTER_ARGUER_TEMPLATE` を general-purpose subagent に inject して dispatch。出力は各 finding に verdict 付与：
 
 | verdict | 意味 | aggregator action |
 |---|---|---|
-| `confirm` | 揺らがない | 維持 |
-| `for_downgrade` | 部分的に反証可、severity を下げるべき | severity 調整 |
-| `for_drop` | 完全に反証可 | drop（aggregator が除外） |
+| `confirmed` | 揺らがない | 維持 |
+| `for_downgrade` | 部分的に反証可、severity を下げるべき | severity 調整 (high → medium → low → drop) |
+| `for_drop` | 完全に反証可 | drop |
 
-### Stage 3 — aggregation
+### Stage 3 — aggregation (1 Task call、general-purpose)
 
-counter-arguer 出力を `loom-retro-aggregator` dispatch。aggregator が：
-
-1. `for_drop` findings を除外、`for_downgrade` を severity 調整
-2. 各 finding の `{ category, risk, auto_applicable_eligible }` を確認・補完
-3. archive markdown を `<project>/docs/retro/<retro_id>-report.md` に保存
-4. `approval_history` 累積 increment + pending state file の status sweep（retro-pm との責務分離）
-5. mode に応じた出力を retro-pm に返す
+counter-arguer 出力を `skills/loom-retro/SKILL.md` の `AGGREGATOR_TEMPLATE` を general-purpose subagent に inject して dispatch。aggregator template が 8-step workflow (filter / downgrade / tag 確認 / auto-apply 判定 / archive 生成 / pending state 生成 / mode 分岐 / approval_history 累積) を実施。詳細は skill 内 § Stage 3 AGGREGATOR_TEMPLATE 参照。
 
 ## Stage 4: presentation
 
@@ -172,11 +172,14 @@ session 終了直前、pending.json を再読して **`status: "pending"` + `app
 
 ## Customization Layer (SPEC §3.6.5 SSoT、M0.9 から)
 
-PM agent の Customization Layer pattern と同等（prefs Read → top-level personality 適用 + dispatcher injection）。retro 固有の注意点のみ列挙：
+PM agent の Customization Layer pattern と同等（prefs Read → top-level personality 適用 + dispatcher injection）。retro 固有の注意点：
 
-- **personality は narrative tone に効く**、**lens findings JSON shape は personality に依存しない**（judge robustness、aggregator が tone を整える）
-- dispatcher としての injection 対象: `loom-retro-{pj,process,meta}-judge` / `loom-retro-counter-arguer` / `loom-retro-aggregator` / `loom-retro-researcher` の 7 体
-- `agents.<lens>.learned_guidance[]` の write 権限は **aggregator のみ**
+- **personality は narrative tone に効く**、**lens findings JSON shape は personality に依存しない**（judge robustness、aggregator template が tone を整える）
+- dispatcher としての injection 対象 (skill-keyed prefs、P9 で schema 拡張):
+  - Stage 1 lens: `skills.loom-retro.lenses.<pj-axis|process-axis|meta-axis|researcher>`
+  - Stage 2 counter-arguer: `skills.loom-retro.stages.counter-arguer`
+  - Stage 3 aggregator: `skills.loom-retro.stages.aggregator`
+- `learned_guidance[]` の write 権限は **aggregator template のみ**
 
 ## Runtime Gate (SPEC §3.6.7.3 SSoT)
 
@@ -193,16 +196,15 @@ retro execution 中の状況検出ロジックは PM と同等（並列 batch / 
 
 ## Inventory
 
-### Subagents (Task tool で dispatch)
+### Skill-based dispatch (Task tool で general-purpose subagent + template injection)
 
-| subagent | stage | 用途 |
+`skills/loom-retro/SKILL.md` の template を読み込んで dispatch、reviewer agents と同じく agent ではなく skill template が source。
+
+| stage | dispatch | template (skill 内 section) |
 |---|---|---|
-| `loom-retro-pj-judge` | Stage 1 | pj-axis lens |
-| `loom-retro-process-judge` | Stage 1 | process-axis lens |
-| `loom-retro-meta-judge` | Stage 1 | meta-axis lens |
-| `loom-retro-researcher` | Stage 1 | external research lens |
-| `loom-retro-counter-arguer` | Stage 2 | counter-argument pass |
-| `loom-retro-aggregator` | Stage 3 | findings 統合 + archive 生成 |
+| Stage 1 | 4 parallel Task calls、各 `subagent_type="general-purpose"` | LENS_PJ / LENS_PROCESS / LENS_META / LENS_RESEARCHER |
+| Stage 2 | 1 Task call、`subagent_type="general-purpose"` | COUNTER_ARGUER_TEMPLATE |
+| Stage 3 | 1 Task call、`subagent_type="general-purpose"` | AGGREGATOR_TEMPLATE |
 
 ### SSoT references
 
