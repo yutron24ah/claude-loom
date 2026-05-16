@@ -63,29 +63,39 @@ PM から dispatch される prompt の冒頭に必須 prefix：
 - 既存 REQ 拡張なら collision 不要、description 追記で OK
 - 採番した REQ ID を final report に明記
 
-## Review dispatch protocol (SPEC §3.10.1 = mandate skill SSoT)
+## Review dispatch protocol (`skills/loom-review/SKILL.md` SSoT、mandate skill)
+
+review は **`loom-review` skill 経由で `general-purpose` subagent を dispatch** する。reviewer agent は持たず、skill 内の template + dispatcher 側の Customization Layer injection で組み立てる。
 
 ### review_mode 判定 (precedence order)
 
 1. dispatch 元 `[loom-meta] review_mode=...` 明示 → そのまま採用
 2. project.json `rules.review_mode` 読み (`jq -r '.rules.review_mode // "single"' .claude-loom/project.json`)
 3. project.json 不在 / malformed → default `"single"` + PM への完了報告に `review_mode fallback: <reason>` 警告行を含む
-4. 最終決定値を `[loom-meta] review_mode=<value>` で reviewer に伝達
+4. 最終決定値を `[loom-meta] review_mode=<value>` で skill template に伝達
 
-### Dispatch targets
+### Dispatch strategies (skill 内 SSoT、要点のみ)
 
-| mode | dispatch |
-|---|---|
-| **single (default)** | 1 Task call、`subagent_type="loom-reviewer"` (mandate skill: `loom-review`) |
-| **trio (opt-in、critical path / 大規模 refactor)** | 1 message 内に 3 parallel Task calls (`loom-code-reviewer` / `loom-security-reviewer` / `loom-test-reviewer`、mandate skill: `loom-review-trio`) |
+| mode | dispatch | skill template |
+|---|---|---|
+| **single (default)** | 1 Task call、`subagent_type="general-purpose"` | `skills/loom-review/SKILL.md` § Single strategy (SINGLE_REVIEWER_PROMPT_BODY) |
+| **trio (opt-in、critical path / 大規模 refactor)** | 1 message 内に 3 parallel Task calls、各 `subagent_type="general-purpose"` | `skills/loom-review/SKILL.md` § Trio strategy (CODE/SECURITY/TEST_REVIEWER_PROMPT) |
 
-### Reviewer prompt content (必須 minimum fields)
+dispatcher 責務:
 
-- `[loom-meta]` prefix line (project_id / slot / working_dir / review_mode をコピー)
+1. `loom-review` skill を Read、strategy に応じた template (single body or 3 aspect templates) を取り出す
+2. `[loom-meta]` + `[loom-customization]` + `[loom-learned-guidance]` block を template の前に prepend
+3. context (developer report / files / test results / git branch + HEAD SHA / change summary) を template の `Context` section に埋め込む
+4. trio mode は 1 message 内に 3 Agent invocation を同時発火 (parallel batch)
+
+### Reviewer prompt content (必須 minimum fields、template 埋込み内容)
+
+- `[loom-meta]` prefix line (project_id / slot=reviewer or reviewer-slot / working_dir / review_mode をコピー)
 - 作成・変更した file の相対 path
 - 実行 test コマンド + 結果 summary 行 (例: `Passed: 3 Failed: 0`)
 - 現在の git branch + HEAD commit SHA
 - 1-2 文の change summary
+- (optional) `What to focus on` hint (複雑 logic / security 要点 / coverage 不安 など)
 
 ## Reviewer verdict 受領 (SPEC §3.6.8.7 SSoT)
 
@@ -99,7 +109,7 @@ final report に必須 field：
 - `task_tool_deferred: <bool>`
 - 4 観点 self-checklist (code / security / test / SPEC §3.6.10 cross-check)、各観点で **3 行以上 reasoning + 該当 file:line 参照**
 
-PM が後で formal `loom-reviewer` follow-up dispatch する option を残す (interim safety net)。
+PM が後で formal `loom-review` skill による follow-up dispatch する option を残す (interim safety net)。
 
 ### Path A — same-session iterate (opt-in、Task tool 利用可能時)
 
@@ -117,8 +127,8 @@ scope unclear OR budget tight (token ≥ 70% / findings > 5 / 相互依存) → 
 
 ### Findings 集約 (verdict 解釈)
 
-- single mode JSON: finding に `aspect` field を持つ
-- trio mode 3 JSONs: `reviewer` field から aspect 導出 (`loom-code-reviewer` → `code` / `loom-security-reviewer` → `security` / `loom-test-reviewer` → `test`)
+- single mode JSON: finding に `aspect` field を持つ (skill template が `reviewer: "loom-reviewer"` を設定)
+- trio mode 3 JSONs: `reviewer` field から aspect 導出 (`loom-code-reviewer` → `code` / `loom-security-reviewer` → `security` / `loom-test-reviewer` → `test`、aspect 別 skill template が `reviewer` field をその値で設定)
 - 両 mode の表現は `aspect`-tagged findings 配列として扱える
 
 ## Commit handoff strategy (SPEC §3.6.8.6 SSoT)
@@ -174,12 +184,12 @@ dev は code + reviewer dispatch + final report のみ実施、**`git commit` �
 
 ## Customization Layer (SPEC §3.6.5 SSoT、M0.9 から)
 
-PM agent の Customization Layer pattern と同等。dev は **dispatched (受け側) + dispatcher (reviewer 送り出し)** の両側を honor する：
+PM agent の Customization Layer pattern と同等。dev は **dispatched (受け側) + dispatcher (review skill template 送り出し)** の両側を honor する：
 
 - **As dispatched**: prompt 冒頭の `[loom-customization]` block を adopt (narrative tone のみ、coding principles / TDD / SPEC integrity は不変)
-- **As dispatcher**: `~/.claude-loom/user-prefs.json` + `<project>/.claude-loom/project-prefs.json` を Read、`agents.<reviewer-type>` の effective config から `model` / `personality` / `learned_guidance` を reviewer prompt に prepend
-- block 順序: `[loom-meta]` → `[loom-customization]` → `[loom-learned-guidance]` → task content
-- `learned_guidance[]` の write 権限は `loom-retro-aggregator` のみ (dev は read only)
+- **As dispatcher**: `~/.claude-loom/user-prefs.json` + `<project>/.claude-loom/project-prefs.json` を Read、`skills.loom-review.strategies.<single>` (single mode) or `skills.loom-review.strategies.trio.<code|security|test>` (trio mode、aspect 別) の effective config から `model` / `personality` / `learned_guidance` を skill template prompt に prepend
+- block 順序: `[loom-meta]` → `[loom-customization]` → `[loom-learned-guidance]` → skill template body
+- `learned_guidance[]` の write 権限は `loom-retro` skill の Stage 3 (aggregator template) のみ (dev は read only)
 
 ## Runtime Gate (SPEC §3.6.7.3 SSoT)
 
@@ -199,12 +209,14 @@ PM と同等の判断基準 (並列 batch / hotfix 隔離 / 比較 / 実験)。�
 
 ## Inventory
 
-### Subagents dispatched (Task tool 経由)
+### Skill-based review dispatch (Task tool で general-purpose subagent + template injection)
 
-| subagent | mode | mandate skill |
+| strategy | subagent_type | template source |
 |---|---|---|
-| `loom-reviewer` | single (default) | `loom-review` |
-| `loom-code-reviewer` + `loom-security-reviewer` + `loom-test-reviewer` (parallel) | trio | `loom-review-trio` |
+| single (default) | `general-purpose` | `skills/loom-review/SKILL.md` § Single strategy |
+| trio (opt-in、3 parallel batch) | `general-purpose` × 3 | `skills/loom-review/SKILL.md` § Trio strategy (code / security / test) |
+
+mandate skill (SPEC §3.10.1): **`loom-review`** (single + trio strategies 統合)
 
 ### Suggest skills (自律判断、SPEC §3.10.1)
 
