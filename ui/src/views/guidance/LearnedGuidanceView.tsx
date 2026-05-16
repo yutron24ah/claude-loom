@@ -10,6 +10,7 @@
  */
 import { CatSprite } from '../../components/CatSprite';
 import { ROSTER, type RosterEntry } from '../room/roster';
+import '../../styles/screens/guidance.css';
 
 // -------------------------------------------------------------------------
 // Types — aligned with daemon learnedGuidanceEntrySchema
@@ -148,15 +149,8 @@ function GuidanceItemCard({ item, agent }: GuidanceItemCardProps): JSX.Element {
     <div
       data-testid="guidance-item"
       data-active={item.active}
-      style={{
-        background: 'var(--p-paper)',
-        border: '2px solid var(--p-border)',
-        padding: '10px 12px',
-        display: 'flex',
-        gap: 12,
-        alignItems: 'flex-start',
-        opacity: item.active ? 1 : 0.5,
-      }}
+      className="lg-item"
+      style={{ opacity: item.active ? 1 : 0.5 }}
     >
       {/* Active state marker (hidden visual indicator for tests) */}
       {item.active
@@ -165,7 +159,7 @@ function GuidanceItemCard({ item, agent }: GuidanceItemCardProps): JSX.Element {
       }
 
       {/* Agent sprite with scroll icon when active */}
-      <div style={{ position: 'relative', flexShrink: 0 }}>
+      <div className="lg-item__sprite-wrapper">
         <CatSprite
           size={36}
           fur={agent?.fur ?? '#aaa'}
@@ -177,28 +171,18 @@ function GuidanceItemCard({ item, agent }: GuidanceItemCardProps): JSX.Element {
       </div>
 
       {/* Body */}
-      <div style={{ flex: 1, minWidth: 0 }}>
+      <div className="lg-item__body">
         {/* Agent + category + source + scope */}
-        <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 4, flexWrap: 'wrap' }}>
-          <span
-            data-testid="guidance-agent-name"
-            style={{ fontSize: 12, fontWeight: 700 }}
-          >
+        <div className="lg-item__meta-row">
+          <span data-testid="guidance-agent-name" className="lg-item__agent-name">
             {item.agentName}
           </span>
-          {agent && (
-            <span className="rpg-label">{agent.role}</span>
-          )}
-          <span
-            data-testid="guidance-category"
-            style={{ display: 'flex', alignItems: 'center', gap: 4 }}
-          >
+          {agent && <span className="rpg-label">{agent.role}</span>}
+          <span data-testid="guidance-category" className="lg-item__category">
             <span className={CATEGORY_DOT_CLASS[item.category]} />
             <span className="rpg-label">{item.category}</span>
           </span>
-          <span style={{ fontSize: 9, fontFamily: 'ui-monospace, monospace', color: 'var(--p-text-muted)' }}>
-            from: {item.fromSource}
-          </span>
+          <span className="lg-item__from-source">from: {item.fromSource}</span>
           <span
             className="chip"
             style={item.scope === 'project'
@@ -208,51 +192,31 @@ function GuidanceItemCard({ item, agent }: GuidanceItemCardProps): JSX.Element {
             {item.scope}
           </span>
           {!item.active && (
-            <span className="chip" style={{ color: 'var(--p-text-muted)' }}>inactive</span>
+            <span className="chip lg-chip--inactive">inactive</span>
           )}
         </div>
 
         {/* Guidance text */}
-        <div
-          data-testid="guidance-text"
-          style={{
-            fontSize: 11,
-            lineHeight: 1.5,
-            color: 'var(--p-text)',
-            padding: '6px 8px',
-            background: 'var(--p-tint)',
-            borderLeft: '3px solid var(--p-accent)',
-          }}
-        >
+        <div data-testid="guidance-text" className="lg-item__text">
           {item.text}
         </div>
 
         {/* Meta row */}
-        <div style={{
-          display: 'flex',
-          gap: 12,
-          marginTop: 6,
-          fontSize: 9,
-          color: 'var(--p-text-muted)',
-          fontFamily: 'ui-monospace, monospace',
-          alignItems: 'center',
-        }}>
+        <div className="lg-item__stat-row">
           <span>added: {item.addedAt}</span>
           <span>use_count: {item.useCount}</span>
           <span>ttl: {item.ttl}</span>
-          <div style={{ marginLeft: 'auto', display: 'flex', gap: 4 }}>
+          <div className="lg-item__btn-group">
             <button
               data-testid="guidance-toggle"
-              className="btn-px ghost"
-              style={{ fontSize: 9, padding: '2px 6px' }}
+              className="btn-px ghost guidance-action-btn"
               onClick={() => undefined}
             >
               {item.active ? 'deactivate' : 'activate'}
             </button>
             <button
               data-testid="guidance-delete"
-              className="btn-px ghost"
-              style={{ fontSize: 9, padding: '2px 6px', color: 'var(--p-error)' }}
+              className="btn-px ghost guidance-delete-btn"
               onClick={() => undefined}
             >
               削除
@@ -276,27 +240,23 @@ export function LearnedGuidanceView(): JSX.Element {
   return (
     <div
       data-testid="guidance-view"
-      className="rpg-frame pixel"
-      style={{ padding: 18 }}
+      className="rpg-frame pixel lg-root"
     >
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
-        <div
-          data-testid="guidance-title"
-          className="rpg-title"
-        >
+      <div className="lg-header">
+        <div data-testid="guidance-title" className="rpg-title">
           Learned Guidance — agent に注入された学習
         </div>
         <span className="chip">
-          active <b style={{ marginLeft: 4 }}>{activeCount}</b> / total {totalCount}
+          active <b className="lg-header__badge-active">{activeCount}</b> / total {totalCount}
         </span>
-        <span style={{ marginLeft: 'auto', fontSize: 10, color: 'var(--p-text-muted)' }}>
+        <span className="lg-header__audit-hint">
           retro / finding 由来は監査履歴あり
         </span>
       </div>
 
       {/* Guidance list */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      <div className="lg-list">
         {MOCK_GUIDANCE.map((item) => (
           <GuidanceItemCard
             key={item.id}
@@ -307,15 +267,7 @@ export function LearnedGuidanceView(): JSX.Element {
       </div>
 
       {/* Footer hint */}
-      <div style={{
-        marginTop: 12,
-        fontSize: 10,
-        color: 'var(--p-text-muted)',
-        padding: '8px 12px',
-        background: 'var(--p-tint)',
-        border: '2px dashed var(--p-border)',
-        lineHeight: 1.5,
-      }}>
+      <div className="lg-footer">
         guidance は agent の system prompt に append される。
         重複や矛盾は次 retro でレビュー候補としてマークされる（Phase 2）
       </div>

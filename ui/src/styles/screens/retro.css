@@ -1,0 +1,354 @@
+/* ===========================================================================
+ * retro.css — Retro screen styles (M0.17 Round 2 Phase B mass-production)
+ * Owns: .retro-* classes for views/retro/RetroView.tsx
+ *
+ * Tokens consumed: --p-bg-sky, --p-paper, --p-tint, --p-border,
+ *   --p-text, --p-text-muted, --p-success, --p-error, --p-warn, --p-accent, --p-stone
+ * =========================================================================== */
+
+/* ---------------------------------------------------------------------------
+ * Root container — 2-column grid layout
+ * --------------------------------------------------------------------------- */
+
+.retro-screen {
+  position: absolute;
+  inset: 0;
+  background: var(--p-bg-sky);
+  display: grid;
+  grid-template-columns: 1fr 360px;
+  gap: 12px;
+  padding: 16px;
+  overflow: hidden;
+}
+
+/* ---------------------------------------------------------------------------
+ * Left column — lens cards + transcript + scrubber
+ * --------------------------------------------------------------------------- */
+
+.retro-left {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+/* ---------------------------------------------------------------------------
+ * Session header
+ * --------------------------------------------------------------------------- */
+
+.retro-session-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.retro-session-header__title {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+/* WHY: verdict chip color is dynamic (PASS → success, else error), stays inline */
+
+.retro-session-header__spacer {
+  flex: 1;
+}
+
+/* ---------------------------------------------------------------------------
+ * Lens cards grid (4 cards)
+ * --------------------------------------------------------------------------- */
+
+.retro-lenses {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+/* WHY: lens card background is dynamic (isUser → accent-soft, else paper), stays inline */
+.retro-lens-card {
+  padding: 8px;
+  border: 2px solid var(--p-border);
+}
+
+.retro-lens-card__header {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.retro-lens-card__icon {
+  font-size: 18px;
+}
+
+.retro-lens-card__name {
+  font-size: 10px;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.retro-lens-card__count {
+  font-size: 8px;
+  color: var(--p-text-muted);
+}
+
+/* Severity dot row */
+.retro-lens-card__sev-row {
+  display: flex;
+  gap: 3px;
+  margin-top: 6px;
+}
+
+/* WHY: severity dot bg is dynamic (SEV_COLOR[s]), stays inline */
+.retro-sev-dot {
+  width: 12px;
+  height: 12px;
+  border: 1px solid var(--p-border);
+  display: inline-block;
+}
+
+/* ---------------------------------------------------------------------------
+ * Transcript scroll area
+ * --------------------------------------------------------------------------- */
+
+.retro-transcript {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  border: 2px solid var(--p-border);
+  background: var(--p-paper);
+  padding: 10px;
+}
+
+.retro-transcript__label {
+  font-size: 9px;
+  color: var(--p-text-muted);
+  letter-spacing: 0.06em;
+  margin-bottom: 8px;
+}
+
+/* ---------------------------------------------------------------------------
+ * Transcript entry row
+ * --------------------------------------------------------------------------- */
+
+.retro-entry {
+  display: flex;
+  gap: 8px;
+  padding: 6px 0;
+  border-bottom: 1px dashed var(--p-border);
+  align-items: flex-start;
+}
+
+.retro-entry__ts {
+  font-size: 9px;
+  color: var(--p-text-muted);
+  font-family: ui-monospace, monospace;
+  width: 36px;
+  flex-shrink: 0;
+}
+
+.retro-entry__body {
+  flex: 1;
+  min-width: 0;
+}
+
+.retro-entry__who-row {
+  font-size: 9px;
+}
+
+/* WHY: kind badge background is dynamic (KIND_COLOR[entry.kind]), stays inline */
+.retro-entry__kind-badge {
+  margin-left: 6px;
+  padding: 0 4px;
+  color: white;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.retro-entry__ref-id {
+  margin-left: 6px;
+  font-family: ui-monospace, monospace;
+  color: var(--p-text-muted);
+}
+
+.retro-entry__text {
+  font-size: 11px;
+  margin-top: 2px;
+  line-height: 1.5;
+}
+
+/* ---------------------------------------------------------------------------
+ * Timeline scrubber
+ * --------------------------------------------------------------------------- */
+
+.retro-scrubber {
+  margin-top: 8px;
+  padding: 6px 10px;
+  border: 2px solid var(--p-border);
+  background: var(--p-paper);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.retro-scrubber__range {
+  flex: 1;
+}
+
+.retro-scrubber__counter {
+  font-size: 9px;
+  color: var(--p-text-muted);
+  font-family: ui-monospace, monospace;
+}
+
+/* ---------------------------------------------------------------------------
+ * Right column — findings + action plan
+ * --------------------------------------------------------------------------- */
+
+.retro-right {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  gap: 10px;
+}
+
+/* ---------------------------------------------------------------------------
+ * Findings list panel
+ * --------------------------------------------------------------------------- */
+
+.retro-findings {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  border: 2px solid var(--p-border);
+  background: var(--p-paper);
+  padding: 10px;
+}
+
+.retro-findings__label {
+  font-size: 9px;
+  color: var(--p-text-muted);
+  letter-spacing: 0.06em;
+  margin-bottom: 8px;
+}
+
+/* ---------------------------------------------------------------------------
+ * Finding item card
+ * --------------------------------------------------------------------------- */
+
+.retro-finding-item {
+  padding: 8px;
+  margin-bottom: 6px;
+  border: 1.5px solid var(--p-border);
+  background: var(--p-tint);
+}
+
+.retro-finding-item__header {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+/* WHY: sev bar background is dynamic (SEV_COLOR[f.sev]), stays inline */
+.retro-finding-item__sev-bar {
+  width: 8px;
+  height: 22px;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.retro-finding-item__id {
+  font-size: 9px;
+  font-family: ui-monospace, monospace;
+  color: var(--p-text-muted);
+}
+
+.retro-finding-item__title {
+  font-size: 11px;
+  font-weight: 700;
+  flex: 1;
+}
+
+.retro-finding-item__meta {
+  font-size: 9px;
+  color: var(--p-text-muted);
+  margin-bottom: 6px;
+  font-family: ui-monospace, monospace;
+}
+
+/* Badges row (sev chip + category chip) */
+.retro-finding-item__badges {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 6px;
+  align-items: center;
+}
+
+/* WHY: sev chip bg is dynamic (SEV_COLOR[f.sev]), stays inline on the chip element */
+
+/* Action buttons row */
+.retro-finding-item__actions {
+  display: flex;
+  gap: 4px;
+}
+
+/* WHY: btn-px classes supply base button styling */
+.retro-action-btn {
+  font-size: 8px;
+  padding: 2px 6px;
+}
+
+/* ---------------------------------------------------------------------------
+ * Action plan panel
+ * --------------------------------------------------------------------------- */
+
+.retro-action-plan {
+  border: 2px solid var(--p-border);
+  background: var(--p-paper);
+  padding: 10px;
+}
+
+.retro-action-plan__label {
+  font-size: 9px;
+  color: var(--p-text-muted);
+  letter-spacing: 0.06em;
+  margin-bottom: 6px;
+}
+
+.retro-action-plan__row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+}
+
+.retro-action-plan__row-label {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  width: 80px;
+}
+
+.retro-action-plan__bar-track {
+  flex: 1;
+  height: 8px;
+  background: var(--p-tint);
+  border: 1px solid var(--p-border);
+}
+
+/* WHY: bar fill width (`${b.n * 20}%`) and bg color are dynamic, stay inline */
+.retro-action-plan__bar-fill {
+  height: 100%;
+}
+
+/* WHY: count label color is dynamic (b.c), stays inline */
+.retro-action-plan__count {
+  font-size: 11px;
+  font-weight: 700;
+  font-family: ui-monospace, monospace;
+  width: 24px;
+  text-align: right;
+}

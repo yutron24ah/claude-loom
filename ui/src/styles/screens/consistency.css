@@ -1,0 +1,246 @@
+/* ===========================================================================
+ * consistency.css — Consistency screen styles (M0.17 Round 2 Phase B mass-production)
+ * Owns: .cv-* classes for views/consistency/ConsistencyView.tsx
+ *
+ * Note: ConsistencyViewLive.tsx uses Tailwind-like utility classes; no .cvl-*
+ * classes are needed here. ConsistencyView.tsx (redesign port) owns all .cv-* classes.
+ *
+ * Tokens consumed: --p-paper, --p-tint, --p-border, --p-text, --p-text-muted,
+ *   --p-accent, --p-success, --p-error, --p-warn, --p-stone
+ * =========================================================================== */
+
+/* ---------------------------------------------------------------------------
+ * Root container
+ * Note: ConsistencyView uses .rpg-frame .pixel on the root; padding stays inline
+ * --------------------------------------------------------------------------- */
+
+/* ---------------------------------------------------------------------------
+ * Header row
+ * --------------------------------------------------------------------------- */
+
+.cv-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.cv-header__title {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.cv-header__spacer {
+  flex: 1;
+}
+
+/* WHY: chip with error bg is a static pattern; using chip + inline bg for the dynamic badge */
+
+/* ---------------------------------------------------------------------------
+ * Running state indicator
+ * --------------------------------------------------------------------------- */
+
+.cv-running {
+  padding: 14px;
+  border: 2px dashed var(--p-warn);
+  background: var(--p-paper);
+  margin-bottom: 12px;
+  font-size: 11px;
+}
+
+.cv-running__progress-track {
+  margin-top: 6px;
+  height: 6px;
+  background: var(--p-tint);
+  border: 1px solid var(--p-border);
+  overflow: hidden;
+}
+
+/* WHY: progress bar width is static 60% (mock) — can be moved to CSS */
+.cv-running__progress-fill {
+  width: 60%;
+  height: 100%;
+  background: var(--p-warn);
+}
+
+/* ---------------------------------------------------------------------------
+ * Empty state
+ * --------------------------------------------------------------------------- */
+
+.cv-empty {
+  padding: 30px;
+  text-align: center;
+  border: 2px solid var(--p-border);
+  background: var(--p-paper);
+}
+
+.cv-empty__title {
+  font-size: 12px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.cv-empty__hint {
+  font-size: 10px;
+  color: var(--p-text-muted);
+}
+
+/* ---------------------------------------------------------------------------
+ * Summary strip (4 stat cards: OPEN / ACK / FIXED / DISMISSED)
+ * --------------------------------------------------------------------------- */
+
+.cv-summary {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.cv-summary-card {
+  background: var(--p-tint);
+  border: 2px solid var(--p-border);
+  padding: 10px;
+}
+
+/* WHY: count color is dynamic (s.color from color array), stays inline */
+.cv-summary-card__count {
+  font-size: 20px;
+  font-weight: 800;
+  font-family: ui-monospace, monospace;
+}
+
+/* ---------------------------------------------------------------------------
+ * Finding cards list
+ * --------------------------------------------------------------------------- */
+
+.cv-findings-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* ---------------------------------------------------------------------------
+ * Finding card
+ * --------------------------------------------------------------------------- */
+
+/* WHY: card opacity is dynamic (isFixed || isDismissed → 0.55, else 1), stays inline */
+.cv-finding-card {
+  background: var(--p-paper);
+  border: 2px solid var(--p-border);
+  padding: 12px;
+}
+
+.cv-finding-card__top {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+/* Severity badge — WHY: bg color is dynamic (SEV_COLOR[f.sev]), stays inline */
+.cv-finding-card__sev-badge {
+  font-size: 9px;
+  font-weight: 700;
+  padding: 2px 6px;
+  margin-top: 2px;
+  color: white;
+  border: 2px solid var(--p-border);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  flex-shrink: 0;
+}
+
+.cv-finding-card__body {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Title row */
+.cv-finding-card__title-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 4px;
+  flex-wrap: wrap;
+}
+
+.cv-finding-card__id {
+  font-size: 9px;
+  font-family: ui-monospace, monospace;
+  color: var(--p-text-muted);
+}
+
+.cv-finding-card__title {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+/* WHY: status chip bg is dynamic (ack=warn, fixed=success, dismissed=stone), stays inline */
+
+/* File path + lines */
+.cv-finding-card__file {
+  font-size: 10px;
+  font-family: ui-monospace, monospace;
+  color: var(--p-accent);
+  margin-bottom: 4px;
+}
+
+.cv-finding-card__lines {
+  color: var(--p-text-muted);
+}
+
+/* Expand toggle button */
+.cv-finding-card__expand-btn {
+  font-size: 9px;
+  padding: 2px 6px;
+  margin-bottom: 4px;
+}
+
+/* Expanded detail */
+.cv-finding-card__detail {
+  font-size: 11px;
+  color: var(--p-text);
+  line-height: 1.5;
+  margin-bottom: 6px;
+}
+
+/* Suggestion box */
+.cv-finding-card__suggest {
+  font-size: 10px;
+  padding: 6px 8px;
+  background: var(--p-tint);
+  border: 1px dashed var(--p-border);
+  color: var(--p-text);
+}
+
+.cv-finding-card__suggest-label {
+  font-weight: 700;
+  color: var(--p-success);
+}
+
+/* Actions row */
+.cv-finding-card__actions {
+  display: flex;
+  gap: 4px;
+  margin-top: 8px;
+  align-items: center;
+}
+
+/* WHY: btn-px classes handle button styling */
+.cv-action-btn {
+  font-size: 9px;
+  padding: 3px 6px;
+}
+
+/* Source label (right-aligned) */
+.cv-finding-card__source {
+  margin-left: auto;
+  font-size: 9px;
+  color: var(--p-text-muted);
+}
+
+/* Dismiss button — muted color */
+.cv-action-btn--dismiss {
+  font-size: 9px;
+  padding: 3px 6px;
+  color: var(--p-text-muted);
+}

@@ -1,0 +1,280 @@
+/* ===========================================================================
+ * plan.css — Plan screen styles (M0.17 Round 2 Phase B template).
+ * Owns: .plan-* classes for views/plan/PlanView.tsx.
+ *
+ * Naming: BEM-like, .plan- namespace (screen-scoped, no collision with
+ * shell.css / room.css). Dynamic values (progress bar width, status colors)
+ * remain as inline styles in TSX.
+ *
+ * Tokens consumed:
+ *   --p-bg-sky, --p-text, --p-text-muted, --p-paper, --p-tint,
+ *   --p-border, --p-shadow, --p-accent, --p-accent-soft,
+ *   --p-success, --p-warn, --p-stone
+ * =========================================================================== */
+
+/* ---------------------------------------------------------------------------
+ * Root wrapper
+ * --------------------------------------------------------------------------- */
+
+.plan-screen {
+  position: absolute;
+  inset: 0;
+  padding: 16px;
+  overflow: auto;
+  background: var(--p-bg-sky);
+}
+
+/* ---------------------------------------------------------------------------
+ * Header bar (title + spacer + tab group + add button)
+ * --------------------------------------------------------------------------- */
+
+.plan-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.plan-header__title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--p-text);
+}
+
+.plan-header__spacer {
+  flex: 1;
+}
+
+/* ---------------------------------------------------------------------------
+ * Tab group
+ * --------------------------------------------------------------------------- */
+
+.plan-tab-group {
+  display: flex;
+  border: 2px solid var(--p-border);
+}
+
+/* WHY: tab buttons share a grouped border; individual borders use right-only
+ * hairline to avoid double-border between adjacent tabs. */
+.plan-tab {
+  all: unset;
+  cursor: pointer;
+  padding: 3px 10px;
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 9px;
+  font-weight: 700;
+  background: var(--p-tint);
+  color: var(--p-text);
+  border-right: 1px solid var(--p-border);
+}
+
+.plan-tab:last-child {
+  border-right: none;
+}
+
+.plan-tab--active {
+  background: var(--p-accent);
+  color: white;
+}
+
+/* WHY: disabled edit tab gets ghost treatment so it reads as "present but
+ * not-yet-available" (Phase A B8 fix preserved). */
+.plan-tab--ghost {
+  background: var(--p-tint);
+  color: var(--p-text-muted);
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* ---------------------------------------------------------------------------
+ * Body layout (two-column grid)
+ * --------------------------------------------------------------------------- */
+
+.plan-body {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 14px;
+  align-items: flex-start;
+}
+
+/* ---------------------------------------------------------------------------
+ * Milestones panel (left column)
+ * Extends .rpg-frame from tokens.css (background/border/shadow chrome).
+ * .plan-milestones overrides padding: 0 so inner sections control their own.
+ * --------------------------------------------------------------------------- */
+
+.plan-milestones {
+  padding: 0;
+}
+
+.plan-milestones__label {
+  font-size: 9px;
+  color: var(--p-text-muted);
+  letter-spacing: 0.06em;
+  margin-bottom: 6px;
+  padding: 10px 12px 0;
+}
+
+/* Empty state placeholder */
+.plan-milestones__empty {
+  padding: 30px;
+  text-align: center;
+  border: 2px dashed var(--p-border);
+  background: var(--p-paper);
+  font-size: 10px;
+  color: var(--p-text-muted);
+  margin: 0 12px 12px;
+}
+
+/* ---------------------------------------------------------------------------
+ * Individual milestone card
+ * --------------------------------------------------------------------------- */
+
+.plan-milestone {
+  padding: 12px;
+  background: var(--p-paper);
+  border: 2px solid var(--p-border);
+  box-shadow: 3px 3px 0 0 var(--p-shadow);
+  margin: 0 12px 8px;
+}
+
+/* Milestone header row (id + title + count + optional edit button) */
+.plan-milestone__header {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.plan-milestone__id {
+  font-size: 10px;
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  color: var(--p-text-muted);
+}
+
+.plan-milestone__title {
+  font-size: 13px;
+  font-weight: 700;
+  flex: 1;
+  color: var(--p-text);
+}
+
+.plan-milestone__count {
+  font-size: 10px;
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  color: var(--p-text-muted);
+}
+
+/* Progress bar track */
+.plan-milestone__progress {
+  height: 6px;
+  background: var(--p-tint);
+  border: 1px solid var(--p-border);
+  margin-bottom: 8px;
+  position: relative;
+}
+
+/* Progress fill — dynamic width stays inline (runtime value: m.progress * 100%) */
+.plan-milestone__progress-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  /* WHY: background color is also dynamic (green if complete, accent otherwise),
+   * so it remains inline. Only layout/shape is codified here. */
+}
+
+/* ---------------------------------------------------------------------------
+ * Milestone child items
+ * --------------------------------------------------------------------------- */
+
+.plan-child {
+  display: flex;
+  gap: 6px;
+  font-size: 10px;
+  padding: 2px 0;
+  align-items: center;
+}
+
+/* Status glyph column — dynamic color stays inline (STATUS_COLOR_VAR[c.st]) */
+.plan-child__glyph {
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  width: 12px;
+  flex-shrink: 0;
+}
+
+/* Child text — strikethrough & muted color are dynamic (status-driven), stay inline */
+.plan-child__text {
+  flex: 1;
+}
+
+/* ---------------------------------------------------------------------------
+ * Todos panel (right column, sticky)
+ * Extends .rpg-frame from tokens.css.
+ * WHY sticky: keeps the TodoWrite mirror visible while scrolling milestones.
+ * --------------------------------------------------------------------------- */
+
+.plan-todos {
+  background: var(--p-paper);
+  border: 2px solid var(--p-border);
+  padding: 10px;
+  position: sticky;
+  top: 16px;
+}
+
+.plan-todos__header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.plan-todos__title {
+  font-size: 9px;
+  color: var(--p-text-muted);
+  flex: 1;
+}
+
+.plan-todos__updated-at {
+  font-size: 8px;
+  color: var(--p-text-muted);
+}
+
+/* Individual todo row */
+.plan-todo-item {
+  display: flex;
+  gap: 6px;
+  font-size: 11px;
+  padding: 5px 0;
+  align-items: flex-start;
+}
+
+/* Separator: dashed bottom border between items, none on last */
+.plan-todo-item--not-last {
+  border-bottom: 1px dashed var(--p-border);
+}
+
+/* Status glyph — dynamic color stays inline */
+.plan-todo-item__glyph {
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  width: 14px;
+  flex-shrink: 0;
+  padding-top: 1px;
+}
+
+/* Todo text — strikethrough & muted color are dynamic (status-driven), stay inline */
+.plan-todo-item__text {
+  flex: 1;
+  line-height: 1.4;
+}
+
+/* Hint footer note */
+.plan-todos__hint {
+  margin-top: 10px;
+  padding: 6px;
+  font-size: 9px;
+  color: var(--p-text-muted);
+  background: var(--p-tint);
+  border: 1px dashed var(--p-border);
+  line-height: 1.5;
+}

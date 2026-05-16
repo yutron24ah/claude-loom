@@ -14,6 +14,8 @@
 @import './shell.css';
 /* Room-level surfaces: .desk-station* / .subroom-clone* / .room-poster* / .room-sign / .agent-detail-panel */
 @import './room.css';
+/* Screen-level styles: aggregated per-view CSS (M0.17 Round 2 Phase B+) */
+@import './screens/index.css';
 
 @tailwind base;
 @tailwind components;

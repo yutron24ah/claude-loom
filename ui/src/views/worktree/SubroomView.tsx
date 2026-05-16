@@ -19,6 +19,7 @@ import { useScenario } from '@claude-loom/redesign/api/websocket';
 import type { Worktree } from '@claude-loom/redesign/api/types';
 import { CatSprite } from '../../components/CatSprite';
 import type { RosterEntry } from '../../data/roster';
+import '../../styles/screens/worktree.css';
 
 type SubroomStatus = 'busy' | 'review' | 'idle';
 
@@ -142,27 +143,13 @@ export function SubroomView({
 
   return (
     <div
-      className="rpg-frame pixel subroom-view"
-      style={{
-        width,
-        padding: 0,
-        fontFamily: 'ui-monospace, "SF Mono", Menlo, Consolas, monospace',
-      }}
+      className="rpg-frame pixel sr-root"
+      style={{ width }}
     >
       {/* HEADER STRIP — branch + clone identity */}
-      <div
-        style={{
-          background: 'var(--p-accent)',
-          color: 'white',
-          padding: '10px 16px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          borderBottom: '3px solid var(--p-border)',
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div style={{ filter: 'drop-shadow(0 0 0 2px white)' }}>
+      <div className="sr-header">
+        <div className="sr-header__left">
+          <div className="sr-header__cat-wrap">
             <CatSprite
               size={32}
               fur={parentCat?.fur || '#aaa'}
@@ -172,86 +159,43 @@ export function SubroomView({
             />
           </div>
           <div>
-            <div style={{ fontSize: 9, opacity: 0.85, letterSpacing: '0.06em' }}>
+            <div className="sr-header__subtitle">
               SUBROOM · WORKTREE
             </div>
-            <div style={{ fontSize: 16, fontWeight: 700, letterSpacing: '0.02em' }}>
+            <div className="sr-header__branch">
               @{branch}
             </div>
           </div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div className="sr-header__status-group">
           <span
+            className="sr-header__status-dot"
             style={{
-              display: 'inline-block',
-              width: 10,
-              height: 10,
               background: statusColor,
-              border: '2px solid white',
               animation: status === 'busy' ? 'subroom-pulse 1.2s ease-in-out infinite' : 'none',
             }}
           />
-          <span
-            style={{
-              fontSize: 10,
-              fontWeight: 700,
-              letterSpacing: '0.08em',
-              textTransform: 'uppercase',
-            }}
-          >
+          <span className="sr-header__status-label">
             {status}
           </span>
         </div>
       </div>
 
       {/* BODY — 2 columns */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 0 }}>
+      <div className="sr-body">
         {/* LEFT — current task + disk info + activity */}
-        <div
-          style={{
-            padding: 16,
-            borderRight: '2px dashed var(--p-border)',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 12,
-          }}
-        >
+        <div className="sr-left">
           {/* NOW section — current task (last commit) */}
           <div>
-            <div
-              style={{
-                fontSize: 9,
-                color: 'var(--p-text-muted)',
-                letterSpacing: '0.06em',
-                marginBottom: 4,
-              }}
-            >
-              ▶ NOW
-            </div>
-            <div
-              style={{
-                fontSize: 14,
-                fontWeight: 700,
-                color: 'var(--p-text)',
-                lineHeight: 1.4,
-              }}
-            >
+            <div className="sr-section-label">▶ NOW</div>
+            <div className="sr-now__task">
               {session.task}
             </div>
-            <div style={{ marginTop: 6, display: 'flex', gap: 6, alignItems: 'center' }}>
-              <span
-                style={{
-                  fontSize: 9,
-                  fontWeight: 700,
-                  padding: '2px 6px',
-                  background: 'var(--p-warn)',
-                  color: 'white',
-                  border: '2px solid var(--p-border)',
-                }}
-              >
+            <div className="sr-now__badges">
+              <span className="sr-now__tdd-badge">
                 TDD: {session.tdd}
               </span>
-              <span style={{ fontSize: 10, color: 'var(--p-text-muted)' }}>
+              <span className="sr-now__tdd-detail">
                 {session.tddDetail}
               </span>
             </div>
@@ -259,38 +203,14 @@ export function SubroomView({
 
           {/* Path / disk info */}
           {session.file && (
-            <div
-              style={{
-                background: 'var(--p-tint)',
-                border: '2px solid var(--p-border)',
-                padding: '8px 10px',
-              }}
-            >
-              <div
-                style={{
-                  fontSize: 9,
-                  color: 'var(--p-text-muted)',
-                  letterSpacing: '0.04em',
-                  marginBottom: 3,
-                }}
-              >
-                PATH
-              </div>
-              <div
-                style={{
-                  fontSize: 11,
-                  fontWeight: 700,
-                  color: 'var(--p-text)',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap',
-                }}
-              >
+            <div className="sr-path-panel">
+              <div className="sr-path-panel__label">PATH</div>
+              <div className="sr-path-panel__path">
                 {session.file}
               </div>
               {session.diskMB > 0 && (
-                <div style={{ marginTop: 4, fontSize: 10, display: 'flex', gap: 10 }}>
-                  <span style={{ color: 'var(--p-text-muted)' }}>
+                <div className="sr-path-panel__disk">
+                  <span className="sr-path-panel__disk-label">
                     {session.diskMB} MB on disk
                   </span>
                 </div>
@@ -300,116 +220,38 @@ export function SubroomView({
 
           {/* ACTIVITY section */}
           <div>
-            <div
-              style={{
-                fontSize: 9,
-                color: 'var(--p-text-muted)',
-                letterSpacing: '0.06em',
-                marginBottom: 6,
-              }}
-            >
-              ▶ ACTIVITY
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <div className="sr-section-label">▶ ACTIVITY</div>
+            <div className="sr-activity-list">
               {session.activity.length > 0 ? (
                 session.activity.map((a, i) => (
-                  <div
-                    key={i}
-                    style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: 11 }}
-                  >
+                  <div key={i} className="sr-activity-row">
+                    <span className="sr-activity-row__ts">{a.t}</span>
                     <span
-                      style={{
-                        fontSize: 9,
-                        color: 'var(--p-text-muted)',
-                        width: 36,
-                        flexShrink: 0,
-                      }}
-                    >
-                      {a.t}
-                    </span>
-                    <span
-                      style={{
-                        fontSize: 8,
-                        fontWeight: 700,
-                        padding: '1px 5px',
-                        background: KIND_BG[a.k] || 'var(--p-stone)',
-                        color: 'white',
-                        border: '1.5px solid var(--p-border)',
-                        width: 50,
-                        textAlign: 'center',
-                        flexShrink: 0,
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.04em',
-                      }}
+                      className="sr-activity-row__kind"
+                      style={{ background: KIND_BG[a.k] || 'var(--p-stone)' }}
                     >
                       {a.k}
                     </span>
-                    <span
-                      style={{
-                        flex: 1,
-                        color: 'var(--p-text)',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap',
-                      }}
-                    >
-                      {a.m}
-                    </span>
+                    <span className="sr-activity-row__msg">{a.m}</span>
                   </div>
                 ))
               ) : (
-                <span style={{ fontSize: 10, color: 'var(--p-text-muted)' }}>
-                  — no recent activity
-                </span>
+                <span className="sr-activity-empty">— no recent activity</span>
               )}
             </div>
           </div>
         </div>
 
         {/* RIGHT — mini gantt + meta */}
-        <div
-          style={{
-            padding: 16,
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 12,
-          }}
-        >
+        <div className="sr-right">
           {/* THIS BRANCH section — mini gantt */}
           <div>
-            <div
-              style={{
-                fontSize: 9,
-                color: 'var(--p-text-muted)',
-                letterSpacing: '0.06em',
-                marginBottom: 6,
-              }}
-            >
-              ▶ THIS BRANCH · 1h
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+            <div className="sr-gantt__label">▶ THIS BRANCH · 1h</div>
+            <div className="sr-gantt__bars">
               {session.bars.map((b, i) => (
-                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <span
-                    style={{
-                      fontSize: 8,
-                      color: 'var(--p-text-muted)',
-                      width: 60,
-                      flexShrink: 0,
-                      textAlign: 'right',
-                    }}
-                  >
-                    {b.l}
-                  </span>
-                  <div
-                    style={{
-                      flex: 1,
-                      height: 10,
-                      background: 'var(--p-tint)',
-                      border: '1px solid var(--p-border)',
-                      position: 'relative',
-                    }}
-                  >
+                <div key={i} className="sr-gantt__bar-row">
+                  <span className="sr-gantt__bar-label">{b.l}</span>
+                  <div className="sr-gantt__bar-track">
                     <div
                       style={{
                         position: 'absolute',
@@ -423,16 +265,7 @@ export function SubroomView({
                       }}
                     />
                     {/* current-time marker at 95% */}
-                    <div
-                      style={{
-                        position: 'absolute',
-                        left: '95%',
-                        top: -1,
-                        bottom: -1,
-                        width: 1,
-                        background: 'var(--p-error)',
-                      }}
-                    />
+                    <div className="sr-gantt__now-line" />
                   </div>
                 </div>
               ))}
@@ -440,43 +273,13 @@ export function SubroomView({
           </div>
 
           {/* PARENT meta panel */}
-          <div
-            style={{
-              background: 'var(--p-tint)',
-              border: '2px solid var(--p-border)',
-              padding: '8px 10px',
-            }}
-          >
-            <div
-              style={{
-                fontSize: 9,
-                color: 'var(--p-text-muted)',
-                letterSpacing: '0.04em',
-                marginBottom: 3,
-              }}
-            >
-              PARENT
-            </div>
-            <div style={{ fontSize: 11, fontWeight: 700 }}>
+          <div className="sr-parent-panel">
+            <div className="sr-parent-panel__label">PARENT</div>
+            <div className="sr-parent-panel__name">
               {parentCat?.name || '—'}{' '}
-              <span
-                style={{
-                  fontWeight: 400,
-                  color: 'var(--p-text-muted)',
-                  fontSize: 10,
-                }}
-              >
-                (本体)
-              </span>
+              <span className="sr-parent-panel__suffix">(本体)</span>
             </div>
-            <div
-              style={{
-                marginTop: 6,
-                fontSize: 10,
-                color: 'var(--p-text-muted)',
-                lineHeight: 1.4,
-              }}
-            >
+            <div className="sr-parent-panel__desc">
               本体が orchestrate、このサブルームで並列実行中。
               <br />
               merge: 検証 PASS 後 → main へ
@@ -484,17 +287,9 @@ export function SubroomView({
           </div>
 
           {/* worktree path footer */}
-          <div
-            style={{
-              fontSize: 9,
-              color: 'var(--p-text-muted)',
-              lineHeight: 1.4,
-              paddingTop: 4,
-              borderTop: '1px dashed var(--p-border)',
-            }}
-          >
+          <div className="sr-path-footer">
             ◆ worktree path:{' '}
-            <span style={{ fontWeight: 700, color: 'var(--p-text)' }}>
+            <span className="sr-path-footer__value">
               {session.path || `~/loom/worktrees/${branch.replace('/', '-')}`}
             </span>
           </div>

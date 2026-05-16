@@ -26,6 +26,7 @@
  */
 import { useTokenUsage, TOKEN_TYPE } from '../../live/useTokenUsage';
 import type { TokenSeriesPoint } from '../../live/useTokenUsage';
+import '../../styles/screens/tokens.css';
 
 // ---------------------------------------------------------------------------
 // Sparkline constants
@@ -64,7 +65,7 @@ function Sparkline({ series }: SparklineProps): JSX.Element {
       width={SPARKLINE_W}
       height={SPARKLINE_H}
       aria-label="token usage sparkline"
-      style={{ display: 'block' }}
+      className="token-meter-sparkline"
     >
       {series.map((point, i) => {
         const total = point.inputTokens + point.outputTokens + point.cacheTokens;

@@ -24,6 +24,7 @@ import type {
   RetroLensSeverity,
   RetroFindingCategory,
 } from '@claude-loom/redesign/api/types';
+import '../../styles/screens/retro.css';
 
 // -------------------------------------------------------------------------
 // Constants
@@ -86,31 +87,31 @@ function LensCardComponent({ lens }: LensCardProps): JSX.Element {
     <div
       data-testid={`lens-card-${lens.id}`}
       data-is-user={lens.isUser ? 'true' : undefined}
+      className="retro-lens-card"
       style={{
-        padding: 8,
-        border: '2px solid var(--p-border)',
         background: lens.isUser ? 'var(--p-accent-soft)' : 'var(--p-paper)',
       }}
     >
-      <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+      <div className="retro-lens-card__header">
         {/* isUser renders person icon */}
         {lens.isUser
-          ? <span style={{ fontSize: 18 }}>👤</span>
-          : <span style={{ fontSize: 18 }}>🔎</span>
+          ? <span className="retro-lens-card__icon">👤</span>
+          : <span className="retro-lens-card__icon">🔎</span>
         }
-        <div style={{ minWidth: 0 }}>
-          <div style={{ fontSize: 10, fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+        <div>
+          <div className="retro-lens-card__name">
             {lens.lensName}
           </div>
-          <div style={{ fontSize: 8, color: 'var(--p-text-muted)' }}>{lens.count} 件</div>
+          <div className="retro-lens-card__count">{lens.count} 件</div>
         </div>
       </div>
       {/* Severity dots */}
-      <div style={{ display: 'flex', gap: 3, marginTop: 6 }}>
+      <div className="retro-lens-card__sev-row">
         {lens.sev.map((s, i) => (
           <span
             key={i}
-            style={{ width: 12, height: 12, background: SEV_COLOR[s], border: '1px solid var(--p-border)', display: 'inline-block' }}
+            className="retro-sev-dot"
+            style={{ background: SEV_COLOR[s] }}
           />
         ))}
       </div>
@@ -128,34 +129,29 @@ function TranscriptEntryRow({ entry, index }: TranscriptEntryProps): JSX.Element
   return (
     <div
       data-testid="transcript-entry"
-      style={{
-        display: 'flex',
-        gap: 8,
-        padding: '6px 0',
-        borderBottom: '1px dashed var(--p-border)',
-        alignItems: 'flex-start',
-      }}
+      className="retro-entry"
     >
-      <span style={{ fontSize: 9, color: 'var(--p-text-muted)', fontFamily: 'ui-monospace, monospace', width: 36, flexShrink: 0 }}>
+      <span className="retro-entry__ts">
         {fmtSec(entry.ts)}
       </span>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 9 }}>
+      <div className="retro-entry__body">
+        <div className="retro-entry__who-row">
           <b>{entry.who}</b>
           <span
             data-testid={index === 0 || undefined}
-            style={{ marginLeft: 6, padding: '0 4px', background: kindColor, color: 'white', fontSize: 8, fontWeight: 700, letterSpacing: '0.04em' }}
+            className="retro-entry__kind-badge"
+            style={{ background: kindColor }}
           >
             {/* WHY: each kind appears once in transcript; testid is per-kind to satisfy the "kind icon" test */}
             <span data-testid={`transcript-kind-${entry.kind}`}>{entry.kind}</span>
           </span>
           {entry.refId && (
-            <span style={{ marginLeft: 6, fontFamily: 'ui-monospace, monospace', color: 'var(--p-text-muted)' }}>
+            <span className="retro-entry__ref-id">
               {entry.refId}
             </span>
           )}
         </div>
-        <div style={{ fontSize: 11, marginTop: 2, lineHeight: 1.5 }}>{entry.text}</div>
+        <div className="retro-entry__text">{entry.text}</div>
       </div>
     </div>
   );
@@ -172,18 +168,21 @@ function FindingRow({ finding: f }: FindingRowProps): JSX.Element {
       id={`finding-${f.id}`}
       // WHY: per-finding testid for direct access in tests
       {...{ 'data-finding-id': f.id }}
-      style={{ padding: 8, marginBottom: 6, border: '1.5px solid var(--p-border)', background: 'var(--p-tint)' }}
+      className="retro-finding-item"
     >
-      <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 4 }}>
-        <span style={{ width: 8, height: 22, background: SEV_COLOR[f.sev], display: 'inline-block', flexShrink: 0 }} />
-        <span style={{ fontSize: 9, fontFamily: 'ui-monospace, monospace', color: 'var(--p-text-muted)' }}>{f.id}</span>
-        <span style={{ fontSize: 11, fontWeight: 700, flex: 1 }}>{f.title}</span>
+      <div className="retro-finding-item__header">
+        <span
+          className="retro-finding-item__sev-bar"
+          style={{ background: SEV_COLOR[f.sev] }}
+        />
+        <span className="retro-finding-item__id">{f.id}</span>
+        <span className="retro-finding-item__title">{f.title}</span>
       </div>
-      <div style={{ fontSize: 9, color: 'var(--p-text-muted)', marginBottom: 6, fontFamily: 'ui-monospace, monospace' }}>
+      <div className="retro-finding-item__meta">
         {f.lens} · {f.target} · {f.status}
       </div>
       {/* Severity + category badges */}
-      <div style={{ display: 'flex', gap: 4, marginBottom: 6, alignItems: 'center' }}>
+      <div className="retro-finding-item__badges">
         <span
           data-testid="finding-sev"
           className="chip"
@@ -195,17 +194,17 @@ function FindingRow({ finding: f }: FindingRowProps): JSX.Element {
         <span className={statusDotClass(f.status)} />
       </div>
       {/* Action buttons — noop in Phase 3 (Phase 5 write hookup) */}
-      <div style={{ display: 'flex', gap: 4 }}>
-        <button type="button" className="btn-px success" style={{ fontSize: 8, padding: '2px 6px' }} onClick={() => undefined}>
+      <div className="retro-finding-item__actions">
+        <button type="button" className="btn-px success retro-action-btn" onClick={() => undefined}>
           {FINDING_ACTION.ACCEPT}
         </button>
-        <button type="button" className="btn-px ghost" style={{ fontSize: 8, padding: '2px 6px' }} onClick={() => undefined}>
+        <button type="button" className="btn-px ghost retro-action-btn" onClick={() => undefined}>
           {FINDING_ACTION.REJECT}
         </button>
-        <button type="button" className="btn-px ghost" style={{ fontSize: 8, padding: '2px 6px' }} onClick={() => undefined}>
+        <button type="button" className="btn-px ghost retro-action-btn" onClick={() => undefined}>
           {FINDING_ACTION.DEFER}
         </button>
-        <button type="button" className="btn-px primary" style={{ fontSize: 8, padding: '2px 6px' }} onClick={() => undefined}>
+        <button type="button" className="btn-px primary retro-action-btn" onClick={() => undefined}>
           {FINDING_ACTION.DISCUSS}
         </button>
       </div>
@@ -228,25 +227,16 @@ export function RetroView(): JSX.Element {
   return (
     <div
       data-testid="retro-view"
-      style={{
-        position: 'absolute',
-        inset: 0,
-        background: 'var(--p-bg-sky)',
-        display: 'grid',
-        gridTemplateColumns: '1fr 360px',
-        gap: 12,
-        padding: 16,
-        overflow: 'hidden',
-      }}
+      className="retro-screen"
     >
       {/* LEFT — lens cards + transcript player + scrubber */}
-      <div style={{ display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+      <div className="retro-left">
 
         {/* Session header */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+        <div className="retro-session-header">
           <div
             data-testid="retro-session-title"
-            style={{ fontSize: 14, fontWeight: 700 }}
+            className="retro-session-header__title"
           >
             {r.title}
           </div>
@@ -258,30 +248,21 @@ export function RetroView(): JSX.Element {
             verdict: {r.verdict}
           </span>
           <span className="chip">{Math.floor(dur / 60)} min</span>
-          <div style={{ flex: 1 }} />
+          <div className="retro-session-header__spacer" />
           <button type="button" className="btn-px ghost" onClick={() => undefined}>archive →</button>
           <button type="button" className="btn-px primary" onClick={() => undefined}>+ 新 retro</button>
         </div>
 
         {/* Lens summary cards — 4 cards in a grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 6, marginBottom: 10 }}>
+        <div className="retro-lenses">
           {r.lenses.map((lens) => (
             <LensCardComponent key={lens.id} lens={lens} />
           ))}
         </div>
 
         {/* Transcript scroll */}
-        <div
-          style={{
-            flex: 1,
-            minHeight: 0,
-            overflow: 'auto',
-            border: '2px solid var(--p-border)',
-            background: 'var(--p-paper)',
-            padding: 10,
-          }}
-        >
-          <div style={{ fontSize: 9, color: 'var(--p-text-muted)', letterSpacing: '0.06em', marginBottom: 8 }}>
+        <div className="retro-transcript">
+          <div className="retro-transcript__label">
             SESSION TRANSCRIPT (session.jsonl)
           </div>
           {visible.map((entry, i) => (
@@ -290,17 +271,7 @@ export function RetroView(): JSX.Element {
         </div>
 
         {/* Timeline scrubber */}
-        <div
-          style={{
-            marginTop: 8,
-            padding: '6px 10px',
-            border: '2px solid var(--p-border)',
-            background: 'var(--p-paper)',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-          }}
-        >
+        <div className="retro-scrubber">
           <button
             type="button"
             className="btn-px ghost"
@@ -314,7 +285,7 @@ export function RetroView(): JSX.Element {
             max={r.transcript.length - 1}
             value={cursor}
             onChange={(e) => setCursor(+e.target.value)}
-            style={{ flex: 1 }}
+            className="retro-scrubber__range"
           />
           <button
             type="button"
@@ -323,27 +294,18 @@ export function RetroView(): JSX.Element {
           >
             ▸
           </button>
-          <span style={{ fontSize: 9, color: 'var(--p-text-muted)', fontFamily: 'ui-monospace, monospace' }}>
+          <span className="retro-scrubber__counter">
             {cursor + 1}/{r.transcript.length}
           </span>
         </div>
       </div>
 
       {/* RIGHT — findings + action plan */}
-      <div style={{ display: 'flex', flexDirection: 'column', minHeight: 0, gap: 10 }}>
+      <div className="retro-right">
 
         {/* Findings list */}
-        <div
-          style={{
-            flex: 1,
-            minHeight: 0,
-            overflow: 'auto',
-            border: '2px solid var(--p-border)',
-            background: 'var(--p-paper)',
-            padding: 10,
-          }}
-        >
-          <div style={{ fontSize: 9, color: 'var(--p-text-muted)', letterSpacing: '0.06em', marginBottom: 8 }}>
+        <div className="retro-findings">
+          <div className="retro-findings__label">
             FINDINGS — retro 産出物
           </div>
           {r.findings.map((f) => (
@@ -357,9 +319,9 @@ export function RetroView(): JSX.Element {
         {/* Action plan tally */}
         <div
           data-testid="action-plan"
-          style={{ border: '2px solid var(--p-border)', background: 'var(--p-paper)', padding: 10 }}
+          className="retro-action-plan"
         >
-          <div style={{ fontSize: 9, color: 'var(--p-text-muted)', letterSpacing: '0.06em', marginBottom: 6 }}>
+          <div className="retro-action-plan__label">
             ACTION PLAN — aggregator が確定
           </div>
           {[
@@ -367,14 +329,18 @@ export function RetroView(): JSX.Element {
             { key: 'milestone', lbl: 'MILESTONE', n: r.actionPlan.milestone, c: 'var(--p-warn)' },
             { key: 'deferred',  lbl: 'DEFERRED',  n: r.actionPlan.deferred,  c: 'var(--p-stone)' },
           ].map((b) => (
-            <div key={b.lbl} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 0' }}>
-              <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.06em', width: 80 }}>{b.lbl}</span>
-              <div style={{ flex: 1, height: 8, background: 'var(--p-tint)', border: '1px solid var(--p-border)' }}>
-                <div style={{ width: `${b.n * 20}%`, height: '100%', background: b.c }} />
+            <div key={b.lbl} className="retro-action-plan__row">
+              <span className="retro-action-plan__row-label">{b.lbl}</span>
+              <div className="retro-action-plan__bar-track">
+                <div
+                  className="retro-action-plan__bar-fill"
+                  style={{ width: `${b.n * 20}%`, background: b.c }}
+                />
               </div>
               <span
                 data-testid={`action-plan-${b.key}`}
-                style={{ fontSize: 11, fontWeight: 700, fontFamily: 'ui-monospace, monospace', color: b.c, width: 24, textAlign: 'right' }}
+                className="retro-action-plan__count"
+                style={{ color: b.c }}
               >
                 {b.n}
               </span>

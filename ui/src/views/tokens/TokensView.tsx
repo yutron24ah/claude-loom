@@ -17,6 +17,7 @@
  */
 import { useScenario } from '@claude-loom/redesign/api/websocket';
 import type { TokensByAgent, Pricing, ModelId } from '@claude-loom/redesign/api/types';
+import '../../styles/screens/tokens.css';
 
 // ---------------------------------------------------------------------------
 // Pure helpers (no side effects)
@@ -54,42 +55,28 @@ interface DailyBarProps {
 /** Single vertical bar in the 7-day cost chart. */
 function DailyBar({ day, cost, cacheRatio, heightPct }: DailyBarProps): JSX.Element {
   return (
-    <div
-      style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}
-    >
-      <span style={{ fontSize: 9, color: 'var(--p-text-muted)', fontFamily: 'ui-monospace, monospace' }}>
+    <div className="tokens-daily-bar">
+      <span className="tokens-daily-bar__cost">
         ${cost.toFixed(2)}
       </span>
       {/* Bar wrapper — fixed height so bars are comparable */}
-      <div style={{ position: 'relative', width: '100%', flex: 1, display: 'flex', alignItems: 'flex-end' }}>
+      <div className="tokens-daily-bar__track">
         {/* The bar element carries data-testid and data-cache-ratio for tests */}
         <div
           data-testid={`daily-bar-${day}`}
           data-cache-ratio={String(Math.round(cacheRatio * 100))}
-          style={{
-            width: '100%',
-            height: `${heightPct}%`,
-            background: 'var(--p-accent)',
-            border: '1.5px solid var(--p-border)',
-            position: 'relative',
-            minHeight: 2,
-          }}
+          className="tokens-daily-bar__fill"
+          style={{ height: `${heightPct}%` }}
         >
           {/* Cache-hit ratio marker line within the bar */}
           <div
-            style={{
-              position: 'absolute',
-              left: 0,
-              right: 0,
-              top: `${(1 - cacheRatio) * 100}%`,
-              height: 2,
-              background: 'var(--p-success)',
-            }}
+            className="tokens-daily-bar__cache-marker"
+            style={{ top: `${(1 - cacheRatio) * 100}%` }}
             title={`cache ${Math.round(cacheRatio * 100)}%`}
           />
         </div>
       </div>
-      <span style={{ fontSize: 9, fontWeight: 700, fontFamily: 'ui-monospace, monospace' }}>{day}</span>
+      <span className="tokens-daily-bar__day">{day}</span>
     </div>
   );
 }
@@ -138,32 +125,19 @@ export function TokensView(): JSX.Element {
   return (
     <div
       data-testid="tokens-view"
-      style={{
-        position: 'absolute',
-        inset: 0,
-        padding: 16,
-        overflow: 'auto',
-        background: 'var(--p-bg-sky)',
-      }}
+      className="tokens-screen"
     >
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-        <div style={{ fontSize: 14, fontWeight: 700 }}>$ TOKENS — usage + 効率分析</div>
+      <div className="tokens-header">
+        <div className="tokens-header__title">$ TOKENS — usage + 効率分析</div>
         <span className="chip">{t.period}</span>
-        <span style={{ marginLeft: 'auto', fontSize: 9, color: 'var(--p-text-muted)' }}>
+        <span className="tokens-header__period-hint">
           pricing: Anthropic公式 (1h cache)
         </span>
       </div>
 
       {/* Stat cards */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(4,1fr)',
-          gap: 10,
-          marginBottom: 14,
-        }}
-      >
+      <div className="tokens-stat-grid">
         {[
           {
             lbl: 'TOTAL COST',
@@ -190,57 +164,22 @@ export function TokensView(): JSX.Element {
             c:   avgCacheHit > 0.7 ? 'var(--p-success)' : 'var(--p-warn)',
           },
         ].map(s => (
-          <div
-            key={s.lbl}
-            style={{
-              padding: 12,
-              background: 'var(--p-paper)',
-              border: '2px solid var(--p-border)',
-              boxShadow: '3px 3px 0 0 var(--p-shadow)',
-            }}
-          >
-            <div style={{ fontSize: 8, color: 'var(--p-text-muted)', letterSpacing: '0.08em' }}>
-              {s.lbl}
-            </div>
-            <div
-              style={{
-                fontSize: 22,
-                fontWeight: 800,
-                color: s.c,
-                fontFamily: 'ui-monospace, monospace',
-                marginTop: 2,
-              }}
-            >
+          <div key={s.lbl} className="tokens-stat-card">
+            <div className="tokens-stat-card__label">{s.lbl}</div>
+            <div className="tokens-stat-card__value" style={{ color: s.c }}>
               {s.v}
             </div>
-            <div style={{ fontSize: 9, color: 'var(--p-text-muted)' }}>{s.sub}</div>
+            <div className="tokens-stat-card__sub">{s.sub}</div>
           </div>
         ))}
       </div>
 
       {/* Daily trend chart */}
-      <div
-        style={{
-          background: 'var(--p-paper)',
-          border: '2px solid var(--p-border)',
-          padding: 12,
-          marginBottom: 14,
-        }}
-      >
-        <div
-          style={{
-            fontSize: 9,
-            color: 'var(--p-text-muted)',
-            letterSpacing: '0.06em',
-            marginBottom: 8,
-          }}
-        >
+      <div className="tokens-chart-panel">
+        <div className="tokens-chart__label">
           DAILY COST × CACHE-HIT (7d)
         </div>
-        <div
-          data-testid="daily-chart"
-          style={{ display: 'flex', gap: 8, alignItems: 'flex-end', height: 120 }}
-        >
+        <div data-testid="daily-chart" className="tokens-chart__bars">
           {t.daily.map(d => (
             <DailyBar
               key={d.day}
@@ -252,69 +191,29 @@ export function TokensView(): JSX.Element {
           ))}
         </div>
         {/* Legend */}
-        <div
-          style={{
-            marginTop: 8,
-            fontSize: 9,
-            color: 'var(--p-text-muted)',
-            display: 'flex',
-            gap: 16,
-          }}
-        >
+        <div className="tokens-chart__legend">
           <span>
-            <span
-              style={{
-                display: 'inline-block',
-                width: 12,
-                height: 8,
-                background: 'var(--p-accent)',
-                marginRight: 4,
-                verticalAlign: 'middle',
-              }}
-            />
+            <span className="tokens-legend-swatch--cost" />
             cost ($/day)
           </span>
           <span>
-            <span
-              style={{
-                display: 'inline-block',
-                width: 12,
-                height: 2,
-                background: 'var(--p-success)',
-                marginRight: 4,
-                verticalAlign: 'middle',
-              }}
-            />
+            <span className="tokens-legend-swatch--cache" />
             cache-hit ratio
           </span>
         </div>
       </div>
 
       {/* Per-agent table */}
-      <div
-        data-testid="agent-table"
-        style={{ background: 'var(--p-paper)', border: '2px solid var(--p-border)' }}
-      >
+      <div data-testid="agent-table" className="tokens-agent-table">
         {/* Table header */}
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: '1.4fr 80px 90px 90px 100px 90px 90px',
-            fontSize: 9,
-            color: 'var(--p-text-muted)',
-            letterSpacing: '0.06em',
-            padding: '6px 10px',
-            borderBottom: '2px solid var(--p-border)',
-            background: 'var(--p-tint)',
-          }}
-        >
+        <div className="tokens-agent-table__header">
           <span>AGENT</span>
           <span>MODEL</span>
-          <span style={{ textAlign: 'right' }}>INPUT</span>
-          <span style={{ textAlign: 'right' }}>OUTPUT</span>
-          <span style={{ textAlign: 'right' }}>CACHE R/W</span>
-          <span style={{ textAlign: 'right' }}>CACHE-HIT</span>
-          <span style={{ textAlign: 'right' }}>COST</span>
+          <span className="tokens-agent-row__cell--right">INPUT</span>
+          <span className="tokens-agent-row__cell--right">OUTPUT</span>
+          <span className="tokens-agent-row__cell--right">CACHE R/W</span>
+          <span className="tokens-agent-row__cell--right">CACHE-HIT</span>
+          <span className="tokens-agent-row__cell--right">COST</span>
         </div>
 
         {/* Rows sorted by cost descending */}
@@ -324,60 +223,31 @@ export function TokensView(): JSX.Element {
             <div
               key={r.agentId}
               data-testid={`agent-row-${r.agentId}`}
-              style={{
-                display: 'grid',
-                gridTemplateColumns: '1.4fr 80px 90px 90px 100px 90px 90px',
-                alignItems: 'center',
-                padding: '8px 10px',
-                borderBottom: '1px dashed var(--p-border)',
-                fontSize: 10,
-                fontFamily: 'ui-monospace, monospace',
-              }}
+              className="tokens-agent-row"
             >
               {/* Agent ID */}
-              <div
-                style={{
-                  fontWeight: 700,
-                  fontFamily: 'system-ui',
-                }}
-              >
-                {r.agentId}
-              </div>
+              <div className="tokens-agent-row__name">{r.agentId}</div>
               {/* Model badge */}
-              <span
-                style={{
-                  display: 'inline-block',
-                  padding: '1px 6px',
-                  fontSize: 9,
-                  fontWeight: 700,
-                  border: '1px solid var(--p-border)',
-                  width: 'fit-content',
-                }}
-              >
-                {r.model}
-              </span>
+              <span className="tokens-agent-row__model-badge">{r.model}</span>
               {/* Input */}
-              <span style={{ textAlign: 'right' }}>{fmtN(r.input)}</span>
+              <span className="tokens-agent-row__cell--right">{fmtN(r.input)}</span>
               {/* Output */}
-              <span style={{ textAlign: 'right' }}>{fmtN(r.output)}</span>
+              <span className="tokens-agent-row__cell--right">{fmtN(r.output)}</span>
               {/* Cache R / W */}
-              <span style={{ textAlign: 'right' }}>
+              <span className="tokens-agent-row__cell--right">
                 {fmtN(r.cacheRead)} / {fmtN(r.cacheWrite)}
               </span>
-              {/* Cache-hit % */}
+              {/* Cache-hit % — dynamic color stays inline */}
               <span
-                style={{
-                  textAlign: 'right',
-                  color: lowHit ? 'var(--p-warn)' : 'var(--p-success)',
-                  fontWeight: 700,
-                }}
+                className="tokens-agent-row__cache-hit"
+                style={{ color: lowHit ? 'var(--p-warn)' : 'var(--p-success)' }}
               >
                 {Math.round(r.cacheHit * 100)}%
               </span>
               {/* Cost USD */}
               <span
                 data-testid={`agent-cost-${r.agentId}`}
-                style={{ textAlign: 'right', fontWeight: 700 }}
+                className="tokens-agent-row__cost"
               >
                 ${r.cost.toFixed(2)}
               </span>
@@ -387,26 +257,8 @@ export function TokensView(): JSX.Element {
       </div>
 
       {/* Efficiency hints (rule-based, always rendered for testability) */}
-      <div
-        data-testid="efficiency-hints"
-        style={{
-          marginTop: 12,
-          padding: 12,
-          background: 'var(--p-paper)',
-          border: '2px dashed var(--p-warn)',
-          fontSize: 10,
-          lineHeight: 1.6,
-        }}
-      >
-        <div
-          style={{
-            fontSize: 9,
-            color: 'var(--p-warn)',
-            letterSpacing: '0.06em',
-            marginBottom: 6,
-            fontWeight: 700,
-          }}
-        >
+      <div data-testid="efficiency-hints" className="tokens-hints">
+        <div className="tokens-hints__label">
           効率改善ヒント (rule-based)
         </div>
 
@@ -432,7 +284,7 @@ export function TokensView(): JSX.Element {
 
         {/* No hints fallback */}
         {!hasHints && (
-          <div style={{ color: 'var(--p-text-muted)' }}>
+          <div className="tokens-hints__no-hints">
             ◆ 大きな改善余地は見つかりませんでした。
           </div>
         )}

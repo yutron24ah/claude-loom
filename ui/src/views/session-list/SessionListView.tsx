@@ -25,6 +25,7 @@ import { useScenario } from '@claude-loom/redesign/api/websocket';
 import type { SessionItem, SessionVerdict } from '@claude-loom/redesign/api/types';
 import { CatSprite } from '../../components/CatSprite';
 import { ROSTER } from '../room/roster';
+import '../../styles/screens/sessions.css';
 
 // ---------------------------------------------------------------------------
 // Helpers — typed constants avoid string literal scatter (Principle: avoid string literals)
@@ -72,109 +73,46 @@ function SessionEntry({ session, isSelected, onClick, rosterById }: SessionEntry
     <button
       data-testid="session-entry"
       onClick={onClick}
+      className="sess-entry"
       style={{
-        all: 'unset',
-        cursor: 'pointer',
-        display: 'block',
-        width: '100%',
-        padding: '10px 12px',
-        borderBottom: '1px dashed var(--p-border)',
         background: isSelected ? 'var(--p-accent-soft)' : 'transparent',
         borderLeft: isSelected ? '3px solid var(--p-accent)' : '3px solid transparent',
-        boxSizing: 'border-box',
       }}
     >
       {/* Row 1: agent sprite + time + verdict + duration */}
-      <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 4 }}>
+      <div className="sess-entry__row1">
         {agent && (
           <CatSprite size={20} fur={agent.fur} cheek={agent.cheek} hat={agent.hat} pose="sit" />
         )}
-        <span
-          style={{
-            fontSize: 9,
-            fontFamily: 'ui-monospace, monospace',
-            color: 'var(--p-text-muted)',
-          }}
-        >
-          {session.startedAt}
-        </span>
-        <span style={{ flex: 1 }} />
+        <span className="sess-entry__time">{session.startedAt}</span>
+        <span className="sess-entry__spacer" />
         <span
           data-testid="session-verdict-badge"
-          style={{
-            fontSize: 8,
-            fontWeight: 700,
-            padding: '0 4px',
-            background: VERDICT_BG[session.verdict],
-            color: 'white',
-            border: '1px solid var(--p-border)',
-          }}
+          className="sess-entry__verdict"
+          style={{ background: VERDICT_BG[session.verdict] }}
         >
           {session.verdict}
         </span>
-        <span
-          style={{
-            fontSize: 9,
-            color: 'var(--p-text-muted)',
-            fontFamily: 'ui-monospace, monospace',
-          }}
-        >
-          {fmtDur(session.durationSec)}
-        </span>
+        <span className="sess-entry__duration">{fmtDur(session.durationSec)}</span>
       </div>
 
       {/* Row 2: summary */}
-      <div style={{ fontSize: 11, fontWeight: 600, lineHeight: 1.4, marginBottom: 4 }}>
-        {session.summary}
-      </div>
+      <div className="sess-entry__summary">{session.summary}</div>
 
       {/* Row 3: files + findings chips */}
-      <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', fontSize: 8 }}>
+      <div className="sess-entry__chips">
         {session.filesTouched.slice(0, 3).map((f) => (
-          <span
-            key={f}
-            style={{
-              padding: '1px 4px',
-              background: 'var(--p-tint)',
-              border: '1px solid var(--p-border)',
-              fontFamily: 'ui-monospace, monospace',
-              whiteSpace: 'nowrap',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              maxWidth: 140,
-            }}
-          >
-            {f}
-          </span>
+          <span key={f} className="sess-entry__file-chip">{f}</span>
         ))}
         {session.filesTouched.length > 3 && (
-          <span style={{ color: 'var(--p-text-muted)' }}>+{session.filesTouched.length - 3}</span>
+          <span className="sess-entry__more">+{session.filesTouched.length - 3}</span>
         )}
         {session.relatedFindings.length > 0 &&
           session.relatedFindings.map((f) => (
-            <span
-              key={f}
-              style={{
-                padding: '1px 4px',
-                background: 'var(--p-warn)',
-                color: 'white',
-                border: '1px solid var(--p-border)',
-              }}
-            >
-              ⚠ {f}
-            </span>
+            <span key={f} className="sess-entry__finding-chip">⚠ {f}</span>
           ))}
         {session.relatedRetro && (
-          <span
-            style={{
-              padding: '1px 4px',
-              background: 'var(--p-tint)',
-              border: '1px solid var(--p-accent)',
-              color: 'var(--p-accent)',
-            }}
-          >
-            {session.relatedRetro}
-          </span>
+          <span className="sess-entry__retro-chip">{session.relatedRetro}</span>
         )}
       </div>
     </button>
@@ -194,19 +132,9 @@ interface SessionDetailPanelProps {
 function SessionDetailPanel({ session, rosterById, projectName }: SessionDetailPanelProps): JSX.Element {
   if (!session) {
     return (
-      <div
-        data-testid="session-detail-panel"
-        style={{
-          display: 'grid',
-          placeItems: 'center',
-          height: '100%',
-          fontSize: 11,
-          color: 'var(--p-text-muted)',
-          textAlign: 'center',
-        }}
-      >
+      <div data-testid="session-detail-panel" className="sess-detail-empty">
         <div>
-          <div style={{ fontSize: 32, marginBottom: 8 }}>📂</div>
+          <div className="sess-detail-empty__icon">📂</div>
           左のリストから session を選ぶと、ここに
           <br />
           summary / 関連 file / 関連 retro / transcript player が表示されます。
@@ -220,142 +148,63 @@ function SessionDetailPanel({ session, rosterById, projectName }: SessionDetailP
   return (
     <div data-testid="session-detail-panel">
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+      <div className="sess-detail__header">
         {agent && (
           <CatSprite size={36} fur={agent.fur} cheek={agent.cheek} hat={agent.hat} pose="sit" />
         )}
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 14, fontWeight: 700 }}>{session.summary}</div>
-          <div
-            style={{
-              fontSize: 9,
-              fontFamily: 'ui-monospace, monospace',
-              color: 'var(--p-text-muted)',
-            }}
-          >
+        <div className="sess-detail__header-body">
+          <div className="sess-detail__title">{session.summary}</div>
+          <div className="sess-detail__meta">
             {session.id} · {session.startedAt} · {fmtDur(session.durationSec)} · {session.turns}{' '}
             turns
           </div>
         </div>
         <span
-          style={{
-            fontSize: 9,
-            fontWeight: 700,
-            padding: '2px 6px',
-            background: VERDICT_BG[session.verdict],
-            color: 'white',
-            border: '1.5px solid var(--p-border)',
-          }}
+          className="sess-detail__verdict"
+          style={{ background: VERDICT_BG[session.verdict] }}
         >
           {session.verdict}
         </span>
       </div>
 
       {/* Files + Related grid */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: '1fr 1fr',
-          gap: 10,
-          marginBottom: 12,
-        }}
-      >
+      <div className="sess-detail__grid">
         {/* Files touched */}
-        <div
-          style={{
-            padding: 10,
-            background: 'var(--p-paper)',
-            border: '2px solid var(--p-border)',
-          }}
-        >
-          <div
-            style={{
-              fontSize: 9,
-              color: 'var(--p-text-muted)',
-              letterSpacing: '0.06em',
-              marginBottom: 6,
-            }}
-          >
-            FILES TOUCHED
-          </div>
+        <div className="sess-detail__card">
+          <div className="sess-detail__card-label">FILES TOUCHED</div>
           {session.filesTouched.map((f) => (
-            <div
-              key={f}
-              style={{
-                fontSize: 10,
-                fontFamily: 'ui-monospace, monospace',
-                padding: '2px 0',
-                color: 'var(--p-accent)',
-              }}
-            >
-              ↗ {f}
-            </div>
+            <div key={f} className="sess-detail__file-row">↗ {f}</div>
           ))}
         </div>
 
         {/* Related retro + findings */}
-        <div
-          style={{
-            padding: 10,
-            background: 'var(--p-paper)',
-            border: '2px solid var(--p-border)',
-          }}
-        >
-          <div
-            style={{
-              fontSize: 9,
-              color: 'var(--p-text-muted)',
-              letterSpacing: '0.06em',
-              marginBottom: 6,
-            }}
-          >
-            RELATED
-          </div>
+        <div className="sess-detail__card">
+          <div className="sess-detail__card-label">RELATED</div>
           {session.relatedRetro && (
-            <div style={{ fontSize: 10, padding: '2px 0' }}>
+            <div className="sess-detail__related-row">
               ◆ retro:{' '}
-              <a style={{ color: 'var(--p-accent)', cursor: 'pointer' }}>
-                {session.relatedRetro}
-              </a>
+              <a className="sess-detail__related-link">{session.relatedRetro}</a>
             </div>
           )}
           {session.relatedFindings.length > 0 &&
             session.relatedFindings.map((f) => (
-              <div key={f} style={{ fontSize: 10, padding: '2px 0' }}>
-                ⚠ finding: <a style={{ color: 'var(--p-accent)', cursor: 'pointer' }}>{f}</a>
+              <div key={f} className="sess-detail__related-row">
+                ⚠ finding: <a className="sess-detail__related-link">{f}</a>
               </div>
             ))}
           {!session.relatedRetro && session.relatedFindings.length === 0 && (
-            <div style={{ fontSize: 10, color: 'var(--p-text-muted)' }}>—</div>
+            <div className="sess-detail__related-empty">—</div>
           )}
         </div>
       </div>
 
       {/* Transcript replay placeholder */}
-      <div
-        style={{
-          padding: 14,
-          background: 'var(--p-paper)',
-          border: '2px solid var(--p-border)',
-          textAlign: 'center',
-          fontSize: 11,
-          color: 'var(--p-text-muted)',
-          lineHeight: 1.6,
-        }}
-      >
-        <div
-          style={{
-            fontSize: 9,
-            letterSpacing: '0.06em',
-            marginBottom: 8,
-          }}
-        >
-          TRANSCRIPT REPLAY
-        </div>
-        <button className="btn-px primary" style={{ fontSize: 10, padding: '5px 12px' }}>
+      <div className="sess-detail__replay">
+        <div className="sess-detail__replay-label">TRANSCRIPT REPLAY</div>
+        <button className="btn-px primary sess-detail__replay-btn">
           ▶ 再生 (Retro と同じ player)
         </button>
-        <div style={{ marginTop: 8, fontSize: 9 }}>
+        <div className="sess-detail__replay-hint">
           実装時: <code>~/.claude/projects/{projectName}/{session.id}.jsonl</code> を読んで
           <br />
           Retro screen の transcript component を流用
@@ -399,38 +248,14 @@ export function SessionListView(): JSX.Element {
   });
 
   return (
-    <div
-      data-testid="session-list"
-      style={{
-        position: 'absolute',
-        inset: 0,
-        display: 'grid',
-        gridTemplateColumns: 'minmax(380px, 1fr) 1.4fr',
-        gap: 0,
-        background: 'var(--p-bg-sky)',
-      }}
-    >
+    <div data-testid="session-list" className="sess-screen">
       {/* LEFT — list + filters */}
-      <div
-        style={{
-          borderRight: '3px solid var(--p-border)',
-          background: 'var(--p-paper)',
-          display: 'flex',
-          flexDirection: 'column',
-          minHeight: 0,
-        }}
-      >
+      <div className="sess-list-panel">
         {/* Header + search + filter bar */}
-        <div
-          style={{
-            padding: '10px 12px',
-            borderBottom: '2px solid var(--p-border)',
-            flexShrink: 0,
-          }}
-        >
+        <div className="sess-list-header">
           {/* Title + count chip */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-            <div style={{ fontSize: 14, fontWeight: 700 }}>❐ SESSIONS</div>
+          <div className="sess-list-header__title-row">
+            <div className="sess-list-header__title">❐ SESSIONS</div>
             <span className="chip">
               {filtered.length} / {sessions.length}
             </span>
@@ -443,31 +268,16 @@ export function SessionListView(): JSX.Element {
             placeholder="🔍 summary / file name / PR…"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            style={{
-              width: '100%',
-              padding: '5px 8px',
-              fontSize: 10,
-              marginBottom: 6,
-              border: '1.5px solid var(--p-border)',
-              background: 'var(--p-tint)',
-              fontFamily: 'ui-monospace, monospace',
-              boxSizing: 'border-box',
-            }}
+            className="sess-search-input"
           />
 
           {/* Filter bar: agent + verdict */}
-          <div style={{ display: 'flex', gap: 4 }}>
+          <div className="sess-filter-bar">
             <select
               data-testid="session-filter-agent"
               value={agentFilter}
               onChange={(e) => setAgentFilter(e.target.value)}
-              style={{
-                flex: 1,
-                padding: '3px',
-                fontSize: 9,
-                border: '1.5px solid var(--p-border)',
-                background: 'var(--p-tint)',
-              }}
+              className="sess-filter-select"
             >
               <option value="all">全 agent</option>
               {agentRoots.map((id) => (
@@ -481,13 +291,7 @@ export function SessionListView(): JSX.Element {
               data-testid="session-filter-verdict"
               value={verdictFilter}
               onChange={(e) => setVerdictFilter(e.target.value as VerdictFilterValue)}
-              style={{
-                flex: 1,
-                padding: '3px',
-                fontSize: 9,
-                border: '1.5px solid var(--p-border)',
-                background: 'var(--p-tint)',
-              }}
+              className="sess-filter-select"
             >
               {VERDICT_FILTER_OPTIONS.map((opt) => (
                 <option key={opt.value} value={opt.value}>
@@ -499,16 +303,9 @@ export function SessionListView(): JSX.Element {
         </div>
 
         {/* Session entry list */}
-        <div style={{ flex: 1, overflow: 'auto' }}>
+        <div className="sess-list-body">
           {filtered.length === 0 && (
-            <div
-              style={{
-                padding: 30,
-                textAlign: 'center',
-                fontSize: 10,
-                color: 'var(--p-text-muted)',
-              }}
-            >
+            <div className="sess-list-empty">
               条件にマッチする session はありません
             </div>
           )}
@@ -525,7 +322,7 @@ export function SessionListView(): JSX.Element {
       </div>
 
       {/* RIGHT — detail panel */}
-      <div style={{ minHeight: 0, overflow: 'auto', padding: 16 }}>
+      <div className="sess-detail-panel">
         <SessionDetailPanel
           session={selected}
           rosterById={rosterById}

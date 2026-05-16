@@ -12,6 +12,7 @@ import { useState } from 'react';
 import { useScenario } from '@claude-loom/redesign/api/websocket';
 import type { Finding, FindingSeverity, FindingStatus, ConsistencyState } from '@claude-loom/redesign/api/types';
 import { useConsistencyMutations } from '../../live/useConsistencyMutations';
+import '../../styles/screens/consistency.css';
 
 // ---------------------------------------------------------------------------
 // Re-export types for downstream consumers
@@ -61,41 +62,27 @@ function FindingCard({ finding: f, onAck, onFix, onDismiss, onOpenEditor }: Find
   return (
     <div
       data-testid="finding-card"
-      style={{
-        background: 'var(--p-paper)',
-        border: '2px solid var(--p-border)',
-        padding: 12,
-        opacity: isFixed || isDismissed ? 0.55 : 1,
-      }}
+      className="cv-finding-card"
+      style={{ opacity: isFixed || isDismissed ? 0.55 : 1 }}
     >
-      <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+      <div className="cv-finding-card__top">
         {/* Severity badge with data-sev attribute + finding-severity testid */}
         <div
           data-testid="finding-severity"
           data-sev={f.sev}
-          style={{
-            fontSize: 9,
-            fontWeight: 700,
-            padding: '2px 6px',
-            marginTop: 2,
-            background: SEV_COLOR[f.sev],
-            color: 'white',
-            border: '2px solid var(--p-border)',
-            textTransform: 'uppercase',
-            letterSpacing: '0.06em',
-            flexShrink: 0,
-          }}
+          className="cv-finding-card__sev-badge"
+          style={{ background: SEV_COLOR[f.sev] }}
         >
           {f.sev === 'high' && <span data-testid="severity-high">{f.sev}</span>}
           {f.sev === 'medium' && <span data-testid="severity-medium">{f.sev}</span>}
           {f.sev === 'low' && <span data-testid="severity-low">{f.sev}</span>}
         </div>
 
-        <div style={{ flex: 1, minWidth: 0 }}>
+        <div className="cv-finding-card__body">
           {/* Title row: id, title, status chip + dot */}
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 4, flexWrap: 'wrap' }}>
-            <span style={{ fontSize: 9, fontFamily: 'ui-monospace, monospace', color: 'var(--p-text-muted)' }}>{f.id}</span>
-            <span style={{ fontSize: 13, fontWeight: 700 }}>{f.title}</span>
+          <div className="cv-finding-card__title-row">
+            <span className="cv-finding-card__id">{f.id}</span>
+            <span className="cv-finding-card__title">{f.title}</span>
             {/* Status chip (for non-open) */}
             {isAck && (
               <span
@@ -129,15 +116,14 @@ function FindingCard({ finding: f, onAck, onFix, onDismiss, onOpenEditor }: Find
           </div>
 
           {/* File path + lines */}
-          <div style={{ fontSize: 10, fontFamily: 'ui-monospace, monospace', color: 'var(--p-accent)', marginBottom: 4 }}>
-            {f.file} <span style={{ color: 'var(--p-text-muted)' }}>{f.lines}</span>
+          <div className="cv-finding-card__file">
+            {f.file} <span className="cv-finding-card__lines">{f.lines}</span>
           </div>
 
           {/* Expand/collapse detail+suggest */}
           <button
             data-testid={`expand-btn-${f.id}`}
-            className="btn-px ghost"
-            style={{ fontSize: 9, padding: '2px 6px', marginBottom: 4 }}
+            className="btn-px ghost cv-finding-card__expand-btn"
             onClick={() => setExpanded((v) => !v)}
           >
             {expanded ? '▲ 詳細を閉じる' : '▼ 詳細・提案を表示'}
@@ -148,29 +134,28 @@ function FindingCard({ finding: f, onAck, onFix, onDismiss, onOpenEditor }: Find
               {/* Detail text */}
               <div
                 data-testid={`detail-${f.id}`}
-                style={{ fontSize: 11, color: 'var(--p-text)', lineHeight: 1.5, marginBottom: 6 }}
+                className="cv-finding-card__detail"
               >
                 {f.detail}
               </div>
               {/* Suggestion box */}
               <div
                 data-testid={`suggest-${f.id}`}
-                style={{ fontSize: 10, padding: '6px 8px', background: 'var(--p-tint)', border: '1px dashed var(--p-border)', color: 'var(--p-text)' }}
+                className="cv-finding-card__suggest"
               >
-                <span style={{ fontWeight: 700, color: 'var(--p-success)' }}>提案 ▶</span> {f.suggest}
+                <span className="cv-finding-card__suggest-label">提案 ▶</span> {f.suggest}
               </div>
             </>
           )}
 
           {/* Action buttons — wired to useConsistencyMutations (M0.15 t16) */}
-          <div style={{ display: 'flex', gap: 4, marginTop: 8, alignItems: 'center' }}>
+          <div className="cv-finding-card__actions">
             {/* Open in Editor — for open and ack (backward compat) */}
             {(isOpen || isAck) && (
               <button
                 data-testid="action-open-editor"
                 data-action="open-editor"
-                className="btn-px ghost"
-                style={{ fontSize: 9, padding: '3px 6px' }}
+                className="btn-px ghost cv-action-btn"
                 onClick={() => onOpenEditor(f.file)}
               >
                 Open in Editor
@@ -181,8 +166,7 @@ function FindingCard({ finding: f, onAck, onFix, onDismiss, onOpenEditor }: Find
               <button
                 data-testid="action-acknowledge"
                 data-action="ack"
-                className="btn-px primary"
-                style={{ fontSize: 9, padding: '3px 6px' }}
+                className="btn-px primary cv-action-btn"
                 onClick={() => onAck(f.id)}
               >
                 Acknowledge
@@ -193,8 +177,7 @@ function FindingCard({ finding: f, onAck, onFix, onDismiss, onOpenEditor }: Find
               <button
                 data-testid="action-mark-fixed"
                 data-action="fix"
-                className="btn-px ghost"
-                style={{ fontSize: 9, padding: '3px 6px' }}
+                className="btn-px ghost cv-action-btn"
                 onClick={() => onFix(f.id)}
               >
                 Mark Fixed
@@ -205,8 +188,7 @@ function FindingCard({ finding: f, onAck, onFix, onDismiss, onOpenEditor }: Find
               <button
                 data-testid="action-dismiss"
                 data-action="dismiss"
-                className="btn-px ghost"
-                style={{ fontSize: 9, padding: '3px 6px', color: 'var(--p-text-muted)' }}
+                className="btn-px ghost cv-action-btn--dismiss"
                 onClick={() => onDismiss(f.id)}
               >
                 Dismiss
@@ -217,14 +199,13 @@ function FindingCard({ finding: f, onAck, onFix, onDismiss, onOpenEditor }: Find
               <button
                 data-testid="action-discuss"
                 data-action="discuss"
-                className="btn-px ghost"
-                style={{ fontSize: 9, padding: '3px 6px' }}
+                className="btn-px ghost cv-action-btn"
                 onClick={() => undefined}
               >
                 Discuss
               </button>
             )}
-            <span style={{ marginLeft: 'auto', fontSize: 9, color: 'var(--p-text-muted)' }}>{f.source}</span>
+            <span className="cv-finding-card__source">{f.source}</span>
           </div>
         </div>
       </div>
@@ -263,10 +244,10 @@ export function ConsistencyView(): JSX.Element {
       style={{ padding: 18 }}
     >
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
+      <div className="cv-header">
         <div
           data-testid="consistency-title"
-          style={{ fontSize: 14, fontWeight: 700 }}
+          className="cv-header__title"
         >
           整合性 — Consistency Findings
         </div>
@@ -275,7 +256,7 @@ export function ConsistencyView(): JSX.Element {
             NEW {openCount}
           </span>
         )}
-        <div style={{ flex: 1 }} />
+        <div className="cv-header__spacer" />
         {/* チェック実行 button — Phase 5 write hookup */}
         <button className="btn-px primary" onClick={() => undefined}>
           チェック実行
@@ -286,11 +267,11 @@ export function ConsistencyView(): JSX.Element {
       {consistencyState === 'running' && (
         <div
           data-testid="consistency-running"
-          style={{ padding: 14, border: '2px dashed var(--p-warn)', background: 'var(--p-paper)', marginBottom: 12, fontSize: 11 }}
+          className="cv-running"
         >
           <b>spec_diff 実行中</b> — agents/ skills/ docs/ を scan 中…
-          <div style={{ marginTop: 6, height: 6, background: 'var(--p-tint)', border: '1px solid var(--p-border)', overflow: 'hidden' }}>
-            <div style={{ width: '60%', height: '100%', background: 'var(--p-warn)' }} />
+          <div className="cv-running__progress-track">
+            <div className="cv-running__progress-fill" />
           </div>
         </div>
       )}
@@ -299,10 +280,10 @@ export function ConsistencyView(): JSX.Element {
       {consistencyState === 'empty' && (
         <div
           data-testid="consistency-empty"
-          style={{ padding: 30, textAlign: 'center', border: '2px solid var(--p-border)', background: 'var(--p-paper)' }}
+          className="cv-empty"
         >
-          <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 4 }}>整合性違反は検出されていません</div>
-          <div style={{ fontSize: 10, color: 'var(--p-text-muted)' }}>
+          <div className="cv-empty__title">整合性違反は検出されていません</div>
+          <div className="cv-empty__hint">
             SPEC.md と agent/skill prompts を最後に scan した結果。
           </div>
         </div>
@@ -312,22 +293,22 @@ export function ConsistencyView(): JSX.Element {
       {consistencyState === 'has-findings' && findings.length > 0 && (
         <>
           {/* Summary strip */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginBottom: 16 }}>
+          <div className="cv-summary">
             {[
               { label: 'OPEN', n: openCount, color: 'var(--p-error)' },
               { label: 'ACK', n: ackCount, color: 'var(--p-warn)' },
               { label: 'FIXED', n: fixedCount, color: 'var(--p-success)' },
               { label: 'DISMISSED', n: dismissedCount, color: 'var(--p-stone)' },
             ].map((s) => (
-              <div key={s.label} style={{ background: 'var(--p-tint)', border: '2px solid var(--p-border)', padding: 10 }}>
+              <div key={s.label} className="cv-summary-card">
                 <div className="rpg-label">{s.label}</div>
-                <div style={{ fontSize: 20, fontWeight: 800, color: s.color, fontFamily: 'ui-monospace, monospace' }}>{s.n}</div>
+                <div className="cv-summary-card__count" style={{ color: s.color }}>{s.n}</div>
               </div>
             ))}
           </div>
 
           {/* Finding cards */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div className="cv-findings-list">
             {findings.map((f) => (
               <FindingCard
                 key={f.id}
