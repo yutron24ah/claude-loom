@@ -104,6 +104,7 @@ Phase 1 MVP closure 時に「4 branch chain × 32+ commits ahead of main、PR �
 - `docs/plans/` — 各マイルストーン詳細プラン（`writing-plans` skill を使う場合は default の `docs/superpowers/plans/` を上書きしてここに保存する）
 - `docs/SCREEN_REQUIREMENTS.md` — UI 要件
 - `tests/REQUIREMENTS.md` — 受入要件 ID
+- `docs/AGENT_PROMPT_DESIGN.md` — **agent prompt 設計原則**（2-layer structure / anti-patterns / size guideline、`agents/*.md` を書く・直す時の必読）
 
 ## skill 使い分けポリシー（M0.14 から、SPEC §3.10.1 SSoT）
 

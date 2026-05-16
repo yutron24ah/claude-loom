@@ -1394,6 +1394,21 @@ agent prompt 記述形式: `「X 時の候補として Y skill。他の skill / 
 - suggest skill の追加は agent prompt 単体更新で可
 - retro lens は suggest skill の活用機会を検出し finding 化する（`process-axis` lens の責務、§3.9 参照）
 
+#### 3.10.2 Agent prompt 設計原則（M0.17 から）
+
+claude-loom の `agents/*.md` は **Claude Code に loom-specific なロールを overlay する** ための prompt であり、ゼロから AI agent を構築する prompt ではない。
+
+**設計原則の SSoT**: `docs/AGENT_PROMPT_DESIGN.md` を参照。
+
+要旨：
+
+- **2-layer 構造**: Reasoning layer (mission / character / workflow semantic / judgment axes、薄く judgment を Claude Code に委ねる) + Contract layer (interface contracts / file paths / hard constraints、precise に prescribe)
+- **Anti-patterns**: mechanical keyword matching / Claude Code 基本能力の再教示 / prompt template verbatim 固定 / step-by-step bash command prescription / historical retro reference embed / replicated structure across sections
+- **Size guideline**: PM 200-250 行 / developer 150-200 行 / reviewer 100-150 行（specialized 80-120 行）/ retro-pm 150-200 行 / retro lens 80-120 行
+- **SPEC → prompt の単方向 flow**: prompt 側で新 rule を発明せえへん。SPEC §X.X SSoT がある内容は引用 1 行に圧縮、過去の retro 由来 tactical rule は SPEC 昇格後に prompt 反映
+
+agent prompt の新規作成・改修時は本 SPEC §3.10.2 + `docs/AGENT_PROMPT_DESIGN.md` の verification checklist 9 項目を満たすこと。
+
 ## 4. アクター（エージェント）定義
 
 ### 4.1 ロール一覧
