@@ -257,8 +257,10 @@ export function RoomView(): JSX.Element {
       )}
 
       {/* === Agent detail drawer === */}
+      {/* WHY zIndex token: --z-agent-detail = 10, matches tokens.css Phase 2 z-index scale.
+          Eliminates magic number per S9 cleanup (M0.17 Phase C). */}
       {selectedEntry && (
-        <div style={{ position: 'absolute', top: 14, right: 14, zIndex: 10 }}>
+        <div style={{ position: 'absolute', top: 14, right: 14, zIndex: 'var(--z-agent-detail)' as unknown as number }}>
           <AgentDetailPanel
             agent={selectedEntry}
             onClose={() => {

@@ -293,13 +293,15 @@ export function PMChatPanel({
       )}
 
       {/* Approval toast stack (med/low risk) — rendered outside tab pane */}
+      {/* WHY --z-agent-detail (10): toast stack sits above pm-chat content (z=5) but
+          below high-risk modal (--z-pm-modal=20). S9 token fix, M0.17 Phase C. */}
       {nonHighRisk.length > 0 && (
         <div
           style={{
             position: 'absolute',
             bottom: 80,
             right: 8,
-            zIndex: 10,
+            zIndex: 'var(--z-agent-detail)' as unknown as number,
             display: 'flex',
             flexDirection: 'column',
             gap: 4,

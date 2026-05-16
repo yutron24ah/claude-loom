@@ -38,7 +38,7 @@ export function AppRouter(): JSX.Element {
         <Route element={<AppShell />}>
           {/* Index route: Room canvas with no panel overlay */}
           <Route index element={null} />
-          {/* Panel overlay routes */}
+          {/* Sibling screen routes (M0.17 S2 sibling routing 化、AppShell が isRoom ? <RoomView /> : <Outlet /> で分岐) */}
           <Route path="plan" element={<PlanView />} />
           <Route path="gantt" element={<GanttView />} />
           <Route path="retro" element={<RetroView />} />
