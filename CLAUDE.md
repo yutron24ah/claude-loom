@@ -115,7 +115,7 @@ Phase 1 MVP closure 時に「4 branch chain × 32+ commits ahead of main、PR �
 | 用途 | mandate skill | 理由 |
 |---|---|---|
 | TDD discipline | `loom-tdd-cycle` | claude-loom の Red→Green→Refactor→Review cycle 規律 |
-| code review | `loom-review` (single) / `loom-review-trio` (deep) | Reviewer verdict を quality gate とする SPEC §3.6.6 規約 |
+| code review | `loom-review` (strategy=single default / strategy=trio opt-in via review_mode) | Reviewer verdict を quality gate とする SPEC §3.6.8.7 規約 |
 | retro 振り返り | `loom-retro` | 4 lens × counter-argument の 3 段階プロトコル必須 |
 | harness self-test | `loom-test` | claude-loom 固有の install/agent/command/skill test |
 | harness status 確認 | `loom-status` | claude-loom 固有のスナップショット |

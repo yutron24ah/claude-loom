@@ -30,8 +30,8 @@ Together they turn Claude Code from a single-window chat into a **multi-agent de
 
 ## Features
 
-- **13 specialized subagents** — PM, Developer, single-mode Reviewer (default), Code/Security/Test reviewer trio (opt-in), 4 retro lens judges + counter-arguer + aggregator + retro PM
-- **10 skills** — `loom-tdd-cycle`, `loom-review`, `loom-review-trio`, `loom-retro`, `loom-test`, `loom-status`, `loom-worktree`, `loom-write-plan`, `loom-debug`, `loom-ui-smoke` (browser interactive smoke test)
+- **3 specialized subagents** — PM, Developer, Retro PM (other reviewer / retro lens responsibilities migrated to skills)
+- **9 skills** — `loom-tdd-cycle`, `loom-review` (single + trio strategies), `loom-retro`, `loom-test`, `loom-status`, `loom-worktree`, `loom-write-plan`, `loom-debug`, `loom-ui-smoke` (browser interactive smoke test)
 - **10 slash commands** — `/loom-pm`, `/loom-spec`, `/loom-go`, `/loom-retro`, `/loom-status`, `/loom-worktree`, `/loom-mode`, `/loom-stop`, `/loom`, `/loom-ui-smoke`
 - **Real-time GUI** — pixel-RPG room view, Plan + Gantt with bi-directional file sync, Session list, Agent Detail (React + Phaser/SVG)
 - **Local daemon** — Node.js + Fastify + tRPC + Drizzle + SQLite, binds to `127.0.0.1` only, auto-shuts after 30 min idle
