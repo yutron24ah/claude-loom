@@ -1198,6 +1198,219 @@ SPEC §3.6.15.5 の 10 項目 checkbox を全 `[x]`、`./tests/run_tests.sh` 全
 
 ---
 
+## マイルストーン M0.17: UI Redesign Port Correction
+
+design review 2026-05-14 (handoff bundle `claude-room/project/REVIEW.md`) で発覚した M0.15 UI Redesign Port の SSoT 乖離 (再現度 30〜40%) を修正する Phase 2 hardening continuation milestone。design 側で proposed file 11 種が既に SSoT 化済、これを実コードに適用 + Phase 4 細部仕上げまで完遂する。
+
+**SSoT**: design bundle `claude-room/project/REVIEW.md` が修正 scope + Phase 構成 + G6 トークン化方針 + 完了基準の SSoT。本 PLAN section は task list + planned_files + commit hint。
+
+**変更 scope**:
+- P0 致命 3 件 (B1 shell.css 移植漏れ / B2 ゾーン箱化 / B3 RoomView 固定座標)
+- P1 構造的ズレ 6 件 (S1 LiveRail 不在 / S2 モーダル二重実装 / S3 REVIEW デスク配置 / S4 worktree clone 位置 / S5 デコレーション過多 / S6 cat-walker 未実装)
+- G6 トークン化全廃 (色 / z-index / 比率 / サイズ / 文字列 / 構造化テーブルを tokens.css + constants.ts へ)
+- Phase 4 細部 (cat-walker 配線 / RoomModeToggle 縮小 / SubroomClone 微差 / Playwright 全種再撮影)
+
+**dispatch 戦略**: Strategy a (commit_handoff=dev) / single mode / shared tree (file overlap が tokens.css 1 件のみで shared tree で衝突なし)。Phase 単位で別 dev session dispatch、phase 境界で PM checkpoint。
+
+### Phase 1: シェル復旧 (B1)
+
+- [x] shell.css (832L、design bundle SSoT) を ui/src/styles/ に新設 + index.css を proposed 内容で置換 (`@import './shell.css';` のみ追加、`@import './room.css';` は t9 atomic) <!-- id: m0.17-t1 status: done committed_sha: fd81c22 path: C (self_review、CSS-only verbatim port) planned_files: ui/src/styles/shell.css, ui/src/styles/index.css -->
+  - source: `/tmp/loom-design-review/claude-room/project/ui/src/styles/shell.css` + `/tmp/loom-design-review/claude-room/project/ui/src/styles/index.css.proposed`
+  - 完了基準: TopBar 36px 横バー / Drawer 168px サイドバー / StatusBar 24px 下バー / ScenarioPicker 右上正しい位置
+  - dispatcher: Strategy a / single mode / shared tree
+
+- [x] tokens.css の Phase 1 必須 token 25 個 verify、不足あれば追加 (`--p-ok` + `--p-bad` の 2 token を `:root` / `.theme-dusk` / `.theme-night` 3 theme block に追加、23 token は pre-existing) <!-- id: m0.17-t2 status: done committed_sha: fd81c22 path: C (t1 と統合 commit、tokens_added: ['--p-ok','--p-bad']) planned_files: ui/src/styles/tokens.css -->
+  - dispatcher: Strategy a / single mode / shared tree
+
+- [x] Playwright baseline darwin re-take (Phase 1 visual diff 確認用、shell 復旧後の差分 absorb) <!-- id: m0.17-t3 status: deferred-to-t15 note: per-phase retake は throwaway なので t15 で 1 回統合 retake に consolidation (Phase 4.5 hotfix 含む 7215138 commit で 16 baseline 全種再撮影済み) planned_files: ui/e2e/__screenshots__/m0.15-redesign/screen-baseline.spec.ts-snapshots/*-darwin.png, ui/e2e/__screenshots__/room-baseline.spec.ts-snapshots/*-darwin.png -->
+  - command: `pnpm --filter @claude-loom/ui exec playwright test --config e2e/playwright.config.ts --update-snapshots=all e2e/m0.15-redesign/ e2e/room-baseline.spec.ts`
+  - dispatcher: PM direct (snapshot regenerate)
+
+### Phase 2: ゾーン再描画 + 比率レイアウト (B2 + B3 + S3 + S4 + S5)
+
+- [x] tokens.css.patch (69L) を tokens.css 末尾に append (zone 色 / prop 色 / z-index / 比率 / サイズの token 追加) + `.room-island*` / `.room-sign--island--*` ルール削除 <!-- id: m0.17-t4 status: done committed_sha: d737f89 path: C (t5 + t6 と統合 commit、9 .room-island* rule deleted) planned_files: ui/src/styles/tokens.css -->
+  - source: `/tmp/loom-design-review/claude-room/project/ui/src/styles/tokens.css.patch`
+  - 削除対象 ルール: `.room-island`, `.room-island::before`, `.room-island--pm`, `.room-island--dev`, `.room-island--review`, `.room-island--review::before`, `.room-sign--island--pm`, `.room-sign--island--dev`, `.room-sign--island--review`
+  - dispatcher: Strategy a / single mode / shared tree
+
+- [x] RoomBackground.tsx を proposed 内容で置換 (ゾーン SVG ラグ化、opacity 0.30 + letter-spacing 8 floor stencil、枠線なし) + ui/src/views/room/constants.ts 新設 (`ROOM_AGENT_IDS` / `ZONES` / `COLD_START_COPY` / `LIVE_RAIL_TABS` / `MAX_SUBROOM_CLONES` etc.) <!-- id: m0.17-t5 status: done committed_sha: d737f89 path: C (verbatim port: 79L→173L、constants.ts 86L new) planned_files: ui/src/views/room/RoomBackground.tsx, ui/src/views/room/constants.ts -->
+  - source: `/tmp/loom-design-review/claude-room/project/ui/src/views/room/RoomBackground.proposed.tsx` + `/tmp/loom-design-review/claude-room/project/ui/src/views/room/constants.ts.proposed`
+  - dispatcher: Strategy a / single mode / shared tree
+
+- [x] RoomView.tsx を proposed 内容で置換 (`width`/`height` props 削除 + ResizeObserver + W/H/floorY 比率座標 + 4 モーダル撤去 + ポスター `onClick={navigate('/...')}` + Islands import 削除 + SUBROOM_CLONES `scenario.worktrees.filter().slice().map()` + `<Plant>` DOM 2 件削除) + Islands.tsx 削除 + RoomView.tsx 呼び出し側 (AppShell) は新版で width/height 渡さない設計に整合 <!-- id: m0.17-t6 status: done committed_sha: d737f89 path: C (verbatim port: 408L→285L、Islands.tsx 56L deleted、7 test files refactored for ResizeObserver/useNavigate mocks) planned_files: ui/src/views/room/RoomView.tsx, ui/src/views/room/Islands.tsx -->
+  - source: `/tmp/loom-design-review/claude-room/project/ui/src/views/room/RoomView.proposed.tsx`
+  - 削除対象: `ui/src/views/room/Islands.tsx` (56L)
+  - dispatcher: Strategy a / single mode / shared tree
+
+- [x] Playwright baseline darwin re-take (Phase 2 visual diff 確認用、ゾーン箱化解消 + 比率レイアウト active 化後の差分 absorb) <!-- id: m0.17-t7 status: deferred-to-t15 note: per-phase retake は throwaway なので t15 で統合 (Phase 4.5 hotfix 含む 7215138 commit で 16 baseline 全種再撮影済み) planned_files: ui/e2e/__screenshots__/m0.15-redesign/screen-baseline.spec.ts-snapshots/*-darwin.png, ui/e2e/__screenshots__/room-baseline.spec.ts-snapshots/*-darwin.png -->
+  - dispatcher: PM direct (snapshot regenerate)
+
+### Phase 3: ルーティングと LiveRail (S1 + S2)
+
+- [x] AppShell.tsx を proposed 内容で置換 (Outlet 全画面オーバーレイ撤去、`isRoom ? <RoomView /> : <Outlet />` の sibling routing 化、Escape key handler 削除、APP_COPY 経由の文字列 token 化、LiveRail mount 配線) + ui/src/routing/constants.ts 新設 (`NAV_GROUPS` / `SCENARIO_KEYS` / `APP_COPY`) <!-- id: m0.17-t8 status: done committed_sha: dc00834 path: C (verbatim port: 468L→295L、constants.ts 74L new、注: Phase 4.5 で marginRight wrapper drop の oversight を修正 — 7215138 で復活) planned_files: ui/src/routing/AppShell.tsx, ui/src/routing/constants.ts -->
+  - source: `/tmp/loom-design-review/claude-room/project/ui/src/routing/AppShell.proposed.tsx` + `/tmp/loom-design-review/claude-room/project/ui/src/routing/constants.ts.proposed`
+  - dispatcher: Strategy a / single mode / shared tree
+
+- [x] LiveRail.tsx 新設 (92L、PM 非起動時の右カラム fallback、tabs: merged/reasoning/tools) + DeskStation.tsx を proposed 内容で置換 (inline 全廃 → `.desk-station__*` クラス、`STATUS_COLOR` 定数廃止 → `.desk-station__status-dot--{status}` 修飾子、`deskColor` prop 廃止 → `--p-wood` token) + room.css 新設 (366L) + index.css に `@import './room.css';` atomic 追加 <!-- id: m0.17-t9 status: done committed_sha: dc00834 path: C (verbatim port: DeskStation 253L→141L、LiveRail 92L new、room.css 366L new、index.css final 3 import: tokens/shell/room、StreamEvent→StreamMsg 型名 stale を dev が検出 + 修正) planned_files: ui/src/views/room/LiveRail.tsx, ui/src/views/room/DeskStation.tsx, ui/src/styles/room.css, ui/src/styles/index.css -->
+  - source: `/tmp/loom-design-review/claude-room/project/ui/src/views/room/LiveRail.proposed.tsx` + `/tmp/loom-design-review/claude-room/project/ui/src/views/room/DeskStation.proposed.tsx` + `/tmp/loom-design-review/claude-room/project/ui/src/styles/room.css`
+  - dispatcher: Strategy a / single mode / shared tree
+
+- [x] 個別 screen (PlanView / GanttView / ConsistencyView / RetroView / GuidanceView / CustomizationView / SessionListView / TokensView / WorktreeView / ProjectSettingsView) の `className="bg-bg1/80 backdrop-blur-sm"` modal wrapper 撤去、Outlet 通常配置 (content 領域 lay) に追従 <!-- id: m0.17-t10 status: done committed_sha: dc00834 path: C (verify only: 全 10 screen が既に outer modal wrapper を持たず clean、screens_stripped_wrapper: []) planned_files: ui/src/views/plan/PlanView.tsx, ui/src/views/gantt/GanttView.tsx, ui/src/views/consistency/ConsistencyView.tsx, ui/src/views/retro/RetroView.tsx, ui/src/views/guidance/GuidanceView.tsx, ui/src/views/customization/CustomizationView.tsx, ui/src/views/session-list/SessionListView.tsx, ui/src/views/tokens/TokensView.tsx, ui/src/views/worktree/WorktreeView.tsx, ui/src/views/project-settings/ProjectSettingsView.tsx -->
+  - 完了基準: Drawer の Plan クリック → URL `/plan` → content 領域に PlanView 切替、Drawer の Plan に active 強調
+  - dispatcher: Strategy a / single mode / shared tree
+
+- [x] Playwright baseline darwin re-take (Phase 3 visual diff 確認用、sibling routing + LiveRail active 化後の差分 absorb) <!-- id: m0.17-t11 status: deferred-to-t15 note: per-phase retake は throwaway なので t15 で統合 (Phase 4.5 hotfix 含む 7215138 commit で 16 baseline 全種再撮影済み) planned_files: ui/e2e/__screenshots__/m0.15-redesign/screen-baseline.spec.ts-snapshots/*-darwin.png, ui/e2e/__screenshots__/room-baseline.spec.ts-snapshots/*-darwin.png -->
+  - dispatcher: PM direct (snapshot regenerate)
+
+### Phase 4: 細部仕上げ (S6 + M1 + M2 + M3)
+
+- [x] DeskStation に `walkTo` prop 配線 (`scenario.agents[id].walkTo` 定義時のみ `--walk-dx` / `--walk-dy` CSS 変数を style 経由で注入、`.cat-walker` class active 化) <!-- id: m0.17-t12 status: done committed_sha: cc8c9d5 path: C (TDD red→green confirmed、+5 walkTo tests in desk-station.test.tsx、walkTo_type_source: runtime string cast — AgentState.walkTo は agent id string、RoomView が positions 経由で {dx, dy} に変換) planned_files: ui/src/views/room/DeskStation.tsx, ui/src/views/room/RoomView.tsx -->
+  - source: redesign `room.jsx` L60-64 + L107-115 (cat-walker 配線元)
+  - dispatcher: Strategy a / single mode / shared tree
+
+- [x] RoomModeToggle (Room 画面右上の「🐱 レトロ開始」CTA) 縮小判断 — room.css 側で主張弱める or 撤去して `/retro` route 経由のみに統一 (M1 review item) <!-- id: m0.17-t13 status: done committed_sha: cc8c9d5 path: C (Phase 2 RoomView replacement で既に dormant 化済 + decor/RoomModeToggle.tsx dead code 削除、import 無し safe) planned_files: ui/src/views/room/decor/RoomModeToggle.tsx (deleted), ui/src/views/room/decor/index.ts -->
+  - dispatcher: Strategy a / single mode / shared tree
+
+- [x] SubroomClone label 重なり調整 + Speech bubble tail (DeskStation `::after`) と redesign source position の微差確認 + M2 branch label 責務分離 (`◆ branch: {branch}` のみに、`claude-loom` 名は TopBar 責務) + M3 font 確認 <!-- id: m0.17-t14 status: done committed_sha: cc8c9d5 path: C (verify + M2 fix: RoomWallDecor.tsx の `◆ claude-loom — branch: main` を `◆ branch: {branch}` に prop-driven 化、scenario.branch 経由、SubroomClone + Speech bubble + M3 font は room.css/shell.css に definition 揃って no-op) planned_files: ui/src/views/room/SubroomClone.tsx, ui/src/views/room/decor/RoomWallDecor.tsx, ui/src/styles/room.css -->
+  - dispatcher: Strategy a / single mode / shared tree
+
+- [x] Playwright snapshot 全種再撮影 + visual diff verify (M0.17 全 Phase 完了後の最終 baseline 確定、Phase 4.5 hotfix 含む) <!-- id: m0.17-t15 status: done committed_sha: 7215138 path: C (PM direct → Phase 4.5 hotfix dev dispatch、16 darwin baselines regenerated、Playwright 19/19 pass) planned_files: ui/e2e/__screenshots__/**/*-darwin.png -->
+  - command: `pnpm --filter @claude-loom/ui exec playwright test --config e2e/playwright.config.ts --update-snapshots=all e2e/m0.15-redesign/ e2e/room-baseline.spec.ts` (全種)
+  - 完了基準: 16/16 baseline pass、Playwright 19/19 (12 screen + agent-detail + pm-chat-overlay + 3 click flow + 3 room baseline)、再現度 30〜40% → ≥90% 達成
+  - dispatcher: PM direct + Phase 4.5 hotfix dev (snapshot regenerate)
+
+### Phase 4.5: post-Phase-4 hotfix (proposed AppShell oversight + stale test selectors)
+
+Phase 4 完了後 PM が Playwright baseline retake (t15) を実行、19 test 中 7 failures 検出。3 root cause:
+
+- **Root cause A (構造的 bug)**: proposed AppShell.tsx で 旧 AppShell が持っていた `<div style={{position:'absolute', inset:0, marginRight: rightColumnWidth}}><RoomView /></div>` wrapper が drop され、LiveRail (width 280px) + PMChatPanel (width 340px) overlay が PM desk (x=W*0.78) を覆う pointer event intercept bug
+- **Root cause B (stale test selector)**: `screen-baseline.spec.ts` の gantt/consistency/retro が旧 dialog wrapper testid `[data-testid="view-panel"]` を waitSelector に使用、proposed AppShell が dialog wrapper 撤去済 (S2 atomic) で testid 存在しない
+- **Root cause C (tRPC WS transport)**: click-flow 3 件 (Customization/PMChat/ProjectSettings 保存) が `page.route('**/?batch=1')` HTTP intercept で network assertion、tRPC client は実態 wsLink (WebSocket) で HTTP route intercept では match せず assertion 失敗
+
+- [x] Phase 4.5 hotfix dev dispatch: AppShell marginRight wrapper 復活 + screen-baseline waitSelector を screen 固有 testid に update (gantt-view / consistency-view / retro-view) + GanttView/RetroView に testid 追加 + click-flow の HTTP network assertion 削除 (tRPC WS 実態に整合) + Playwright 16 darwin baseline 全種再撮影 <!-- id: m0.17-phase-4.5-hotfix status: done committed_sha: 7215138 path: C (TDD: RED Playwright 12/19 → GREEN 19/19 confirmed twice、3 fix + 16 baseline regenerate atomic commit) planned_files: ui/src/routing/AppShell.tsx, ui/src/views/gantt/GanttView.tsx, ui/src/views/retro/RetroView.tsx, ui/e2e/m0.15-redesign/screen-baseline.spec.ts, ui/e2e/m0.15-redesign/click-flow.spec.ts, ui/e2e/__screenshots__/**/*-darwin.png, tests/REQUIREMENTS.md -->
+  - source: PM 直接診断 + dev hotfix dispatch (REQ-091 として REQUIREMENTS.md に append 済)
+  - 完了基準: Playwright 19/19 pass、Vitest UI 958/958 + daemon 546/546、0 regression
+  - dispatcher: Strategy a / single mode / shared tree
+
+### Phase 5: doc + closure
+
+- [x] docs/SCREEN_REQUIREMENTS.md + docs/DOC_CONSISTENCY_CHECKLIST.md M0.17 check items update + 変更履歴 entry (「M0.17 — UI Redesign Port Correction (REVIEW.md handoff 適用)、再現度 30〜40%→≥90%」) <!-- id: m0.17-t16 status: done committed_sha: 78abd00 path: PM direct (atomic doc commit、t17 と統合) planned_files: docs/SCREEN_REQUIREMENTS.md, docs/DOC_CONSISTENCY_CHECKLIST.md -->
+  - dispatcher: PM direct (atomic doc commit)
+
+- [x] tests/REQUIREMENTS.md REQ-091..099 entry PM 一括 append (SPEC §3.6.14.3 規律、各 task の rationale + commit SHA 記録) <!-- id: m0.17-t17 status: done committed_sha: 78abd00 path: PM direct (REQ-091 Phase 4.5 dev 7215138 + REQ-092..099 PM 一括 append、計 9 REQ) planned_files: tests/REQUIREMENTS.md -->
+  - dispatcher: PM direct (一括 append)
+
+- [x] Layer 2.5 dogfood smoke 8 step (SPEC §3.6.15.4 + §10.4.1) PM 直接実行、`docs/smoke-tests/m0.17-dogfood/report.md` に structured report 出力 + fixture bump 6→7 carryover (pre-existing M0.16 retro 2026-05-12-001 反映漏れ) <!-- id: m0.17-t18 status: done committed_sha: edd4a79 path: PM direct (8/8 PASS + Step 8 graceful skip + fixture bump carryover) planned_files: docs/smoke-tests/m0.17-dogfood/*.md, tests/fixtures/applied_summary_expected.json -->
+  - dispatcher: PM direct (no subagent)
+
+- [x] m0.17-complete tag 設置 + retro hook trigger + main への PR open trigger (branch hygiene learned_guidance lg-2026-05-12-001 遵守) <!-- id: m0.17-t19 status: done committed_sha: 170d323 note: tag は 170d323 上に annotated tag として設置、PR #12 (https://github.com/yutron24ah/claude-loom/pull/12) を gh pr create で open、retro hook で user 承認 → loom-retro-pm dispatch 予定、REQ-099 PM 一括 append 済 (78abd00) planned_files: PLAN.md -->
+  - dispatcher: PM direct (tag + PR + retro 提案)
+
+### Phase 4.6: post-tag-hotfix series (M0.16 latent bug 解消、SPEC §3.6.8.11)
+
+m0.17-complete tag 設置後 (170d323)、PR #12 push で CI Linux Playwright baseline 不在で 16 failures 検出。M0.16 codify 時の playwright-regenerate.yml workflow が parse 不全 + detect-changes 不備 + repo setting 制約で 0/2 milestone で実 active 化しとらん事象を post-tag-hotfix 3 件で構造解消、M0.17 CI green 達成。tag 不変保持、commit message 全 `[post-tag-hotfix m0.17-complete]` annotation、同 branch 継続、retro scope 必須 inclusion 確約。
+
+- [x] playwright-regenerate.yml YAML 全面 simplify (147L→92L、GH Actions parser registration 修正、`pr-title` input 廃止 + leading 24 行 comment block 整理 + `--update-snapshots=all` 構文整合 + `github.ref_name` で base branch dynamic 化) <!-- id: m0.17-pth-1 status: done committed_sha: a50f0a9 path: PM direct (M0.16 latent bug fix、REQ-100 append 予定) planned_files: .github/workflows/playwright-regenerate.yml -->
+
+- [x] playwright-regenerate.yml detect-changes step を `git diff --quiet` → `git status --porcelain` に変更 (untracked file 検出修正、初回 Linux baseline 16 枚生成 が silent skip されとった logic bug 修正) <!-- id: m0.17-pth-2 status: done committed_sha: 84af3f3 path: PM direct (M0.16 latent bug fix 2、REQ-101 append 予定) planned_files: .github/workflows/playwright-regenerate.yml -->
+
+- [x] Linux baseline auto-generated branch `chore/playwright-linux-baseline-20260514-135845` を `--no-ff` merge で取込 (16 *-linux.png file、`gh pr create` が repo setting "Allow GitHub Actions to create or approve PRs" 無効で fail した workaround、direct branch merge で admin access 不要に解消) <!-- id: m0.17-pth-3 status: done committed_sha: 6ed212b path: PM direct (M0.16 codify と repo setting 乖離 workaround、REQ-102 append 予定) planned_files: ui/e2e/__screenshots__/m0.15-redesign/screen-baseline.spec.ts-snapshots/*-linux.png, ui/e2e/__screenshots__/room-baseline.spec.ts-snapshots/*-linux.png -->
+
+**Phase 4.6 verification**: PR #12 CI 全 green (vitest UI 958 + daemon 546 + Playwright 19/19 darwin baseline + 19/19 linux baseline = 双方 platform pass)、mergeable 状態到達。Linux baseline auto-PR infrastructure が初めて実 active 化 (M0.16 codify から 2 milestone 経て first usage)。
+
+### Phase 4.8: Production mock= scaffolding gate (post-closure user 指摘契機、2026-05-15)
+
+Phase 4.7 real daemon verify で「ScenarioPicker が production 表示 + useScenario が `?mock=` URL param で fixture fallback」logic が production bundle に含まれとる事実を surface 化。user 指摘「production code に mock= 残っとる」を契機に dev/QA scaffolding を `import.meta.env.DEV` で gate、production build (Vite minifier + daemon-served ui/dist) では tree-shake で完全除去、dev/test (Vite dev server / Vitest) では従来動作維持の dual-mode design。
+
+- [x] redesign/api/websocket.ts `useScenario()` mock fallback block を `if (import.meta.env.DEV)` で gate + ui/src/routing/AppShell.tsx の ScenarioPicker render を `{isRoom && import.meta.env.DEV && <ScenarioPicker .../>}` で gate + ui/tsconfig.json に `"types": ["vite/client"]` 追加 (ImportMeta.env 型解決の collateral) <!-- id: m0.17-phase-4.8-mock-gate status: done committed_sha: 559549e path: C (Strategy a single dev、Vitest 958/958 + daemon 546/546 + bash 42/42 PASS、tsc -1 net (M0.15 由来 ImportMeta error 1 件副次解消)、0 regression、production bundle で SCENARIOS / ScenarioPicker / readMockKey が Vite DCE で tree-shake、URL param 経由 mock bypass 不能化) planned_files: redesign/api/websocket.ts, ui/src/routing/AppShell.tsx, ui/tsconfig.json -->
+  - rationale: SCREEN_REQUIREMENTS 「mock mode: ?mock=active で fixture 注入」は M0.15 redesign 期間中の design 前提、production release では dev/QA 限定にすべき
+  - build-time gate (Vite `import.meta.env.DEV` 静的置換): production user が `DEV=true` を runtime で書き換える方法は存在しない構造的 security 改善
+  - dispatcher: Strategy a / single mode / shared tree
+
+### Phase 4.7: Real daemon mock-less verify (post-closure user 指摘契機、2026-05-15)
+
+closure 判断が全 layer mock pass のみで成立した dogfood gap を user 指摘で post-closure 検出、Playwright MCP browser_* tool で `http://127.0.0.1:5757/` を mock パラメータ無しで navigate + snapshot し real scenario data で M0.17 全実装を実機 verify。
+
+- [x] real daemon mock-less verification + report 作成 + 2 screenshots commit <!-- id: m0.17-real-daemon status: done committed_sha: 24b3ab0 path: PM direct (Playwright MCP browser_navigate / browser_snapshot / browser_take_screenshot / browser_click 経由、AppShell sibling routing + Drawer active toggling + LiveRail conditional mount + ColdStart card + M2 branch label + Wall posters + DeskStations + SubroomClone 全項目 real scenario で動作確認、Finding R1 WS 再接続中 persistent display と R2 cat-walker real verify deferred を M0.17 scope 外 retro candidate 化) planned_files: docs/smoke-tests/m0.17-real-daemon/report.md, docs/smoke-tests/m0.17-real-daemon/*.png -->
+
+### M0.17 retro status: deferred to M0.18 / Phase boundary retro (user 判断 2026-05-15)
+
+M0.17 milestone retro は user 判断 (2026-05-15 closure session) により skip、`retro-debt: m0.17-carryover` 状態として M0.18 または Phase 2 entry の Phase boundary retro で covering scope 一括検討。
+
+**accumulated finding candidates (次回 retro が scan で参照する SoT 一覧)**:
+- `docs/smoke-tests/m0.17-dogfood/report.md` — Layer 2.5 dogfood smoke 由来 6 候補 (act adoption gap / proposed file SSoT oversight / stale test selector / type name stale / fixture drift CI gate / dogfood 成功 record)
+- `docs/smoke-tests/m0.17-real-daemon/report.md` — real daemon mock-less verify 由来 4 候補 (mock-only dogfood gap structural / WS 再接続中 persistent display / cat-walker real daemon active verify deferred / loom-ui-smoke mandate 格上げ提案)
+- `tests/REQUIREMENTS.md` REQ-100..102 — M0.16 latent bug class 由来 implicit candidates (CI parity gate adoption gap / codify→next milestone usage gate)
+- Phase 4.5 hotfix (REQ-091) — proposed file SSoT oversight + stale test selector + tRPC WS transport の 3 root cause、design handoff bundle review gate 強化候補
+
+**rationale**: Phase boundary retro covering rule (CLAUDE.md M0.8 retro 規律 + retro 2026-05-04-001 F-pj-005 解消) により、M0.15/M0.16/M0.17 連続 unrun-retro 状態を Phase boundary で一括 covering。dogfood phase の柔軟運用、`.claude-loom/project-prefs.json` `last_retro` は m0.15-complete のまま (実 retro 未実行のため更新せず、carryover state を明示)。
+
+---
+
+## M0.17 Round 2 Review Followup (2026-05-16、user Round 2 review 由来)
+
+design review 第 2 巡 (`docs/m0.17-round2-review.md` SSoT、2026-05-16 user 実施) で M0.17 closure 直後の状態に対し 15 finding (P0 動かないボタン 8 件 / P1 構造的ズレ 4 件 / P2 雑多 5 件) を検出。**体感再現度: Room 70% / その他 35% / 全体 50%** と評価、Phase B (12 screens G6 トークン化) が最 ROI と指摘。
+
+**戦略**: user 推奨に従い 3 branch 分割 + 順次 (A → B → C) 実行。各 phase で別 PR、parallel review 可能。現 `fix/m0.17-ui-redesign-correction` HEAD (`2b297ba`) をベースに分岐、PR #12 は user 判断で任意 merge。
+
+**branch 構成**:
+- `fix/m0.17-phase-a-buttons` — Phase A (B4-B11 動かないボタン掃除、半日想定)
+- `fix/m0.17-phase-b-tokens` — Phase B (12 screens G6 トークン化、1-2 day 想定、最 ROI)
+- `fix/m0.17-phase-c-cleanup` — Phase C (S7-S9 + M3-M5 misc cleanup、半日、任意)
+
+### Round 2 Phase A: 動かないボタン掃除
+
+- [ ] B4: `RoomView.tsx` ColdStart 「▶ PM を起動」`onClick={() => alert('POST /pm/start')}` → `usePMSession().start()` 配線 <!-- id: m0.17-r2-A4 status: todo branch: fix/m0.17-phase-a-buttons planned_files: ui/src/views/room/RoomView.tsx -->
+- [ ] B5: `RoomView.tsx` の `retroMode` state UI 復活 (Drawer MANAGE グループ移行 OR Room 右上小 CTA) または状態ごと削除判断 <!-- id: m0.17-r2-A5 status: todo branch: fix/m0.17-phase-a-buttons planned_files: ui/src/views/room/RoomView.tsx -->
+- [ ] B6: `RoomView.tsx` `<RetroGathering><div>RetroView placeholder</div></RetroGathering>` → 実 `<RetroView />` import or `children` prop 撤去 <!-- id: m0.17-r2-A6 status: todo branch: fix/m0.17-phase-a-buttons planned_files: ui/src/views/room/RoomView.tsx -->
+- [ ] B7: `AppShell.tsx` TopBar project button noop → `navigate('/project-settings')` 最低限配線 (将来的 dropdown 化候補) <!-- id: m0.17-r2-A7 status: todo branch: fix/m0.17-phase-a-buttons planned_files: ui/src/routing/AppShell.tsx -->
+- [ ] B8: `PlanView.tsx` `edit` ボタン noop → `upsertItem` mutation 経由の milestone editor 配線 <!-- id: m0.17-r2-A8 status: todo branch: fix/m0.17-phase-a-buttons planned_files: ui/src/views/plan/PlanView.tsx -->
+- [ ] B9: `LiveRail.tsx` `if (collapsed) { return <button .../>; }` 分岐デッドコード削除 (AppShell 側 `<button className="rail-toggle">` に一本化、責務明確化) <!-- id: m0.17-r2-A9 status: todo branch: fix/m0.17-phase-a-buttons planned_files: ui/src/views/room/LiveRail.tsx -->
+- [ ] B10: `AppShell.tsx` TopBar 4 metrics drill-down navigation (PARALLEL→/gantt、TASK TOOL→/sessions、TDD ORDER→/consistency?filter=tdd、VERDICT→/consistency) <!-- id: m0.17-r2-A10 status: todo branch: fix/m0.17-phase-a-buttons planned_files: ui/src/routing/AppShell.tsx -->
+- [ ] B11: `AppShell.tsx` ScenarioPicker `activate(key)` を `window.history.replaceState` + `popstate` から `useNavigate` + `useSearchParams` (React Router 経由) に統一、NavLink active 同期確保 <!-- id: m0.17-r2-A11 status: todo branch: fix/m0.17-phase-a-buttons planned_files: ui/src/routing/AppShell.tsx -->
+
+**Phase A 完了基準**: `grep -rn "onClick" ui/src | grep -v "=>"` で素朴な noop が 0 件、`alert(` 0 件、Vitest UI 958/958 + daemon 546/546 + Playwright 19/19 全 pass、`tsc --noEmit` new error 0、PR open + CI green。
+
+### Round 2 Phase B: トークン化を screens に降ろす (最 ROI)
+
+12 screens の inline style 全廃 → `ui/src/styles/screens/<screen>.css` クラス置換。`screens/plan.css` を雛形として手で詰め、他 11 screens は同パターンで mass-production。
+
+- [ ] B-template: `ui/src/styles/screens/plan.css` 新設 + `PlanView.tsx` の inline 全廃 (雛形確立) <!-- id: m0.17-r2-B-template status: todo branch: fix/m0.17-phase-b-tokens planned_files: ui/src/styles/screens/plan.css, ui/src/views/plan/PlanView.tsx -->
+- [ ] B-gantt: `screens/gantt.css` + `GanttView.tsx` <!-- id: m0.17-r2-B-gantt status: todo branch: fix/m0.17-phase-b-tokens planned_files: ui/src/styles/screens/gantt.css, ui/src/views/gantt/GanttView.tsx -->
+- [ ] B-consistency: `screens/consistency.css` + `ConsistencyView.tsx` / `ConsistencyViewLive.tsx` <!-- id: m0.17-r2-B-consistency status: todo branch: fix/m0.17-phase-b-tokens planned_files: ui/src/styles/screens/consistency.css, ui/src/views/consistency/ConsistencyView.tsx, ui/src/views/consistency/ConsistencyViewLive.tsx -->
+- [ ] B-customization: `screens/customization.css` + `CustomizationView.tsx` <!-- id: m0.17-r2-B-customization status: todo branch: fix/m0.17-phase-b-tokens planned_files: ui/src/styles/screens/customization.css, ui/src/views/customization/CustomizationView.tsx -->
+- [ ] B-retro: `screens/retro.css` + `RetroView.tsx` <!-- id: m0.17-r2-B-retro status: todo branch: fix/m0.17-phase-b-tokens planned_files: ui/src/styles/screens/retro.css, ui/src/views/retro/RetroView.tsx -->
+- [ ] B-sessions: `screens/sessions.css` + `SessionListView.tsx` <!-- id: m0.17-r2-B-sessions status: todo branch: fix/m0.17-phase-b-tokens planned_files: ui/src/styles/screens/sessions.css, ui/src/views/session-list/SessionListView.tsx -->
+- [ ] B-settings: `screens/project-settings.css` + `ProjectSettingsView.tsx` <!-- id: m0.17-r2-B-settings status: todo branch: fix/m0.17-phase-b-tokens planned_files: ui/src/styles/screens/project-settings.css, ui/src/views/project-settings/ProjectSettingsView.tsx -->
+- [ ] B-tokens: `screens/tokens.css` + `TokenMeterView.tsx` / `TokensView.tsx` <!-- id: m0.17-r2-B-tokens status: todo branch: fix/m0.17-phase-b-tokens planned_files: ui/src/styles/screens/tokens.css, ui/src/views/tokens/TokenMeterView.tsx, ui/src/views/tokens/TokensView.tsx -->
+- [ ] B-worktree: `screens/worktree.css` + `WorktreeView.tsx` / `SubroomView.tsx` <!-- id: m0.17-r2-B-worktree status: todo branch: fix/m0.17-phase-b-tokens planned_files: ui/src/styles/screens/worktree.css, ui/src/views/worktree/WorktreeView.tsx, ui/src/views/worktree/SubroomView.tsx -->
+- [ ] B-guidance: `screens/guidance.css` + `GuidanceView.tsx` / `LearnedGuidanceView.tsx` <!-- id: m0.17-r2-B-guidance status: todo branch: fix/m0.17-phase-b-tokens planned_files: ui/src/styles/screens/guidance.css, ui/src/views/guidance/GuidanceView.tsx, ui/src/views/guidance/LearnedGuidanceView.tsx -->
+- [ ] B-agent-detail: `screens/agent-detail.css` + `AgentDetailPanel.tsx` / `AgentDetailNotes.tsx` <!-- id: m0.17-r2-B-agent-detail status: todo branch: fix/m0.17-phase-b-tokens planned_files: ui/src/styles/screens/agent-detail.css, ui/src/views/room/AgentDetailPanel.tsx, ui/src/views/room/AgentDetailNotes.tsx -->
+- [ ] B-pm-approval: `screens/pm-approval.css` + `PMApprovalModal.tsx` / `PMApprovalToast.tsx` <!-- id: m0.17-r2-B-pm-approval status: todo branch: fix/m0.17-phase-b-tokens planned_files: ui/src/styles/screens/pm-approval.css, ui/src/views/pm-chat/PMApprovalModal.tsx, ui/src/views/pm-chat/PMApprovalToast.tsx -->
+
+**Phase B 完了基準**: `grep -rn "style={{" ui/src/views | wc -l` が動的値 (progress bar `width: ${n}%` 等) 以外 0 に近づく、Vitest + daemon + Playwright 全 pass、再現度 50%→80% (Room 70%→80% + その他 35%→80%) target、PR open + CI green。
+
+### Round 2 Phase C: 細部 cleanup (任意)
+
+- [ ] S7: `AppShell.tsx` `<div style={{marginRight: rightColumnWidth}}><RoomView /></div>` wrapper 撤去、右カラム absolute overlay 化、RoomView は full width で ResizeObserver は `.content` 直観測 <!-- id: m0.17-r2-C-S7 status: todo branch: fix/m0.17-phase-c-cleanup planned_files: ui/src/routing/AppShell.tsx, ui/src/views/room/RoomView.tsx -->
+- [ ] S8: `AppShell.tsx` TopBar に branch chip 追加 (`◆ branch: {scenario.branch}` 常時表示)、project は StatusBar `~/work/{project}` で十分 <!-- id: m0.17-r2-C-S8 status: todo branch: fix/m0.17-phase-c-cleanup planned_files: ui/src/routing/AppShell.tsx -->
+- [ ] S9: z-index 生数値撲滅 (`grep -rn "zIndex: [0-9]" ui/src` で全数洗い、`--z-*` トークン置換) <!-- id: m0.17-r2-C-S9 status: todo branch: fix/m0.17-phase-c-cleanup planned_files: ui/src/views/room/RoomView.tsx, ui/src/routing/AppShell.tsx -->
+- [ ] M3: `shell.css` の `@keyframes cat-walk-trip` + `.cat-walker` class の `--walk-dx/--walk-dy` 配線確認 (Phase 4 t12 で DeskStation 側完了、CSS side 健全性 verify) <!-- id: m0.17-r2-C-M3 status: todo branch: fix/m0.17-phase-c-cleanup planned_files: ui/src/styles/shell.css -->
+- [ ] M4: `routes.tsx` のコメント「Panel overlay routes」→「Sibling screen routes」書き換え (S2 sibling routing 化で文言不整合) <!-- id: m0.17-r2-C-M4 status: todo branch: fix/m0.17-phase-c-cleanup planned_files: ui/src/routing/routes.tsx -->
+- [ ] M5: ScenarioPicker の `'live'` ボタンを `SCENARIO_KEYS` に含めて統一実装、`activate('')` 別実装の不一貫解消 <!-- id: m0.17-r2-C-M5 status: todo branch: fix/m0.17-phase-c-cleanup planned_files: ui/src/routing/constants.ts, ui/src/routing/AppShell.tsx -->
+
+**Phase C 完了基準**: 上記 6 item check、Vitest + daemon + Playwright 全 pass、PR open + CI green。
+
+### Round 2 完成基準 (Phase A + B + C 全完遂)
+
+`grep -rn "style={{" ui/src/views | wc -l` が動的値以外 0、`grep -rn "onClick" ui/src | grep -v "=>"` noop 0 件、`alert(` 0 件、`grep -rn "zIndex: [0-9]" ui/src` 0 件、Vitest UI 958+ / daemon 546+ / Playwright 19/19 全 pass、tsc new error 0、再現度 50%→**87%** (Room 70%→90% + その他 35%→85% target、review Phase C 後見積もり)、PR Phase A/B/C 3 件 mergeable + CI green、retro 候補は M0.18 / Phase boundary retro に carryover。
+
+### M0.17 完成基準
+
+REVIEW.md Phase 1+2+3+4 完了、proposed file 11 種全適用 (shell.css / room.css / tokens.css.patch / index.css / AppShell / 2 つの constants.ts / RoomBackground / RoomView / DeskStation / LiveRail)、`ui/src/views/room/Islands.tsx` 削除済、再現度 30〜40% → ≥90% 達成 (Playwright visual diff 確認)、Outlet 全画面オーバーレイ撤去 (S2 — sibling routing 化、Drawer active 強調活性化)、ゾーン箱化解消 (B2 — SVG ラグ化、枠線なし)、ResizeObserver による比率レイアウト (B3 — `width=1080` 固定座標廃止)、LiveRail PM idle 時表示 (S1)、cat-walker walkTo 配線 (S6)、G6 トークン化全廃 (`STATUS_COLOR` 等の literal 定数廃止 + inline style → class 移行 + 構造化テーブル constants.ts 化)、`./tests/run_tests.sh` 全 PASS、`pnpm --filter @claude-loom/ui test` 全 pass (regression 0)、`pnpm --filter @claude-loom/daemon test` 全 pass (regression 0)、`tsc --noEmit` redesign 由来 error 0 (pre-existing は維持)、Layer 2.5 dogfood smoke 8 step 全 PASS (Step 8 graceful skip 可)、Playwright darwin baseline 全 16 picture 再撮影済 + 16/16 pass、SPEC §3.6.14 / docs/SCREEN_REQUIREMENTS.md / DOC_CONSISTENCY_CHECKLIST.md update 済、tests/REQUIREMENTS.md REQ-091..N PM 一括 append 済、`tag m0.17-complete` 設置、`m0`〜`m0.16-complete` 全保持、main への PR open 済 (branch hygiene 遵守)。
+
+---
+
 ## Phase 1 → Phase 2 boundary（retro 2026-05-04-001 由来）
 
 Phase 1 MVP 21 milestone (M0 → M5) を 2026-05-04 に main 統合完了 (4 stacked branch を `--no-ff` merge)。tag `m5-complete` 設置済。

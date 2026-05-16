@@ -1,46 +1,21 @@
-# .github/workflows/playwright-regenerate.yml
-#
-# WHY this file exists (M0.16 Phase 2 t3):
-# CI runs on Linux (ubuntu-latest) but our committed baselines are darwin (macOS).
-# Platform-specific font rendering and anti-aliasing means Linux produces different
-# screenshots than macOS. This workflow lets us regenerate the *-linux.png baselines
-# on demand from any commit, then auto-PRs the result for review.
-#
-# HOW TO INVOKE:
-#   GitHub UI: Actions → "Playwright Snapshot Regenerate (Linux)" → Run workflow
-#   gh CLI:    gh workflow run playwright-regenerate.yml \
-#                --field target=all \
-#                --field pr-title="chore(e2e): regenerate Linux baseline snapshots"
-#
-# After the workflow completes, it opens a PR with the new *-linux.png baselines.
-# Review the visual diff in the PR before merging.
-#
-# SECURITY DESIGN:
-# - workflow_dispatch only: no automatic push/PR triggers (manual invoke required)
-# - permissions: contents:write + pull-requests:write only (least privilege)
-# - GITHUB_TOKEN: uses built-in token, never a PAT
-# - branch injection prevention: user inputs.target is NOT embedded in branch name;
-#   branch uses a fixed prefix + date suffix only
-# - secrets: no secrets echoed or logged
+name: Playwright Regenerate Linux
 
-name: Playwright Snapshot Regenerate (Linux)
+# Manual invocation: regenerates Linux baselines for the dispatched branch
+# and opens an auto-PR with the resulting *-linux.png files.
+#
+# Invoke:
+#   gh workflow run playwright-regenerate.yml --ref <branch> -f target=all
+#
+# After completion, review the auto-PR's visual diff before merging.
 
 on:
   workflow_dispatch:
     inputs:
       target:
-        description: 'Which spec to regenerate (e.g., "e2e/m0.15-redesign/" or "all")'
+        description: 'Spec scope (e.g. e2e/m0.15-redesign/ or all)'
         required: true
-        default: 'all'
-      pr-title:
-        description: 'Title for the auto-PR'
-        required: false
-        default: 'chore(e2e): regenerate Linux baseline snapshots'
+        default: all
 
-# WHY minimal permissions:
-# Only write access to repo contents (to push the baseline branch) and
-# pull-requests (to open the auto-PR). All other scopes remain read-only
-# (GitHub Actions default) to minimize blast radius if workflow is compromised.
 permissions:
   contents: write
   pull-requests: write
@@ -53,13 +28,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          # WHY fetch-depth: 0: we need full history so git push works correctly
-          # and the auto-PR can reference the triggering commit SHA
           fetch-depth: 0
 
-      # WHY v4 (not v3 as in ci.yml): pnpm/action-setup@v4 is the latest stable
-      # release; v3 will eventually be deprecated. Regenerate workflow uses v4
-      # intentionally as the newer baseline.
       - uses: pnpm/action-setup@v4
         with:
           version: 10
@@ -76,72 +46,47 @@ jobs:
         run: pnpm --filter @claude-loom/ui exec playwright install chromium --with-deps
 
       - name: Regenerate snapshots
-        # WHY conditional on inputs.target:
-        # "all" runs every spec under e2e/; a specific path (e.g., "e2e/m0.15-redesign/")
-        # regenerates only the targeted spec suite — faster for focused baseline updates.
-        # inputs.target is NOT used in shell variable assignment for branch naming
-        # (injection prevention); it is only passed as a positional arg to playwright
-        # which treats it as a filter glob, not an eval target.
         run: |
           if [ "${{ inputs.target }}" = "all" ]; then
             pnpm --filter @claude-loom/ui exec playwright test \
               --config e2e/playwright.config.ts \
-              --update-snapshots
+              --update-snapshots=all
           else
             pnpm --filter @claude-loom/ui exec playwright test \
               --config e2e/playwright.config.ts \
               "${{ inputs.target }}" \
-              --update-snapshots
+              --update-snapshots=all
           fi
 
-      - name: Detect changes in baseline screenshots
+      - name: Detect changes
         id: changes
-        # WHY: avoid creating an empty PR if no baselines changed.
-        # git diff --quiet exits 0 when no changes, 1 when changes exist.
+        # WHY git status --porcelain (not git diff --quiet):
+        # First-time *-linux.png generation creates UNTRACKED files. git diff only
+        # tracks modifications to known files, so untracked baselines were silently
+        # skipped, causing the workflow to no-op without creating the auto-PR.
+        # git status --porcelain catches both modified and untracked changes.
         run: |
-          if git diff --quiet ui/e2e/__screenshots__/; then
+          if [ -z "$(git status --porcelain ui/e2e/__screenshots__/)" ]; then
             echo "has-changes=false" >> $GITHUB_OUTPUT
           else
             echo "has-changes=true" >> $GITHUB_OUTPUT
           fi
 
-      - name: Create PR with regenerated baselines
+      - name: Create PR
         if: steps.changes.outputs.has-changes == 'true'
         env:
-          # WHY env-block for GH_TOKEN (not inline ${{ secrets.GITHUB_TOKEN }}):
-          # Passing the token via env prevents it from appearing in shell expansion
-          # logs and is the recommended GitHub Actions pattern.
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # WHY date suffix only in branch name:
-          # inputs.target could contain slashes, spaces, or shell metacharacters.
-          # Using a fixed prefix + timestamp guarantees a valid branch name and
-          # prevents any form of injection via user-controlled input.
           BRANCH="chore/playwright-linux-baseline-$(date +%Y%m%d-%H%M%S)"
-
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-
           git checkout -b "$BRANCH"
           git add ui/e2e/__screenshots__/
-          git commit \
-            -m "chore(e2e): regenerate Linux baseline snapshots [playwright-baseline-regenerate]" \
-            -m "Auto-generated by playwright-regenerate workflow on $(date -u +%Y-%m-%dT%H:%M:%SZ)" \
-            -m "Trigger: ${{ inputs.target }}"
-
+          git commit -m "chore(e2e): regenerate Linux baseline snapshots [playwright-baseline-regenerate]"
           git push origin "$BRANCH"
-
+          BASE_BRANCH="${{ github.ref_name }}"
           gh pr create \
-            --base main \
+            --base "$BASE_BRANCH" \
             --head "$BRANCH" \
-            --title "${{ inputs.pr-title }}" \
-            --body "Auto-generated Linux baseline regenerate PR.
-
-Triggered by workflow_dispatch on commit \`${{ github.sha }}\`.
-
-**Review checklist before merging:**
-- [ ] Visual diff of \`*-linux.png\` files looks correct (no layout regressions)
-- [ ] No unexpected files changed outside \`ui/e2e/__screenshots__/\`
-- [ ] CI passes on this branch (vitest + playwright with new baselines)
-
-_This PR was created automatically by the [playwright-regenerate workflow](../.github/workflows/playwright-regenerate.yml)._"
+            --title "chore(e2e): regenerate Linux baselines (auto-PR into $BASE_BRANCH)" \
+            --body "Auto-generated by playwright-regenerate workflow on $(date -u +%Y-%m-%dT%H:%M:%SZ). Triggered by workflow_dispatch on commit ${{ github.sha }}. Review the *-linux.png visual diff before merging."

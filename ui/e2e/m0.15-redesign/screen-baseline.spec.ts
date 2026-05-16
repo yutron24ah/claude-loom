@@ -57,11 +57,11 @@ const SCREENS = [
   // ② Plan
   { id: 'plan',             route: '/plan',              waitSelector: '[data-testid="plan-long-term"]' },
   // ③ Gantt
-  { id: 'gantt',            route: '/gantt',             waitSelector: '[data-testid="view-panel"]' },
+  { id: 'gantt',            route: '/gantt',             waitSelector: '[data-testid="gantt-view"]' },
   // ④ Consistency
-  { id: 'consistency',      route: '/consistency',       waitSelector: '[data-testid="view-panel"]' },
+  { id: 'consistency',      route: '/consistency',       waitSelector: '[data-testid="consistency-view"]' },
   // ⑤ Retro
-  { id: 'retro',            route: '/retro',             waitSelector: '[data-testid="view-panel"]' },
+  { id: 'retro',            route: '/retro',             waitSelector: '[data-testid="retro-view"]' },
   // ⑥ Worktree
   { id: 'worktree',         route: '/worktree',          waitSelector: '[data-testid="worktree-view"]' },
   // ⑦ Customization

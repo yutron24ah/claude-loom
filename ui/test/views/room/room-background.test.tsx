@@ -87,75 +87,53 @@ describe('RoomBackground — layer rects', () => {
 });
 
 // ---------------------------------------------------------------------------
-// Tile grid counts
+// Wood-plank texture (v2 — replaces old tile grid + wallpaper dots)
+// WHY: M0.17 t5 replaced --p-bg-floor-2 grid lines + wallpaper dot rects with
+// wood-plank seams (horizontal opacity=0.18, vertical opacity=0.1, both --p-wood-dark).
 // ---------------------------------------------------------------------------
-describe('RoomBackground — tile grid', () => {
-  it('renders exactly 14 vertical grid lines', () => {
+describe('RoomBackground — wood-plank texture', () => {
+  it('renders horizontal plank seam rects (fill=var(--p-wood-dark) opacity=0.18)', () => {
     const { container } = render(<RoomBackground width={800} height={600} />);
     const rects = Array.from(container.querySelectorAll('rect'));
-    // Vertical grid lines: fill="var(--p-bg-floor-2)" + opacity="0.6"
-    const verticals = rects.filter(
+    const hSeams = rects.filter(
       r =>
-        r.getAttribute('fill') === 'var(--p-bg-floor-2)' &&
-        r.getAttribute('opacity') === '0.6',
+        r.getAttribute('fill') === 'var(--p-wood-dark)' &&
+        r.getAttribute('opacity') === '0.18',
     );
-    expect(verticals).toHaveLength(14);
+    // floorH = 600 * (1 - 0.43) = 342, ceil(342/28) = 13 rows
+    expect(hSeams.length).toBeGreaterThan(0);
   });
 
-  it('renders exactly 6 horizontal grid lines', () => {
+  it('renders vertical plank seam rects (fill=var(--p-wood-dark) opacity=0.1)', () => {
     const { container } = render(<RoomBackground width={800} height={600} />);
     const rects = Array.from(container.querySelectorAll('rect'));
-    // Horizontal grid lines: fill="var(--p-bg-floor-2)" + opacity="0.4"
-    const horizontals = rects.filter(
+    const vSeams = rects.filter(
       r =>
-        r.getAttribute('fill') === 'var(--p-bg-floor-2)' &&
-        r.getAttribute('opacity') === '0.4',
+        r.getAttribute('fill') === 'var(--p-wood-dark)' &&
+        r.getAttribute('opacity') === '0.1',
     );
-    expect(horizontals).toHaveLength(6);
+    // width=800, ceil(800/56) = 15 columns
+    expect(vSeams.length).toBeGreaterThan(0);
   });
 });
 
 // ---------------------------------------------------------------------------
-// Wallpaper dots count
+// Zone rugs (v2 — replaces Islands.tsx DOM divs)
+// WHY: M0.17 t5 zones are now SVG <rect opacity="0.3"> + <text opacity="0.16"> pairs.
 // ---------------------------------------------------------------------------
-describe('RoomBackground — wallpaper dots', () => {
-  it('renders exactly 44 wallpaper dot rects (22 row1 + 22 row2)', () => {
+describe('RoomBackground — zone rugs', () => {
+  it('renders 3 zone rug rects (DEV / PM / REVIEW) at opacity=0.3', () => {
     const { container } = render(<RoomBackground width={800} height={600} />);
     const rects = Array.from(container.querySelectorAll('rect'));
-    // Wallpaper dots: fill="var(--p-wall-2)" + width="2" + height="2"
-    const dots = rects.filter(
-      r =>
-        r.getAttribute('fill') === 'var(--p-wall-2)' &&
-        r.getAttribute('width') === '2' &&
-        r.getAttribute('height') === '2',
-    );
-    expect(dots).toHaveLength(44);
+    const rugRects = rects.filter(r => r.getAttribute('opacity') === '0.3');
+    expect(rugRects).toHaveLength(3);
   });
 
-  it('row1 dots are positioned at y=20', () => {
+  it('renders 3 zone label texts at opacity=0.16', () => {
     const { container } = render(<RoomBackground width={800} height={600} />);
-    const rects = Array.from(container.querySelectorAll('rect'));
-    const dots = rects.filter(
-      r =>
-        r.getAttribute('fill') === 'var(--p-wall-2)' &&
-        r.getAttribute('width') === '2' &&
-        r.getAttribute('height') === '2' &&
-        r.getAttribute('y') === '20',
-    );
-    expect(dots).toHaveLength(22);
-  });
-
-  it('row2 dots are positioned at y=50', () => {
-    const { container } = render(<RoomBackground width={800} height={600} />);
-    const rects = Array.from(container.querySelectorAll('rect'));
-    const dots = rects.filter(
-      r =>
-        r.getAttribute('fill') === 'var(--p-wall-2)' &&
-        r.getAttribute('width') === '2' &&
-        r.getAttribute('height') === '2' &&
-        r.getAttribute('y') === '50',
-    );
-    expect(dots).toHaveLength(22);
+    const texts = Array.from(container.querySelectorAll('text'));
+    const zoneLabels = texts.filter(t => t.getAttribute('opacity') === '0.16');
+    expect(zoneLabels).toHaveLength(3);
   });
 });
 

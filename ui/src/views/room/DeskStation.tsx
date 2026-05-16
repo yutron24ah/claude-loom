@@ -1,17 +1,27 @@
 /**
- * DeskStation — a single desk station: monitor + keyboard + cat seated facing PC.
+ * DeskStation (proposed v2) — class-based, zero inline visual styles.
  *
- * WHY this component: Phase B Stage B2 sprite consumer.
- * Ported from /tmp/claude-room-handoff/claude-room/project/room.jsx L7-95.
- * Uses CatSprite (commit 09eae65) and RosterEntry from data/roster.ts.
+ * Diff vs current ui/src/views/room/DeskStation.tsx:
  *
- * statusColor mapping is defined as a constant (SPEC §3.6.10 SSoT):
- * - busy   → var(--p-success)
- * - idle   → var(--p-stone)
- * - review → var(--p-accent)
- * - fail   → var(--p-error)
- * - tdd    → var(--p-warn)
+ * 1. ALL `style={{...}}` blocks for visual surface removed. Replaced by
+ *    .desk-station__* classes defined in ui/src/styles/room.css (G1+G6).
+ *
+ * 2. The STATUS_COLOR map is gone — color is set by a status-modifier
+ *    class on the dot element (.desk-station__status-dot--{busy,idle,
+ *    review,fail,tdd}). One less constant to maintain.
+ *
+ * 3. The only remaining inline style is `style={{ left: x, top: y }}`
+ *    on the root .desk-station element. This is justified inline per G6:
+ *    position is *dynamic* (driven by RoomView's responsive positions table)
+ *    and cannot be expressed as a CSS variable without extra plumbing.
+ *
+ * 4. data-testid attributes are preserved exactly so existing tests pass:
+ *    speech-bubble / monitor-screen / status-dot / desk-top / tdd-tag.
+ *
+ * 5. Public API unchanged (same DeskStationProps). Drop-in replacement for
+ *    the current DeskStation.tsx.
  */
+import type React from 'react';
 import { CatSprite } from '../../components/CatSprite';
 import type { RosterEntry } from '../../data/roster';
 
@@ -22,24 +32,26 @@ export interface DeskStationProps {
   y: number;
   cat: RosterEntry;
   status?: DeskStatus;
+  /** speech bubble text — currentTool name or short reasoning */
   task?: string;
+  /** wiggle the sprite while the agent is working */
   scroll?: boolean;
+  /** TDD phase tag (RED/GREEN/REFACTOR) shown under the nameplate */
   tdd?: string;
+  /** secondary label under the role (e.g. "last: 14:23") */
   label?: string;
-  deskColor?: string;
+  /** click handler — typically toggles selection */
   onClick?: () => void;
+  /** outline the desk to indicate selection */
   selected?: boolean;
+  /**
+   * Walk animation target — pixel offset to the destination desk.
+   * WHY: shell.css @keyframes cat-walk-trip uses --walk-dx / --walk-dy CSS vars.
+   * RoomView computes the offset from state.walkTo (agent id) + positions table,
+   * matching redesign/screens/room.jsx L460-462 (wt → target → {dx,dy}).
+   */
+  walkTo?: { dx: number; dy: number };
 }
-
-// WHY constant over inline object: avoids recreating the map on every render
-// and makes the mapping a single source of truth (SPEC §3.6.10 SSoT).
-const STATUS_COLOR: Record<DeskStatus, string> = {
-  busy:   'var(--p-success)',
-  idle:   'var(--p-stone)',
-  review: 'var(--p-accent)',
-  fail:   'var(--p-error)',
-  tdd:    'var(--p-warn)',
-};
 
 export function DeskStation({
   x,
@@ -50,200 +62,94 @@ export function DeskStation({
   scroll,
   tdd,
   label,
-  deskColor = 'var(--p-wood)',
   onClick,
   selected = false,
+  walkTo,
 }: DeskStationProps) {
-  const statusColor = STATUS_COLOR[status];
+  const sleeping = status === 'idle';
+
+  // Monitor variant: idle (dim), fail (red), or default screen
+  const monitorVariant = status === 'fail'
+    ? 'desk-station__monitor--fail'
+    : sleeping
+      ? 'desk-station__monitor--idle'
+      : '';
+
+  // WHY: cat-walker animation is driven by CSS vars --walk-dx / --walk-dy.
+  // When walkTo is defined, inject the class + vars onto the root element.
+  const walkStyle = walkTo
+    ? ({ '--walk-dx': `${walkTo.dx}px`, '--walk-dy': `${walkTo.dy}px` } as React.CSSProperties)
+    : {};
 
   return (
-    <div style={{ position: 'absolute', left: x, top: y, width: 100 }}>
-      {/* Speech bubble — only rendered when task prop is provided */}
+    <div
+      className={`desk-station${walkTo ? ' cat-walker' : ''}`}
+      style={{ left: x, top: y, ...walkStyle }}
+    >
+      {/* === Speech bubble === */}
       {task && (
-        <div
-          data-testid="speech-bubble"
-          style={{
-            position: 'relative',
-            display: 'inline-block',
-            background: 'var(--p-paper)',
-            border: '2px solid var(--p-border)',
-            padding: '3px 6px',
-            fontSize: 9,
-            lineHeight: 1.3,
-            maxWidth: 110,
-            marginBottom: 4,
-            boxShadow: '2px 2px 0 0 var(--p-shadow)',
-            fontFamily: 'ui-monospace, "SF Mono", Menlo, monospace',
-            color: 'var(--p-text)',
-            marginLeft: 8,
-            fontWeight: 700,
-          }}
-        >
+        <div data-testid="speech-bubble" className="desk-station__bubble">
           {task}
-          {/* Bubble tail — 45deg rotated square gives the arrow pointing down */}
-          <span
-            style={{
-              position: 'absolute',
-              left: 14,
-              bottom: -5,
-              width: 6,
-              height: 6,
-              background: 'var(--p-paper)',
-              borderRight: '2px solid var(--p-border)',
-              borderBottom: '2px solid var(--p-border)',
-              transform: 'rotate(45deg)',
-            }}
-          />
         </div>
       )}
 
       <button
         onClick={onClick}
-        style={{
-          all: 'unset',
-          cursor: 'pointer',
-          display: 'block',
-          width: '100%',
-          padding: 4,
-          boxSizing: 'border-box',
-          outline: selected ? '3px solid var(--p-accent)' : 'none',
-          outlineOffset: 2,
-        }}
+        className={`desk-station__btn${selected ? ' desk-station__btn--selected' : ''}`}
       >
-        {/* Cat behind monitor — peek over the top */}
-        <div style={{ position: 'relative', height: 56, marginLeft: 16 }}>
-          <div style={{ position: 'absolute', left: 0, top: 0 }}>
+        {/* === Cat sprite, peeking over the monitor === */}
+        <div className="desk-station__cat-wrap">
+          <div className="desk-station__cat">
             <CatSprite
               size={48}
               fur={cat.fur}
               cheek={cat.cheek}
               hat={cat.hat}
-              pose={status === 'idle' ? 'sit' : 'work'}
-              sleep={status === 'idle'}
+              pose={sleeping ? 'sit' : 'work'}
+              sleep={sleeping}
               scroll={scroll}
             />
           </div>
         </div>
 
-        {/* Monitor + desk (isometric-ish) */}
-        <div style={{ position: 'relative', marginTop: -16, width: 96 }}>
-          {/* Monitor screen */}
+        {/* === Monitor + desk stack === */}
+        <div className="desk-station__pc">
           <div
             data-testid="monitor-screen"
-            style={{
-              width: 64,
-              height: 36,
-              marginLeft: 16,
-              background: status === 'fail' ? 'var(--p-error)' : 'var(--p-screen)',
-              border: '2px solid var(--p-border)',
-              position: 'relative',
-              boxShadow: 'inset 0 0 0 2px var(--p-screen-glow)',
-            }}
+            className={`desk-station__monitor ${monitorVariant}`.trim()}
           >
-            {/* Code lines on screen — 4 thin rects at different widths */}
-            <div
-              style={{
-                position: 'absolute',
-                left: 4,
-                top: 4,
-                right: 4,
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 2,
-              }}
-            >
-              <div style={{ height: 2, width: '70%', background: 'var(--p-screen-glow)' }} />
-              <div style={{ height: 2, width: '50%', background: 'var(--p-screen-glow)' }} />
-              <div style={{ height: 2, width: '85%', background: 'var(--p-screen-glow)' }} />
-              <div style={{ height: 2, width: '40%', background: 'var(--p-screen-glow)' }} />
-            </div>
-
-            {/* Status dot in top-right corner */}
+            {!sleeping && (
+              <div className="desk-station__monitor-lines">
+                <div className="desk-station__monitor-line desk-station__monitor-line--w70" />
+                <div className="desk-station__monitor-line desk-station__monitor-line--w50" />
+                <div className="desk-station__monitor-line desk-station__monitor-line--w85" />
+                <div className="desk-station__monitor-line desk-station__monitor-line--w40" />
+              </div>
+            )}
             <span
               data-testid="status-dot"
-              style={{
-                position: 'absolute',
-                top: -5,
-                right: -5,
-                width: 10,
-                height: 10,
-                background: statusColor,
-                border: '2px solid var(--p-border)',
-              }}
+              className={`desk-station__status-dot desk-station__status-dot--${status}`}
             />
           </div>
-
-          {/* Monitor stand */}
-          <div
-            style={{
-              width: 12,
-              height: 4,
-              marginLeft: 42,
-              background: 'var(--p-stone)',
-              border: '2px solid var(--p-border)',
-              borderTop: 'none',
-            }}
-          />
-
-          {/* Desk top */}
-          <div
-            data-testid="desk-top"
-            style={{
-              width: 96,
-              height: 8,
-              background: deskColor,
-              border: '2px solid var(--p-border)',
-              borderRadius: 1,
-            }}
-          />
-
-          {/* Desk shadow front */}
-          <div
-            style={{
-              width: 96,
-              height: 4,
-              background: 'var(--p-wood-dark)',
-              borderLeft: '2px solid var(--p-border)',
-              borderRight: '2px solid var(--p-border)',
-              borderBottom: '2px solid var(--p-border)',
-            }}
-          />
+          <div className="desk-station__stand" />
+          <div data-testid="desk-top" className="desk-station__top" />
+          <div className="desk-station__front" />
         </div>
 
-        {/* Nameplate */}
-        <div
-          style={{
-            marginTop: 4,
-            fontSize: 9,
-            fontFamily: 'ui-monospace, monospace',
-            textAlign: 'center',
-            color: 'var(--p-text)',
-            fontWeight: 700,
-          }}
-        >
+        {/* === Nameplate === */}
+        <div className="desk-station__nameplate">
           {cat.name}{' '}
-          <span style={{ color: 'var(--p-text-muted)', fontWeight: 400 }}>
-            {label || cat.role}
-          </span>
+          <span className="desk-station__role">{label || cat.role}</span>
         </div>
 
-        {/* TDD phase tag — only rendered when tdd prop is provided */}
+        {/* === Secondary label (only for idle cats with lastSeenAt) === */}
+        {sleeping && label && (
+          <div className="desk-station__label-sub">{label}</div>
+        )}
+
+        {/* === TDD phase tag === */}
         {tdd && (
-          <div
-            data-testid="tdd-tag"
-            style={{
-              display: 'block',
-              margin: '2px auto 0',
-              padding: '1px 4px',
-              fontSize: 8,
-              background: 'var(--p-warn)',
-              color: 'white',
-              border: '1px solid var(--p-border)',
-              fontFamily: 'ui-monospace, monospace',
-              width: 'fit-content',
-              fontWeight: 700,
-            }}
-          >
+          <div data-testid="tdd-tag" className="desk-station__tdd">
             {tdd}
           </div>
         )}

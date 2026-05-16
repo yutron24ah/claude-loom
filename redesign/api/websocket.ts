@@ -518,9 +518,15 @@ export function useScenario(): Scenario {
     live.getSnapshot,
     live.getSnapshot,
   );
-  const mockKey = readMockKey();
-  if (mockKey) {
-    return SCENARIOS[mockKey];
+  // WHY import.meta.env.DEV gate: mock= URL param fallback は dev/QA tool。
+  // production build (Vite minifier) は import.meta.env.DEV=false で本 block
+  // 全体を dead code として tree-shake、SCENARIOS import も unused 化で削除。
+  // dev (Vite dev server) + Vitest test (DEV=true) では mock= 機能維持。
+  if (import.meta.env.DEV) {
+    const mockKey = readMockKey();
+    if (mockKey) {
+      return SCENARIOS[mockKey];
+    }
   }
   return snapshot;
 }

@@ -227,6 +227,7 @@ export function RetroView(): JSX.Element {
 
   return (
     <div
+      data-testid="retro-view"
       style={{
         position: 'absolute',
         inset: 0,
