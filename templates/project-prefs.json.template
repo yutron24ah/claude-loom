@@ -21,7 +21,7 @@
   },
 
   "agents": {
-    "_comment": "PJ 単位の override。user-prefs より優先される。詳細: SPEC §6.9.4",
+    "_comment": "PJ 単位の override (persistent role agents のみ)。user-prefs より優先される。詳細: SPEC §6.9.4。reviewer / retro lens は `skills.*` section を使う (SPEC §3.9 / §4.2.3 / §4.2.5)",
     "loom-developer": {
       "model": "sonnet",
       "personality": "default",
@@ -40,6 +40,34 @@
           "last_used_in": null
         }
       ]
+    }
+  },
+
+  "skills": {
+    "_comment": "skill-keyed customization (PJ 単位の override)。reviewer / retro lens / counter-arguer / aggregator の skill template を PJ 固有 policy で上書き。user-prefs.skills.* より優先 (SPEC §3.6.5 precedence rule)",
+    "loom-review": {
+      "strategies": {
+        "single": {
+          "learned_guidance": []
+        },
+        "trio": {
+          "code": { "learned_guidance": [] },
+          "security": { "learned_guidance": [] },
+          "test": { "learned_guidance": [] }
+        }
+      }
+    },
+    "loom-retro": {
+      "lenses": {
+        "pj-axis": { "learned_guidance": [] },
+        "process-axis": { "learned_guidance": [] },
+        "meta-axis": { "learned_guidance": [] },
+        "researcher": { "learned_guidance": [] }
+      },
+      "stages": {
+        "counter-arguer": { "learned_guidance": [] },
+        "aggregator": { "learned_guidance": [] }
+      }
     }
   },
 

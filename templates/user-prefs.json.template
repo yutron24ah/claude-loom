@@ -26,7 +26,7 @@
   "retro_session_history": [],
 
   "agents": {
-    "_comment": "agent 単位の model / personality 上書き。precedence: project-prefs > user-prefs > agent frontmatter。詳細: SPEC §6.9.4",
+    "_comment": "agent 単位の model / personality 上書き (persistent role agents のみ)。precedence: project-prefs > user-prefs > agent frontmatter。詳細: SPEC §6.9.4。reviewer / retro lens は agent file を持たず skill template として codify されとるため `skills.*` section を使う (SPEC §3.9 / §4.2.3 / §4.2.5)",
     "loom-pm": {
       "model": "opus",
       "personality": "default"
@@ -49,6 +49,66 @@
           "last_used_in": null
         }
       ]
+    },
+    "loom-retro-pm": {
+      "model": "opus",
+      "personality": "default"
+    }
+  },
+
+  "skills": {
+    "_comment": "skill-keyed customization (2026-05 architectural cleanup、SPEC §3.6.5 + §3.9)。reviewer / retro lens / counter-arguer / aggregator は agent file ではなく skill template として codify されとる。dispatcher (loom-developer / loom-retro-pm) は dispatch 前に該当 skill template の personality / learned_guidance を read して [loom-customization] + [loom-learned-guidance] block を inject する。precedence は agents.* と同じく project-prefs > user-prefs > skill template default",
+    "loom-review": {
+      "strategies": {
+        "single": {
+          "personality": "default",
+          "learned_guidance": []
+        },
+        "trio": {
+          "code": {
+            "personality": "default",
+            "learned_guidance": []
+          },
+          "security": {
+            "personality": "default",
+            "learned_guidance": []
+          },
+          "test": {
+            "personality": "default",
+            "learned_guidance": []
+          }
+        }
+      }
+    },
+    "loom-retro": {
+      "lenses": {
+        "pj-axis": {
+          "personality": "default",
+          "learned_guidance": []
+        },
+        "process-axis": {
+          "personality": "default",
+          "learned_guidance": []
+        },
+        "meta-axis": {
+          "personality": "default",
+          "learned_guidance": []
+        },
+        "researcher": {
+          "personality": "default",
+          "learned_guidance": []
+        }
+      },
+      "stages": {
+        "counter-arguer": {
+          "personality": "default",
+          "learned_guidance": []
+        },
+        "aggregator": {
+          "personality": "default",
+          "learned_guidance": []
+        }
+      }
     }
   }
 }
