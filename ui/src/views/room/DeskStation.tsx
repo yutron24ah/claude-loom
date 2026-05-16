@@ -27,12 +27,32 @@ import type { RosterEntry } from '../../data/roster';
 
 export type DeskStatus = 'busy' | 'idle' | 'review' | 'fail' | 'tdd';
 
+/**
+ * Typed speech bubble — matches redesign source L23-27.
+ * WHY: kind discriminates visual treatment:
+ *   'tool'   → yellow label (--p-warn) + optional sub text
+ *   'reason' → italic quoted text
+ */
+export interface BubbleShape {
+  kind: 'tool' | 'reason';
+  text: string;
+  sub?: string;
+}
+
 export interface DeskStationProps {
   x: number;
   y: number;
   cat: RosterEntry;
   status?: DeskStatus;
-  /** speech bubble text — currentTool name or short reasoning */
+  /**
+   * Typed speech bubble (R-3). Supersedes `task` for new call sites.
+   * Design SSoT: redesign/screens/room.jsx L23-46 (bubble kind dispatch).
+   */
+  bubble?: BubbleShape;
+  /**
+   * Legacy plain-text bubble — kept for backward compat.
+   * When `bubble` is provided, `task` is ignored.
+   */
   task?: string;
   /** wiggle the sprite while the agent is working */
   scroll?: boolean;
@@ -53,11 +73,16 @@ export interface DeskStationProps {
   walkTo?: { dx: number; dy: number };
 }
 
+function truncate(s: string, n: number): string {
+  return s.length > n ? `${s.slice(0, n - 1)}…` : s;
+}
+
 export function DeskStation({
   x,
   y,
   cat,
   status = 'busy',
+  bubble,
   task,
   scroll,
   tdd,
@@ -81,15 +106,32 @@ export function DeskStation({
     ? ({ '--walk-dx': `${walkTo.dx}px`, '--walk-dy': `${walkTo.dy}px` } as React.CSSProperties)
     : {};
 
+  // WHY: typed bubble takes precedence over legacy task prop for new call sites.
+  const hasBubble = !!bubble || !!task;
+
   return (
     <div
       className={`desk-station${walkTo ? ' cat-walker' : ''}`}
       style={{ left: x, top: y, ...walkStyle }}
     >
-      {/* === Speech bubble === */}
-      {task && (
+      {/* === Speech bubble (typed kind or legacy plain text) === */}
+      {hasBubble && (
         <div data-testid="speech-bubble" className="desk-station__bubble">
-          {task}
+          {bubble ? (
+            <>
+              {bubble.kind === 'tool' && (
+                <span className="desk-station__bubble-tool">{bubble.text}</span>
+              )}
+              {bubble.kind === 'reason' ? (
+                <span className="desk-station__bubble-reason">"{bubble.text}"</span>
+              ) : bubble.sub ? (
+                <span className="desk-station__bubble-sub">{truncate(bubble.sub, 28)}</span>
+              ) : null}
+            </>
+          ) : (
+            // Legacy plain-text backward compat (task prop)
+            task
+          )}
         </div>
       )}
 
@@ -119,11 +161,12 @@ export function DeskStation({
             className={`desk-station__monitor ${monitorVariant}`.trim()}
           >
             {!sleeping && (
+              // WHY: 3 lines matching redesign/screens/room.jsx L65-68 (70%/50%/85%).
+              // 4th w40 line was an extra not present in the design SSoT (R-2).
               <div className="desk-station__monitor-lines">
                 <div className="desk-station__monitor-line desk-station__monitor-line--w70" />
                 <div className="desk-station__monitor-line desk-station__monitor-line--w50" />
                 <div className="desk-station__monitor-line desk-station__monitor-line--w85" />
-                <div className="desk-station__monitor-line desk-station__monitor-line--w40" />
               </div>
             )}
             <span

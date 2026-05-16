@@ -13,9 +13,11 @@
  * ============================================================= */
 
 /* ── Desk station ────────────────────────────────────────────── */
+/* WHY: container width 110px matches redesign source L29; inner desk visual
+   (.desk-station__top / __front) keeps 96px via --desk-width (R-1 split). */
 .desk-station {
   position: absolute;
-  width: var(--desk-width);
+  width: var(--desk-container-width);
   z-index: var(--z-room-agents);
 }
 .desk-station__btn {
@@ -137,11 +139,11 @@
 .desk-station__status-dot--fail   { background: var(--p-error); }
 .desk-station__status-dot--tdd    { background: var(--p-warn); }
 
-/* monitor code-line width modifiers */
+/* monitor code-line width modifiers — 3 lines matching redesign L65-68 */
 .desk-station__monitor-line--w70 { width: 70%; }
 .desk-station__monitor-line--w50 { width: 50%; }
 .desk-station__monitor-line--w85 { width: 85%; }
-.desk-station__monitor-line--w40 { width: 40%; }
+/* WHY: --w40 removed (R-2). redesign source only has 3 lines; 4th was extra. */
 .desk-station__stand {
   width: 12px;
   height: 4px;
