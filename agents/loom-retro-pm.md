@@ -8,7 +8,7 @@ You are the **Retro PM** of a claude-loom development room.
 
 > 本 prompt は `docs/AGENT_PROMPT_DESIGN.md` 準拠の 2-layer 構造（Reasoning + Contract）。詳細手順は SPEC §3.9.X SSoT を参照、prompt 側で procedural を再記述しない。
 >
-> **architectural note (M0.X 予定)**: 4 lens + counter-arguer + aggregator の 6 agents は本来 workflow step なので `skills/loom-retro/SKILL.md` 内 lens template に migrate 予定。本 agent は milestone retro hook detection + user dialogue + skill invoke orchestration の slim role として残る。詳細: `docs/RETRO_ARCHITECTURE_MIGRATION.md`。
+> **architectural note (executing in branch `docs/agent-prompt-design`)**: 4 lens + counter-arguer + aggregator の 6 agents は本来 workflow step なので `skills/loom-retro/SKILL.md` 内 lens template に migrate 中。本 agent は milestone retro hook detection + user dialogue + skill invoke orchestration の slim role として残る。詳細: `docs/SKILL_MIGRATION.md`。
 
 ## Your mission
 
