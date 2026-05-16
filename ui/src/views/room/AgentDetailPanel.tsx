@@ -25,8 +25,16 @@ import type { RosterEntry } from '../../data/roster';
 import { CatSprite } from '../../components/CatSprite';
 import { AgentDetailNotes } from './AgentDetailNotes';
 import { useScenario } from '@claude-loom/redesign/api/websocket';
-import type { StreamMsg, TokensByAgent } from '@claude-loom/redesign/api/types';
+import type { StreamMsg, TokensByAgent, GanttRow } from '@claude-loom/redesign/api/types';
 import '../../styles/screens/agent-detail.css';
+
+// WHY: bar color map matches redesign/screens/agent-detail.jsx bar kind coloring
+const BAR_KIND_COLOR: Record<string, string> = {
+  fail:   'var(--p-error)',
+  review: 'var(--p-accent)',
+  tdd:    'var(--p-warn)',
+  busy:   'var(--p-success)',
+};
 
 // ---------------------------------------------------------------------------
 // Status color mapping (no inline string literals — SPEC §3.6.10)
@@ -112,6 +120,12 @@ export function AgentDetailPanel({
     (s) => s.who === agent.name,
   );
 
+  // Filter gantt rows by agent id — matches redesign/screens/agent-detail.jsx ganttRows
+  // WHY: redesign shows "RECENT DISPATCHES" section with mini bar track per dispatch
+  const ganttRows: GanttRow[] = (scenario.gantt?.rows ?? []).filter(
+    (r) => r.agentId === agent.id,
+  );
+
   // Resolve token usage for this agent
   const tokenEntry: TokensByAgent | undefined = (
     scenario.tokens?.byAgent ?? []
@@ -192,6 +206,37 @@ export function AgentDetailPanel({
               </div>
             )}
           </div>
+
+          {/* RECENT DISPATCHES — gantt rows per agent (matches redesign/screens/agent-detail.jsx) */}
+          {ganttRows.length > 0 && (
+            <>
+              <div className="ad-section-label">RECENT DISPATCHES</div>
+              <div className="ad-dispatches-panel">
+                {ganttRows.map((r, i) => (
+                  <div key={i} className="ad-dispatch-row">
+                    <div className="ad-dispatch-row__meta">
+                      <span className="ad-dispatch-row__worktree">⌗{r.worktree}</span>
+                      <span className="ad-dispatch-row__label">{r.label}</span>
+                      {r.live && <span className="ad-dispatch-row__live">● LIVE</span>}
+                    </div>
+                    <div className="ad-dispatch-row__bar-track">
+                      {r.bars.map((b, j) => (
+                        <div
+                          key={j}
+                          className="ad-dispatch-row__bar-fill"
+                          style={{
+                            left: `${b.s}%`,
+                            width: `${b.e - b.s}%`,
+                            background: BAR_KIND_COLOR[b.kind] ?? 'var(--p-stone)',
+                          }}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
 
           {/* STREAM TAIL — filtered by agent name */}
           {streamForAgent.length > 0 && (

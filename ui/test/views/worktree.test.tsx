@@ -132,16 +132,18 @@ describe('WorktreeView — status display', () => {
   });
 });
 
+// WHY: M0.17 R3 Phase E redesign port replaced rpg-frame/rpg-title root with wt-screen/wt-header__title
+// per redesign/screens/worktree.jsx which uses position:absolute/inset:0 full-bleed screen pattern.
 describe('WorktreeView — RPG design tokens (M0.11.4 t15)', () => {
-  it('wraps outer container in rpg-frame class', () => {
+  it('wraps outer container in wt-screen class (redesign port: replaces rpg-frame)', () => {
     render(<WorktreeView />);
-    const frame = document.querySelector('.rpg-frame');
+    const frame = document.querySelector('.wt-screen');
     expect(frame).toBeTruthy();
   });
 
-  it('renders worktree title with rpg-title class', () => {
+  it('renders worktree title with wt-header__title class (redesign port: replaces rpg-title)', () => {
     render(<WorktreeView />);
-    const title = document.querySelector('.rpg-title');
+    const title = document.querySelector('.wt-header__title');
     expect(title).toBeTruthy();
   });
 

@@ -35,8 +35,31 @@
   font-weight: 700;
 }
 
+.tokens-header__spacer {
+  flex: 1;
+}
+
+/* Period selector strip — matches redesign/screens/tokens.jsx period buttons */
+.tokens-period-strip {
+  display: flex;
+  border: 2px solid var(--p-border);
+}
+
+/* WHY: period button bg/color are dynamic (active → accent/white, else tint/text), stays inline */
+.tokens-period-btn {
+  all: unset;
+  cursor: pointer;
+  padding: 3px 10px;
+  font-size: 9px;
+  font-weight: 700;
+  border-right: 1px solid var(--p-border);
+}
+
+.tokens-period-btn:last-child {
+  border-right: none;
+}
+
 .tokens-header__period-hint {
-  margin-left: auto;
   font-size: 9px;
   color: var(--p-text-muted);
 }
@@ -213,7 +236,11 @@
   font-family: ui-monospace, monospace;
 }
 
+/* WHY: agent name cell now includes CatSprite (matches redesign token row with cat + name) */
 .tokens-agent-row__name {
+  display: flex;
+  gap: 6px;
+  align-items: center;
   font-weight: 700;
   font-family: system-ui;
 }

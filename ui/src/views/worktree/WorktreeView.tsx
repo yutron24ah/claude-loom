@@ -12,6 +12,7 @@
  * SCREEN_REQUIREMENTS §3.9 / §4.8 / §5.1
  * REQ-077
  */
+import { useState } from 'react';
 import { useScenario } from '@claude-loom/redesign/api/websocket';
 import type { WorktreeUse, WorktreeStatus } from '@claude-loom/redesign/api/types';
 import { CatSprite } from '../../components/CatSprite';
@@ -47,23 +48,31 @@ export function WorktreeView(): JSX.Element {
   const rosterById = Object.fromEntries(ROSTER.map((r) => [r.id, r]));
   const totalDisk = worktrees.reduce((acc, w) => acc + w.diskMB, 0);
   const { lockWorktree, unlockWorktree, destroyWorktree } = useWorktreeMutations();
+  // WHY: showCreate controls the create dialog (matches redesign/screens/worktree.jsx showCreate)
+  const [showCreate, setShowCreate] = useState(false);
 
   return (
     <div
       data-testid="worktree-view"
-      className="rpg-frame pixel"
-      style={{ padding: 16 }}
+      className="wt-screen"
     >
-      {/* Header */}
+      {/* Header — matches redesign: title + chips + spacer + "+ 新 worktree" button */}
       <div className="wt-header">
         <div
           data-testid="worktree-title"
-          className="rpg-title"
+          className="wt-header__title"
         >
-          WORKTREES — git worktree 管理
+          ⌗ WORKTREES — git worktree 管理
         </div>
         <span className="chip">{worktrees.length} active</span>
         <span className="chip">{(totalDisk / 1024).toFixed(1)} GB on disk</span>
+        <div className="wt-header__spacer" />
+        <button
+          className="btn-px primary wt-header__create-btn"
+          onClick={() => setShowCreate(true)}
+        >
+          + 新 worktree
+        </button>
       </div>
 
       {/* Branch graph (simplified) */}
@@ -220,11 +229,48 @@ export function WorktreeView(): JSX.Element {
       {/* Legend */}
       <div className="wt-legend">
         ◆ <strong>USE</strong>: primary (本番), parallel (並列開発), experiment
-        (実験), hotfix (緊急修正)
+        (実験), hotfix (緊急修正) — SKILL.md §5用途と一致
         <br />
         ◆ Room の poster 並びはここで管理する worktree から派生。Room 側は
         read-only な「並べ替え」のみ。
       </div>
+
+      {/* Create dialog — matches redesign/screens/worktree.jsx showCreate modal */}
+      {showCreate && (
+        <div
+          onClick={() => setShowCreate(false)}
+          className="wt-create-overlay"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="wt-create-dialog"
+          >
+            <div className="wt-create-dialog__title">＋ 新 worktree</div>
+            <div className="wt-create-dialog__field-label">BRANCH NAME</div>
+            <input
+              type="text"
+              placeholder="feat/something"
+              className="wt-create-dialog__input"
+            />
+            <div className="wt-create-dialog__field-label">USE</div>
+            <div className="wt-create-dialog__use-row">
+              {(Object.keys(USE_COLOR) as WorktreeUse[]).map((u) => (
+                <button
+                  key={u}
+                  className="btn-px ghost wt-create-dialog__use-btn"
+                  style={{ background: USE_COLOR[u], color: 'white' }}
+                >
+                  {u}
+                </button>
+              ))}
+            </div>
+            <div className="wt-create-dialog__actions">
+              <button className="btn-px ghost" onClick={() => setShowCreate(false)}>cancel</button>
+              <button className="btn-px primary" onClick={() => setShowCreate(false)}>作成</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

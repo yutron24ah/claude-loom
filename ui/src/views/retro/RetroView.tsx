@@ -17,6 +17,8 @@
 
 import { useState } from 'react';
 import { useScenario } from '@claude-loom/redesign/api/websocket';
+import { CatSprite } from '../../components/CatSprite';
+import { ROSTER } from '../room/roster';
 import type {
   RetroLensCard,
   RetroFinding,
@@ -83,6 +85,10 @@ interface LensCardProps {
 }
 
 function LensCardComponent({ lens }: LensCardProps): JSX.Element {
+  // WHY: match redesign/screens/retro.jsx — uses CatSprite for known agents, 👤 for user/unknown
+  const rosterById = Object.fromEntries(ROSTER.map((r) => [r.id, r]));
+  const agentEntry = rosterById[lens.id];
+
   return (
     <div
       data-testid={`lens-card-${lens.id}`}
@@ -93,10 +99,18 @@ function LensCardComponent({ lens }: LensCardProps): JSX.Element {
       }}
     >
       <div className="retro-lens-card__header">
-        {/* isUser renders person icon */}
-        {lens.isUser
-          ? <span className="retro-lens-card__icon">👤</span>
-          : <span className="retro-lens-card__icon">🔎</span>
+        {/* CatSprite for known roster agents, 👤 for user or unknown */}
+        {agentEntry && !lens.isUser
+          ? (
+            <CatSprite
+              size={26}
+              fur={agentEntry.fur}
+              cheek={agentEntry.cheek}
+              hat={agentEntry.hat}
+              pose="sit"
+            />
+          )
+          : <span className="retro-lens-card__icon">👤</span>
         }
         <div>
           <div className="retro-lens-card__name">

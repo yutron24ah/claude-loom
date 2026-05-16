@@ -120,7 +120,7 @@ function GuidanceItemCard({ item, diffOpen, onToggleDiff, onRetire }: GuidanceIt
           className="btn-px ghost guidance-action-btn"
           onClick={() => undefined}
         >
-          source: {item.from}
+          ↗ source: {item.from}
         </button>
         {item.diff && (
           <button
@@ -128,7 +128,7 @@ function GuidanceItemCard({ item, diffOpen, onToggleDiff, onRetire }: GuidanceIt
             className="btn-px ghost guidance-action-btn"
             onClick={onToggleDiff}
           >
-            {diffOpen ? '' : ''} 前 version との diff
+            {diffOpen ? '▾' : '▸'} 前 version との diff
           </button>
         )}
         <span className="guidance-item__spacer" />
@@ -183,7 +183,7 @@ export function GuidanceView(): JSX.Element {
       {/* Header */}
       <div className="guidance-header">
         <div data-testid="guidance-title" className="guidance-header__title">
-          GUIDANCE — learned-guidance.md
+          ❉ GUIDANCE — learned-guidance.md 監査
         </div>
         <div className="guidance-header__spacer" />
         <span className="chip">

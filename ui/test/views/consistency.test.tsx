@@ -185,11 +185,14 @@ describe('ConsistencyView — action buttons', () => {
 });
 
 // M0.11.4 t14 — RPG design structure assertions
+// WHY: M0.17 R3 Phase E redesign port replaced rpg-frame root with cv-screen (full-bleed)
+// per redesign/screens/consistency.jsx which uses position:absolute/inset:0.
+// The rpg-label class is still present inside summary cards.
 describe('ConsistencyView — RPG design structure (M0.11.4 t14)', () => {
-  it('wraps view in rpg-frame element', () => {
+  it('wraps view in cv-screen element (redesign port: replaces rpg-frame)', () => {
     const { container } = render(<ConsistencyView />);
-    const rpgFrame = container.querySelector('.rpg-frame');
-    expect(rpgFrame).toBeInTheDocument();
+    const screen_ = container.querySelector('.cv-screen');
+    expect(screen_).toBeInTheDocument();
   });
 
   it('renders action buttons with btn-px class', () => {

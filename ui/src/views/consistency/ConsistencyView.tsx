@@ -222,6 +222,9 @@ export function ConsistencyView(): JSX.Element {
   const findings: Finding[] = sc.findings ?? [];
   const consistencyState: ConsistencyState = sc.consistencyState ?? 'empty';
   const { acknowledgeFinding, markFindingFixed, dismissFinding, openInEditor } = useConsistencyMutations();
+  // WHY: redesign has clickable summary cards that filter the list; mirrors consistency.jsx setFilter
+  const [filter, setFilter] = useState<string>('all');
+  const [running, setRunning] = useState(false);
 
   // WHY: redesign Finding.id is string (e.g. 'F-12'); daemon uses numeric IDs.
   // parseInt extracts the numeric portion for daemon mutation calls.
@@ -237,34 +240,38 @@ export function ConsistencyView(): JSX.Element {
   const fixedCount = findings.filter((f) => f.status === 'fixed').length;
   const dismissedCount = findings.filter((f) => f.status === 'dismissed').length;
 
+  // Filtered list — mirrors redesign consistency.jsx filter logic
+  const list = filter === 'all' ? findings : findings.filter((f) => f.status === filter);
+
+  // Running state override — button triggers local running animation (matches redesign)
+  const isRunning = running || consistencyState === 'running';
+
   return (
     <div
       data-testid="consistency-view"
-      className="rpg-frame pixel"
-      style={{ padding: 18 }}
+      className="cv-screen"
     >
-      {/* Header */}
+      {/* Header — matches redesign: title + since chip + spacer + チェック実行 button */}
       <div className="cv-header">
         <div
           data-testid="consistency-title"
           className="cv-header__title"
         >
-          整合性 — Consistency Findings
+          📜 整合性 — Consistency Findings
         </div>
-        {openCount > 0 && consistencyState === 'has-findings' && (
-          <span className="chip" style={{ background: 'var(--p-error)', color: 'white', borderColor: 'var(--p-error)' }}>
-            NEW {openCount}
-          </span>
-        )}
+        <span className="chip">since: 2 hours ago</span>
         <div className="cv-header__spacer" />
-        {/* チェック実行 button — Phase 5 write hookup */}
-        <button className="btn-px primary" onClick={() => undefined}>
-          チェック実行
+        {/* チェック実行 button — matches redesign with running animation */}
+        <button
+          className="btn-px primary"
+          onClick={() => { setRunning(true); setTimeout(() => setRunning(false), 1500); }}
+        >
+          {isRunning ? '▶ 実行中…' : '▶ チェック実行'}
         </button>
       </div>
 
-      {/* State: running */}
-      {consistencyState === 'running' && (
+      {/* State: running — redesign shows progress bar */}
+      {isRunning && (
         <div
           data-testid="consistency-running"
           className="cv-running"
@@ -277,39 +284,59 @@ export function ConsistencyView(): JSX.Element {
       )}
 
       {/* State: empty */}
-      {consistencyState === 'empty' && (
+      {!isRunning && findings.length === 0 && (
         <div
           data-testid="consistency-empty"
           className="cv-empty"
         >
+          <div className="cv-empty__icon">📭</div>
           <div className="cv-empty__title">整合性違反は検出されていません</div>
           <div className="cv-empty__hint">
-            SPEC.md と agent/skill prompts を最後に scan した結果。
+            SPEC.md と agent/skill prompts を最後に scan した結果。<br />
+            新しい変更が入ると自動的に検出されます。
           </div>
         </div>
       )}
 
-      {/* State: has-findings */}
-      {consistencyState === 'has-findings' && findings.length > 0 && (
+      {/* State: has-findings — redesign shows summary strip + filter + finding cards */}
+      {!isRunning && findings.length > 0 && (
         <>
-          {/* Summary strip */}
+          {/* Summary strip — clickable cards that filter the list (matches redesign) */}
           <div className="cv-summary">
             {[
-              { label: 'OPEN', n: openCount, color: 'var(--p-error)' },
-              { label: 'ACK', n: ackCount, color: 'var(--p-warn)' },
-              { label: 'FIXED', n: fixedCount, color: 'var(--p-success)' },
-              { label: 'DISMISSED', n: dismissedCount, color: 'var(--p-stone)' },
+              { label: 'OPEN',      filterKey: 'open',      n: openCount,      color: 'var(--p-error)' },
+              { label: 'ACK',       filterKey: 'ack',       n: ackCount,       color: 'var(--p-warn)' },
+              { label: 'FIXED',     filterKey: 'fixed',     n: fixedCount,     color: 'var(--p-success)' },
+              { label: 'DISMISSED', filterKey: 'dismissed', n: dismissedCount, color: 'var(--p-stone)' },
             ].map((s) => (
-              <div key={s.label} className="cv-summary-card">
-                <div className="rpg-label">{s.label}</div>
+              <button
+                key={s.label}
+                onClick={() => setFilter(s.filterKey)}
+                className="cv-summary-card"
+                style={{
+                  background: filter === s.filterKey ? 'var(--p-accent-soft)' : 'var(--p-paper)',
+                  border: `2px solid ${filter === s.filterKey ? 'var(--p-accent)' : 'var(--p-border)'}`,
+                }}
+              >
+                <div className="rpg-label cv-summary-card__lbl">{s.label}</div>
                 <div className="cv-summary-card__count" style={{ color: s.color }}>{s.n}</div>
-              </div>
+              </button>
             ))}
+          </div>
+
+          {/* "all" filter button — matches redesign */}
+          <div className="cv-filter-row">
+            <button
+              className={`btn-px ${filter === 'all' ? 'primary' : 'ghost'} cv-filter-all-btn`}
+              onClick={() => setFilter('all')}
+            >
+              all ({findings.length})
+            </button>
           </div>
 
           {/* Finding cards */}
           <div className="cv-findings-list">
-            {findings.map((f) => (
+            {list.map((f) => (
               <FindingCard
                 key={f.id}
                 finding={f}

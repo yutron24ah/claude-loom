@@ -15,11 +15,21 @@
  * =========================================================================== */
 
 /* ---------------------------------------------------------------------------
- * Root container (rpg-frame pixel applies on root; padding stays inline)
+ * Root container — full-bleed absolute (matches redesign position:absolute,inset:0)
+ * WHY: redesign/screens/worktree.jsx uses position:absolute,inset:0,padding:16
+ * not rpg-frame. Using wt-screen for proper full-bleed layout.
  * --------------------------------------------------------------------------- */
 
+.wt-screen {
+  position: absolute;
+  inset: 0;
+  padding: 16px;
+  overflow: auto;
+  background: var(--p-bg-sky);
+}
+
 /* ---------------------------------------------------------------------------
- * Header row
+ * Header row — now includes title + chips + spacer + create button
  * --------------------------------------------------------------------------- */
 
 .wt-header {
@@ -27,6 +37,20 @@
   align-items: center;
   gap: 10px;
   margin-bottom: 12px;
+}
+
+.wt-header__title {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.wt-header__spacer {
+  flex: 1;
+}
+
+.wt-header__create-btn {
+  font-size: 9px;
+  padding: 3px 8px;
 }
 
 /* ---------------------------------------------------------------------------
@@ -254,6 +278,68 @@
   background: var(--p-paper);
   border: 2px dashed var(--p-border);
   line-height: 1.6;
+}
+
+/* ---------------------------------------------------------------------------
+ * Create dialog — matches redesign worktree.jsx showCreate modal
+ * --------------------------------------------------------------------------- */
+
+.wt-create-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: grid;
+  place-items: center;
+  z-index: 100;
+}
+
+.wt-create-dialog {
+  width: 380px;
+  padding: 16px;
+  background: var(--p-paper);
+  border: 3px solid var(--p-border);
+  box-shadow: 5px 5px 0 0 var(--p-shadow);
+}
+
+.wt-create-dialog__title {
+  font-size: 13px;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
+.wt-create-dialog__field-label {
+  font-size: 10px;
+  color: var(--p-text-muted);
+  margin-bottom: 6px;
+}
+
+.wt-create-dialog__input {
+  width: 100%;
+  padding: 6px;
+  font-size: 11px;
+  border: 2px solid var(--p-border);
+  background: var(--p-tint);
+  margin-bottom: 10px;
+  font-family: ui-monospace, monospace;
+  box-sizing: border-box;
+}
+
+.wt-create-dialog__use-row {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+
+/* WHY: use-btn background is dynamic (USE_COLOR[u]), stays inline */
+.wt-create-dialog__use-btn {
+  font-size: 9px;
+  padding: 3px 8px;
+}
+
+.wt-create-dialog__actions {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
 }
 
 /* ===========================================================================

@@ -69,16 +69,19 @@ function GanttBarSegment({ bar }: { bar: GanttBar }): JSX.Element {
 function GanttAgentRow({
   row,
   nowPct,
+  isFirst = false,
 }: {
   row: GanttRow;
   nowPct: number;
+  /** WHY: first row in a group has no top border (matches redesign borderTop: i ? "1px dashed..." : "none") */
+  isFirst?: boolean;
 }): JSX.Element {
   const agent = ROSTER.find((r) => r.id === row.agentId);
 
   return (
     <div
       data-testid="gantt-row"
-      className="gantt-agent-row"
+      className={`gantt-agent-row${isFirst ? ' gantt-agent-row--first' : ''}`}
     >
       {/* Label column */}
       <div className="gantt-agent-row__label">
@@ -187,8 +190,8 @@ function WorktreeGroup({
 
       {/* Agent rows (hidden when collapsed) */}
       {!collapsed &&
-        rows.map((row) => (
-          <GanttAgentRow key={row.agentId} row={row} nowPct={nowPct} />
+        rows.map((row, idx) => (
+          <GanttAgentRow key={row.agentId} row={row} nowPct={nowPct} isFirst={idx === 0} />
         ))}
     </div>
   );
