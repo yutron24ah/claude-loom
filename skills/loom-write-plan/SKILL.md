@@ -21,9 +21,37 @@ claude-loom 専用の **lightweight implementation plan generator**。spec → m
 
 ## Output structure
 
-生成する Markdown ファイルは以下のセクションを必ず含む：
+### PLAN mode 選択（3 mode 共存、SPEC §3.11.1 SSoT）
 
-### Plan-level 構造
+PJ 規模と既存 PLAN.md のサイズに応じて以下 3 mode から選択する。**PM が mode 判断を行い、user 確認必須**（自動選択禁止）：
+
+| mode | PLAN 構造 | 想定 PJ 規模 |
+|---|---|---|
+| **1. single-file** (現状 default) | `PLAN.md` master + `docs/plans/YYYY-MM-DD-mN-<topic>.md` | 小規模（個人 PJ、検証 PJ） |
+| **2. Phase-split** | `PLAN.md` top-level index + `docs/plans/PLAN-phase-A.md` 等 | 大規模 PJ で master roadmap が肥大化した時 |
+| **3. milestone-folder** (opt-in) | Phase-split + `docs/plans/_milestones/YYYY-MM-DD-mN-<topic>/index.md` + axis ファイル群 | 大規模 milestone 単体を axis 分割したい時 |
+
+**Phase-split mode** の構造例：
+```
+PLAN.md                              ← top-level index: Phase 一覧 + 現在地
+docs/plans/
+├── PLAN-phase-A.md                  ← Phase A の milestone 列
+├── PLAN-phase-B.md
+└── _milestones/
+    └── YYYY-MM-DD-mN-<topic>/
+        ├── index.md                  ← milestone master: 依存関係 + 完了条件
+        ├── backend.md
+        ├── frontend.md
+        └── db.md
+```
+
+**milestone-folder は opt-in**: 通常は single-file mode（`docs/plans/*.md` 1 ファイル）。大規模 milestone のみ folder 化。PM が milestone planning で user 確認。
+
+**SSoT**: SPEC §3.11.1（3 mode 共存 + 自然 promotion 原則）、design spec §3.3 / §3.4
+
+### Plan-level 構造（各 mode 共通）
+
+生成する Markdown ファイルは以下のセクションを必ず含む：
 
 | section | 必須/任意 | 役割 |
 |---|---|---|
@@ -96,6 +124,12 @@ digraph loom_write_plan {
    - `SPEC.md` の該当 milestone セクション
    - `docs/plans/specs/YYYY-MM-DD-<topic>-design.md` の設計 SSoT（あれば）
    - `PLAN.md` の master milestone task list（id 整合性チェック）
+   - `PLAN.md` のサイズ確認（`wc -l PLAN.md`）— 1500 行超なら Phase-split mode 候補
+1a. **PLAN mode 判断**（PJ 規模・PLAN.md サイズから PM が判断、user 確認必須）
+   - single-file mode: PLAN.md ≤1500 行、小〜中規模 PJ → 従来 `docs/plans/YYYY-MM-DD-mN-<topic>.md` 生成
+   - Phase-split mode: PLAN.md 肥大化・多 Phase PJ → `docs/plans/PLAN-phase-X.md` 追記 or 新規作成
+   - milestone-folder mode (opt-in): 単一 milestone が大規模で axis 分割が有効 → `docs/plans/_milestones/YYYY-MM-DD-mN-<topic>/` folder 生成
+   - **自動判定禁止**: mode は PM が判断し user 確認を経て確定（SPEC §3.11.3 trigger 準拠）
 2. **Identify file changes**
    - 新規作成 / 編集 / 削除する全ファイルを列挙
    - 各ファイルがどの Task で触られるかマッピング
