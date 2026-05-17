@@ -354,16 +354,27 @@ retro-pm の lazy build accuracy 補強用、PM 自身は file write しない�
 - **proc-001 audit**: `commit_sha: null` entry が頻出 → loom-developer の commit handoff anomaly pattern 検出
 - **trio mode 採用率 audit**: `review_mode` の分布で trio opt-in 頻度を tracking
 
-## Lifecycle Tracking Architecture（M0.11.1 から、SSoT は SPEC §3.9.11 + §6.9.6 + §6.9.7）
+## Lifecycle Tracking Architecture（M0.11.1 / M0.11.2 から、SSoT は SPEC §3.9.11 + §3.9.16 + §6.9.6 + §6.9.7 + §6.9.8）
 
-retro 機能の **finding lifecycle + guidance lifecycle** を構造的に追跡する mechanism。M3.0 retro 由来の symptomatic patch (proc-NEW-1 counter-arguer stale check) を構造的に置換し、SPEC §3.9.x P4 理想形「症状対処 → 構造的解決後 rollback」cleanup loop の最初の実例。
+retro 機能の **finding lifecycle + guidance lifecycle** を構造的に追跡する mechanism。M3.0 retro 由来の symptomatic patch (proc-NEW-1 counter-arguer stale check) を構造的に置換し、SPEC §3.9.x P4 理想形「症状対処 → 構造的解決後 rollback」cleanup loop の最初の実例。M0.11.2 で **pending side architecture** を追加、applied 側と orthogonal な carryover lifecycle を構造化。
 
-### Finding lifecycle (pending.json v2 + applied_summary.json)
+### Finding lifecycle (pending.json v3 + applied_summary.json + pending_summary.json)
 
-- **`pending.json` 拡張**: schema_version 1 → 2 で `applied_in` (single) + `apply_history` (array) field 追加（SPEC §6.9.6）
+**Applied side (M0.11.1、SPEC §3.9.11):**
+- **`pending.json` 拡張 v1 → v2**: `applied_in` (single) + `apply_history` (array) field 追加（SPEC §6.9.6）
 - **`applied_summary.json` 新設**: retro-pm Stage 0 で過去全 retro session の pending.json を scan + 集約、4 lens に path 経由で渡す（SPEC §6.9.7）
-- **lens 注入 mechanism**: 4 lens の agent dispatch prompt prefix に `applied_summary_path: <path>` 追加、lens は `Read` tool で参照、stale check を Stage 1 内で自前実行
+- **lens 注入 mechanism**: 4 lens template (skills/loom-retro/SKILL.md § LENS_*) の dispatch prompt prefix に `applied_summary_path: <path>` 追加、lens は `Read` tool で参照、stale check を Stage 1 内で自前実行
 - **rollback discipline**: M3.0 retro proc-NEW-1 の counter-arguer stale finding detection section は本 architecture 完成時 **物理削除**、M0.11.1 task list 内 mandatory（SPEC §3.9.x P4 理想形 archive 例）
+
+**Pending side (M0.11.2、SPEC §3.9.16):**
+- **`pending.json` 拡張 v2 → v3**: `carryover_count` + `last_seen_in` + `expired_at` + `re_evaluated_in` 4 field 追加 (pending lifecycle、SPEC §6.9.6 v3)
+- **`pending_summary.json` 新設**: retro-pm Stage 0 で過去全 retro session の `status: pending` + `carryover_count >= 1` finding を集約、4 lens に path 経由で渡す（SPEC §6.9.8）
+- **Auto-expire (3-strike)**: `carryover_count >= 3` で auto-expire flip (`expired_at` set + pending_summary 内 `status: "expired"` に flip)、retro-pm Stage 0 で idempotent increment + flip 担当
+- **lens re-evaluation**: 4 lens template が `pending_summary_path` 経由で carryover findings を Read、`re_evaluation_verdict` (`still-relevant` | `expired` | `drop` | `null`) を finding output に付与
+- **aggregator back-fill**: `re_evaluation_verdict: "still-relevant"` で `source_pending_id: not null` の case、AGGREGATOR_TEMPLATE が origin pending.json に `re_evaluated_in: <current_retro_id>` lazy back-fill
+- **durability fallback**: pending.json 消失時は archive markdown (`docs/retro/<retro_id>-report.md`) から `daemon/src/lib/retro-reconstruct.ts` で best-effort 再構築 (SPEC §3.9.12 補完、M0.11.2 t7)
+
+**§3.9.14 (deferred findings carryover escalation) との関係**: orthogonal — `deferred` 系 = 専用 fix milestone insertion proposal / `pending` 系 = auto-expire + lens re-evaluation。両 rule 共存で 2 軸独立管理。
 
 ### Guidance lifecycle (learned_guidance auto-prune)
 
@@ -400,11 +411,13 @@ M3.0 retro 2026-05-02-002 で生まれた proc-NEW-1 (counter-arguer stale check
 - SPEC §3.9.9（lens tagging + learned_guidance auto-write）
 - SPEC §3.9.10（verdict_evidence 概念 + write timing）
 - SPEC §3.9.11（Lifecycle Tracking Architecture、M0.11.1）
+- SPEC §3.9.16（Pending Lifecycle Architecture、M0.11.2）
 - SPEC §3.6.5.4（learned_guidance 注入機構）
 - SPEC §6.9.1 / §6.9.2 / §6.9.3（schemas + merge 規則）
 - SPEC §6.9.4.5（learned_guidance auto-prune rule、M0.11.1）
 - SPEC §6.9.5（verdict_evidence.json 完全 schema）
-- SPEC §6.9.6（pending.json 完全 schema、M0.11.1 v2）
+- SPEC §6.9.6（pending.json 完全 schema、M0.11.1 v2 → M0.11.2 v3）
 - SPEC §6.9.7（applied_summary.json 完全 schema、M0.11.1）
+- SPEC §6.9.8（pending_summary.json 完全 schema、M0.11.2）
 - `docs/plans/specs/2026-04-27-retro-design.md`（設計 SSoT）
 - `~/.claude-loom/user-prefs.json` + `<project>/.claude-loom/project-prefs.json`（実状態）

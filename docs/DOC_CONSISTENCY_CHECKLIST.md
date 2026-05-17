@@ -190,20 +190,31 @@ M3.2（Session/Agent/notes）実装時：
 - [ ] Agent Detail `agent.markAttention` mutation が daemon `agent` route + DB schema と整合
 - [ ] notes `note.create` mutation + plan_items 連結が daemon `note` route + `plan_items` table schema と整合
 
-## M0.11.1 Lifecycle Tracking Architecture 関連 check
+## M0.11.1 + M0.11.2 Lifecycle Tracking Architecture 関連 check
 
-SPEC §3.9.11（Lifecycle Tracking Architecture）/ §6.9.6（pending.json schema v2）/ §6.9.7（applied_summary.json schema）/ §6.9.4.5（learned_guidance auto-prune rule）を編集した時：
+SPEC §3.9.11 / §3.9.16 (Lifecycle Tracking Architecture — applied + pending side) / §6.9.6 (pending.json schema v3) / §6.9.7 (applied_summary.json schema) / §6.9.8 (pending_summary.json schema) / §6.9.4.5 (learned_guidance auto-prune rule) を編集した時：
 
+**Applied side (M0.11.1)**:
 - [ ] §3.9.11 の write timing / 責務 / lazy build 戦略が §6.9.6 + §6.9.7 schema と整合
-- [ ] §6.9.6 schema_version: 2 が `pending.json` 既存 4 retro session の migration 後 state と整合
-- [ ] §6.9.7 lazy build 5 step が `agents/loom-retro-pm.md` Stage 0 拡張記述と整合
+- [ ] §6.9.7 lazy build が `agents/loom-retro-pm.md` Stage 0 拡張記述と整合
 - [ ] §6.9.4.5 auto-prune 2 mechanism (ttl_sessions + last_used_in) が `skills/loom-retro/SKILL.md` § AGGREGATOR_TEMPLATE write logic と整合
-- [ ] 4 lens prompt（pj-judge / process-judge / meta-judge / researcher）が `applied_summary_path` injection + `Read` tool 参照 mechanism を記述
+- [ ] 4 lens template (`skills/loom-retro/SKILL.md` § LENS_PJ / LENS_PROCESS / LENS_META / LENS_RESEARCHER) が `applied_summary_path` injection + `Read` tool 参照 mechanism を記述
 - [ ] stale finding detection は applied_summary 構造的 prevention path (M0.11.1) に完全置換、`skills/loom-retro/SKILL.md` § COUNTER_ARGUER_TEMPLATE に symptomatic patch section 不在 (SPEC §3.9.x P4 理想形 archive)
-- [ ] `templates/{user,project}-prefs.json.template` の learned_guidance example に `last_used_in` field 追加
-- [ ] `docs/RETRO_GUIDE.md` "Lifecycle Tracking Architecture" section が SPEC §3.9.11 + §6.9.6 + §6.9.7 + §6.9.4.5 と整合
-- [ ] migration script (M0.11.1 t7) が既存 4 retro session の pending.json に `applied_in` + `apply_history` 後付けして schema_version 2 に migrate 完了
-- [ ] dry-run test (M0.11.1 t12) で applied_summary build → schema validate → fixture diff の動作確認 (rollback 前安全網)
+- [ ] migration script (M0.11.1 t7、`tests/migrate_pending_schema.sh`) が既存 retro session の pending.json に `applied_in` + `apply_history` 後付けして schema_version 2 に migrate 完了
+- [ ] dry-run test (`tests/dry_run_applied_summary_test.sh`) で applied_summary build → schema validate の動作確認
+
+**Pending side (M0.11.2)**:
+- [ ] §3.9.16 (Pending Lifecycle Architecture) の write timing / 責務 / auto-expire policy が §6.9.6 v3 + §6.9.8 schema と整合
+- [ ] §6.9.6 schema_version: 3 が pending.json 既存 retro session の migration 後 state と整合 (4 new field: `carryover_count` / `last_seen_in` / `expired_at` / `re_evaluated_in`)
+- [ ] §6.9.8 (pending_summary.json) schema が retro-pm Stage 0 lazy build 手順と整合 (scope: carryover 1+ only、auto-expire flip at 3-strike)
+- [ ] 4 lens template が `pending_summary_path` injection + re-evaluation guidance (`source_pending_id` + `re_evaluation_verdict`) を記述、expired finding の new-finding 化禁止規律も明示
+- [ ] AGGREGATOR_TEMPLATE Step 3.5 で `re_evaluated_in` lazy back-fill logic (still-relevant promote の origin pending.json への back-fill) 記述
+- [ ] §3.9.14 (deferred carryover escalation) との orthogonal 関係を §3.9.16 末尾 + RETRO_GUIDE.md に明示
+- [ ] migration script (M0.11.2 t5、`tests/migrate_pending_v2_to_v3.sh`) が既存 retro session の pending.json を v2 → v3 migrate 完了
+- [ ] dry-run test (`tests/dry_run_pending_summary_test.sh`) で pending_summary build + 3-strike auto-expire + scope filter (carryover >= 1) 動作確認
+- [ ] daemon archive markdown reconstruction (`daemon/src/lib/retro-reconstruct.ts` + `retro.reconstructFromArchive` procedure) が durability fallback (§3.9.12 補完) として動作
+- [ ] `templates/{user,project}-prefs.json.template` の learned_guidance example に `last_used_in` field 追加 (M0.11.1 完了済)
+- [ ] `docs/RETRO_GUIDE.md` "Lifecycle Tracking Architecture" section が SPEC §3.9.11 + §3.9.16 + §6.9.6 v3 + §6.9.7 + §6.9.8 + §6.9.4.5 と整合
 
 ## SCREEN_REQUIREMENTS.md 更新時の整合性 check
 
