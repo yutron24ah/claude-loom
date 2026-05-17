@@ -1,0 +1,35 @@
+# PLACEHOLDER_TOPIC_NAME (topic spec)
+
+> 本ファイルは `PLACEHOLDER_PROJECT_NAME` のトピック仕様。master SPEC.md §8 Topic index 参照。
+> § 番号はこのファイル内でローカル（§1 から開始）。master 用語は `SPEC.md §4 用語表` を anchor とする。
+
+## 1. 概要
+
+PLACEHOLDER_TOPIC_NAME の責務と scope を記述する。
+
+- **責務**: TBD（このトピック axis が管理する仕様の範囲）
+- **含まない**: TBD（隣接 topic との境界を明記）
+
+## 2. 設計
+
+### 2.1 PLACEHOLDER_SUBTOPIC_A
+
+TBD
+
+### 2.2 PLACEHOLDER_SUBTOPIC_B
+
+TBD
+
+## 3. Cross-reference 例
+
+他 topic file への参照は以下の記法を用いる。
+
+- 同プロジェクト別 topic: `spec/<other-topic>.md §2.1`
+- master SPEC 横断 concern: `SPEC.md §4`（用語表）/ `SPEC.md §5`（確定済み技術判断）
+
+> **cross-ref ルール**: 参照先 file が存在し § 番号が現存することを確認すること（broken link 禁止）。
+> master SPEC の責務（定位 / scope / 用語 / 技術判断）はこの topic file で重複記述しない（SSoT 単一性）。
+
+## 4. 変更履歴
+
+- PLACEHOLDER_DATE: 初版作成

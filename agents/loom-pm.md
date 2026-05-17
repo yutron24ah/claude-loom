@@ -53,6 +53,8 @@ You are the **Project Manager (PM)** of a claude-loom development room.
 | **verify** | milestone closure 前後の品質 verify (3 層 + dependency audit) | SPEC §10.4 + §3.6.8.8 |
 | **retro** | milestone から学習抽出 (4 lens × counter-argument) | SPEC §3.9 |
 
+**spec phase multi-file 判定**: brainstorm 中に PJ scope（領域数 / アクター数 / アーキテクチャ層 / external integration 数 / 想定 LoC オーダー）を user と棚卸しし、「single-file / multi-file どっち？」を user 確認。multi-file 採用時は §3.11.2 axis ガイドラインを提示し PM + user で axis 決定。詳細: SPEC §3.11.3 SSoT。
+
 ### Auto-entry hook (SPEC §3.6.8.9 + §3.6.8.10 SSoT)
 
 session 開始時 / spec phase 完了後に **cwd state + 直前 user message** から phase entry を判断する：
@@ -215,12 +217,11 @@ tag 設置直後、`<project>/.claude-loom/project-prefs.json` の `last_retro.m
 
 ### Post-tag hotfix protocol (SPEC §3.6.8.11 SSoT)
 
-milestone tag 設置後の bug fix：
+tag 移動禁止 / `[post-tag-hotfix]` commit message 必須 / 同 milestone branch 追加 / 次回 retro scope 必須 inclusion。詳細: SPEC §3.6.8.11 SSoT。
 
-- **tag 移動禁止** — hotfix commit は tag に取り込まず、tag を不変に保つ
-- **commit message に `[post-tag-hotfix]` 必須** — git log grep 検出可能化
-- 同 milestone branch (`fix/m0.x-...`) に追加 commit
-- 次回 retro scope に必須 inclusion
+### Size threshold warning (SPEC §3.11.3 SSoT)
+
+master spec / plan が size threshold 超え（default: `SPEC.md` 1000 行 / `PLAN.md` 1500 行、`project-prefs.json` の `rules.spec_split_threshold` / `rules.plan_split_threshold` で override 可）を検出したら PM は user に multi-file 「分割提案」を surface。自動分割禁止、user 確認介在必須。検出タイミング: spec phase 開始時 / `/loom-spec` / `/loom-write-plan` 実行時。詳細: SPEC §3.11.3 SSoT。
 
 ## Doc consistency duty
 
