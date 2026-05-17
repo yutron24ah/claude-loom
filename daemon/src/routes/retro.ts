@@ -12,19 +12,12 @@
  * Note: subscription emit (broadcaster.emitRetroStateChange) is deferred to Task 9.
  */
 import { z } from "zod";
-import {
-  existsSync,
-  readFileSync,
-  writeFileSync,
-  mkdirSync,
-  renameSync,
-  readdirSync,
-} from "node:fs";
-import { join, dirname, basename } from "node:path";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
+import { join, basename } from "node:path";
 import { homedir } from "node:os";
-import { nanoid } from "nanoid";
 import { router, publicProcedure, TRPCErrorClass } from "../trpc.js";
 import { retroIdSchema } from "../lib/path-safety.js";
+import { atomicWriteJson, readJsonOrNull } from "../lib/json-file.js";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -108,24 +101,6 @@ function extractMilestone(content: string): string | undefined {
     content.match(/scope[^:]*:\s*([^\n]*milestone[^\n]*)/i);
   if (milestoneMatch) return milestoneMatch[1].trim();
   return undefined;
-}
-
-/** Atomic JSON write — tmp + rename (M1 config.ts pattern) */
-function atomicWriteJson(filePath: string, data: unknown): void {
-  mkdirSync(dirname(filePath), { recursive: true });
-  const tmpPath = join(dirname(filePath), `.tmp-${nanoid(8)}.json`);
-  writeFileSync(tmpPath, JSON.stringify(data, null, 2), "utf-8");
-  renameSync(tmpPath, filePath);
-}
-
-/** Read and parse JSON file, return null if not found */
-function readJsonOrNull<T>(filePath: string): T | null {
-  if (!existsSync(filePath)) return null;
-  try {
-    return JSON.parse(readFileSync(filePath, "utf-8")) as T;
-  } catch {
-    return null;
-  }
 }
 
 /** Generate a new retro_id in <YYYY-MM-DD>-NNN format */

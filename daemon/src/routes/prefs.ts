@@ -15,19 +15,13 @@
  * Note: subscription emit (broadcaster.emitLearnedGuidanceChange) is deferred to Task 9.
  */
 import { z } from "zod";
-import {
-  existsSync,
-  readFileSync,
-  writeFileSync,
-  mkdirSync,
-  renameSync,
-} from "node:fs";
-import { join, dirname } from "node:path";
+import { existsSync, readFileSync } from "node:fs";
+import { join } from "node:path";
 import { homedir } from "node:os";
-import { nanoid } from "nanoid";
 import { router, publicProcedure, TRPCErrorClass } from "../trpc.js";
 import { broadcaster } from "../events/broadcaster.js";
 import { projectIdSchema, assertSafeProjectId } from "../lib/path-safety.js";
+import { atomicWriteJson, readJsonOrDefault } from "../lib/json-file.js";
 
 // ---------------------------------------------------------------------------
 // File paths
@@ -60,26 +54,6 @@ function resolveProjectRoot(projectId: string): string {
 function projectPrefsPath(projectId: string): string {
   const root = resolveProjectRoot(projectId);
   return join(root, ".claude-loom", "project-prefs.json");
-}
-
-// ---------------------------------------------------------------------------
-// Atomic write helper (M1 config.ts pattern: nanoid tmp + rename)
-// ---------------------------------------------------------------------------
-
-function atomicWriteJson(filePath: string, data: unknown): void {
-  mkdirSync(dirname(filePath), { recursive: true });
-  const tmpPath = join(dirname(filePath), `.prefs-${nanoid(8)}.tmp`);
-  writeFileSync(tmpPath, JSON.stringify(data, null, 2), "utf-8");
-  renameSync(tmpPath, filePath);
-}
-
-function readJsonOrDefault<T>(filePath: string, defaultValue: T): T {
-  if (!existsSync(filePath)) return defaultValue;
-  try {
-    return JSON.parse(readFileSync(filePath, "utf-8")) as T;
-  } catch {
-    return defaultValue;
-  }
 }
 
 // ---------------------------------------------------------------------------
