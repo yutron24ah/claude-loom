@@ -207,8 +207,10 @@ check_ui_auto_launch_default() {
 
 # REQ-037: SPEC §6.9 に ui.auto_launch の記述がある
 check_spec_ui_auto_launch() {
-    if grep -q "ui\.auto_launch" "SPEC.md"; then
-        echo "PASS [prefs]: SPEC.md §6.9 contains ui.auto_launch (M0.11.5)"
+    # ui.auto_launch was migrated from SPEC.md §6.9 to spec/daemon-and-data.md §4.9.2
+    # Check both master and topic file (multi-file mode, M0.X-spec-plan-multi-file-dogfood)
+    if grep -q "ui\.auto_launch" "SPEC.md" || grep -q "ui\.auto_launch" "spec/daemon-and-data.md"; then
+        echo "PASS [prefs]: SPEC.md or spec/daemon-and-data.md contains ui.auto_launch (M0.11.5)"
         ((passes++))
     else
         echo "FAIL [prefs]: SPEC.md missing ui.auto_launch documentation (M0.11.5)"

@@ -246,6 +246,49 @@ if [ -f "$HARNESS_MD" ]; then
   fi
 fi
 
+# ----- t3 checks: spec/daemon-and-data.md migration (skeleton-n6 through skeleton-n9) -----
+DAEMON_AND_DATA_MD="$ROOT_DIR/spec/daemon-and-data.md"
+
+# ----- Check (n6): spec/daemon-and-data.md file exists -----
+if [ -f "$DAEMON_AND_DATA_MD" ]; then
+  echo "PASS [skeleton-n6]: spec/daemon-and-data.md exists"
+else
+  echo "FAIL [skeleton-n6]: spec/daemon-and-data.md not found at $DAEMON_AND_DATA_MD"
+  failures=$((failures + 1))
+fi
+
+# ----- Check (n7): spec/daemon-and-data.md has ≥4 top-level sections (## headings) -----
+if [ -f "$DAEMON_AND_DATA_MD" ]; then
+  n7_count=$(grep -c "^## " "$DAEMON_AND_DATA_MD" || true)
+  if [ "$n7_count" -ge 4 ]; then
+    echo "PASS [skeleton-n7]: spec/daemon-and-data.md has $n7_count top-level sections (##) (≥4)"
+  else
+    echo "FAIL [skeleton-n7]: spec/daemon-and-data.md has $n7_count top-level sections (## ) (need ≥4)"
+    failures=$((failures + 1))
+  fi
+fi
+
+# ----- Check (n8): spec/daemon-and-data.md starts at §1 (local renumber confirmed) -----
+if [ -f "$DAEMON_AND_DATA_MD" ]; then
+  if grep -qE "^## 1\." "$DAEMON_AND_DATA_MD"; then
+    echo "PASS [skeleton-n8]: spec/daemon-and-data.md starts at §1 (local renumber confirmed)"
+  else
+    echo "FAIL [skeleton-n8]: spec/daemon-and-data.md does not start at §1 (need '## 1.' heading)"
+    failures=$((failures + 1))
+  fi
+fi
+
+# ----- Check (n9): SPEC.md has ≥4 pointer lines to spec/daemon-and-data.md -----
+if [ -f "$SPEC_FILE" ]; then
+  n9_count=$(grep -c "spec/daemon-and-data.md" "$SPEC_FILE" || true)
+  if [ "$n9_count" -ge 4 ]; then
+    echo "PASS [skeleton-n9]: SPEC.md has $n9_count pointer lines to spec/daemon-and-data.md (≥4)"
+  else
+    echo "FAIL [skeleton-n9]: SPEC.md has $n9_count pointer lines to spec/daemon-and-data.md (need ≥4)"
+    failures=$((failures + 1))
+  fi
+fi
+
 if [ "$failures" -gt 0 ]; then
   echo "multi_file_skeleton_test FAILED with $failures violation(s)"
   exit 1
