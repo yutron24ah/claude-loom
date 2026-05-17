@@ -192,6 +192,60 @@ if [ -f "$DOC_CHECKLIST" ]; then
   fi
 fi
 
+# ----- t2 checks: spec/harness.md migration (skeleton-n1 through skeleton-n5) -----
+HARNESS_MD="$ROOT_DIR/spec/harness.md"
+
+# ----- Check (n1): spec/harness.md file exists -----
+if [ -f "$HARNESS_MD" ]; then
+  echo "PASS [skeleton-n1]: spec/harness.md exists"
+else
+  echo "FAIL [skeleton-n1]: spec/harness.md not found at $HARNESS_MD"
+  failures=$((failures + 1))
+fi
+
+# ----- Check (n2): spec/harness.md has exactly 8 top-level sections (## headings) -----
+if [ -f "$HARNESS_MD" ]; then
+  n2_count=$(grep -c "^## " "$HARNESS_MD" || true)
+  if [ "$n2_count" -ge 8 ]; then
+    echo "PASS [skeleton-n2]: spec/harness.md has $n2_count top-level sections (##) (≥8)"
+  else
+    echo "FAIL [skeleton-n2]: spec/harness.md has $n2_count top-level sections (## ) (need ≥8)"
+    failures=$((failures + 1))
+  fi
+fi
+
+# ----- Check (n3): spec/harness.md starts at §1 (local renumber confirmed) -----
+if [ -f "$HARNESS_MD" ]; then
+  if grep -qE "^## 1\." "$HARNESS_MD"; then
+    echo "PASS [skeleton-n3]: spec/harness.md starts at §1 (local renumber confirmed)"
+  else
+    echo "FAIL [skeleton-n3]: spec/harness.md does not start at §1 (need '## 1.' heading)"
+    failures=$((failures + 1))
+  fi
+fi
+
+# ----- Check (n4): SPEC.md has ≥8 pointer lines to spec/harness.md -----
+# Note: pointer format is `spec/harness.md` §N — grep for path only then verify § on same line
+if [ -f "$SPEC_FILE" ]; then
+  n4_count=$(grep -c "spec/harness.md" "$SPEC_FILE" || true)
+  if [ "$n4_count" -ge 8 ]; then
+    echo "PASS [skeleton-n4]: SPEC.md has $n4_count pointer lines to spec/harness.md (≥8)"
+  else
+    echo "FAIL [skeleton-n4]: SPEC.md has $n4_count pointer lines to spec/harness.md (need ≥8)"
+    failures=$((failures + 1))
+  fi
+fi
+
+# ----- Check (n5): spec/harness.md has back-pointer header to master SPEC.md -----
+if [ -f "$HARNESS_MD" ]; then
+  if grep -q "SPEC.md" "$HARNESS_MD"; then
+    echo "PASS [skeleton-n5]: spec/harness.md has back-pointer to master SPEC.md"
+  else
+    echo "FAIL [skeleton-n5]: spec/harness.md missing back-pointer to master SPEC.md"
+    failures=$((failures + 1))
+  fi
+fi
+
 if [ "$failures" -gt 0 ]; then
   echo "multi_file_skeleton_test FAILED with $failures violation(s)"
   exit 1
