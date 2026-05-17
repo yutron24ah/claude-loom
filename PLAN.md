@@ -1564,7 +1564,7 @@ claude-loom が promote する spec/plan 駆動開発の **構造規約として
 - multi-file mode の doc consistency check (用語整合 / cross-ref 健全性 / scope 重複 / master index 整合性) は M4 doc 整合性エンジン v1 候補、本 milestone では手作業 checklist 化
 
 - [x] PLAN.md M0.X-spec-plan-multi-file + M0.X-spec-plan-multi-file-dogfood placeholder entry 追加（本タスク） <!-- id: m0.x-spec-plan-t1 status: done -->
-- [ ] SPEC.md §3.11 新設 (multi-file thinking SSoT: 思想 / axis ガイドライン / trigger / 参照記法 / doc consistency 拡張) <!-- id: m0.x-spec-plan-t2 status: todo planned_files: SPEC.md -->
+- [x] SPEC.md §3.11 新設 (multi-file thinking SSoT: 思想 / axis ガイドライン / trigger / 参照記法 / doc consistency 拡張) <!-- id: m0.x-spec-plan-t2 status: done committed_sha: 006a209 path: loom-developer (self-review Path C、reviewer 4 観点 PASS、tests/spec_311_multi_file_test.sh 1/1 PASS で TDD red→green 確認) planned_files: SPEC.md, tests/spec_311_multi_file_test.sh -->
 - [ ] CLAUDE.md ファイル配置規約 + 主要ドキュメント参照 更新 (multi-file pattern 追記 + §3.11 ポインタ) <!-- id: m0.x-spec-plan-t3 status: todo planned_files: CLAUDE.md -->
 - [ ] templates/multi-file-spec-skeleton/ 新規追加 (master + sample topic) <!-- id: m0.x-spec-plan-t4 status: todo planned_files: templates/multi-file-spec-skeleton/SPEC.md.template, templates/multi-file-spec-skeleton/spec/_sample-topic.md.template -->
 - [ ] agents/loom-pm.md に spec phase multi-file 判定 step + size 警告 logic 追加 <!-- id: m0.x-spec-plan-t5 status: todo planned_files: agents/loom-pm.md -->

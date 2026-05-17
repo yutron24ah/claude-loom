@@ -59,7 +59,7 @@ claude-loom が promote する spec/plan 駆動開発の **構造規約として
 **Files**: `SPEC.md` (modify)
 **Spec ref**: design spec §3, §4, §5, §6
 **Insertion points**: `### 3.10.2 Agent prompt 設計原則` の直後、`## 4. アクター（エージェント）定義` の直前
-**Integrity check**: `grep -cE "^### 3\\.11(\\.|\\s|$)" SPEC.md` → `≥1` (§3.11 + sub-sections)
+**Integrity check**: `grep -cE "^### 3\\.11(\\s|$)" SPEC.md` → `1` (parent) && `grep -cE "^#### 3\\.11\\.[1-5]" SPEC.md` → `5` (sub-sections at `####` level、§3.10.x convention 準拠)
 **Commit prefix**: `docs(spec): §3.11 multi-file spec/plan thinking 新設`
 **Notes**: §3.11 の subsections として §3.11.1 (思想) / §3.11.2 (axis ガイドライン) / §3.11.3 (trigger) / §3.11.4 (参照記法) / §3.11.5 (doc consistency 拡張) を設置。design spec の §3〜§6 内容を要点圧縮で転記
 
