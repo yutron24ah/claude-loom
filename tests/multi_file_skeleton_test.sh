@@ -372,6 +372,21 @@ if [ -f "$SPEC_FILE" ]; then
   fi
 fi
 
+# ----- t7 check: master SPEC.md Topic Index existence (skeleton-n17) -----
+# Verifies that the §15 Topic Index section has been added to master SPEC.md
+# (M0.X-spec-plan-multi-file-dogfood t7 integrity check)
+
+# ----- Check (n17): SPEC.md has exactly 1 "## 15. Topic Index" section -----
+if [ -f "$SPEC_FILE" ]; then
+  n17_count=$(grep -cE "^## 15\. Topic Index" "$SPEC_FILE" || true)
+  if [ "$n17_count" -eq 1 ]; then
+    echo "PASS [skeleton-n17]: SPEC.md has Topic Index §15 section (count=$n17_count)"
+  else
+    echo "FAIL [skeleton-n17]: SPEC.md Topic Index §15 section not found (need exactly 1, got $n17_count)"
+    failures=$((failures + 1))
+  fi
+fi
+
 if [ "$failures" -gt 0 ]; then
   echo "multi_file_skeleton_test FAILED with $failures violation(s)"
   exit 1

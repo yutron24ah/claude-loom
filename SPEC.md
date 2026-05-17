@@ -521,6 +521,26 @@ CREATE TABLE consistency_findings (
 
 ---
 
+## 15. Topic Index (multi-file mode、M0.X-spec-plan-multi-file-dogfood で確立)
+
+本 SPEC は **multi-file mode** で運用されとる (master SPEC §3.11.1 SSoT)。詳細な technical content は `spec/` directory 配下の 5 topic file に分割管理されとり、master SPEC.md は cross-cutting メタ情報 (定位 / scope / SSoT 原則 / 設定 / セキュリティ / commands / 確定済み技術判断 / TBD / 関連 / 変更履歴) を担う。
+
+| topic | 責務 | path |
+|---|---|---|
+| harness | agents / skills / commands customization / worktree / coexistence / process discipline / commit + branch 規約 / superpowers independence / actor 定義 / 標準 workflow | [spec/harness.md](spec/harness.md) |
+| daemon-and-data | Lazy Daemon ライフサイクル / 中央指令室モデル / WebSocket メッセージスキーマ / SQLite データモデル | [spec/daemon-and-data.md](spec/daemon-and-data.md) |
+| ui-arch | M3 UI Architecture / SSoT cross-check rule / UI Smoke Test / Design Implementation / Ceremony Reduction / UI Redesign Port / Playwright e2e | [spec/ui-arch.md](spec/ui-arch.md) |
+| retro-system | Retro 機能全機能 (4 lens / counter-argument / aggregator / pending lifecycle 等) | [spec/retro-system.md](spec/retro-system.md) |
+| install-and-test | プロジェクトライフサイクルと adopt 戦略 / 配布・インストール / テスト戦略 | [spec/install-and-test.md](spec/install-and-test.md) |
+
+### 参照記法 (master SPEC §3.11.4 SSoT)
+
+- master 内部 ref: `SPEC.md §X.Y` (現行記法維持)
+- topic 内 ref: `spec/<topic>.md §X.Y` (file path + § 番号、§ 番号は file 内 local)
+- 既存 agent prompts / retro report 等の `SPEC §3.6.5` 形式古記法 ref は **書き換えず維持** (heading anchor は本 master 内に保持されとる)
+
+---
+
 ## 変更履歴
 
 - 2026-04-26: 初版作成（ブレインストーミング Q3-Q12 + §1-§4 設計合意を反映）
