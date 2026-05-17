@@ -11,10 +11,14 @@
 # (g) agents/loom-pm.md mentions multi-file ≥2 times
 # (h) commands/loom-spec.md mentions multi-file ≥1 time
 # (i) SPEC.md §3.11 parent section exists
+# (j) skills/loom-write-plan/SKILL.md has Phase-split/milestone-folder/PLAN-phase- marker (t7)
+# (k) skills/loom-write-plan/SKILL.md mentions multi-file or single-file ≥2 times (t7)
+# (l) docs/DOC_CONSISTENCY_CHECKLIST.md mentions multi-file mode ≥1 time (t8)
+# (m) docs/DOC_CONSISTENCY_CHECKLIST.md has all 4 multi-file mode check keywords (t8)
 #
-# This test covers M0.X-spec-plan-multi-file t4 integrity checks.
-# t5/t6 checks (g/h) and t2 check (i) are included here for unified
-# multi-file harness coverage (as per Task 9 spec).
+# This test covers M0.X-spec-plan-multi-file t2/t4/t5/t6/t7/t8 integrity checks.
+# t5/t6 checks (g/h), t2 check (i), t7 checks (j/k), and t8 checks (l/m) are
+# included here for unified multi-file harness coverage (as per Task 9 spec).
 
 set -euo pipefail
 
@@ -127,6 +131,65 @@ if [ -f "$SPEC_FILE" ]; then
 else
   echo "FAIL [skeleton-i]: SPEC.md not found"
   failures=$((failures + 1))
+fi
+
+# ----- Check (j): skills/loom-write-plan/SKILL.md has Phase-split/milestone-folder/PLAN-phase- marker (t7 regression guard) -----
+WRITE_PLAN_SKILL="$ROOT_DIR/skills/loom-write-plan/SKILL.md"
+if [ -f "$WRITE_PLAN_SKILL" ]; then
+  j_count=$(grep -cE "Phase-split|milestone-folder|PLAN-phase-" "$WRITE_PLAN_SKILL" || true)
+  if [ "$j_count" -ge 1 ]; then
+    echo "PASS [skeleton-j]: skills/loom-write-plan/SKILL.md has Phase-split/milestone-folder/PLAN-phase- marker (${j_count} occurrence(s))"
+  else
+    echo "FAIL [skeleton-j]: skills/loom-write-plan/SKILL.md Phase-split/milestone-folder/PLAN-phase- marker not found (need ≥1, got $j_count)"
+    failures=$((failures + 1))
+  fi
+else
+  echo "FAIL [skeleton-j]: skills/loom-write-plan/SKILL.md not found"
+  failures=$((failures + 1))
+fi
+
+# ----- Check (k): skills/loom-write-plan/SKILL.md mentions multi-file or single-file ≥2 times (t7 regression guard) -----
+if [ -f "$WRITE_PLAN_SKILL" ]; then
+  k_count=$(grep -cE "multi-file|single-file" "$WRITE_PLAN_SKILL" || true)
+  if [ "$k_count" -ge 2 ]; then
+    echo "PASS [skeleton-k]: skills/loom-write-plan/SKILL.md mentions multi-file or single-file $k_count time(s) (≥2)"
+  else
+    echo "FAIL [skeleton-k]: skills/loom-write-plan/SKILL.md multi-file or single-file mention $k_count time(s) (need ≥2)"
+    failures=$((failures + 1))
+  fi
+fi
+
+# ----- Check (l): docs/DOC_CONSISTENCY_CHECKLIST.md mentions multi-file mode ≥1 time (t8 regression guard) -----
+DOC_CHECKLIST="$ROOT_DIR/docs/DOC_CONSISTENCY_CHECKLIST.md"
+if [ -f "$DOC_CHECKLIST" ]; then
+  l_count=$(grep -c "multi-file mode" "$DOC_CHECKLIST" || true)
+  if [ "$l_count" -ge 1 ]; then
+    echo "PASS [skeleton-l]: docs/DOC_CONSISTENCY_CHECKLIST.md mentions multi-file mode $l_count time(s) (≥1)"
+  else
+    echo "FAIL [skeleton-l]: docs/DOC_CONSISTENCY_CHECKLIST.md multi-file mode not found (need ≥1, got $l_count)"
+    failures=$((failures + 1))
+  fi
+else
+  echo "FAIL [skeleton-l]: docs/DOC_CONSISTENCY_CHECKLIST.md not found"
+  failures=$((failures + 1))
+fi
+
+# ----- Check (m): docs/DOC_CONSISTENCY_CHECKLIST.md has all 4 multi-file mode check keywords (t8 regression guard) -----
+if [ -f "$DOC_CHECKLIST" ]; then
+  m_failures=0
+  for keyword in "用語整合" "cross-ref 健全性" "scope 重複" "master index"; do
+    if grep -qF "$keyword" "$DOC_CHECKLIST"; then
+      true
+    else
+      m_failures=$((m_failures + 1))
+    fi
+  done
+  if [ "$m_failures" -eq 0 ]; then
+    echo "PASS [skeleton-m]: docs/DOC_CONSISTENCY_CHECKLIST.md has all 4 multi-file mode check keywords (用語整合/cross-ref 健全性/scope 重複/master index)"
+  else
+    echo "FAIL [skeleton-m]: docs/DOC_CONSISTENCY_CHECKLIST.md missing $m_failures of 4 multi-file mode check keywords (用語整合/cross-ref 健全性/scope 重複/master index)"
+    failures=$((failures + 1))
+  fi
 fi
 
 if [ "$failures" -gt 0 ]; then
