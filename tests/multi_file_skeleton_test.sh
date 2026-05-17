@@ -322,6 +322,28 @@ if [ -f "$SPEC_FILE" ]; then
   fi
 fi
 
+# ----- t5 checks: spec/retro-system.md migration (skeleton-n13 through skeleton-n14) -----
+RETRO_SYSTEM_MD="$ROOT_DIR/spec/retro-system.md"
+
+# ----- Check (n13): spec/retro-system.md file exists -----
+if [ -f "$RETRO_SYSTEM_MD" ]; then
+  echo "PASS [skeleton-n13]: spec/retro-system.md exists"
+else
+  echo "FAIL [skeleton-n13]: spec/retro-system.md not found at $RETRO_SYSTEM_MD"
+  failures=$((failures + 1))
+fi
+
+# ----- Check (n14): SPEC.md has ≥1 pointer line to spec/retro-system.md -----
+if [ -f "$SPEC_FILE" ]; then
+  n14_count=$(grep -c "spec/retro-system.md" "$SPEC_FILE" || true)
+  if [ "$n14_count" -ge 1 ]; then
+    echo "PASS [skeleton-n14]: SPEC.md has $n14_count pointer line(s) to spec/retro-system.md (≥1)"
+  else
+    echo "FAIL [skeleton-n14]: SPEC.md has $n14_count pointer line(s) to spec/retro-system.md (need ≥1)"
+    failures=$((failures + 1))
+  fi
+fi
+
 if [ "$failures" -gt 0 ]; then
   echo "multi_file_skeleton_test FAILED with $failures violation(s)"
   exit 1
