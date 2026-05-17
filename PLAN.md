@@ -283,31 +283,42 @@ retro 2026-05-02-002 で観測された **lifecycle tracking 不在** を構造�
 
 ## マイルストーン M0.11.2: Pending Lifecycle Tracking（M0.11.1 next iteration）
 
-詳細: 未作成（spec phase 開始時に `loom-write-plan` skill で詳細化）
-retro 起源: `docs/retro/2026-05-03-001-report.md` finding meta-003 (structural、M0.X cleanup 系列候補)
+**SSoT**: SPEC §3.9.16 (Pending Lifecycle Architecture、2026-05-17 spec phase で codify 済) + SPEC §6.9.6 v3 (pending.json schema 拡張) + SPEC §6.9.8 (pending_summary.json schema 新設)
+**retro 起源**: `docs/retro/2026-05-03-001-report.md` finding meta-003 (structural、M0.X cleanup 系列候補)
 
-retro 2026-05-03-001 で観測された **pending finding lifecycle tracking 不在** を構造的に解決する milestone。M0.11.1 で applied finding の lifecycle tracking architecture (`applied_summary.json`) を確立したが、**status: pending のまま carryover される finding** は applied_summary に集約されず、4 lens は 'pending として宙ぶらりん状態' を context として取得できん。本 retro で res-001 (carryover from 2026-05-02-001) と proc-003 (parallel-batch audit log carryover) が surface したが、stale 排除でも apply 候補でもない、'未処理の宙ぶらりん' 状態が permanent に積み上がる pattern。M0.11.1 lifecycle tracking architecture の **next iteration** として proposed。
+retro 2026-05-03-001 で観測された **pending finding lifecycle tracking 不在** を構造的に解決する milestone。M0.11.1 で applied finding の lifecycle tracking architecture (`applied_summary.json`) を確立したが、**`status: pending` のまま carryover される finding** は applied_summary に集約されず、4 lens は 'pending として宙ぶらりん状態' を context として取得できん。stale 排除でも apply 候補でもない '未処理の宙ぶらりん' state が permanent に積み上がる pattern を、**3-strike auto-expire + lens re-evaluation** で構造化する。
 
-### 設計合意候補（M0.11.2 spec phase で詰める）
+### 設計合意 (2026-05-17 spec phase 確定済)
 
-- **pending_summary schema 新設**: SPEC §3.9.x or §6.9.x で `pending_summary.json` schema 定義、retro-pm Stage 0 で過去全 retro session の status: pending findings 集約
-- **4 lens prompt 拡張**: `pending_summary_path` 注入、lens は applied_summary と pending_summary 両方を `Read` で参照、'pending carryover' を re-up じゃなく 'still relevant?' assessment 対象として扱う
-- **finding lifecycle 状態遷移 formalize**: SPEC §3.9.x で pending → approved → applied (M0.11.1 既存) + pending → expired (TTL or N session 越え auto-close) + pending → re-evaluated-still-relevant (lens 判定で本 retro の新 finding に格上げ) を define
-- **migration**: 既存 4+ retro session の pending.json から carryover 候補抽出 + lifecycle field 後付け (M0.11.1 migration script の延長)
+- **expiration policy**: A1 — `carryover_count >= 3` で auto-expire (3-strike rule、§3.9.13 escalation と同 number)
+- **re-evaluation 判定**: B1 — 4 lens template が自前判定 (autonomy 尊重、`source_pending_id` + `re_evaluation_verdict` field で出力)
+- **aggregate scope**: a2 — carryover 1+ のみ pending_summary に集約 (本 retro 新規 pending は除外、scope clean)
+- **expired finding 扱い**: b1 — pending_summary に `status: "expired"` で残す (audit trail 維持)
+- **pending.json schema 拡張**: schema_version `2 → 3`、`carryover_count` / `last_seen_in` / `expired_at` / `re_evaluated_in` 4 field 追加
+- **lens output 拡張**: `source_pending_id` + `re_evaluation_verdict` (`still-relevant` | `expired` | `drop` | null)
+- **§3.9.14 (Carryover escalation for deferred) との関係**: orthogonal、両 rule 共存可能 (deferred 系 = 専用 fix milestone insertion、pending 系 = auto-expire + lens re-evaluation)
 
-### Task （spec phase で確定後 list 化、retro 2026-05-04-001 F-meta-002 で scope 拡張済）
+### Task (impl 用、spec 確定済の 9 task)
 
-- [ ] SPEC §3.9.x or §6.9.x に pending_summary schema 新設 <!-- id: m0.11.2-t1 status: todo -->
-- [ ] retro-pm Stage 0 で pending_summary.json lazy build mechanism 追加 <!-- id: m0.11.2-t2 status: todo -->
-- [ ] 4 lens prompt に pending_summary_path injection + 'still relevant?' assessment guidance 追加 <!-- id: m0.11.2-t3 status: todo -->
-- [ ] finding lifecycle 状態遷移 (pending → expired auto-close 等) formalize <!-- id: m0.11.2-t4 status: todo -->
-- [ ] migration script: 既存 retro session の pending.json に lifecycle field 後付け <!-- id: m0.11.2-t5 status: todo -->
-- [ ] tests 拡張 (pending_summary build + auto-expiration assertion) <!-- id: m0.11.2-t6 status: todo -->
-- [ ] **archive markdown reconstruction logic** (retro 2026-05-04-001 F-meta-002): pending.json 不在時 `docs/retro/<retro_id>-report.md` から applied/recorded findings を抽出して applied_summary に再構築する fallback 実装、SPEC §3.9.12 の retro state durability 補完 <!-- id: m0.11.2-t7 status: todo -->
-- [ ] **Token meter UX iteration** (retro 2026-05-04-001 F-res-003): ui/src/live/useTokenUsage.ts に refetchInterval enabled flag (session-active 時のみ polling) + ui/src/components/Sidebar.tsx を AppShell に wire up (M5 t4 reviewer 指摘の dead export 解消) <!-- id: m0.11.2-t8 status: todo -->
-- [ ] tag m0.11.2-complete 設置、Phase 1 全 milestone tag 全保持 <!-- id: m0.11.2-t9 status: todo -->
+- [ ] SPEC §3.9.16 (Pending Lifecycle Architecture) + §6.9.6 v3 + §6.9.8 (pending_summary schema) を codify <!-- id: m0.11.2-t1 status: done note: 本 spec phase で先行完了 planned_files: SPEC.md -->
+- [ ] retro-pm agent (agents/loom-retro-pm.md) Stage 0 で pending_summary.json lazy build mechanism 追加 (verdict_evidence + applied_summary + command_frequency に続く 4 件目 file) + idempotent carryover_count increment + auto-expire flip logic <!-- id: m0.11.2-t2 status: todo planned_files: agents/loom-retro-pm.md -->
+- [ ] 4 lens template (`skills/loom-retro/SKILL.md` § LENS_PJ / LENS_PROCESS / LENS_META / LENS_RESEARCHER + 共通 scaffold) に `pending_summary_path` injection + 're-evaluation 判定' guidance (`source_pending_id` / `re_evaluation_verdict` 出力規約) + 'still-relevant promote' workflow 追加 <!-- id: m0.11.2-t3 status: todo planned_files: skills/loom-retro/SKILL.md -->
+- [ ] AGGREGATOR_TEMPLATE (`skills/loom-retro/SKILL.md` § Stage 3) に `re_evaluated_in` lazy back-fill logic 追加 (lens 判定 `still-relevant` の origin pending.json への back-fill) <!-- id: m0.11.2-t4 status: todo planned_files: skills/loom-retro/SKILL.md -->
+- [ ] migration script: 既存 retro session の pending.json (v2) に v3 field 後付け (`carryover_count: 0` / `last_seen_in: <self>` / `expired_at: null` / `re_evaluated_in: null`) + schema_version 2 → 3 flag <!-- id: m0.11.2-t5 status: todo planned_files: scripts/migrate_pending_v2_to_v3.sh -->
+- [ ] tests 拡張: `tests/dry_run_pending_summary_test.sh` (pending_summary build + 3-strike auto-expire assertion + lens re-evaluation verdict 集約 assertion) + tests/retro_test.sh への schema_version 3 assertion 追加 <!-- id: m0.11.2-t6 status: todo planned_files: tests/dry_run_pending_summary_test.sh, tests/retro_test.sh -->
+- [ ] **archive markdown reconstruction logic** (retro 2026-05-04-001 F-meta-002): pending.json 不在時 `docs/retro/<retro_id>-report.md` から applied/recorded findings を抽出して applied_summary + pending_summary に再構築する fallback 実装、SPEC §3.9.12 の retro state durability 補完 <!-- id: m0.11.2-t7 status: todo planned_files: daemon/src/routes/retro.ts, daemon/src/lib/retro-reconstruct.ts -->
+- [ ] **Token meter UX iteration** (retro 2026-05-04-001 F-res-003): ui/src/live/useTokenUsage.ts に refetchInterval enabled flag (session-active 時のみ polling) + ui/src/components/Sidebar.tsx を AppShell に wire up (M5 t4 reviewer 指摘の dead export 解消) <!-- id: m0.11.2-t8 status: todo planned_files: ui/src/live/useTokenUsage.ts, ui/src/components/Sidebar.tsx, ui/src/routing/AppShell.tsx -->
+- [ ] doc consistency 更新 (RETRO_GUIDE / DOC_CONSISTENCY_CHECKLIST に §3.9.16 + §6.9.8 cross-check 追加) + Layer 1/2.5 dogfood smoke + tag m0.11.2-complete 設置、Phase 1 全 milestone tag 全保持 <!-- id: m0.11.2-t9 status: todo planned_files: docs/RETRO_GUIDE.md, docs/DOC_CONSISTENCY_CHECKLIST.md -->
 
-**M0.11.2 着手タイミング**: Phase 1 → Phase 2 boundary milestone、Phase 2 entry 前の cleanup として実施推奨。**M0.11.3 完了後に着手**（M0.11.3 で確立する loom-ui-smoke skill を本 milestone 自身の verify にも活用、cumulative refinement chain）。M0.X cleanup 系列 (M0.11.1 / M0.13 / M0.14 と同 family) として short milestone (推定 7-9 task)。本 milestone は SPEC §3.9.x P4 (Root cause first) の 2 回目 application、M0.11.1 の lifecycle tracking architecture を pending side + durability side に拡張する cumulative refinement。
+### Impl 戦略 (spec phase の判断)
+
+- **dispatch 戦略**: Strategy a (commit_handoff=dev) / single mode / sequential dispatch — file overlap は SPEC (t1 既完了) と各 file scope 独立で衝突なし
+- **branch**: 本 spec branch は spec PR で merge、impl は `feat/m0.11.2-pending-lifecycle-impl` 新 branch で進める (1 branch = 1 PBI 厳守)
+- **parallel batch candidate**: t6 (tests) と t7 (reconstruction) と t8 (Token meter UX) は独立 file scope なので parallel batch 可、ただし t2/t3/t4 完了後
+
+### M0.11.2 着手タイミング
+
+Phase 1 → Phase 2 boundary milestone、Phase 2 entry 前の cleanup として実施。M0.X cleanup 系列 (M0.11.1 / M0.13 / M0.14 / M0.X-daemon-refactor-phase1 と同 family)。本 milestone は SPEC §3.9.x P4 (Root cause first) の 3 回目 application (M0.11.1 lifecycle tracking + skill migration に続く)、M0.11.1 の applied side architecture を pending side + durability side に拡張する cumulative refinement。
 
 ## マイルストーン M0.11.3: UI Smoke Test Skill（loom-ui-smoke skill 新設）
 

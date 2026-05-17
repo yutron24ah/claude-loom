@@ -1364,6 +1364,95 @@ retro architecture を data 駆動化し、Phase 2 candidate prioritization に 
 - **silent failure 検出強化 (retro 2026-05-06-003 F-meta-004 由来)**: `~/.claude-loom/command-frequency.log` 不在時、retro-pm Stage 0 は **空 tally で proceed するだけでなく warning log を出力** (`log_warn "command-frequency.log not found at <path>; post_tool hook may not be wired or LOOM_FREQUENCY_LOG override mismatched"`)。post_tool hook が actual 発火しとるかを Bash で path 検証 (`ls -la ~/.claude-loom/command-frequency.log` 等)、log 不在が連続検出される場合は M0.X-hook-ingest-recovery scope の post_tool hook investigation task を retro-pm が PM に escalation 提案する
 - **SDK input 依存 (retro 2026-05-06-004 F-pj-007 由来、α post-tag t6 fix で actual 解決)**: command name 抽出は Claude Code SDK の **stdin JSON input** から `.tool_name` + `.tool_input.command` を `jq` parse する path が primary (REQ-057)。env var (`CLAUDE_TOOL_NAME` / `CLAUDE_TOOL_INPUT_COMMAND` / `CLAUDE_TOOL_INPUT`) は **fallback chain** として残置 (test invoke / interactive 起動時の compat)、SDK が env var を set せん仕様で env-only path は永久 false negative になる。`hooks/post_tool.sh` 実装は `if [ ! -t 0 ]; then HOOK_STDIN=$(cat); fi` で stdin 利用可能時のみ read、`jq` 不在環境では env var fallback に degrade。CMD_NAME=`unknown` log entries は SDK env var が set されとらん環境 (= 通常の Claude Code session 経由 invoke) を示す signal、stdin reading 経由なら command name が正常に extract される
 
+#### 3.9.16 Pending Lifecycle Architecture（M0.11.2 から、retro 2026-05-03-001 meta-003 由来）
+
+M0.11.1 で確立した **applied finding lifecycle tracking** (§3.9.11) の **pending side 拡張**。`status: pending` のまま carryover される finding が permanent に積み上がる pattern を構造的に解決する。retro origin: `docs/retro/2026-05-03-001-report.md` finding meta-003 ("'pending として宙ぶらりん状態' が permanent 積み上がる")。
+
+**責務 / write timing**:
+- **書込主体**: `loom-retro-pm` が Stage 0 で lazy build (verdict_evidence + applied_summary + command_frequency に続く 4 件目の Stage 0 file)
+- **読込主体**: 4 lens template (`skills/loom-retro/SKILL.md` § LENS_PJ / LENS_PROCESS / LENS_META / LENS_RESEARCHER)、Stage 1 で `Read` tool 経由参照
+- **build 戦略**: 過去全 retro session の `<project>/.claude-loom/retro/*/pending.json` を scan、`status: "pending"` + `carryover_count >= 1` の finding を集約 → `<project>/.claude-loom/retro/<retro_id>/pending_summary.json` write
+
+**含める scope**: carryover 1+ のみ (本 retro 自身の output / 直近 retro の新規 pending は除外)。lens が「本 retro の新 finding」と「過去 carryover」を混同せん scope clean design。
+
+**lens の責務 — 're-evaluation' 判定 (B1 design、lens 自前)**:
+
+4 lens template は pending_summary を Read、各 carryover finding に対して以下を判定し finding 出力 JSON に reflection：
+
+```typescript
+{
+  // 既存 lens output fields
+  id, category, severity, risk, target_artifact, ...
+
+  // 新規 (pending lifecycle 関連)
+  source_pending_id: string | null              // pending_summary 由来なら origin finding id
+  re_evaluation_verdict: "still-relevant" | "expired" | "drop" | null
+}
+```
+
+- `re_evaluation_verdict: "still-relevant"` → counter-arguer + aggregator が **本 retro の新 finding と同等に扱う**、origin pending finding は **promoted** (pending.json で `re_evaluated_in: <current_retro_id>` set)
+- `re_evaluation_verdict: "expired"` → 即時 auto-expire (TTL 到達を待たず)
+- `re_evaluation_verdict: "drop"` → lens 判定で削除 (state は永続化、lens は意見表明のみ、削除主体は aggregator)
+- `re_evaluation_verdict: null` (default) → 通常 finding flow、pending との関連無し
+
+**Auto-expiration policy (A1 design、N retro sessions threshold)**:
+
+`carryover_count >= 3` の finding は **自動 expire** (3-strike rule、§3.9.13 degraded mode escalation と同 number)：
+
+- expiration trigger: retro-pm Stage 0 で pending_summary build 時、`carryover_count >= 3` を検出 → 該当 pending.json の finding に `expired_at: <now_ms>` set
+- expired finding は **pending_summary に `status: "expired"` で残す** (b1 design、audit trail 維持)
+- expired finding を lens は read するが新規 finding 化はせえへん (record-only として扱う、retry / re-up しない)
+- expired finding を user が manually 復活させたい場合は archive markdown から手動 re-create、自動 mechanism は提供せん
+
+**N retro sessions count rule (carryover_count 増分)**:
+
+```
+carryover_count = 0  ← 新規 finding (本 retro 出力時の initial value)
+carryover_count = 1  ← 次 retro で pending として scan された時に retro-pm が increment
+carryover_count = 2  ← さらに次 retro で scan された時
+carryover_count = 3  ← 自動 expire trigger、`expired_at` set される
+```
+
+increment 主体: retro-pm Stage 0 build 時 (lazy + idempotent — 既に increment 済 retro_id なら skip、`last_seen_in` field で重複 increment 防止)。
+
+**`re_evaluated_in` field (promotion trace)**:
+
+`re_evaluation_verdict: "still-relevant"` で promote された origin pending finding は：
+
+- origin pending.json: 元 finding の `re_evaluated_in: <current_retro_id>` set + `status: "approved"` には移行せず `pending` 維持 (promotion ≠ approval、独立 concept)
+- current retro pending.json: 新 finding として entry 追加、`source_pending_id` field で origin reference 保持
+- 次 retro Stage 0 で `re_evaluated_in: not null` の pending は **carryover_count increment 対象外** (promote 済として excluded、新 retro の新 finding 側が active carryover として扱われる)
+
+**schema**:
+- `pending.json` 完全 schema: §6.9.6 (schema_version 2 → 3 で `carryover_count` + `last_seen_in` + `expired_at` + `re_evaluated_in` field 追加、§6.9.6.1 表組 update)
+- `pending_summary.json` 完全 schema: §6.9.8 新設
+- lens output JSON 拡張 (`source_pending_id` + `re_evaluation_verdict`) は `skills/loom-retro/SKILL.md` LENS_*_TEMPLATE 内で codify
+
+**保存 path 規約**:
+- `<project>/.claude-loom/retro/<retro_id>/pending.json` (既存、新 field 追加)
+- `<project>/.claude-loom/retro/<retro_id>/pending_summary.json` (新設、retro session 単位 per-instance file)
+
+**§3.9.14 (Carryover escalation rule) との関係**:
+
+§3.9.14 は **`status: "deferred"`** の finding が 3 retro 連続未解決時の専用 fix milestone insertion proposal。本 §3.9.16 は **`status: "pending"`** finding の lifecycle 構造化。両者は orthogonal:
+
+- `deferred` finding → §3.9.14 escalation: 専用 fix milestone (e.g., M0.X-debt-cleanup) を PLAN.md に insert proposal
+- `pending` finding → §3.9.16 lifecycle: auto-expire (3-strike) + lens re-evaluation で structural cleanup
+
+両 rule の coexistence によって retro state debt の 2 軸 (defer 系 + pending 系) を独立に管理可能。
+
+**Migration policy**:
+
+既存 retro session の `pending.json` (schema_version 2) に対して、M0.11.2 task で migration script を実装：
+
+- `carryover_count: 0` (initial)
+- `last_seen_in: <self_retro_id>` (own retro_id を default)
+- `expired_at: null`
+- `re_evaluated_in: null`
+- schema_version `2 → 3` flag
+
+migration 後の lens 動作: 既存 pending finding は `carryover_count: 0` でも本 retro Stage 0 で +1 increment、3 retro 後に expire 開始。
+
 ### 3.10 superpowers Independence（M0.9 から）
 
 claude-loom は **superpowers plugin に依存せずに完結する** ことを設計目標とする。
@@ -2113,9 +2202,9 @@ export type VerdictEvidence = z.infer<typeof verdictEvidenceSchema>;
 4. PM final report の hint reference があれば優先的に使用（PM hint 機構、§3.9.10 参照）
 5. zod schema validate → file write、schema 不整合は warning として log（retro 自体は continue、機能 block しない）
 
-### 6.9.6 `<project>/.claude-loom/retro/<retro_id>/pending.json` 完全スキーマ（M0.8 から、M0.11.1 で v2 拡張）
+### 6.9.6 `<project>/.claude-loom/retro/<retro_id>/pending.json` 完全スキーマ（M0.8 から、M0.11.1 で v2、M0.11.2 で v3 拡張）
 
-retro session の finding queue + user 確定 verdict + apply trace 用 file。M0.8 から運用、M0.11.1 で `applied_in` + `apply_history` field 追加（schema_version 1 → 2）。M3.0 retro 起源の **finding lifecycle tracking** SSoT。
+retro session の finding queue + user 確定 verdict + apply trace + pending lifecycle tracking 用 file。M0.8 から運用、M0.11.1 で `applied_in` + `apply_history` field 追加 (v1 → v2)、M0.11.2 で `carryover_count` + `last_seen_in` + `expired_at` + `re_evaluated_in` field 追加 (v2 → v3、§3.9.16 SSoT)。M3.0 retro 起源の **finding lifecycle tracking** SSoT。
 
 ```ts
 import { z } from "zod";
@@ -2136,7 +2225,7 @@ export const pendingFindingSchema = z.object({
   // M3.0 retro meta-NEW-1 から (proposal_type 区別)
   proposal_type: z.enum(["symptomatic", "structural", "record-only"]).optional(),
 
-  // M0.11.1 新設 (lifecycle tracking)
+  // M0.11.1 新設 (applied lifecycle tracking)
   applied_in: z.object({
     commit_sha: z.string().nullable(),              // 最新 apply 状態の commit、record-only なら null
     milestone_tag: z.string().nullable(),           // 別 milestone scope で apply された場合
@@ -2149,6 +2238,12 @@ export const pendingFindingSchema = z.object({
     apply_type: z.enum(["immediate", "milestone", "record-only", "rollback"]),
     note: z.string().optional(),                    // rollback の理由等
   })).default([]),                                  // multi-apply / rollback の trace
+
+  // M0.11.2 新設 (pending lifecycle tracking、§3.9.16)
+  carryover_count: z.number().int().nonnegative().default(0),  // 過去 retro 越え count、新規 = 0
+  last_seen_in: z.string(),                         // 最後に retro-pm が scan した retro_id (idempotent increment 用)
+  expired_at: z.number().int().nullable().default(null),       // carryover_count >= 3 で auto-expire 時 ms、未 expire は null
+  re_evaluated_in: z.string().nullable().default(null),        // lens が "still-relevant" promote した先の retro_id、未 promote は null
 
   // 既存 (M0.8 から)
   applicable_files: z.array(z.string()).optional(),
@@ -2163,7 +2258,7 @@ export const pendingFindingSchema = z.object({
 });
 
 export const pendingSchema = z.object({
-  schema_version: z.literal(2),                      // M0.8 v1 → M0.11.1 v2 (applied_in/apply_history 追加)
+  schema_version: z.literal(3),                      // M0.8 v1 → M0.11.1 v2 → M0.11.2 v3 (pending lifecycle 4 field 追加)
   retro_id: z.string(),
   milestone_tag: z.string(),
   mode: z.enum(["conversation", "report"]),
@@ -2184,7 +2279,9 @@ export type PendingFinding = z.infer<typeof pendingFindingSchema>;
 | `record-only` | commit なし observability | M3.0 retro proc-001 / meta-003 |
 | `rollback` | symptomatic patch を構造的解決後に rollback | M0.11.1 closure 時の proc-NEW-1 rollback |
 
-**migration**: 既存 4 retro session（2026-04-29-001 / 2026-05-02-001 / 2026-05-02-002 + 古い 1 件確認）の `pending.json` に `applied_in` + `apply_history` field 後付け書き込み（M0.11.1 task `m0.11.1-t7` で migration script、apply commit を git log + commit message 解析で推定）。schema_version `1 → 2` migrate flag。
+**migration**:
+- v1 → v2 (M0.11.1 task `m0.11.1-t7`): `applied_in` + `apply_history` 後付け、apply commit を git log + commit message 解析で推定
+- v2 → v3 (M0.11.2 task `m0.11.2-t5`): pending lifecycle 4 field 後付け、`carryover_count: 0` / `last_seen_in: <self_retro_id>` / `expired_at: null` / `re_evaluated_in: null` initial、schema_version `2 → 3` flag
 
 #### 6.9.6.1 schema_version SSoT 統一表組（2026-05-06 retro F-pj-004 + F-meta-002 由来）
 
@@ -2194,8 +2291,9 @@ retro 系 + prefs 系 file 間で schema_version の format / 値 drift を防�
 |---|---|---|---|
 | `~/.claude-loom/user-prefs.json` | `1` | integer | leave-as-is、新規 write 時のみ v1 維持 |
 | `<project>/.claude-loom/project-prefs.json` | `1` | integer | leave-as-is、新規 write 時のみ v1 維持 |
-| `<project>/.claude-loom/retro/<retro_id>/pending.json` | `2` | integer | M0.11.1 task t7 で migration 完了 (1 → 2)、新規 write は必ず v2 |
+| `<project>/.claude-loom/retro/<retro_id>/pending.json` | `3` | integer | M0.11.1 task t7 で v1 → v2 migration、M0.11.2 task t5 で v2 → v3 migration (pending lifecycle 4 field 追加)、新規 write は必ず v3 |
 | `<project>/.claude-loom/retro/<retro_id>/applied_summary.json` | `2` | integer | 過去 v1.0.0 文字列形式 file は **leave-as-is** (rebuild 時に v2 上書き)、新規 write は必ず v2 |
+| `<project>/.claude-loom/retro/<retro_id>/pending_summary.json` | `1` | integer | M0.11.2 から新設、initial v1、新規 write は必ず v1 |
 | `<project>/.claude-loom/retro/<retro_id>/verdict_evidence.json` | `2` | integer | M2.1 から v2 が initial、leave-as-is なし |
 
 **format 規律 (degraded mode bug 由来)**:
@@ -2250,6 +2348,71 @@ export type AppliedSummary = z.infer<typeof appliedSummarySchema>;
 - 4 lens template (LENS_PJ / LENS_PROCESS / LENS_META / LENS_RESEARCHER、`skills/loom-retro/SKILL.md`) の dispatch prompt prefix に `applied_summary_path: <path>` を追加
 - lens は category 関連 finding を `Read` tool で参照、stale check を Stage 1 内で自前実行
 - M3.0 retro proc-NEW-1 の「counter-arguer 単独 stale check」を構造的に置換、4 lens 全体が stale 判別能力を獲得（root cause 解決、SPEC §3.9.x P4 理想形）
+
+### 6.9.8 `<project>/.claude-loom/retro/<retro_id>/pending_summary.json` 完全スキーマ（M0.11.2 から）
+
+retro session 開始時に `loom-retro-pm` が **過去全 retro session の pending finding を集約** した file。4 lens template (`skills/loom-retro/SKILL.md` § LENS_PJ / LENS_PROCESS / LENS_META / LENS_RESEARCHER) が Stage 1 で `Read` tool で参照、carryover finding の `still-relevant` 再評価 + auto-expire 判定の input として活用。M0.11.1 §6.9.7 applied_summary.json と同 pattern (lazy build family、§3.9.16 SSoT)。
+
+**含める scope**: `status: "pending"` + `carryover_count >= 1` の finding のみ (本 retro 自身の新規 pending は除外、scope clean design)。expired finding (`expired_at: not null`) は audit trail として残す (`status: "expired"` 扱い)。
+
+```ts
+import { z } from "zod";
+
+export const pendingSummaryFindingSchema = z.object({
+  finding_id: z.string(),                            // 元 retro 内 id (e.g., "pj-001")
+  origin_retro_id: z.string(),                       // どの retro session 由来か
+  lens: z.enum(["pj-axis", "process-axis", "researcher", "meta-axis", "user-axis"]),
+  category: z.string(),
+  severity: z.enum(["low", "medium", "high"]).optional(),
+  risk: z.enum(["low", "medium", "high", "medium-high"]),
+  proposal_type: z.enum(["symptomatic", "structural", "record-only"]).optional(),
+  summary: z.string(),
+  description: z.string().optional(),
+
+  // pending lifecycle state (§3.9.16)
+  status: z.enum(["pending", "expired"]),            // expired は carryover_count >= 3 で auto-flip
+  carryover_count: z.number().int().positive(),      // pending_summary は carryover 1+ のみ含むので positive
+  last_seen_in: z.string(),                          // 最後に scan された retro_id
+  expired_at: z.number().int().nullable(),           // status=expired 時 ms、pending 時 null
+
+  // re-evaluation trace (lens 出力で promote された場合)
+  re_evaluated_in: z.string().nullable(),            // null = 未 promote、retro_id = "still-relevant" 判定で promote 済
+});
+
+export const pendingSummarySchema = z.object({
+  schema_version: z.literal(1),                       // M0.11.2 から initial v1
+  retro_id: z.string(),                              // 本 retro session の id (生成元)
+  generated_at: z.number().int(),
+  total_retro_sessions_scanned: z.number().int(),    // scan 対象 retro session 数
+  pending_findings: z.array(pendingSummaryFindingSchema),
+});
+
+export type PendingSummary = z.infer<typeof pendingSummarySchema>;
+export type PendingSummaryFinding = z.infer<typeof pendingSummaryFindingSchema>;
+```
+
+**Lazy build 手順** (retro-pm Stage 0、§3.9.11 + §3.9.16):
+
+1. `<project>/.claude-loom/retro/*/pending.json` を glob (全 retro session)
+2. 各 pending.json の `findings` から `status: "pending"` + `carryover_count >= 1` を抽出
+3. 同時に `carryover_count` を **idempotent increment**:
+   - `last_seen_in === <current_retro_id>` なら skip (既 increment 済)
+   - `last_seen_in !== <current_retro_id>` なら `carryover_count + 1`、`last_seen_in: <current_retro_id>` set
+   - increment 後 `carryover_count >= 3` なら `expired_at: <now_ms>` set + `status: "expired"` flip (内部、pending.json 側 finding は status 不変、pending_summary 内 status のみ flip)
+4. `re_evaluated_in: not null` の finding は **carryover_count increment 対象外** (promote 済として skip、新 retro 側の新 finding が active carryover)
+5. pending_summary_findings array に集約 → `<project>/.claude-loom/retro/<current_retro_id>/pending_summary.json` write
+6. schema validate (zod) → file 不整合は WARN log、retro 自体は continue
+
+**Lens 読込 + re-evaluation 責務**:
+
+4 lens template が Stage 1 で pending_summary を Read、各 finding に対して以下を判定：
+
+- 本 retro の context (現 SPEC / 現 codebase / 現 git log) で **still relevant** か → finding 出力 JSON に `source_pending_id: <id>` + `re_evaluation_verdict: "still-relevant"` set
+- 既に解消済 (state changed) なら → `re_evaluation_verdict: "expired"` (即時 expire)
+- lens 判定で削除すべき (誤検出だった) なら → `re_evaluation_verdict: "drop"`
+- 通常 finding (pending_summary と無関係) → `source_pending_id: null` + `re_evaluation_verdict: null`
+
+aggregator template が verdict を集約、origin pending.json の `re_evaluated_in` field を update (lazy back-fill)。
 
 ### 6.10 `~/.claude-loom/config.json` スキーマ（方針サマリ）
 
