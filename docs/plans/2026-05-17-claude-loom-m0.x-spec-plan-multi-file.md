@@ -1,14 +1,15 @@
-# M0.18: SPEC/PLAN multi-file thinking 思想 codify (Stage 1)
+# M0.X-spec-plan-multi-file: SPEC/PLAN multi-file thinking 思想 codify (Stage 1)
 
 - **Date**: 2026-05-17
 - **Branch**: `docs/spec-plan-multi-file-thinking-design` (既設、design doc commit 済み)
 - **Design spec**: [docs/plans/specs/2026-05-17-spec-plan-multi-file-thinking-design.md](specs/2026-05-17-spec-plan-multi-file-thinking-design.md)
-- **Master PLAN id**: M0.18 (Stage 1)、Stage 2 (claude-loom 自身の migration) は M0.19 placeholder
+- **Master PLAN id**: M0.X-spec-plan-multi-file (Stage 1)、Stage 2 (claude-loom 自身の migration) は M0.X-spec-plan-multi-file-dogfood placeholder
 - **Status**: planned
+- **Rename history**: 2026-05-17 当初 M0.X-spec-plan-multi-file で起案、M0.X-spec-plan-multi-file が M0.17 retro carryover placeholder と既に予約済みやったため M0.X-* convention へ rename (CLAUDE.md GitHub Flow 規約 + M0.X-* convention 準拠)
 
 ## Goal
 
-claude-loom が promote する spec/plan 駆動開発の **構造規約として multi-file 思想を組み込む**。本 milestone は **思想 codify のみ** (SPEC §3.11 新設 + 関連 agent/command/skill/template 更新)。claude-loom 自身の SPEC.md 2865 行解体は M0.19 の dogfood migration へ分離。
+claude-loom が promote する spec/plan 駆動開発の **構造規約として multi-file 思想を組み込む**。本 milestone は **思想 codify のみ** (SPEC §3.11 新設 + 関連 agent/command/skill/template 更新)。claude-loom 自身の SPEC.md 2865 行解体は M0.X-spec-plan-multi-file-dogfood の dogfood migration へ分離。
 
 ## Architecture
 
@@ -43,14 +44,14 @@ claude-loom が promote する spec/plan 駆動開発の **構造規約として
 
 ## Tasks
 
-### Task 1: PLAN.md master milestone entry (M0.18 + M0.19)
+### Task 1: PLAN.md master milestone entry (M0.X-spec-plan-multi-file + M0.X-spec-plan-multi-file-dogfood)
 
-**Goal**: master roadmap に Stage 1 (M0.18) + Stage 2 (M0.19 placeholder) を登録
+**Goal**: master roadmap に Stage 1 (M0.X-spec-plan-multi-file) + Stage 2 (M0.X-spec-plan-multi-file-dogfood placeholder) を登録
 **Files**: `PLAN.md` (modify)
 **Spec ref**: design spec §8
 **Insertion points**: 既存 M0.X-skill-migration milestone エントリの直後 (PLAN.md 行 1530 周辺、適切な timeline 順序へ挿入)
 **Integrity check**: `grep -cE "^## マイルストーン M0\\.(18|19)" PLAN.md` → `2`
-**Commit prefix**: `docs(plan): M0.18 + M0.19 milestone entry 追加`
+**Commit prefix**: `docs(plan): M0.X-spec-plan-multi-file + M0.X-spec-plan-multi-file-dogfood milestone entry 追加`
 
 ### Task 2: SPEC §3.11 新設 (multi-file thinking SSoT)
 
@@ -144,8 +145,8 @@ claude-loom が promote する spec/plan 駆動開発の **構造規約として
 - design spec §5 (参照記法) → t2 (SPEC §3.11.4) + t3 (CLAUDE.md)
 - design spec §6 (doc consistency 拡張) → t2 (SPEC §3.11.5) + t8 (DOC_CONSISTENCY_CHECKLIST)
 - design spec §7 (template) → t4 + t9 (test)
-- design spec §8 Stage 1 scope → t1 (M0.18 entry) + 全 task
-- design spec §8 Stage 2 → t1 (M0.19 placeholder entry のみ、本 milestone scope 外)
+- design spec §8 Stage 1 scope → t1 (M0.X-spec-plan-multi-file entry) + 全 task
+- design spec §8 Stage 2 → t1 (M0.X-spec-plan-multi-file-dogfood placeholder entry のみ、本 milestone scope 外)
 - design spec §9 影響範囲 → 9 task で全 file 網羅
 
 ### Placeholder scan
@@ -163,10 +164,10 @@ claude-loom が promote する spec/plan 駆動開発の **構造規約として
 ## Risks
 
 - **§3.11 番号 conflict リスク**: 別 milestone (M0.X-skill-migration、active branch) が §3.10.x へ加筆中の可能性。t2 開始前に main 最新を fetch し、SPEC §3.11 が他 branch で予約されてないか確認。conflict 時は §3.12 へ shift
-- **PLAN.md M0.18/M0.19 番号 conflict リスク**: 別 active branch が同番号予約してないか確認。conflict 時は M0.X-spec-plan-multi-file prefix へ rename
+- **PLAN.md M0.X-spec-plan-multi-file/M0.X-spec-plan-multi-file-dogfood 番号 conflict リスク**: 別 active branch が同番号予約してないか確認。conflict 時は M0.X-spec-plan-multi-file prefix へ rename
 - **agent prompt size guideline**: t5 で `agents/loom-pm.md` (現 200-250 行 guideline) に追記、size 上限超過の場合は判断 logic を SPEC §3.11.3 SSoT 引用 1 行 + skill delegation で圧縮 (SPEC §3.10.2 Agent prompt 設計原則 準拠)
 
-## Out of scope (Stage 2 / M0.19)
+## Out of scope (Stage 2 / M0.X-spec-plan-multi-file-dogfood)
 
 - claude-loom 自身の SPEC.md (2865 行) 解体
 - claude-loom 自身の M1/M2 milestone 詳細 (SPEC 内 行 1846〜2435) を PLAN 側へ移管

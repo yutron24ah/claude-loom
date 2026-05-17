@@ -1548,3 +1548,42 @@ Agent prompt design principle 確立 + 10 agents → 2 skills への architectur
 - Local Layer 2.5 dogfood smoke (`bash hooks/loom-launch-ui.sh` + `curl /health` / `/mode` / `/`) 全 PASS
 - Skill-centric architecture 実機 dogfood verify (`/loom-retro` invoke で retro-pm が skill template を read + general-purpose subagent dispatch chain 動作確認、smoke verification)
 - main への PR open + merge (branch hygiene 遵守)
+
+## マイルストーン M0.X-spec-plan-multi-file (`docs/spec-plan-multi-file-thinking-design` branch、2026-05-17 から)
+
+詳細: `docs/plans/2026-05-17-claude-loom-m0.x-spec-plan-multi-file.md`
+設計書: `docs/plans/specs/2026-05-17-spec-plan-multi-file-thinking-design.md`
+
+claude-loom が promote する spec/plan 駆動開発の **構造規約として multi-file 思想を組み込む** Stage 1。SPEC.md / PLAN.md を 1 ファイルに突っ込み続けると発生する 4 痛み (LLM context 食い / 人間の読みづらさ / 編集衝突 / doc 整合性 check) を構造的に塞ぐ。PJ 規模・要件に応じて適応的に single-file / multi-file を選択、PM agent が brainstorm で user と決定、後発の肥大化は size threshold (default SPEC 1000 行 / PLAN 1500 行) で trigger。axis はガイドラインのみ codify (layer-based / domain-based / feature-group / 横断)、PJ 性質で動的決定。SSoT 参照記法は `spec/<topic>.md §X.Y` (file path + § 番号)。本 milestone は **思想 codify のみ**、claude-loom 自身の SPEC.md 解体は次 M0.X-spec-plan-multi-file-dogfood placeholder へ分離。
+
+設計合意（2026-05-17 brainstorm session）:
+- 画一 default 引かず、PM brainstorm 判断 + size threshold 警告で発火 (両方とも自動分割禁止、user 確認介在)
+- axis ガイドライン codify、PJ 性質で動的決定 (固定 default は judgment を奪う)
+- 参照記法は file path + § 番号 (grep 容易、IDE jumpable、現行記法 `SPEC.md §X` と連続性)
+- Stage 1 (思想 codify) と Stage 2 (claude-loom 自身 migration) は別 milestone (review / revert 単位、Stage 2 が新思想の最初の dogfood テストケース)
+- multi-file mode の doc consistency check (用語整合 / cross-ref 健全性 / scope 重複 / master index 整合性) は M4 doc 整合性エンジン v1 候補、本 milestone では手作業 checklist 化
+
+- [x] PLAN.md M0.X-spec-plan-multi-file + M0.X-spec-plan-multi-file-dogfood placeholder entry 追加（本タスク） <!-- id: m0.x-spec-plan-t1 status: done -->
+- [ ] SPEC.md §3.11 新設 (multi-file thinking SSoT: 思想 / axis ガイドライン / trigger / 参照記法 / doc consistency 拡張) <!-- id: m0.x-spec-plan-t2 status: todo planned_files: SPEC.md -->
+- [ ] CLAUDE.md ファイル配置規約 + 主要ドキュメント参照 更新 (multi-file pattern 追記 + §3.11 ポインタ) <!-- id: m0.x-spec-plan-t3 status: todo planned_files: CLAUDE.md -->
+- [ ] templates/multi-file-spec-skeleton/ 新規追加 (master + sample topic) <!-- id: m0.x-spec-plan-t4 status: todo planned_files: templates/multi-file-spec-skeleton/SPEC.md.template, templates/multi-file-spec-skeleton/spec/_sample-topic.md.template -->
+- [ ] agents/loom-pm.md に spec phase multi-file 判定 step + size 警告 logic 追加 <!-- id: m0.x-spec-plan-t5 status: todo planned_files: agents/loom-pm.md -->
+- [ ] commands/loom-spec.md に multi-file brainstorm prompt 追加 <!-- id: m0.x-spec-plan-t6 status: todo planned_files: commands/loom-spec.md -->
+- [ ] skills/loom-write-plan/SKILL.md に PLAN Phase 分割 + milestone 内 axis 分割 サポート追加 <!-- id: m0.x-spec-plan-t7 status: todo planned_files: skills/loom-write-plan/SKILL.md -->
+- [ ] docs/DOC_CONSISTENCY_CHECKLIST.md に multi-file mode check 項目追加 (用語整合 / cross-ref / scope 重複 / master index 整合性 の 4 項目) <!-- id: m0.x-spec-plan-t8 status: todo planned_files: docs/DOC_CONSISTENCY_CHECKLIST.md -->
+- [ ] tests/multi_file_skeleton_test.sh 新規追加 (template 構造 + agent prompt marker + SPEC §3.11 存在 verify) <!-- id: m0.x-spec-plan-t9 status: todo planned_files: tests/multi_file_skeleton_test.sh -->
+
+**M0.X-spec-plan-multi-file 完成基準**：`SPEC.md §3.11` 新設 + sub-section §3.11.1〜.5 完備、`templates/multi-file-spec-skeleton/SPEC.md.template` + `spec/_sample-topic.md.template` 作成、`agents/loom-pm.md` 内 `multi-file` 言及 ≥2、`commands/loom-spec.md` 内 multi-file brainstorm prompt 追加、`skills/loom-write-plan/SKILL.md` に Phase-split + milestone-folder pattern 追加、`docs/DOC_CONSISTENCY_CHECKLIST.md` に multi-file mode 4 項目追加、`./tests/run_tests.sh multi_file_skeleton` PASS、`./tests/run_tests.sh` 全 PASS 維持、`tag m0.x-spec-plan-complete` 設置、main への PR open (branch hygiene 遵守)。
+
+## マイルストーン M0.X-spec-plan-multi-file-dogfood (Stage 2 placeholder、M0.X-spec-plan-multi-file 完了後)
+
+詳細: 未作成（M0.X-spec-plan-multi-file 完了後、`loom-write-plan` skill で生成）
+設計書: `docs/plans/specs/2026-05-17-spec-plan-multi-file-thinking-design.md` §8.2 (SSoT)
+
+claude-loom 自身の **dogfood migration**: M0.X-spec-plan-multi-file で codify した新思想を自リポに適用、現状 monolithic な `SPEC.md` (2865 行) を解体 → master + `spec/<topic 群>.md` へ移管。同時に SPEC 内に混入してる milestone 詳細 (M1/M2 ステージ層 / アクター層、現 SPEC.md 1846〜2435 行) を PLAN / docs/plans 側へ移管し、SPEC の「時間非依存の真実」原則を回復。PM brainstorm が新思想の最初の dogfood テストケースとなり、retro で skill 調整 feedback を得る。
+
+完成基準 (placeholder、loom-write-plan skill で詳細化時に確定):
+- claude-loom `SPEC.md` master + `spec/<topic 群>.md` (axis は PM brainstorm で動的決定) へ migration
+- SPEC.md 内 milestone 詳細 (現 1846〜2435 行) を PLAN.md / docs/plans 側へ移管、SPEC は「時間非依存の真実」原則を回復
+- 既存 agent prompts / retro report に残る `SPEC.md §X` 記法は **書き換えない** (design spec §5.1 SSoT、新規記述から段階的適用)
+- 全 test PASS 維持 + tag + main merge (branch hygiene 遵守)
