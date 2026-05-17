@@ -10,7 +10,12 @@
  *   - On each interval tick, refetch summary + series queries
  *   - Cleanup interval on unmount
  *
- * enabled gate: only fire query when WS connection is 'connected'.
+ * enabled gate (M0.11.2 t8、retro 2026-05-04-001 F-res-003 由来):
+ *   - **Caller can pass `enabled: false`** to disable polling entirely
+ *     (e.g. when no active claude session is running — avoids unnecessary
+ *     daemon hits for empty data, reduces UI/backend cost during idle)
+ *   - Default `enabled: true` preserves M5 baseline behavior
+ *   - 内部 isConnected gate (WS connected) と AND 合成: 両方 true で polling 開始
  *
  * SPEC §3.6.10: no raw string literals for token type names — consumers
  * should use TOKEN_TYPE constants from this module.
@@ -60,23 +65,54 @@ export interface UseTokenUsageResult {
 // Default time window: last hour
 const DEFAULT_SINCE_MS = () => Date.now() - 60 * 60 * 1000;
 
+export interface UseTokenUsageOptions {
+  /**
+   * Override the time window start (default: now - 1 hour).
+   */
+  sinceMs?: number;
+  /**
+   * External enabled gate (e.g. "session is active"). When `false`, polling
+   * + queries are disabled regardless of WS status. Defaults to `true` to
+   * preserve M5 baseline behavior.
+   *
+   * Composed with internal `isConnected` gate via AND: polling only fires
+   * when both are true. (M0.11.2 t8、F-res-003)
+   */
+  enabled?: boolean;
+}
+
 /**
  * Query token usage summary + series from daemon and poll every 30 seconds.
+ *
+ * @param options Optional time window override + external enabled gate.
+ *                Backward compatible: `useTokenUsage()` / `useTokenUsage(ms)`
+ *                continue to work (legacy positional `sinceMs` signature).
  */
-export function useTokenUsage(sinceMs?: number): UseTokenUsageResult {
+export function useTokenUsage(
+  sinceMsOrOptions?: number | UseTokenUsageOptions
+): UseTokenUsageResult {
+  // Backward-compat: legacy positional `sinceMs` signature
+  const options: UseTokenUsageOptions =
+    typeof sinceMsOrOptions === 'number'
+      ? { sinceMs: sinceMsOrOptions }
+      : sinceMsOrOptions ?? {};
+
+  const externalEnabled = options.enabled ?? true;
+
   const status = useConnectionStore((s) => s.status);
   const isConnected = status === 'connected';
+  const isActive = isConnected && externalEnabled;
 
-  const since = sinceMs ?? DEFAULT_SINCE_MS();
+  const since = options.sinceMs ?? DEFAULT_SINCE_MS();
 
   const summaryResult = trpc.token.getUsageSummary.useQuery(
     { sinceMs: since },
-    { enabled: isConnected },
+    { enabled: isActive },
   );
 
   const seriesResult = trpc.token.getUsageSeries.useQuery(
     { sinceMs: since },
-    { enabled: isConnected },
+    { enabled: isActive },
   );
 
   const utils = trpc.useUtils();
@@ -87,7 +123,7 @@ export function useTokenUsage(sinceMs?: number): UseTokenUsageResult {
   utilsRef.current = utils;
 
   useEffect(() => {
-    if (!isConnected) return;
+    if (!isActive) return;
 
     const id = setInterval(() => {
       void utilsRef.current.token.getUsageSummary.invalidate();
@@ -97,7 +133,7 @@ export function useTokenUsage(sinceMs?: number): UseTokenUsageResult {
     return () => {
       clearInterval(id);
     };
-  }, [isConnected]);
+  }, [isActive]);
 
   const isLoading = summaryResult.isLoading || seriesResult.isLoading;
   const error = (summaryResult.error ?? seriesResult.error) as Error | null;
