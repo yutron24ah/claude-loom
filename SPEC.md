@@ -1511,6 +1511,95 @@ claude-loom の `agents/*.md` は **Claude Code に loom-specific なロール�
 
 agent prompt の新規作成・改修時は本 SPEC §3.10.2 + `docs/AGENT_PROMPT_DESIGN.md` の verification checklist 9 項目を満たすこと。
 
+### 3.11 Multi-file Spec/Plan 思想（M0.X から）
+
+claude-loom が promote する spec/plan 駆動開発において、単一ファイルに記述を集積し続けると「LLM context 食い / 人間の読みづらさ / 並列 PR 衝突 / doc 整合性 check の困難さ」という 4 つの痛みが同時発生する。§3.11 はこれを **PJ 規模・要件に応じた適応的 multi-file 構造**で構造的に解消する思想を codify する。
+
+**SSoT**: `docs/plans/specs/2026-05-17-spec-plan-multi-file-thinking-design.md` §2 (Goal)
+
+#### 3.11.1 思想（M0.X から）
+
+PJ 規模に応じて 3 mode を共存させ、成長に従って自然 promotion する：
+
+| mode | SPEC 構造 | PLAN 構造 | 想定 PJ 規模 |
+|---|---|---|---|
+| **1. minimal** | `SPEC.md` 単独 | `PLAN.md` + `docs/plans/*.md` | 小規模（個人 PJ、検証 PJ） |
+| **2. spec-split** | master `SPEC.md` + `spec/` folder | `PLAN.md` + `docs/plans/*.md` | 中規模（アーキテクチャ層が複数） |
+| **3. full split** | master `SPEC.md` + `spec/` folder | top-level index + Phase-split + milestone-folder | 大規模（多 Phase / 多領域 PJ） |
+
+**自然 promotion 原則**: PJ 成長に従って `1 → 2 → 3` へ昇格。逆方向の demotion は仕組み化しない（手動 merge は可能だが PM agent は提案しない）。**画一 default は引かず**、PM agent が brainstorm で user と決定する。
+
+**master spec の責務**（multi-file mode 時）: プロダクト定位 / scope / SSoT 原則 / 用語表（cross-file integrity の anchor）/ 確定済み技術判断 / 関連ドキュメント / 変更履歴 / topic への index（各 topic file の責務 1 行 + path）
+
+**topic file の責務**: 1 axis 1 file（混在禁止）/ 自身の §1 から番号開始（file 内 local）/ 他 topic への参照は file path + § 番号で明示
+
+**SSoT**: `docs/plans/specs/2026-05-17-spec-plan-multi-file-thinking-design.md` §3.1, §3.4
+
+#### 3.11.2 Axis ガイドライン（M0.X から）
+
+PM が brainstorm で参考にする典型 axis セット（固定 default ではなく判断材料）：
+
+| axis 種別 | 例 | 適用 PJ 傾向 |
+|---|---|---|
+| **layer-based** | backend / frontend / db / infra | UI と server が明確に分離した中規模 PJ |
+| **domain-based** | auth / billing / search / reports | DDD 寄り、業務領域が独立した大規模 PJ |
+| **feature-group** | chat / file / dashboard | feature 中心の SaaS |
+| **横断 axis** | api / external-integration / shared-types | 上記いずれかと組み合わせて利用 |
+
+複数 axis 併用可（例: layer-based + 横断 api file）。**PM agent が brainstorm で user と axis を decide**、ガイドラインは判断材料に留まる。
+
+**SSoT**: `docs/plans/specs/2026-05-17-spec-plan-multi-file-thinking-design.md` §3.2
+
+#### 3.11.3 Trigger（M0.X から）
+
+**初発（brainstorm 時の判定）**
+
+`/loom-spec` の brainstorm phase で PM が PJ scope を user と棚卸し（領域数 / アクター数 / アーキテクチャ層 / external integration 数 / 想定 LoC オーダー）し、「single-file / multi-file どっち?」を user 確認する。multi-file 採用なら axis ガイドライン（§3.11.2）を提示し、PM と user で axis を決定する。
+
+**後発（size warning）**
+
+master spec / master plan が size threshold 超え → PM が「分割提案」を surface：
+
+- **default threshold**: `SPEC.md` 1000 行 / `PLAN.md` 1500 行
+- **project-prefs.json で override 可**: `rules.spec_split_threshold` / `rules.plan_split_threshold`
+- **自動分割は禁止**: 「PM 提案 → user 確認」が原則
+- **検出箇所**: PM agent の SessionStart 系 hook（project 開始時の health check）/ `/loom-spec` / `/loom-write-plan` 実行時の前処理
+
+**SSoT**: `docs/plans/specs/2026-05-17-spec-plan-multi-file-thinking-design.md` §4
+
+#### 3.11.4 参照記法（M0.X から）
+
+| mode | 参照記法 | 例 |
+|---|---|---|
+| single-file | `SPEC.md §X.Y`（現行） | `SPEC.md §3.2` |
+| multi-file master | `SPEC.md §X.Y`（現行） | `SPEC.md §1.1`（定位） |
+| multi-file topic | `spec/<topic>.md §X.Y` | `spec/architecture.md §3.2` |
+
+**ルール**:
+- § 番号は topic file 内で local に振り直し（各 file が §1 から開始、global 番号体系は引かない）
+- master spec の用語表が cross-file integrity の **anchor**
+- grep 一発で参照箇所追える（`grep -rn 'spec/architecture.md' .`）
+- agent prompt / retro report / commit message 全てで同記法を使う
+
+**既存記法との互換**: claude-loom 自身が将来 multi-file 化した時、既存 commit / retro report に残る `SPEC.md §X` 記法は書き換えない（git 履歴汚染を避ける）。新規記述から段階的に新記法へ移行する。
+
+**SSoT**: `docs/plans/specs/2026-05-17-spec-plan-multi-file-thinking-design.md` §5, §5.1
+
+#### 3.11.5 Doc Consistency 拡張（M0.X から）
+
+**single-file mode**: 現状の `docs/DOC_CONSISTENCY_CHECKLIST.md` 手作業のまま継続。
+
+**multi-file mode（新規 check 項目）**:
+
+1. **用語整合性**: 各 topic file の用語が master spec 用語表と一致してるか
+2. **cross-reference 健全性**: `spec/X.md` で言及される `spec/Y.md` が存在し、§ 番号が現存してるか（broken link 検出）
+3. **scope 重複**: 同概念が複数 topic file で別記述されてないか（SSoT 単一性 check）
+4. **master index 整合性**: master `SPEC.md` の index が `spec/` 直下 file 一覧と一致してるか
+
+M4 の doc 整合性エンジン v1 候補（§7）。手作業期間は `docs/DOC_CONSISTENCY_CHECKLIST.md` に追記する。
+
+**SSoT**: `docs/plans/specs/2026-05-17-spec-plan-multi-file-thinking-design.md` §6.2
+
 ## 4. アクター（エージェント）定義
 
 ### 4.1 ロール一覧

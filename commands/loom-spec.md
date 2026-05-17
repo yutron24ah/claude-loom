@@ -22,10 +22,11 @@ Spec phase actions (per the PM agent's "Spec phase" workflow):
    - The goal (what business / technical outcome)
    - Constraints (deadlines, dependencies, must-not-break)
    - Success criteria (how do we know it works)
-4. If proposing a new approach, give 2-3 options with tradeoffs. Recommend one.
-5. Once user agrees, draft the SPEC update.
-6. Run the doc consistency manual checklist (`docs/DOC_CONSISTENCY_CHECKLIST.md`).
-7. Estimate developer headcount needed for implementation. Propose to user.
-8. Update `PLAN.md` with new tasks for the next milestone.
+4. **multi-file 判定**: PJ scope（領域数 / アクター数 / アーキテクチャ層 / external integration 数 / 想定 LoC オーダー）を user と棚卸しし、「single-file / multi-file どっち？」を user 確認。multi-file 採用時は SPEC §3.11.2 axis ガイドラインを提示し axis 決定。詳細: SPEC §3.11.3 SSoT。
+5. If proposing a new approach, give 2-3 options with tradeoffs. Recommend one.
+6. Once user agrees, draft the SPEC update.
+7. Run the doc consistency manual checklist (`docs/DOC_CONSISTENCY_CHECKLIST.md`).
+8. Estimate developer headcount needed for implementation. Propose to user.
+9. Update `PLAN.md` with new tasks for the next milestone.
 
 Stay in this spec phase until the user signals they want to switch to implementation (`/loom-go`).

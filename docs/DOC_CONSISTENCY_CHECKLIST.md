@@ -291,6 +291,19 @@ SPEC §3.6.15 (M0.16 SSoT) + SPEC §3.6.14.5 Layer 2.5 Step 8 を編集した時
 - [ ] **retro 2026-05-12-001 F-res-002 status update**: pending.json の F-res-002 entry を post-merge structural fix で resolve、`.claude-loom/retro/2026-05-12-001/pending.json` に M0.16 完了 reference 追記 ← t11 PM closure で update 予定
 - [ ] **closure tag chain 保持**: `m0.16-complete` 設置時 `m0` 〜 `m0.15-complete` の全 tag が保持 (`git tag -l --sort=-creatordate | grep -E 'm[0-9]'` で verify) ← t11 PM closure で verify 予定
 
+## multi-file mode 用 check 項目 (M0.X-spec-plan-multi-file から、SPEC §3.11.5 SSoT)
+
+> single-file mode の PJ ではこの section は skip 可。multi-file mode 採用 PJ で SPEC / topic file 編集後に通す。
+
+SPEC `§3.11.5` を参照。
+
+- [ ] **用語整合性** (SPEC §3.11.5 item 1): 各 topic file の用語が master spec 用語表と一致してるか
+- [ ] **cross-ref 健全性** (SPEC §3.11.5 item 2): `spec/X.md` で言及される `spec/Y.md` が存在し、§ 番号が現存してるか (broken link 検出)
+- [ ] **scope 重複** (SPEC §3.11.5 item 3): 同概念が複数 topic file で別記述されてないか (SSoT 単一性 check)
+- [ ] **master index 整合性** (SPEC §3.11.5 item 4): master `SPEC.md` の index が `spec/` 直下 file 一覧と一致してるか
+
+M4 doc 整合性エンジン v1 (SPEC §7) で自動化候補。
+
 ## M0.17 UI Redesign Port Correction 関連 check
 
 REVIEW.md (`docs/m0.17-design-review.md`) を SSoT として、M0.15 UI Redesign Port の乖離修正と Phase 4.5 hotfix に関する整合性チェック:

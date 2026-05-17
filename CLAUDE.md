@@ -82,6 +82,7 @@ Phase 1 MVP closure 時に「4 branch chain × 32+ commits ahead of main、PR �
 - hooks/ : bash hook scripts (M1 以降)
 - skills/ : Claude Code skill (M0.5 から有効)
 - templates/ : 新規 PJ 配布用テンプレ
+- spec/ : multi-file mode 時の topic file 群（SPEC §3.11 SSoT、master SPEC.md + topic files で分割管理）
 - tests/ : bash test harness
 - daemon/ : Node daemon (M1 以降)
 - ui/ : React + Phaser UI (M2 以降)
@@ -105,6 +106,20 @@ Phase 1 MVP closure 時に「4 branch chain × 32+ commits ahead of main、PR �
 - `docs/SCREEN_REQUIREMENTS.md` — UI 要件
 - `tests/REQUIREMENTS.md` — 受入要件 ID
 - `docs/AGENT_PROMPT_DESIGN.md` — **agent prompt 設計原則**（2-layer structure / anti-patterns / size guideline、`agents/*.md` を書く・直す時の必読）
+
+### multi-file mode 時の参照記法（SPEC §3.11.4 SSoT）
+
+PJ が multi-file mode（master `SPEC.md` + `spec/` topic files）に移行した場合、参照記法は以下の通り：
+
+| 参照先 | 記法 | 例 |
+|---|---|---|
+| master spec | `SPEC.md §X.Y`（現行のまま） | `SPEC.md §1.1` |
+| topic file | `spec/<topic>.md §X.Y`（file path + § 番号） | `spec/architecture.md §3.2` |
+
+- § 番号は topic file 内で local に振り直し（各 file が §1 から開始）
+- master `SPEC.md` の用語表が cross-file integrity の anchor
+- 既存記法（`SPEC §X` パターン）はそのまま維持（git 履歴汚染を避ける、新規記述から段階的適用）
+- 詳細・axis ガイドライン・trigger 条件: `SPEC.md §3.11`
 
 ## skill 使い分けポリシー（M0.14 から、SPEC §3.10.1 SSoT）
 
