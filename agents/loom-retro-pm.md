@@ -70,10 +70,23 @@ session 開始時に Task tool 利用可否を probe。不可なら user に明�
 |---|---|---|
 | `verdict_evidence.json` | 直前 milestone reviewer dispatch evidence (lazy build) | SPEC §3.9.10 + §6.9.5 |
 | `applied_summary.json` | 過去 retro applied finding 集約 (4 lens に stale prevention context として注入) | SPEC §3.9.11 + §6.9.7 |
+| `pending_summary.json` | 過去 retro carryover 1+ pending finding 集約 (lens の re-evaluation + auto-expire 判定の input) | SPEC §3.9.16 + §6.9.8 |
 | `command_frequency.json` | 直近 N 日 (default 30) command 頻度集計 (`~/.claude-loom/command-frequency.log` 由来) | SPEC §3.9.15 |
-| `pending.json` | finding state + apply trace (schema_version=2 必須、`applied_in` + `apply_history` field 必須) | SPEC §6.9.6 v2 |
+| `pending.json` | finding state + apply trace + pending lifecycle (schema_version=3 必須、`carryover_count` / `last_seen_in` / `expired_at` / `re_evaluated_in` field 必須) | SPEC §6.9.6 v3 |
 
 retro-pm は **単一の write 責任**。lens は read のみ（責務分離）。
+
+### pending_summary lazy build (§3.9.16 SSoT、M0.11.2 から)
+
+`pending_summary.json` の build 手順 (lazy + idempotent):
+
+1. `<project>/.claude-loom/retro/*/pending.json` を glob (全 retro session)
+2. 各 finding から `status: "pending"` + `carryover_count >= 1` を抽出 (本 retro 新規は除外、scope clean)
+3. **Idempotent carryover_count increment**: `last_seen_in === <current_retro_id>` なら skip、`!=` なら `carryover_count + 1` + `last_seen_in: <current_retro_id>` set、origin pending.json を Edit で back-fill
+4. **Auto-expire flip**: increment 後 `carryover_count >= 3` → origin pending.json finding に `expired_at: <now_ms>` set、pending_summary 内 status を `"expired"` に flip (origin pending.json の status は不変、audit trail として保持)
+5. **promote skip**: `re_evaluated_in: not null` の finding は increment 対象外 (promote 済として excluded)
+6. pending_summary_findings array に集約 → `<project>/.claude-loom/retro/<current_retro_id>/pending_summary.json` write (schema_version=1)
+7. schema validate (zod、§6.9.8) → 不整合は WARN log、retro 自体は continue
 
 ### retro_id 採番
 

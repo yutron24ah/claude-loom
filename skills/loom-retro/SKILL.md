@@ -55,10 +55,22 @@ retro-pm が以後の 3-stage protocol を本 skill の template を使って or
 ## Context references (dispatcher が path で渡す)
 - verdict_evidence_path: <path>/verdict_evidence.json (直前 milestone reviewer dispatch evidence)
 - applied_summary_path: <path>/applied_summary.json (過去 retro applied finding 集約、stale prevention)
+- pending_summary_path: <path>/pending_summary.json (過去 retro carryover 1+ pending finding 集約、§3.9.16 + §6.9.8)
 - command_frequency_path: <path>/command_frequency.json (直近 30 日 command 頻度、data-driven prioritization)
 
 ## Applied summary 参照 (必須、SPEC §3.9.11 + §6.9.7)
 finding 提案前に applied_summary を Read、過去 retro で approved + applied 済の issue は finding 化せず skip (stale re-up 防止)。部分適用なら未適用残差を明記して finding 化可。
+
+## Pending summary 参照 + re-evaluation (必須、SPEC §3.9.16 + §6.9.8、M0.11.2 から)
+
+pending_summary を Read し、carryover 1+ の pending finding 各々に対して **本 retro context で再評価** を行う：
+
+- 本 retro の現 SPEC / 現 codebase / 現 git log で **still relevant** か → 新 finding として出力時 `source_pending_id: <origin_finding_id>` + `re_evaluation_verdict: "still-relevant"` set (counter-arguer + aggregator が本 retro の新 finding と同等扱い、aggregator が origin pending.json に `re_evaluated_in: <current_retro_id>` back-fill)
+- 既に解消済 (state changed) → output: `re_evaluation_verdict: "expired"` (lens 判定の即時 expire、carryover_count 3-strike 待たない)
+- 誤検出 / 当時の判断が間違い → output: `re_evaluation_verdict: "drop"`
+- 通常 finding (pending_summary と無関係、新規) → `source_pending_id: null` + `re_evaluation_verdict: null`
+
+**重要**: `status: "expired"` の pending_summary entry は record-only として扱う (3-strike 自動 expire 済)、re-up しない。lens が "expired" finding を新規 finding 化することは禁止 (auto-expire を override せん)。
 
 ## P4: Root cause first (SPEC §3.9.x P4 SSoT)
 症状対処は再発リスク高。構造的 root cause (schema / hook / agent definition / observability mechanism) を優先検討、症状対処は最終手段。
@@ -73,8 +85,13 @@ finding 提案前に applied_summary を Read、過去 retro で approved + appl
 ## Finding tag fields (M0.11 から、必須)
 各 finding に必須:
 - `target_artifact`: `"agent-prompt" | "spec-section" | "doc-file" | "retro-config"`
-- `target_agent[]`: agent 名配列、`target_artifact == "agent-prompt"` 時のみ必須
+- `target_agent[]`: agent or skill identifier 配列、`target_artifact == "agent-prompt"` 時のみ必須
 - `guidance_proposal`: `target_artifact == "agent-prompt"` 時の learned_guidance text 候補 (自然言語 ~1-2 行)
+
+## Pending re-evaluation fields (M0.11.2 から、§3.9.16)
+pending_summary 参照時 + 通常 finding 出力時 ともに必須:
+- `source_pending_id`: origin pending finding id (`<origin_retro_id>:<finding_id>` 形式) or `null` (通常新規 finding)
+- `re_evaluation_verdict`: `"still-relevant"` | `"expired"` | `"drop"` | `null` (通常新規 finding)
 
 ## Freeform improvement (M0.13 から、optional 1-3 件)
 通常 category に加え抽象 PJ 改善視点。**三点セット必須**: 「現状 X、改善後 Y、根拠 Z」+ `<file>:<line>` or commit SHA。generic ("doc 充実" / "test 増" 等) 禁止。`category: "freeform-improvement"` で出力。
@@ -240,6 +257,16 @@ counter-arguer の judgments + 元 lens findings を concat。
 ### Step 3: Tag 確認
 各 finding の `target_artifact / target_agent[] / guidance_proposal / proposal_type` を確認・補完。不足 / inconsistent なら lens 出力に従って最小限の補完を行う。
 
+### Step 3.5: Pending re-evaluation back-fill (M0.11.2 から、§3.9.16)
+
+各 finding の `source_pending_id` + `re_evaluation_verdict` を確認、`re_evaluation_verdict: "still-relevant"` で `source_pending_id: not null` の場合：
+
+- origin retro_id を `source_pending_id` から parse (例: `2026-05-03-001:pj-005` → retro_id=`2026-05-03-001`, finding_id=`pj-005`)
+- `<project>/.claude-loom/retro/<origin_retro_id>/pending.json` を Read + Edit:
+  - 該当 finding の `re_evaluated_in: <current_retro_id>` set (back-fill)
+  - schema_version v3 維持、その他 field 不変
+- back-fill 失敗 (origin pending.json 不在 / write 失敗) は WARN log、retro 自体は continue (durability fallback は archive markdown reconstruction、§3.9.12)
+
 ### Step 4: Auto-apply 判定
 - `auto_applicable_eligible: true` + `risk: low|never` + project.json `rules.auto_apply.categories` に category 登録あり → auto-apply 対象として archive に "auto-applied" として明記、即時 file 適用
 - 上記以外は user approval 待ち (pending state)
@@ -248,7 +275,7 @@ counter-arguer の judgments + 元 lens findings を concat。
 `<project>/docs/retro/<retro_id>-report.md` に保存。下記 Archive markdown structure に従う。
 
 ### Step 6: Pending State 生成
-`<project>/.claude-loom/retro/<retro_id>/pending.json` を write (schema_version=2 必須、SPEC §6.9.6、`applied_in: null` + `apply_history: []` 初期値必須)。
+`<project>/.claude-loom/retro/<retro_id>/pending.json` を write (schema_version=3 必須、SPEC §6.9.6 v3、必須 default 値: `applied_in: null` / `apply_history: []` / `carryover_count: 0` / `last_seen_in: <current_retro_id>` / `expired_at: null` / `re_evaluated_in: null`)。
 
 ### Step 7: Mode 分岐 (orchestrator に渡す)
 - conversation mode → findings list を retro-pm に返す (retro-pm が 1 件ずつ user 提示)
