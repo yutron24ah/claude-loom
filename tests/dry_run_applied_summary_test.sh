@@ -3,7 +3,7 @@
 # applied_summary build mechanism 動作確認 (rollback 前安全網)
 # 既存 retro session pending.json で applied_summary build → schema validate → fixture diff
 #
-# 依存: tests/migrate_pending_schema.sh 実行済 (schema_version: 2) が前提
+# 依存: tests/migrate_pending_schema.sh + tests/migrate_pending_v2_to_v3.sh 実行済 (schema_version: 3、M0.11.2 から) が前提
 # macOS bash 3.2 compatible
 
 set -uo pipefail
@@ -34,21 +34,21 @@ if [ ! -d "$RETRO_DIR" ]; then
     exit 0
 fi
 
-# All pending.json must be schema_version 2 (migration prerequisite)
+# All pending.json must be schema_version 3 (M0.11.2 migration prerequisite)
 schema_ok=1
 for session_dir in "$RETRO_DIR"/*/; do
     [ -d "$session_dir" ] || continue
     pending="$session_dir/pending.json"
     [ -f "$pending" ] || continue
     ver=$(jq -r '.schema_version // "missing"' "$pending")
-    if [ "$ver" != "2" ]; then
-        fail_check "$(basename "$session_dir")/pending.json has schema_version=$ver (expected 2, run migrate_pending_schema.sh first)"
+    if [ "$ver" != "3" ]; then
+        fail_check "$(basename "$session_dir")/pending.json has schema_version=$ver (expected 3, run migrate_pending_v2_to_v3.sh first)"
         schema_ok=0
     fi
 done
 
 if [ "$schema_ok" -eq 1 ]; then
-    pass_check "All pending.json files are schema_version: 2 (migration prerequisite)"
+    pass_check "All pending.json files are schema_version: 3 (M0.11.2 migration prerequisite)"
 else
     echo ""
     echo "dry_run_applied_summary summary: $passes PASS / $fails FAIL"
