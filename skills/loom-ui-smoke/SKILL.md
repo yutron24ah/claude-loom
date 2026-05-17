@@ -21,20 +21,8 @@ skill 起動時、最初に以下の依存を確認する。不在時は **WARN 
 
 ### 必須依存
 
-```bash
-# 1. Playwright MCP tool 可用性確認
-#    browser_navigate が callable か session で確認
-#    利用不可の場合: WARN を出力してスキルを abort
-echo "Playwright MCP: browser_navigate / browser_snapshot / browser_take_screenshot / browser_console_messages / browser_close が必要"
-
-# 2. bash + jq 確認 (Stage 3 report formatter 用)
-if ! command -v bash &>/dev/null; then
-  echo "WARN: bash not found — Stage 3 script 実行不可" >&2
-fi
-if ! command -v jq &>/dev/null; then
-  echo "WARN: jq not found — findings.json validation skip" >&2
-fi
-```
+- **Playwright MCP** — `browser_navigate` / `browser_snapshot` / `browser_take_screenshot` / `browser_console_messages` / `browser_close` の callable 性、session で確認。不在時 skill abort
+- **bash** + **jq** — Stage 3 report formatter 用、不在時は対応 step を graceful skip
 
 ### 任意依存
 
@@ -132,19 +120,6 @@ docs/smoke-tests/<YYYY-MM-DD>-<scope>/strategy.md
 ```
 
 `<scope>` は invocation parameter から取得（`full` / `route:<name>` / `smoke-only`）。
-
-### Phase 2 carryover (retro 2026-05-06-001 F-res-001 由来)
-
-M0.11.5 lazy daemon auto-launch + 7 種 slash command 拡張 (`/loom-pm` / `/loom-spec` / `/loom-go` / `/loom-retro` / `/loom-status` / `/loom-mode` / `/loom-worktree`) で daemon trigger + browser open + WebSocket event 流通 の e2e UX が Phase 2 検証スコープに入る。本 SKILL.md scope を Phase 2 entry 時に下記項目で拡張：
-
-- **daemon auto-launch trigger**: cold-start (daemon 不在状態) で slash command 発火 → `hooks/loom-launch-ui.sh` 経由で daemon 起動 + browser open 動作
-- **headless detection**: `SSH_CONNECTION` / `DISPLAY` 不在環境で browser open skip + URL stdout 出力動作
-- **LOOM_NO_UI override**: `LOOM_NO_UI=1` 環境変数で browser open skip + URL print 動作
-- **clipboard copy** (option): URL stdout を pipe で `pbcopy` / `xclip` に流す UX 動作
-- **warm-start path**: daemon 既起動状態で同 slash command 再発火 → health-check のみで browser 再 open しない動作
-- **install.sh dependency audit pair**: REQ-046 (daemon.js symlink bootstrap、retro F-USER-001 hotfix) と pair で「`bash install.sh` 後に slash command auto-launch 動作」を browser smoke で verify
-
-実装は Phase 2 entry milestone (推定 M0.11.x or Phase 2 1st task) で本 SKILL.md scope に組込、checklist 追加。
 
 ---
 
@@ -437,28 +412,14 @@ git tag -a m<N>-complete -m "..."
 
 ---
 
-## Stage 2 dev 向け script + template path 仕様（命名 SSoT）
+## Bundled scripts + templates (path SSoT)
 
-本 SKILL.md が以下の path を確定する。Stage 2 担当 dev はこの path に実装すること。
-
-### scripts/
-
-| file | 担当 | 役割 |
-|---|---|---|
-| `skills/loom-ui-smoke/scripts/start-servers.sh` | Stage 2 dev-C | hybrid Option C 補助。port 5757/5173 listen 確認、`--auto-start` flag 対応、dev server lifecycle |
-| `skills/loom-ui-smoke/scripts/format-report.sh` | Stage 2 dev-B | deterministic report formatter。strategy.md + console.log + screenshot list → report.md + findings.json 生成 |
-
-### templates/
-
-| file | 担当 | 役割 |
-|---|---|---|
-| `skills/loom-ui-smoke/templates/findings.schema.json` | Stage 2 dev-B | findings.json の JSON schema (jq validate 用) |
-
-### commands/
-
-| file | 担当 | 役割 |
-|---|---|---|
-| `commands/loom-ui-smoke.md` | Stage 2 dev-B | slash command 定義、valid frontmatter + `--scope=full|route:<name>|smoke-only` parameter 認識 |
+| path | 役割 |
+|---|---|
+| `skills/loom-ui-smoke/scripts/start-servers.sh` | port 5757/5173 listen 確認、`--auto-start` flag 対応、dev server lifecycle |
+| `skills/loom-ui-smoke/scripts/format-report.sh` | deterministic report formatter (strategy.md + console.log + screenshot list → report.md + findings.json) |
+| `skills/loom-ui-smoke/templates/findings.schema.json` | findings.json の JSON schema (jq validate 用) |
+| `commands/loom-ui-smoke.md` | slash command 定義、`--scope=full|route:<name>|smoke-only` parameter 認識 |
 
 ---
 

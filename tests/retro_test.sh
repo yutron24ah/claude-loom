@@ -85,21 +85,21 @@ else
   fi
 fi
 
-# REQ-025: 4 retro lens に target_artifact 記述
-check_lens_tag_fields() {
-    local fname="$1"
-    if grep -q "target_artifact" "$fname"; then
-        echo "PASS [$fname]: documents target_artifact field (M0.11)"
+# REQ-025: loom-retro skill (4 lens template + aggregator) に target_artifact 記述
+# Post 2026-05 skill migration: retro lens は agent file ではなく skills/loom-retro/SKILL.md 内 template
+RETRO_SKILL="$ROOT_DIR/skills/loom-retro/SKILL.md"
+if [ -f "$RETRO_SKILL" ]; then
+    if grep -q "target_artifact" "$RETRO_SKILL"; then
+        echo "PASS [skills]: loom-retro skill documents target_artifact field (M0.11)"
         passes=$((passes + 1))
     else
-        echo "FAIL [$fname]: missing target_artifact documentation"
+        echo "FAIL [skills]: loom-retro skill missing target_artifact documentation"
         failures=$((failures + 1))
     fi
-}
-
-for fname in agents/loom-retro-pj-judge.md agents/loom-retro-process-judge.md agents/loom-retro-meta-judge.md agents/loom-retro-researcher.md; do
-    [ -f "$fname" ] && check_lens_tag_fields "$fname"
-done
+else
+    echo "FAIL: skills/loom-retro/SKILL.md not found"
+    failures=$((failures + 1))
+fi
 
 # REQ-027: retro 基本方針 + freeform + action plan assertion
 check_retro_principles() {
@@ -113,25 +113,23 @@ check_retro_principles() {
 }
 check_retro_principles
 
-# REQ-027: 4 lens に freeform improvement instruction
-for fname in agents/loom-retro-pj-judge.md agents/loom-retro-process-judge.md agents/loom-retro-meta-judge.md agents/loom-retro-researcher.md; do
-    if [ -f "$fname" ]; then
-        if grep -q "freeform-improvement\|freeform improvement" "$fname"; then
-            echo "PASS [retro]: $fname has freeform instruction (M0.13)"
-            passes=$((passes + 1))
-        else
-            echo "FAIL [retro]: $fname missing freeform instruction"
-            failures=$((failures + 1))
-        fi
+# REQ-027: loom-retro skill に freeform improvement instruction (旧 4 lens 各 agent → 統合 1 skill)
+if [ -f "$RETRO_SKILL" ]; then
+    if grep -q "freeform-improvement\|freeform improvement\|Freeform improvement" "$RETRO_SKILL"; then
+        echo "PASS [skills]: loom-retro skill has freeform instruction (M0.13)"
+        passes=$((passes + 1))
+    else
+        echo "FAIL [skills]: loom-retro skill missing freeform instruction"
+        failures=$((failures + 1))
     fi
-done
+fi
 
-# REQ-027: aggregator action plan
-if grep -qE "action plan|action_plan|着手項目" agents/loom-retro-aggregator.md; then
-    echo "PASS [retro]: aggregator references action plan (M0.13, P3)"
+# REQ-027: aggregator template action plan (旧 loom-retro-aggregator.md → AGGREGATOR_TEMPLATE in skill)
+if [ -f "$RETRO_SKILL" ] && grep -qE "action plan|action_plan|Action plan|着手項目" "$RETRO_SKILL"; then
+    echo "PASS [skills]: loom-retro skill AGGREGATOR_TEMPLATE references action plan (M0.13, P3)"
     passes=$((passes + 1))
 else
-    echo "FAIL [retro]: aggregator missing action plan reference"
+    echo "FAIL [skills]: loom-retro skill missing action plan reference"
     failures=$((failures + 1))
 fi
 

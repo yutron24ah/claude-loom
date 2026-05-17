@@ -1,6 +1,8 @@
 # Retro Guide
 
-claude-loom が採用する **retro 機能** の運用 SSoT。SPEC §3.9 の policy 宣言から参照される。設計詳細は `docs/plans/specs/2026-04-27-retro-design.md`。
+claude-loom が採用する **retro 機能** の運用 SSoT。SPEC §3.9 の policy 宣言から参照される。設計詳細は `docs/plans/specs/2026-04-27-retro-design.md`、template SSoT は `skills/loom-retro/SKILL.md`。
+
+> **Architecture (skill-centric、2026-05 から)**: retro 4 lens + counter-arguer + aggregator は agent file ではなく `skills/loom-retro/SKILL.md` 内 template として codify されとる (LENS_PJ / LENS_PROCESS / LENS_META / LENS_RESEARCHER + COUNTER_ARGUER_TEMPLATE + AGGREGATOR_TEMPLATE)。`loom-retro-pm` agent が skill から template を Read して `general-purpose` subagent + template injection で dispatch する。本 guide 内の "agent: loom-retro-X" reference は historical naming、現実態は skill template 内 section である。詳細: `docs/SKILL_MIGRATION.md`。
 
 ## 基本方針（M0.13 から、SSoT）
 
@@ -49,7 +51,7 @@ retro は **4 つの観点** で振り返る。各 lens は独立 agent で実�
 
 - **データ source**: SPEC.md / PLAN.md / README.md / git log / agent definitions
 - **検出する問題**: SPEC ↔ 実装乖離、PLAN.md の stale tasks、README 陳腐化、UX claim 未達、feature gap
-- **agent**: `loom-retro-pj-judge`
+- **skill template**: `skills/loom-retro/SKILL.md` § `LENS_PJ_TEMPLATE` (旧 `agents/loom-retro-pj-judge.md`、2026-05 migration で skill template に統合)
 
 ### 1.2 `process-axis`（Process 軸）
 
@@ -57,7 +59,7 @@ retro は **4 つの観点** で振り返る。各 lens は独立 agent で実�
 
 - **データ source**: session transcripts (`~/.claude/projects/<project>/*.jsonl`) / git log / reviewer JSON outputs
 - **検出する問題**: TDD 違反（test 後追い）、reviewer verdict pattern、commit 粒度（過大 / 過小）、手戻りループ、blocker 滞留
-- **agent**: `loom-retro-process-judge`
+- **skill template**: `skills/loom-retro/SKILL.md` § `LENS_PROCESS_TEMPLATE` (旧 `agents/loom-retro-process-judge.md`、2026-05 migration)
 
 ### 1.3 `researcher`（外部研究）
 
@@ -68,7 +70,7 @@ retro は **4 つの観点** で振り返る。各 lens は独立 agent で実�
   - **M0.8 v1 — Light proactive single-pass**: Stage 1 で他 3 lens と並列に 1 回 dispatch、SPEC + 実装から UX 改善 + plugin / Claude 新機能の broad keyword scan を実施。findings 0 件でも OK（水増し厳禁）
   - **Phase 2 evolution — Reactive 2-pass**: 他 lens の confirmed findings を keyword 化して関連 plugin / skill / Claude 機能を finding-driven で検索。daemon が orchestrator の Stage 1 完了を検知して researcher を再 dispatch する設計
 - **検出する問題**: 既存 plugin で課題解決可、Claude 新機能で手作業代替可、UX 改善余地
-- **agent**: `loom-retro-researcher`
+- **skill template**: `skills/loom-retro/SKILL.md` § `LENS_RESEARCHER_TEMPLATE` (旧 `agents/loom-retro-researcher.md`、2026-05 migration)
 
 ### 1.4 `meta-axis`（メタ振り返り）
 
@@ -79,7 +81,7 @@ retro 自身の最適化。再帰的 auto-apply 拡張機構。
   - category C を user が連続承認 → "auto_apply に追加？" 提案
   - lens L の rejected_count 多数 → "lens L disable？" 提案
   - max_risk 上げ余地 → "low-risk 自動化？" 提案
-- **agent**: `loom-retro-meta-judge`
+- **skill template**: `skills/loom-retro/SKILL.md` § `LENS_META_TEMPLATE` (旧 `agents/loom-retro-meta-judge.md`、2026-05 migration)
 
 ## 2. Category enum（v1 ハードコード）
 
@@ -124,7 +126,7 @@ retro 自身の最適化。再帰的 auto-apply 拡張機構。
 
 > v1 では `spec-drift-doc-update` と `readme-staleness` のみが `auto_applicable_eligible: true`。残りは user 承認必須。Phase 2 evolution で拡張可。
 >
-> **2026-05-03 update (retro 2026-05-03-001 meta-001 B)**: meta-axis judge の `meta-auto-apply-proposal` promote logic は **eligible enum を hint に格下げ + 実承認 pattern を main signal** に redesign。`auto_applicable_eligible: true` でなくとも、`approved_count >= 5 AND rejected_count == 0 AND category_max_risk ∈ {low, medium}` を満たせば promote 候補として user に提示する。eligible enum は `evidence.eligible_hint` field で参考表示。詳細: `agents/loom-retro-meta-judge.md` Step 2。
+> **2026-05-03 update (retro 2026-05-03-001 meta-001 B)**: meta-axis lens の `meta-auto-apply-proposal` promote logic は **eligible enum を hint に格下げ + 実承認 pattern を main signal** に redesign。`auto_applicable_eligible: true` でなくとも、`approved_count >= 5 AND rejected_count == 0 AND category_max_risk ∈ {low, medium}` を満たせば promote 候補として user に提示する。eligible enum は `evidence.eligible_hint` field で参考表示。詳細: `skills/loom-retro/SKILL.md` § `LENS_META_TEMPLATE` (旧 `agents/loom-retro-meta-judge.md` Step 2、2026-05 migration)。
 
 #### meta-axis lens の M0.9 拡張：Customization Layer 観測
 
@@ -140,22 +142,23 @@ M0.9 で agent customization が導入されてから、meta-axis lens は以下
 
 ```
 [Stage 1] Parallel critique
-  4 体並列 dispatch（1 メッセージ内、Task tool）：
-    ├─ loom-retro-pj-judge
-    ├─ loom-retro-process-judge
-    ├─ loom-retro-meta-judge
-    └─ loom-retro-researcher
+  4 体並列 dispatch（1 メッセージ内、Task tool、subagent_type=general-purpose、
+                     各 LENS_*_TEMPLATE を skill から inject）：
+    ├─ LENS_PJ_TEMPLATE       (pj-axis lens)
+    ├─ LENS_PROCESS_TEMPLATE  (process-axis lens)
+    ├─ LENS_META_TEMPLATE     (meta-axis lens)
+    └─ LENS_RESEARCHER_TEMPLATE (researcher lens)
   各々が findings 配列を返す
 
 [Stage 2] Counter-argument pass
-  loom-retro-counter-arguer が 4 体の全 findings を input として受け、
+  COUNTER_ARGUER_TEMPLATE が 4 体の全 findings を input として受け、
   各 finding に対して反証可能性を検査：
     - finding が反証できる → for_drop（aggregator が drop）
     - finding が部分的に反証できる → for_downgrade（severity 下げる）
-    - finding が揺らがない → confirm
+    - finding が揺らがない → confirmed
 
 [Stage 3] Aggregator + presentation
-  loom-retro-aggregator が confirmed findings を受け：
+  AGGREGATOR_TEMPLATE が confirmed findings を受け：
     1. 各 finding に { category, risk, auto_applicable_eligible } 確認 / 追加
     2. meta-axis findings の auto-apply 拡張提案を組み込み
     3. archive markdown 生成 → docs/retro/YYYY-MM-DD-<retro-id>-report.md
@@ -281,14 +284,14 @@ PM: user-prefs.json 更新しました。次回以降の retro では spec-drift
 各 lens は finding 出力 JSON に以下 field を含む：
 
 - `target_artifact`: 文字列 enum
-  - `agent-prompt`: agent 振る舞い (loom-developer / loom-reviewer 等)
+  - `agent-prompt`: agent or skill template 振る舞い (loom-pm / loom-developer / loom-retro-pm / skill template scope 等)
   - `spec-section`: SPEC.md の特定セクション
   - `doc-file`: その他 markdown doc (README / CLAUDE / RETRO_GUIDE 等)
   - `retro-config`: retro architecture 自体 (lens disable / threshold / etc.)
-- `target_agent[]`: agent 名の配列、`target_artifact == "agent-prompt"` 時のみ必須（例: `["loom-developer"]`）
-- `guidance_proposal`: agent-prompt 時に prefs.learned_guidance[].guidance に書き込まれる text 候補
+- `target_agent[]`: agent or skill identifier の配列、`target_artifact == "agent-prompt"` 時のみ必須（例: `["loom-developer"]` or `["loom-review.strategies.single"]`）
+- `guidance_proposal`: agent-prompt 時に learned_guidance[].guidance に書き込まれる text 候補
 
-aggregator は user 承認後、target_artifact == "agent-prompt" の finding を該当 agent の learned_guidance[] に書き込み、それ以外は従来通り archive markdown / approval_history のみ更新。
+aggregator template は user 承認後、target_artifact == "agent-prompt" の finding を該当 target の learned_guidance[] に書き込み (agent-keyed なら `agents.<name>.learned_guidance[]`、skill-keyed なら `skills.<skill>.<scope>.learned_guidance[]`)、それ以外は従来通り archive markdown / approval_history のみ更新。
 
 ## Freeform improvement instruction（M0.13 から、4 lens 共通）
 

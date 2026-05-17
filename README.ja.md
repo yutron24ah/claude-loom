@@ -30,8 +30,8 @@ claude-loom は **2 本柱** で構成された Claude Code プラグイン：
 
 ## 主な機能
 
-- **13 専門 subagent** — PM、Developer、single-mode Reviewer（default）、Code/Security/Test reviewer trio（opt-in）、retro 4 lens judge + counter-arguer + aggregator + retro PM
-- **9 skill** — `loom-tdd-cycle`, `loom-review`, `loom-review-trio`, `loom-retro`, `loom-test`, `loom-status`, `loom-worktree`, `loom-write-plan`, `loom-debug`
+- **3 専門 subagent** — PM、Developer、Retro PM（reviewer / retro lens の責務は skill に migrate）
+- **9 skill** — `loom-tdd-cycle`, `loom-review` (single + trio strategy), `loom-retro`, `loom-test`, `loom-status`, `loom-worktree`, `loom-write-plan`, `loom-debug`
 - **9 slash command** — `/loom-pm`, `/loom-spec`, `/loom-go`, `/loom-retro`, `/loom-status`, `/loom-worktree`, `/loom-mode`, `/loom-stop`, `/loom`
 - **リアルタイム GUI** — ピクセル RPG room view、Plan + Gantt（ファイル双方向同期）、Session 一覧、Agent Detail（React + Phaser/SVG）
 - **ローカル daemon** — Node.js + Fastify + tRPC + Drizzle + SQLite、`127.0.0.1` 限定 bind、30 分アイドルで自動停止

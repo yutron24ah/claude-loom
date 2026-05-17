@@ -81,7 +81,7 @@ SPEC `§3.6.5` / `§6.9.4` を編集した時：
 `docs/CODING_PRINCIPLES.md` を編集した時：
 
 - [ ] `agents/loom-developer.md` の Coding Principles セクションが現行 13 原則を参照（追加/削除があれば反映）
-- [ ] 全 reviewer agent prompt（`loom-reviewer.md` / `loom-code-reviewer.md` / `loom-test-reviewer.md`）の review 観点が CODING_PRINCIPLES.md と整合
+- [ ] `skills/loom-review/SKILL.md` の review template (SINGLE_REVIEWER_PROMPT_BODY + CODE_REVIEWER_PROMPT + TEST_REVIEWER_PROMPT) の review 観点が CODING_PRINCIPLES.md と整合 (2026-05 migration で reviewer agent file から skill template に移行)
 - [ ] `README.md` で言及されとる原則数（13）が一致
 
 ## M0.10 Worktree 関連 check
@@ -99,10 +99,10 @@ SPEC §3.6.5.4 / §3.9.x / §6.9.4 を編集した時：
 
 - [ ] `templates/{user,project}-prefs.json.template` の `agents.<name>.learned_guidance` example が schema と一致
 - [ ] `docs/RETRO_GUIDE.md` の lens tagging convention が SPEC §3.9.x と一致
-- [ ] 4 retro lens (`agents/loom-retro-{pj,process,meta}-judge.md` + `loom-retro-researcher.md`) prompt が `target_artifact / target_agent / guidance_proposal` field 出力を記述
+- [ ] 4 lens template (`skills/loom-retro/SKILL.md` § LENS_PJ / LENS_PROCESS / LENS_META / LENS_RESEARCHER) が `target_artifact / target_agent / guidance_proposal` field 出力を記述 (2026-05 migration、旧 4 agent file は skill template に統合)
 - [ ] 13 agent prompt の Customization Layer section が `learned_guidance` 注入経路を記述
-- [ ] `agents/loom-retro-aggregator.md` の write logic が schema 仕様と整合
-- [ ] `agents/loom-retro-counter-arguer.md` が tag fields を verdict pass 通過時に preserve
+- [ ] `skills/loom-retro/SKILL.md` § AGGREGATOR_TEMPLATE の write logic が schema 仕様と整合
+- [ ] `skills/loom-retro/SKILL.md` § COUNTER_ARGUER_TEMPLATE が tag fields を verdict pass 通過時に preserve
 
 ## M0.12 Coexistence Mode 関連 check
 
@@ -120,8 +120,8 @@ SPEC §3.9.x / §3.6.8 / RETRO_GUIDE.md を編集した時：
 
 - [ ] retro 基本方針 P1/P2/P3 が SPEC §3.9.x と RETRO_GUIDE.md で一致
 - [ ] 4 retro lens prompt の freeform improvement instruction が RETRO_GUIDE.md と整合
-- [ ] `agents/loom-retro-aggregator.md` の action plan section が P3 と整合
-- [ ] `agents/loom-retro-counter-arguer.md` の freeform 検証強化が RETRO_GUIDE.md と整合
+- [ ] `skills/loom-retro/SKILL.md` § AGGREGATOR_TEMPLATE の action plan section が P3 と整合
+- [ ] `skills/loom-retro/SKILL.md` § COUNTER_ARGUER_TEMPLATE の freeform 検証強化が RETRO_GUIDE.md と整合
 - [ ] `agents/loom-retro-pm.md` の user lens 公式組込 が SPEC §3.9.x と整合（verdict 保存 hook は M2.1 で SPEC §3.9.10 / §6.9.5 に refactor、本 checklist M2.1 セクション参照）
 - [ ] `agents/loom-pm.md` の workflow discipline 5 項目が SPEC §3.6.8 と整合
 - [ ] `agents/loom-developer.md` の TDD red 順序 enforcement が SPEC §3.6.8.6 と整合
@@ -154,7 +154,7 @@ SPEC §3.9.10（verdict_evidence 概念 + write timing）/ §6.9.5（zod 完全 
 
 M0.14 essence cleanup（M2.1 統合実施、M0.14 t6/t7 closure）：
 
-- [ ] `agents/loom-retro-process-judge.md` の 3 新 category（`process-permission-friction` / `process-routine-automation-opportunity` / `process-keybind-opportunity`）が SPEC §3.10.1 mandate/suggest table と整合（M0.14 essence は SPEC + CLAUDE.md + agents/loom-retro-process-judge.md に既反映済、M2.1 で test rigor 追加で closure）
+- [ ] `skills/loom-retro/SKILL.md` § LENS_PROCESS_TEMPLATE の 3 新 category (`process-permission-friction` / `process-routine-automation-opportunity` / `process-keybind-opportunity`) が SPEC §3.10.1 mandate/suggest table と整合 (M0.14 essence、2026-05 migration で agent file から skill template に移行)
 - [ ] `tests/agents_test.sh` の process-judge 3 新 category schema assertion が SPEC §3.10.1 と整合（M0.14 t7 closure）
 - [ ] PLAN.md M0.14 セクション末尾の PLAN-SSoT 整合性注記が retro 2026-05-02-001-report.md pj-003 / proc-004 と整合（M0.14 t6 closure 補強）
 
@@ -197,9 +197,9 @@ SPEC §3.9.11（Lifecycle Tracking Architecture）/ §6.9.6（pending.json schem
 - [ ] §3.9.11 の write timing / 責務 / lazy build 戦略が §6.9.6 + §6.9.7 schema と整合
 - [ ] §6.9.6 schema_version: 2 が `pending.json` 既存 4 retro session の migration 後 state と整合
 - [ ] §6.9.7 lazy build 5 step が `agents/loom-retro-pm.md` Stage 0 拡張記述と整合
-- [ ] §6.9.4.5 auto-prune 2 mechanism (ttl_sessions + last_used_in) が `agents/loom-retro-aggregator.md` write logic と整合
+- [ ] §6.9.4.5 auto-prune 2 mechanism (ttl_sessions + last_used_in) が `skills/loom-retro/SKILL.md` § AGGREGATOR_TEMPLATE write logic と整合
 - [ ] 4 lens prompt（pj-judge / process-judge / meta-judge / researcher）が `applied_summary_path` injection + `Read` tool 参照 mechanism を記述
-- [ ] `agents/loom-retro-counter-arguer.md` の stale finding detection section が **物理削除** (M0.11.1 closure 時、SPEC §3.9.x P4 理想形 archive)
+- [ ] stale finding detection は applied_summary 構造的 prevention path (M0.11.1) に完全置換、`skills/loom-retro/SKILL.md` § COUNTER_ARGUER_TEMPLATE に symptomatic patch section 不在 (SPEC §3.9.x P4 理想形 archive)
 - [ ] `templates/{user,project}-prefs.json.template` の learned_guidance example に `last_used_in` field 追加
 - [ ] `docs/RETRO_GUIDE.md` "Lifecycle Tracking Architecture" section が SPEC §3.9.11 + §6.9.6 + §6.9.7 + §6.9.4.5 と整合
 - [ ] migration script (M0.11.1 t7) が既存 4 retro session の pending.json に `applied_in` + `apply_history` 後付けして schema_version 2 に migrate 完了
@@ -226,7 +226,7 @@ SPEC §3.6.11（UI Smoke Test Skill）+ §10.4（Browser-interactive verificatio
 - [ ] §3.6.11.7 dev server lifecycle (hybrid Option C、port detect + `--auto-start` opt-in) と `scripts/start-servers.sh` が整合
 - [ ] §3.6.11.8 Failure handling (skill report only、fix dispatch せん、SRP 整合) と SKILL.md 規律記述が整合
 - [ ] §3.6.11.9 依存 (Playwright MCP + bash + jq、graceful skip) と SKILL.md dependency check 手順が整合
-- [ ] §3.6.11.10 Consumer agents (loom-developer primary / loom-pm secondary、loom-test-reviewer は scope 外) と agent prompt suggest skill 記述が整合
+- [ ] §3.6.11.10 Consumer agents (loom-developer primary / loom-pm secondary、`loom-review` skill test aspect template は scope 外) と agent prompt suggest skill 記述が整合
 - [ ] §10.4 Layer 1 / Layer 2 の 2 層 verification 規約と PLAN.md milestone closure default 記述が整合
 - [ ] tests/REQUIREMENTS.md REQ-044 が SPEC §3.6.11 + §10.4 と整合
 

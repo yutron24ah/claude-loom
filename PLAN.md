@@ -1498,3 +1498,26 @@ Phase 1 MVP 21 milestone (M0 → M5) を 2026-05-04 に main 統合完了 (4 sta
 - **multi-contributor branch hygiene enforcement** (F-proc-004 後段): branch chain depth alert mechanism、PR auto-opening trigger
 - **Phase 2 release engineering** (F-pj-004 後段): [0.0.x] → [0.1.0] migration path doc、external user 向け release prep
 - **F-res-004 external 還元**: uninstall round-trip test pattern を claude-blog-skill 等の他 harness にも適用
+- **M0.X-daemon-refactor** (`refactor/daemon-cleanup` 候補 branch、2026-05-17 で scope codify): daemon/src/ 6,101 行 TypeScript の architectural cleanup。routes/prefs.ts (479) / routes/worktree.ts (389) / routes/consistency.ts (378) / routes/retro.ts (372) が上位 candidate、SRP check / duplicate code 検出 / type safety 改善 / events/types.ts (243) zod schema 統合性 verify。Vitest 138+ test との regression-free 整合性保持が必須。scope は agent → skill migration (`docs/agent-prompt-design` branch、2026-05-17 closure) とは独立した技術負債、別 milestone / PR で focused review 推奨
+
+## マイルストーン M0.X-skill-migration (`docs/agent-prompt-design` branch、2026-05-17 から)
+
+Agent prompt design principle 確立 + 10 agents → 2 skills への architectural cleanup。`docs/AGENT_PROMPT_DESIGN.md` (2-layer structure / anti-patterns / size guideline) を SSoT として確立、reviewer 4 体 (loom-reviewer / loom-{code,security,test}-reviewer) を `skills/loom-review/SKILL.md` に統合、retro 6 体 (4 lens + counter-arguer + aggregator) を `skills/loom-retro/SKILL.md` に統合。残存 agents は loom-pm / loom-developer / loom-retro-pm の **3 persistent role only**。
+
+### 完成基準
+
+- `docs/AGENT_PROMPT_DESIGN.md` 新設 (2-layer structure / 6 anti-patterns / 5 good patterns / size guideline / migration 手順 / 9-item verification checklist)
+- `docs/SKILL_MIGRATION.md` 新設 (10 agents → 2 skills migration plan + 完了記録)
+- SPEC §3.10.2 新設 + §3.9 / §3.6.5 / §3.6.10 / §4 / §5 / §9 directory tree skill-centric 改訂
+- 3 persistent role agents (loom-pm / loom-developer / loom-retro-pm) を 2-layer design principle 準拠で refactor
+- 4 reviewer agents 削除 (`agents/loom-{reviewer,code-reviewer,security-reviewer,test-reviewer}.md`)
+- 6 retro agents 削除 (`agents/loom-retro-{pj,process,meta}-judge.md` + counter-arguer + aggregator + researcher)
+- skills/loom-review/SKILL.md 統合拡張 (single + trio strategy + 3 aspect template + JSON contract)
+- skills/loom-retro/SKILL.md 統合拡張 (Stage 0-3 + 4 lens + counter-arguer + aggregator template)
+- `skills/loom-review-trio/SKILL.md` 削除 (loom-review に統合済)
+- `templates/{user,project}-prefs.json.template` の `skills.*` schema 拡張 (loom-review / loom-retro の skill-keyed customization 有効化)
+- docs consistency: RETRO_GUIDE / REQUIREMENTS / DOC_CONSISTENCY_CHECKLIST / README / CLAUDE.md の deleted agent ref を skill template ref に rewire
+- `./tests/run_tests.sh` 全 PASS 維持 (旧 verbose Session Start Hook test 6 個削除 + agents_test.sh skill-aware に rewrite)
+- Local Layer 2.5 dogfood smoke (`bash hooks/loom-launch-ui.sh` + `curl /health` / `/mode` / `/`) 全 PASS
+- Skill-centric architecture 実機 dogfood verify (`/loom-retro` invoke で retro-pm が skill template を read + general-purpose subagent dispatch chain 動作確認、smoke verification)
+- main への PR open + merge (branch hygiene 遵守)

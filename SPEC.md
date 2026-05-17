@@ -300,7 +300,7 @@ M0 で構築したハーネスを使った M1+ 開発の前に、承認プロン
 - `loom-test`：ハーネステスト一括実行 + 結果サマリ
 - `loom-status`：repo / harness 状態スナップショット
 - `loom-tdd-cycle`：TDD 規律ガイド（loom-developer から呼ばれる）
-- `loom-review-trio`：3 reviewer 並列 dispatch のプロンプトテンプレ
+- `loom-review`：single + trio strategy の review skill (single = 1 multi-aspect、trio = 3 parallel aspect specialists)、旧 `loom-review-trio` skill は 2026-05 で本 skill に統合済
 - `templates/settings.json.template`：bundled-script を allowlist に含めた settings 初期値
 
 shipping 規模：4 skill + 1 template + `install.sh` 拡張。SPEC §9.1 のディレクトリ構造に `skills/` が M0.5 から有効化される。
@@ -333,8 +333,8 @@ claude-loom は **agent 単位で model と人格 (personality) をユーザー�
 
 retro が承認した finding を `agents.<name>.learned_guidance[]` に蓄積し、agent dispatch 時に `[loom-learned-guidance]` block として prompt に注入する。
 
-- **書き込み主体**: `loom-retro-aggregator` のみ、user 承認後
-- **読み取り主体**: 全 13 agent (Customization Layer 拡張)
+- **書き込み主体**: `loom-retro` skill の AGGREGATOR_TEMPLATE のみ、user 承認後
+- **読み取り主体**: 全 agent (loom-pm / loom-developer / loom-retro-pm) + 全 skill template (loom-review strategies / loom-retro lenses / stages)
 - **block 順序**: `[loom-customization]` の後、task content の前
 - **format**: 1 行 compact `- <id>: <guidance text>`、active=true のみ注入
 - **scope**: default project-prefs、user 昇格 opt-in (β)
@@ -443,7 +443,7 @@ dev が reviewer dispatch を実施する Step 9 に **3 つの path** を 1st-c
   1. final report に `self_review: true` + `task_tool_deferred: <bool>` 明示
   2. 4 観点 self-checklist 必須記載 (code 観点 / security 観点 / test 観点 / SPEC §3.6.10 SSoT cross-check 観点)
   3. 各観点で 3 行以上の reasoning + 該当 file:line 参照
-  4. PM が follow-up loom-reviewer dispatch を後で実施する option を残す (path C completion ≠ formal review、interim safety net)
+  4. PM が follow-up `loom-review` skill dispatch を後で実施する option を残す (path C completion ≠ formal review、interim safety net)
 - **path A — same-session iterate (opt-in、Task tool 利用可能時)**: probe pass + fix scope clear AND context budget 余裕あり → 同 session 内で fix → re-run tests → re-submit
 - **path B — PM follow-up handoff**: fix scope unclear OR context budget tight → final report に `handoff_required: true + reasoning + recommended next step + 残 findings 全文` 明記
 - **silent self-review 禁止**: path A/B/C のいずれかを final report で必ず宣言
@@ -694,7 +694,7 @@ primary SSoT 候補（M3.1 retro 時点）:
 
 #### 3.6.10.5 reviewer 観点への組込
 
-`agents/loom-reviewer.md` および `agents/loom-code-reviewer.md` の review checklist に「文字列リテラル直接比較の検出 → constant/enum 抽出提案 (severity: medium 候補)」「派生 file の SSoT cross-check 確認」を追加。
+`skills/loom-review/SKILL.md` の各 review template (single SINGLE_REVIEWER_PROMPT_BODY + trio CODE_REVIEWER_PROMPT) の review checklist に「文字列リテラル直接比較の検出 → constant/enum 抽出提案 (severity: medium 候補)」「派生 file の SSoT cross-check 確認」を追加。
 
 #### 3.6.10.6 doc consistency checklist 連動
 
@@ -775,7 +775,7 @@ skill は **読み取り専用 + report 生成のみ**、bug 発見時に fix di
 
 #### 3.6.11.10 Consumer agents
 
-primary: **loom-developer** (UI feature 実装完了時 + milestone closure E2E task)、secondary: **loom-pm** (milestone closure default invoke)。**loom-test-reviewer は consumer 外** (review 責任が scope、execution は SRP 違反)。各 agent prompt に suggest skill 参照記述：
+primary: **loom-developer** (UI feature 実装完了時 + milestone closure E2E task)、secondary: **loom-pm** (milestone closure default invoke)。**loom-review skill の test aspect template は consumer 外** (review 責任が scope、execution は SRP 違反)。各 agent prompt に suggest skill 参照記述：
 
 ```
 UI 関連 task / milestone closure verification の候補として `loom-ui-smoke` skill。
@@ -1152,9 +1152,15 @@ claude-loom は **Conventional Commits**（[conventionalcommits.org](https://www
 
 claude-loom 自身は `"any"`（既存 commit が日英混在のため）。
 
-### 3.9 Retro 機能（M0.8 から有効）
+### 3.9 Retro 機能（M0.8 から有効、M0.X で skill-centric architecture へ移行）
 
-claude-loom は **retro 機能** をハーネスの中核に組み込む。詳細設計は `docs/plans/specs/2026-04-27-retro-design.md`、運用 SSoT は `docs/RETRO_GUIDE.md`。
+claude-loom は **retro 機能** をハーネスの中核に組み込む。詳細設計は `docs/plans/specs/2026-04-27-retro-design.md`、運用 SSoT は `docs/RETRO_GUIDE.md`、template SSoT は `skills/loom-retro/SKILL.md`。
+
+**Architecture (skill-centric、`docs/SKILL_MIGRATION.md` で migration 詳細)**:
+
+- **`loom-retro-pm` agent (persistent role)** — retro session orchestrator、`/loom-retro` で起動、Stage 0 file build + Stage 4 presentation を直接担当、Stage 1-3 は skill template を read して `general-purpose` subagent に inject する形で dispatch
+- **`skills/loom-retro/SKILL.md`** — Stage 0-3 protocol + 4 lens template (LENS_PJ / LENS_PROCESS / LENS_META / LENS_RESEARCHER) + COUNTER_ARGUER_TEMPLATE + AGGREGATOR_TEMPLATE の SSoT
+- **lens / counter-arguer / aggregator は agent file を持たない** (skill template として codify)、旧 `loom-retro-{pj,process,meta}-judge` + `loom-retro-counter-arguer` + `loom-retro-aggregator` + `loom-retro-researcher` の 6 agent file は本 architecture 移行で削除
 
 #### 3.9.x retro 基本方針（M0.13 から、SSoT）
 
@@ -1169,20 +1175,22 @@ retro 機能は以下 3 原則を不変条件とする：
 
 PJ 軸（製品）+ Process 軸（仕事の進め方）+ 外部研究 + 自己最適化（meta）の 4 観点で振り返り → archive markdown + 会話で user に提示 → 承認された改善を user-prefs / project-prefs / SPEC / 各種ファイルに反映。「user × claude × project の組み合わせごとに動的最適化される開発室」を実現する。
 
-#### 3.9.2 4 lens 構成
+#### 3.9.2 4 lens 構成 (skill templates、`skills/loom-retro/SKILL.md` SSoT)
 
-| lens | 観点 | データ source |
-|---|---|---|
-| `pj-axis` | SPEC drift / feature gap / UX 摩擦 | SPEC / PLAN / README / git log / agent definitions |
-| `process-axis` | TDD / review / commit 粒度 / blocker | session transcripts / git log / reviewer JSON |
-| `researcher` | plugin / Claude latest / UX best practice | WebSearch / context7 / WebFetch（reactive + light proactive） |
-| `meta-axis` | auto-apply 拡張提案 / lens 削除提案 / risk threshold 提案 | 過去 retro outputs / user-prefs.json / approval 履歴 |
+| lens identifier | skill template | 観点 | データ source |
+|---|---|---|---|
+| `pj-axis` | LENS_PJ_TEMPLATE | SPEC drift / feature gap / UX 摩擦 | SPEC / PLAN / README / git log / agent definitions |
+| `process-axis` | LENS_PROCESS_TEMPLATE | TDD / review / commit 粒度 / blocker / permission friction / 自動化機会 | session transcripts / git log / reviewer JSON / command_frequency.json |
+| `researcher` | LENS_RESEARCHER_TEMPLATE | plugin / Claude latest / UX best practice | WebSearch / context7 / WebFetch（reactive + light proactive） |
+| `meta-axis` | LENS_META_TEMPLATE | auto-apply 拡張提案 / lens 削除提案 / risk threshold 提案 | 過去 retro outputs / user-prefs.json / approval 履歴 |
+
+各 lens は agent file を持たず、retro-pm が skill から template を read → `general-purpose` subagent + template injection で dispatch する。
 
 #### 3.9.3 3-stage protocol
 
-1. **Parallel critique**: 4 lens 並列 dispatch
-2. **Counter-argument pass**: `loom-retro-counter-arguer` が全 findings を反証検査
-3. **Aggregator**: confirmed findings 統合 → archive markdown 生成 → user 提示
+1. **Parallel critique**: 4 lens template (LENS_PJ / LENS_PROCESS / LENS_META / LENS_RESEARCHER) を retro-pm が 1 message 内 4 parallel Task calls で dispatch
+2. **Counter-argument pass**: COUNTER_ARGUER_TEMPLATE を retro-pm が 1 Task call で dispatch、各 finding に verdict (confirmed / for_downgrade / for_drop) 付与
+3. **Aggregator**: AGGREGATOR_TEMPLATE を retro-pm が 1 Task call で dispatch、confirmed findings 統合 → archive markdown 生成 → user 提示
 
 #### 3.9.4 Trigger
 
@@ -1213,13 +1221,18 @@ retro 自身が承認パターンを観察 → 「category X 連続承認、auto
 
 #### 3.9.9 lens tagging + auto-write to learned_guidance（M0.11 から）
 
-retro lens 4 体 (pj-axis / process-axis / meta-axis / researcher) は finding 出力に以下 field を含む：
+retro 4 lens template (LENS_PJ / LENS_PROCESS / LENS_META / LENS_RESEARCHER) は finding 出力に以下 field を含む：
 
 - `target_artifact`: enum `agent-prompt | spec-section | doc-file | retro-config`
-- `target_agent[]`: array of agent name strings、agent-prompt 時必須
+- `target_agent[]`: array of agent or skill identifier strings、agent-prompt 時必須
 - `guidance_proposal`: agent-prompt 時の注入 text 候補
 
-aggregator は user 承認後、`target_artifact == "agent-prompt"` の finding を `agents.<target_agent[]>.learned_guidance[]` に書き込む。詳細は `docs/RETRO_GUIDE.md`。
+AGGREGATOR_TEMPLATE は user 承認後、`target_artifact == "agent-prompt"` の finding を以下に書き込む：
+
+- agent-keyed (`loom-pm` / `loom-developer` / `loom-retro-pm`): `agents.<target>.learned_guidance[]`
+- skill-keyed (`loom-review.strategies.<single|trio.<aspect>>` / `loom-retro.lenses.<lens>` / `loom-retro.stages.<counter-arguer|aggregator>`): `skills.<target>.learned_guidance[]`
+
+詳細は `docs/RETRO_GUIDE.md`。
 
 #### 3.9.10 verdict_evidence 保存（M2.1 から）
 
@@ -1356,7 +1369,7 @@ retro architecture を data 駆動化し、Phase 2 candidate prioritization に 
 claude-loom は **superpowers plugin に依存せずに完結する** ことを設計目標とする。
 
 - M0.9 時点で `loom-write-plan` / `loom-debug` skill を新設し、claude-loom 自前で spec → plan → implement → debug の workflow を完結
-- claude-loom 固有の **workflow 品質ゲート** となる skill（`loom-tdd-cycle` / `loom-review` / `loom-review-trio` / `loom-retro` / `loom-test` / `loom-status`）は loom-* 版を使う（agent prompt で mandate）。それ以外（`loom-write-plan` / `loom-debug` 等の suggest 系）は agent の自律的 skill discovery に委ね、blanket な「loom-* > superpowers」優先は強制しない
+- claude-loom 固有の **workflow 品質ゲート** となる skill（`loom-tdd-cycle` / `loom-review` (single + trio strategies) / `loom-retro` / `loom-test` / `loom-status`）は loom-* 版を使う（agent prompt で mandate）。それ以外（`loom-write-plan` / `loom-debug` 等の suggest 系）は agent の自律的 skill discovery に委ね、blanket な「loom-* > superpowers」優先は強制しない
 - 残る superpowers skill（brainstorming / executing-plans / verification-before-completion 等）は claude-loom の `loom-pm` / `loom-developer` agent prompt 内に同等動作が記述済みのため、独立 skill 化はしない（YAGNI）
 - 将来 superpowers が global uninstall された場合でも、claude-loom 単独で全 milestone を進められる
 
@@ -1369,7 +1382,7 @@ agent prompt 内の skill 参照は **mandate**（強制）と **suggest**（推
 | 場面 | mandate skill | 理由 |
 |---|---|---|
 | TDD discipline（実装/修正時） | `loom-tdd-cycle` | claude-loom の Red→Green→Refactor→Review cycle 規律 |
-| commit 前 review gate | `loom-review` (single mode) / `loom-review-trio` (deep mode) | Reviewer verdict を quality gate とする SPEC §3.6.6 規約 |
+| commit 前 review gate | `loom-review` (strategy=single default / strategy=trio opt-in via review_mode) | Reviewer verdict を quality gate とする SPEC §3.6.8.7 規約 |
 | milestone 完了後 retro | `loom-retro` | 4 lens × counter-argument の 3 段階プロトコル必須 |
 | harness self-test | `loom-test` | claude-loom 固有の install/agent/command/skill test |
 | harness status 確認 | `loom-status` | claude-loom 固有のスナップショット |
@@ -1394,6 +1407,21 @@ agent prompt 記述形式: `「X 時の候補として Y skill。他の skill / 
 - suggest skill の追加は agent prompt 単体更新で可
 - retro lens は suggest skill の活用機会を検出し finding 化する（`process-axis` lens の責務、§3.9 参照）
 
+#### 3.10.2 Agent prompt 設計原則（M0.17 から）
+
+claude-loom の `agents/*.md` は **Claude Code に loom-specific なロールを overlay する** ための prompt であり、ゼロから AI agent を構築する prompt ではない。
+
+**設計原則の SSoT**: `docs/AGENT_PROMPT_DESIGN.md` を参照。
+
+要旨：
+
+- **2-layer 構造**: Reasoning layer (mission / character / workflow semantic / judgment axes、薄く judgment を Claude Code に委ねる) + Contract layer (interface contracts / file paths / hard constraints、precise に prescribe)
+- **Anti-patterns**: mechanical keyword matching / Claude Code 基本能力の再教示 / prompt template verbatim 固定 / step-by-step bash command prescription / historical retro reference embed / replicated structure across sections
+- **Size guideline**: PM 200-250 行 / developer 150-200 行 / reviewer 100-150 行（specialized 80-120 行）/ retro-pm 150-200 行 / retro lens 80-120 行
+- **SPEC → prompt の単方向 flow**: prompt 側で新 rule を発明せえへん。SPEC §X.X SSoT がある内容は引用 1 行に圧縮、過去の retro 由来 tactical rule は SPEC 昇格後に prompt 反映
+
+agent prompt の新規作成・改修時は本 SPEC §3.10.2 + `docs/AGENT_PROMPT_DESIGN.md` の verification checklist 9 項目を満たすこと。
+
 ## 4. アクター（エージェント）定義
 
 ### 4.1 ロール一覧
@@ -1402,10 +1430,9 @@ agent prompt 記述形式: `「X 時の候補として Y skill。他の skill / 
 |---|---|---|---|
 | PM | 1（singleton） | ユーザーが `/loom-pm` で起動 | `.claude/agents/loom-pm.md` (system prompt) |
 | Developer | 1〜N（PJ ごと max 設定） | PM が Task tool でディスパッチ | `.claude/agents/loom-developer.md` |
-| Reviewer (single mode) | 1〜N（PJ ごと max 設定、default mode） | Developer が Task tool でディスパッチ | `.claude/agents/loom-reviewer.md` |
-| Code Reviewer | 1〜N（PJ ごと max 設定） | Developer が Task tool でディスパッチ | `.claude/agents/loom-code-reviewer.md` |
-| Security Reviewer | 1〜N（PJ ごと max 設定） | Developer が Task tool でディスパッチ | `.claude/agents/loom-security-reviewer.md` |
-| Test Reviewer | 1〜N（PJ ごと max 設定） | Developer が Task tool でディスパッチ | `.claude/agents/loom-test-reviewer.md` |
+| Retro PM | 1（per retro session） | `/loom-retro` で起動 | `.claude/agents/loom-retro-pm.md` |
+| Reviewer (single + trio strategies) | task-scoped、persistent identity 無し | Developer が `loom-review` skill 経由で `general-purpose` subagent + skill template injection で dispatch (single = 1 体、trio = 3 体並列) | `.claude/skills/loom-review/SKILL.md` (template SSoT) |
+| Retro lens / counter-arguer / aggregator | task-scoped、persistent identity 無し | Retro PM が `loom-retro` skill 経由で `general-purpose` subagent + skill template injection で dispatch (Stage 1 = 4 体並列、Stage 2 = 1 体、Stage 3 = 1 体) | `.claude/skills/loom-retro/SKILL.md` (template SSoT) |
 
 ### 4.2 各ロールの責務
 
@@ -1433,24 +1460,32 @@ agent prompt 記述形式: `「X 時の候補として Y skill。他の skill / 
 - 完了したら PM に報告
 - 作業ログをチームに共有
 
-#### 4.2.3 Reviewer (loom-reviewer, single mode default)
-- review_mode の **default**。1 体の subagent が **コード / セキュリティ / テスト 3 観点** を順次回し、各段階で進捗テキスト（`## 観点 N/3: 〜レビュー中...`）を逐次出力
-- 観点ごとに findings を集めた後、`aspect` フィールド（`"code" | "security" | "test"`）付きで集約 JSON を 1 つ返す
-- token コスト ≒ trio mode の 1/3。Modern Claude（Opus/Sonnet 4.x）の多観点単一パス能力を活用
-- 大規模リファクタや critical path で trio mode が必要な場合は `[loom-meta] review_mode=trio` で per-task 切替可
+#### 4.2.3 Reviewer (`loom-review` skill、agent file なし)
 
-> ピクセル RPG GUI（Phase 1 後半 / M3）でのキャラ表現は trio mode 時のみレビュー室に 3 人並ぶ絵が成立。single mode は 1 人キャラが 3 観点バッジを順次表示する設計（M3 で詳細化）。
+review は agent 単位の persistent role ではなく **`skills/loom-review/SKILL.md` 経由の 1-shot subagent dispatch** で実施する (2026-05 architectural cleanup、`docs/SKILL_MIGRATION.md` 参照)。
 
-#### 4.2.4 Review Trio (3 ロール独立、trio mode opt-in)
-- **Code Reviewer**：可読性 / 設計 / コーディング規約
-- **Security Reviewer**：脆弱性 / シークレット混入 / 認証認可
-- **Test Reviewer**：テストカバレッジ / テストの妥当性 / エッジケース
-- trio mode 有効時は 3 体が **常に同時並列発火** することを workflow で強制（部分レビュー禁止）
-- 各自が独立 JSON を返却、Developer が集約して修正
+- **single strategy** (default、`review_mode=single`): 1 Task call、`subagent_type="general-purpose"`、`SINGLE_REVIEWER_PROMPT_BODY` template inject、3 観点 (code / security / test) を sequential 評価、各段階で進捗 marker 出力、aspect-tagged findings 配列 + verdict を 1 JSON で返却
+- **trio strategy** (opt-in、`review_mode=trio`): 1 message 内 3 parallel Task calls、各 `subagent_type="general-purpose"`、`CODE_REVIEWER_PROMPT` / `SECURITY_REVIEWER_PROMPT` / `TEST_REVIEWER_PROMPT` をそれぞれ inject、各 1 aspect 専で独立 JSON 返却、Developer が集約
+- **token コスト**: single ≒ trio の 1/3、modern Claude (Opus/Sonnet 4.x) の多観点単一パス能力を活用
+- **strategy 切替**: `.claude-loom/project.json` の `rules.review_mode` で default 指定、`[loom-meta] review_mode=...` で per-task 上書き可
+
+> ピクセル RPG GUI のキャラ表現は trio strategy 時のみレビュー室に 3 人並ぶ絵が成立。single strategy は 1 人キャラが 3 観点バッジを順次表示する設計。
+
+#### 4.2.4 Retro PM (loom-retro-pm)
+
+retro session orchestrator (persistent role)。Stage 0 file build (verdict_evidence / applied_summary / command_frequency) + Stage 4 presentation (conversation / report mode) を直接担当。Stage 1-3 (lens / counter-argument / aggregation) は `skills/loom-retro/SKILL.md` の template を read して `general-purpose` subagent + template injection で dispatch する。詳細責務: §3.9。
+
+#### 4.2.5 Retro pipeline (`loom-retro` skill、agent file なし)
+
+Retro の Stage 1 lens (pj-axis / process-axis / meta-axis / researcher) + Stage 2 counter-arguer + Stage 3 aggregator は agent 単位の persistent role ではなく **`skills/loom-retro/SKILL.md` 経由の 1-shot subagent dispatch** で実施する (2026-05 architectural cleanup、`docs/SKILL_MIGRATION.md` 参照)。
+
+- Stage 1 lens template: LENS_PJ / LENS_PROCESS / LENS_META / LENS_RESEARCHER
+- Stage 2 counter-arguer template: COUNTER_ARGUER_TEMPLATE
+- Stage 3 aggregator template: AGGREGATOR_TEMPLATE
 
 ### 4.3 Developer / Reviewer プール管理
 
-- プロジェクトごとに `max_developers / max_reviewers / max_code_reviewers / max_security_reviewers / max_test_reviewers` を設定（default: 3 / 1 / 1 / 1 / 1）。`max_reviewers` は single mode（default）の `loom-reviewer` 同時稼働上限、`max_*_reviewer` 系は trio mode の各 specialized reviewer 同時稼働上限
+- プロジェクトごとに `max_developers` を設定（default: 3）。reviewer / retro lens は agent file を持たず skill-dispatch ゆえ pool 不要、developer 1 体あたり review_mode に応じた subagent (single=1 / trio=3 並列) が dispatch される
 - PM は spec フェーズで人数を提案、ユーザーが対話で手直し可
 - pool_slot は永続的な「席」、subagent はその席が演じる「個別タスクの実行体」
 - pool_slot 状態：`idle` / `busy`、busy 中は `current_subagent_id` を保持
@@ -1485,11 +1520,11 @@ agent prompt 記述形式: `「X 時の候補として Y skill。他の skill / 
     review_mode 判定：
       [loom-meta] に review_mode 指定があればそれ採用
       なければ .claude-loom/project.json の rules.review_mode (default "single")
-    review_mode == "single" → loom-reviewer 1 体ディスパッチ
+    review_mode == "single" → loom-review skill (single strategy) で general-purpose subagent 1 体 dispatch
     review_mode == "trio"   → loom-{code,security,test}-reviewer 3 体並列ディスパッチ
 
 [5a] Reviewer (single mode、default)
-     loom-reviewer が順次 3 観点回し、各段階で進捗テキスト出力
+     skill template が順次 3 観点回し、各段階で進捗テキスト出力
      findings を aspect 付き集約 JSON で返却
 
 [5b] Review Trio (trio mode、opt-in)
@@ -1803,7 +1838,7 @@ last_synced_at: 1777200000000
 | `pool.*` | — | 3/1/1/1 | プール上限 |
 | `rules.*` | — | (上記) | チームルール |
 | `rules.commit_prefixes` | — | 11 種（CC type 全部） | コミット prefix の有効値（`feat`/`fix`/`docs`/`style`/`refactor`/`perf`/`test`/`build`/`ci`/`chore`/`revert`） |
-| `rules.review_mode` | — | `"single"` | `"single"` (default、loom-reviewer 1 体) or `"trio"` (loom-{code,security,test}-reviewer 並列 3 体) |
+| `rules.review_mode` | — | `"single"` | `"single"` (default、`loom-review` skill single strategy = 1 体) or `"trio"` (skill trio strategy = 3 体 parallel) |
 | `rules.branch_types` | — | 10 種（CC type 準拠、`revert` 除く） | branch 名 prefix の有効値リスト |
 | `rules.commit_language` | — | `"any"` | コミット件名/本文の言語ポリシー：`"any"` / `"english"` / `"japanese"` |
 | `rules.coexistence_mode` | — | `"full"` | `"full" | "coexist" | "custom"` — 機能 ON/OFF の mode（M0.12 から） |
@@ -2032,10 +2067,10 @@ export const verdictEvidenceSchema = z.object({
     task_id: z.string(),                       // PLAN.md HTML comment id, e.g., "m2-t5"
     commit_sha: z.string().nullable(),         // 40-char SHA or null (commit handoff anomaly 等で commit 不在)
     reviewer_agent: z.enum([
-      "loom-reviewer",                         // single mode
-      "loom-code-reviewer",                    // trio mode
-      "loom-security-reviewer",                // trio mode
-      "loom-test-reviewer",                    // trio mode
+      "loom-reviewer",                         // single strategy (loom-review skill SINGLE_REVIEWER_PROMPT_BODY が設定する identifier、historical agent 名 互換)
+      "loom-code-reviewer",                    // trio strategy code aspect (CODE_REVIEWER_PROMPT が設定する identifier)
+      "loom-security-reviewer",                // trio strategy security aspect
+      "loom-test-reviewer",                    // trio strategy test aspect
     ]),
     review_mode: z.enum(["single", "trio"]),
     verdict: z.enum(["pass", "fail", "partial"]),
@@ -2043,7 +2078,7 @@ export const verdictEvidenceSchema = z.object({
       aspect: z.enum(["code", "security", "test"]),
       verdict: z.enum(["pass", "fail"]),
       findings_count: z.number().int().nonnegative(),
-      output_ref: z.string().nullable(),       // session transcript ref (e.g., "transcript:agent=loom-reviewer:dispatch=m2-t5") / M3 daemon-side で path 化候補
+      output_ref: z.string().nullable(),       // session transcript ref (e.g., "transcript:skill=loom-review:strategy=single:dispatch=m2-t5") / M3 daemon-side で path 化候補
     })),
     dispatched_at: z.number().int(),
   })),
@@ -2212,7 +2247,7 @@ export type AppliedSummary = z.infer<typeof appliedSummarySchema>;
 5. zod schema validate → file write、schema 不整合は warning として log（retro 自体は continue、機能 block しない）
 
 **lens 注入 mechanism**:
-- 4 lens（`loom-retro-pj-judge` / `process-judge` / `meta-judge` / `researcher`）の agent dispatch prompt prefix に `applied_summary_path: <path>` を追加
+- 4 lens template (LENS_PJ / LENS_PROCESS / LENS_META / LENS_RESEARCHER、`skills/loom-retro/SKILL.md`) の dispatch prompt prefix に `applied_summary_path: <path>` を追加
 - lens は category 関連 finding を `Read` tool で参照、stale check を Stage 1 内で自前実行
 - M3.0 retro proc-NEW-1 の「counter-arguer 単独 stale check」を構造的に置換、4 lens 全体が stale 判別能力を獲得（root cause 解決、SPEC §3.9.x P4 理想形）
 
@@ -2368,12 +2403,10 @@ claude-loom/
 ├── docs/
 │   ├── SCREEN_REQUIREMENTS.md  ← 画面要件（別ドキュメント）
 │   └── EVENT_SCHEMA.md         ← hook payload 詳細
-├── agents/
+├── agents/                  ← 3 persistent role only (reviewer / retro lens は skill template に migrate 済)
 │   ├── loom-pm.md
 │   ├── loom-developer.md
-│   ├── loom-code-reviewer.md
-│   ├── loom-security-reviewer.md
-│   └── loom-test-reviewer.md
+│   └── loom-retro-pm.md
 ├── commands/
 │   ├── loom.md
 │   ├── loom-pm.md
@@ -2386,12 +2419,16 @@ claude-loom/
 │   ├── loom-pre-tool.sh
 │   ├── loom-post-tool.sh
 │   └── loom-stop.sh
-├── skills/                  ← M0.5 から有効。M0.5 で 4 + M0.6 で 1 の計 5 つの harness 補助 skill を shipping。Phase 2 で Hermes 型自動生成が加わる
+├── skills/                  ← workflow + template SSoT。reviewer / retro lens は agent file ではなく skill template として codify (2026-05 architectural cleanup)
 │   ├── loom-test/
 │   ├── loom-status/
 │   ├── loom-tdd-cycle/
-│   ├── loom-review/
-│   └── loom-review-trio/
+│   ├── loom-review/        ← single + trio strategy 統合、aspect template (code / security / test) を内包
+│   ├── loom-retro/         ← Stage 0-3 protocol + 4 lens + counter-arguer + aggregator template を内包
+│   ├── loom-write-plan/
+│   ├── loom-debug/
+│   ├── loom-worktree/
+│   └── loom-ui-smoke/
 ├── daemon/                  ← Node プロジェクト
 │   ├── package.json
 │   ├── tsconfig.json

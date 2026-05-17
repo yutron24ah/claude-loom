@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed (M0.X-skill-migration — branch `docs/agent-prompt-design`、2026-05-17)
+
+Architectural cleanup: 10 agents (4 reviewer + 6 retro lens/aggregator/counter-arguer) を 2 skills に統合、agent prompt design principle (2-layer structure) を SSoT として確立。残存 agent は loom-pm / loom-developer / loom-retro-pm の 3 persistent role のみ。
+
+- **Added**:
+  - `docs/AGENT_PROMPT_DESIGN.md` — agent prompt 設計原則 SSoT (2-layer structure / 6 anti-patterns / 5 good patterns / size guideline / migration 手順 / 9-item verification checklist)
+  - `docs/SKILL_MIGRATION.md` — 10 agents → 2 skills migration plan + 完了記録
+  - `SPEC.md §3.10.2` — agent prompt 設計原則 SSoT pointer
+  - `templates/{user,project}-prefs.json.template` `skills.*` schema 拡張 — skill-keyed customization (loom-review.strategies.* / loom-retro.lenses.* / loom-retro.stages.*)
+- **Changed**:
+  - `agents/loom-pm.md` (545 → 264 行、51% 圧縮) — 2-layer design 第一号適用、Mission / Character / Hard constraints + interface contracts のみ codify
+  - `agents/loom-retro-pm.md` (368 → 220 行、40% 圧縮) — slim orchestrator として retro skill 経由 dispatch chain に書換
+  - `agents/loom-developer.md` (274 → 240 行、12% 圧縮) — review dispatch を loom-review skill 経由の `general-purpose` subagent + skill template injection に統一
+  - `skills/loom-review/SKILL.md` (83 → 274 行) — single + trio strategy 統合、aspect template (code / security / test) 内包
+  - `skills/loom-retro/SKILL.md` (56 → 384 行) — Stage 0-3 protocol + 4 lens template + COUNTER_ARGUER_TEMPLATE + AGGREGATOR_TEMPLATE 統合
+  - `skills/loom-ui-smoke/SKILL.md` (507 → 468 行) — obsolete Phase 2 carryover / Stage 2 dev SSoT section 削除、Pre-flight checklist verbose bash echo 圧縮
+  - `skills/loom-tdd-cycle/SKILL.md` Step 6 — review dispatch を loom-review skill 経由に更新
+  - SPEC §3.9 (Retro architecture) を agent-centric → skill-centric に改訂、関連 §3.6.5 / §3.6.10 / §3.10 / §4 / §5 / §9 directory tree も整合更新
+  - CLAUDE.md / README.md / README.ja.md / docs/RETRO_GUIDE.md / docs/DOC_CONSISTENCY_CHECKLIST.md / tests/REQUIREMENTS.md — deleted agent ref を skill template ref に rewire
+- **Removed**:
+  - `agents/loom-reviewer.md` / `loom-code-reviewer.md` / `loom-security-reviewer.md` / `loom-test-reviewer.md` (合計 484 行)
+  - `agents/loom-retro-pj-judge.md` / `loom-retro-process-judge.md` / `loom-retro-meta-judge.md` / `loom-retro-researcher.md` / `loom-retro-counter-arguer.md` / `loom-retro-aggregator.md` (合計 1,300 行)
+  - `skills/loom-review-trio/SKILL.md` (loom-review に統合)
+  - 6 obsolete tests — m0116_t2-t6 / m0117_t2-t5 placeholders / m0116_t3 loom-pm hook test (verbose Session Start Hook の anti-pattern を enforce していた)
+- **Total impact**: 13 agents → 3 agents (77% 削減)、合計 1,484 行の agent prompt 削除 + 2 skill (~650 行) に統合 = 56% 行数削減。本 cleanup は Phase 2 milestone candidates の前提条件、`refactor/daemon-cleanup` 別 milestone への road map clean state 達成
+
 ## [0.1.0] - 2026-05-04
 
 Phase 1 MVP — dogfood 方式で M0〜M5 を完走した最初の完成形リリース。
