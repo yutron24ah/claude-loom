@@ -32,13 +32,13 @@ claude-loom の開発者が **どんな小さな変更でも** 守る TDD ルー
 - コードが汚いと感じたら整える
 - リファクタ毎にテストを再実行
 
-### 6. Review (dispatch reviewer per review_mode)
-完了報告の前に **必ず** review_mode を判定して reviewer を dispatch：
+### 6. Review (dispatch reviewer via loom-review skill)
+完了報告の前に **必ず** review_mode を判定して `loom-review` skill 経由で reviewer を dispatch：
 
-- review_mode = `"single"`（default）→ `loom-reviewer` を **1 体** dispatch（順次 3 観点を回し、進捗テキスト出力）。詳細は `loom-review` skill 参照
-- review_mode = `"trio"`（opt-in、critical path）→ `loom-{code,security,test}-reviewer` を **3 体並列** dispatch。詳細は `loom-review-trio` skill 参照
+- review_mode = `"single"` (default) → skill 経由で `general-purpose` subagent **1 体** + `SINGLE_REVIEWER_PROMPT_BODY` template inject (順次 3 観点を回し、進捗 marker 出力)
+- review_mode = `"trio"` (opt-in、critical path) → skill 経由で `general-purpose` subagent **3 体並列** + aspect-specific template inject (`CODE_REVIEWER_PROMPT` / `SECURITY_REVIEWER_PROMPT` / `TEST_REVIEWER_PROMPT`)
 
-review_mode 判定順序: `[loom-meta]` prefix → `.claude-loom/project.json` の `rules.review_mode` → default `"single"`（詳細は `agents/loom-developer.md` Step 8）。
+詳細は `skills/loom-review/SKILL.md` 参照。review_mode 判定順序: `[loom-meta]` prefix → `.claude-loom/project.json` の `rules.review_mode` → default `"single"` (詳細は `agents/loom-developer.md` Review dispatch protocol)。
 
 ### 7. Aggregate findings
 - いずれかの reviewer が `verdict: needs_fix` → fix → step 6 に戻って再 dispatch（同じ mode で）
