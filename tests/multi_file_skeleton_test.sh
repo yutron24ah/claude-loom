@@ -289,6 +289,39 @@ if [ -f "$SPEC_FILE" ]; then
   fi
 fi
 
+# ----- t4 checks: spec/ui-arch.md migration (skeleton-n10 through skeleton-n12) -----
+UI_ARCH_MD="$ROOT_DIR/spec/ui-arch.md"
+
+# ----- Check (n10): spec/ui-arch.md file exists -----
+if [ -f "$UI_ARCH_MD" ]; then
+  echo "PASS [skeleton-n10]: spec/ui-arch.md exists"
+else
+  echo "FAIL [skeleton-n10]: spec/ui-arch.md not found at $UI_ARCH_MD"
+  failures=$((failures + 1))
+fi
+
+# ----- Check (n11): spec/ui-arch.md has ≥7 top-level sections (## headings) -----
+if [ -f "$UI_ARCH_MD" ]; then
+  n11_count=$(grep -c "^## " "$UI_ARCH_MD" || true)
+  if [ "$n11_count" -ge 7 ]; then
+    echo "PASS [skeleton-n11]: spec/ui-arch.md has $n11_count top-level sections (##) (≥7)"
+  else
+    echo "FAIL [skeleton-n11]: spec/ui-arch.md has $n11_count top-level sections (##) (need ≥7)"
+    failures=$((failures + 1))
+  fi
+fi
+
+# ----- Check (n12): SPEC.md has ≥7 pointer lines to spec/ui-arch.md -----
+if [ -f "$SPEC_FILE" ]; then
+  n12_count=$(grep -c "spec/ui-arch.md" "$SPEC_FILE" || true)
+  if [ "$n12_count" -ge 7 ]; then
+    echo "PASS [skeleton-n12]: SPEC.md has $n12_count pointer lines to spec/ui-arch.md (≥7)"
+  else
+    echo "FAIL [skeleton-n12]: SPEC.md has $n12_count pointer lines to spec/ui-arch.md (need ≥7)"
+    failures=$((failures + 1))
+  fi
+fi
+
 if [ "$failures" -gt 0 ]; then
   echo "multi_file_skeleton_test FAILED with $failures violation(s)"
   exit 1
