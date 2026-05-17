@@ -421,6 +421,26 @@ else
   failures=$((failures + 1))
 fi
 
+# ----- t9 checks: skeleton-p (back-pointer header in each topic file) -----
+# Each topic file must contain "master は [SPEC.md](../SPEC.md)" in its header block.
+TOPIC_FILES=("harness" "daemon-and-data" "ui-arch" "retro-system" "install-and-test")
+BACK_POINTER_PATTERN="master は \[SPEC\.md\]\(\.\./SPEC\.md\)"
+
+for topic in "${TOPIC_FILES[@]}"; do
+  bp_file="$ROOT_DIR/spec/${topic}.md"
+  if [ -f "$bp_file" ]; then
+    if grep -qE "$BACK_POINTER_PATTERN" "$bp_file"; then
+      echo "PASS [skeleton-p-${topic}]: spec/${topic}.md has back-pointer header"
+    else
+      echo "FAIL [skeleton-p-${topic}]: spec/${topic}.md missing back-pointer header"
+      failures=$((failures + 1))
+    fi
+  else
+    echo "FAIL [skeleton-p-${topic}]: spec/${topic}.md not found"
+    failures=$((failures + 1))
+  fi
+done
+
 if [ "$failures" -gt 0 ]; then
   echo "multi_file_skeleton_test FAILED with $failures violation(s)"
   exit 1
