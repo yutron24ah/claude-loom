@@ -11,7 +11,8 @@ import { execFile as execFileCb } from "node:child_process";
 import { promisify } from "node:util";
 import { join, basename } from "node:path";
 import { existsSync, readFileSync } from "node:fs";
-import { TRPCError } from "@trpc/server";
+import { TRPCError as TRPCErrorType } from "@trpc/server";
+import { TRPCErrorClass } from "../trpc.js";
 import { eq } from "drizzle-orm";
 import { router, publicProcedure } from "../trpc.js";
 import { broadcaster } from "../events/broadcaster.js";
@@ -71,7 +72,7 @@ async function resolveProjectRoot(projectId: string): Promise<string> {
   const gitRoot = findGitRoot(process.cwd());
   if (gitRoot) return gitRoot;
 
-  throw new TRPCError({
+  throw new TRPCErrorClass({
     code: "NOT_FOUND",
     message: `Project '${projectId}' not found and no git root detected`,
   });
@@ -103,7 +104,7 @@ function readMaxConcurrentWorktrees(projectRoot: string): number | null {
 async function runGit(
   args: string[],
   cwd: string,
-  errorCode: TRPCError["code"] = "INTERNAL_SERVER_ERROR",
+  errorCode: TRPCErrorType["code"] = "INTERNAL_SERVER_ERROR",
   errorMessage?: string
 ): Promise<string> {
   try {
@@ -113,7 +114,7 @@ async function runGit(
     const message =
       errorMessage ??
       `git ${args[0]} failed: ${err instanceof Error ? err.message : String(err)}`;
-    throw new TRPCError({ code: errorCode, message });
+    throw new TRPCErrorClass({ code: errorCode, message });
   }
 }
 
@@ -241,7 +242,7 @@ export const worktreeRouter = router({
         const existingOutput = await runGit(["worktree", "list", "--porcelain"], root);
         const existing = parsePorcelainWorktrees(existingOutput);
         if (existing.length >= maxConcurrent) {
-          throw new TRPCError({
+          throw new TRPCErrorClass({
             code: "PRECONDITION_FAILED",
             message: `Max concurrent worktrees (${maxConcurrent}) reached for project '${input.projectId}'`,
           });

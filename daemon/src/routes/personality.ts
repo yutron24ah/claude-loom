@@ -10,8 +10,7 @@
 import { z } from "zod";
 import { readdir, readFile } from "node:fs/promises";
 import { join, basename } from "node:path";
-import { TRPCError } from "@trpc/server";
-import { router, publicProcedure } from "../trpc.js";
+import { router, publicProcedure, TRPCErrorClass } from "../trpc.js";
 import { findGitRoot } from "../project/detect.js";
 
 // ---------------------------------------------------------------------------
@@ -166,12 +165,12 @@ export const personalityRouter = router({
       } catch (err: unknown) {
         const nodeErr = err as NodeJS.ErrnoException;
         if (nodeErr.code === "ENOENT") {
-          throw new TRPCError({
+          throw new TRPCErrorClass({
             code: "NOT_FOUND",
             message: `Personality preset '${input.name}' not found`,
           });
         }
-        throw new TRPCError({
+        throw new TRPCErrorClass({
           code: "INTERNAL_SERVER_ERROR",
           message: `Failed to read preset '${input.name}'`,
           cause: err,
