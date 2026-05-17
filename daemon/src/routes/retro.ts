@@ -18,6 +18,13 @@ import { homedir } from "node:os";
 import { router, publicProcedure, TRPCErrorClass } from "../trpc.js";
 import { retroIdSchema } from "../lib/path-safety.js";
 import { atomicWriteJson, readJsonOrNull } from "../lib/json-file.js";
+import {
+  parseArchiveMarkdown,
+  reconstructAppliedSummary,
+  reconstructPendingSummary,
+  type ReconstructedAppliedSummary,
+  type ReconstructedPendingSummary,
+} from "../lib/retro-reconstruct.js";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -342,4 +349,45 @@ export const retroRouter = router({
 
       return { retroId };
     }),
+
+  /**
+   * reconstructFromArchive: durability fallback for SPEC §3.9.12 + §3.9.16.
+   *
+   * When `<project>/.claude-loom/retro/<retro_id>/pending.json` is missing or
+   * corrupt, parse the git-tracked archive markdown at
+   * `<project>/docs/retro/<retro_id>-report.md` and reconstruct synthetic
+   * applied_summary + pending_summary.
+   *
+   * Best-effort: missing fields default to safe values, unparseable lines
+   * are skipped + reported via `warnings` array. The output carries the
+   * `reconstructed_from_archive: true` marker so downstream consumers can
+   * identify reconstructed state vs. authoritative state.
+   */
+  reconstructFromArchive: publicProcedure
+    .input(z.object({ retroId: retroIdSchema }))
+    .query(
+      async ({
+        input,
+      }): Promise<{
+        appliedSummary: ReconstructedAppliedSummary;
+        pendingSummary: ReconstructedPendingSummary;
+        warnings: string[];
+      }> => {
+        const archivePath = join(repoRoot(), "docs", "retro", `${input.retroId}-report.md`);
+        if (!existsSync(archivePath)) {
+          throw new TRPCErrorClass({
+            code: "NOT_FOUND",
+            message: `Archive markdown not found: docs/retro/${input.retroId}-report.md`,
+          });
+        }
+        const content = readFileSync(archivePath, "utf-8");
+        const parsed = parseArchiveMarkdown(content, input.retroId);
+        const now = Date.now();
+        return {
+          appliedSummary: reconstructAppliedSummary(parsed, now),
+          pendingSummary: reconstructPendingSummary(parsed, now),
+          warnings: parsed.warnings,
+        };
+      }
+    ),
 });
