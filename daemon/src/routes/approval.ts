@@ -4,7 +4,7 @@
 // pending approval requests. Decision metadata is stored via JSON update on payload.
 import { z } from "zod";
 import { eq, and } from "drizzle-orm";
-import { router, publicProcedure } from "../trpc.js";
+import { router, publicProcedure, TRPCErrorClass } from "../trpc.js";
 import { createDBClient } from "../db/client.js";
 import { events } from "../db/schema.js";
 import type { Event, NewEvent } from "../db/schema.js";
@@ -42,7 +42,10 @@ export const approvalRouter = router({
         .where(eq(events.id, input.eventId));
 
       if (!original) {
-        return { success: false };
+        throw new TRPCErrorClass({
+          code: "NOT_FOUND",
+          message: `Event ${input.eventId} not found`,
+        });
       }
 
       // Append a decision event

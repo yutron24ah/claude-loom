@@ -15,18 +15,13 @@
  * Note: subscription emit (broadcaster.emitLearnedGuidanceChange) is deferred to Task 9.
  */
 import { z } from "zod";
-import {
-  existsSync,
-  readFileSync,
-  writeFileSync,
-  mkdirSync,
-  renameSync,
-} from "node:fs";
-import { join, dirname } from "node:path";
+import { existsSync, readFileSync } from "node:fs";
+import { join } from "node:path";
 import { homedir } from "node:os";
-import { nanoid } from "nanoid";
 import { router, publicProcedure, TRPCErrorClass } from "../trpc.js";
 import { broadcaster } from "../events/broadcaster.js";
+import { projectIdSchema, assertSafeProjectId } from "../lib/path-safety.js";
+import { atomicWriteJson, readJsonOrDefault } from "../lib/json-file.js";
 
 // ---------------------------------------------------------------------------
 // File paths
@@ -35,12 +30,8 @@ import { broadcaster } from "../events/broadcaster.js";
 const USER_PREFS_PATH = join(homedir(), ".claude-loom", "user-prefs.json");
 
 // SECURITY: projectId は basename only、path traversal 防止
-// 形式: nanoid (英数字 + ハイフン + アンダースコア) のみ許容
-const projectIdSchema = z
-  .string()
-  .regex(/^[A-Za-z0-9_-]+$/, "projectId must be alphanumeric with - or _ only")
-  .min(1)
-  .max(64);
+// projectIdSchema + assertSafeProjectId は lib/path-safety.ts の SSoT を re-use
+// (audit IMPORTANT-6、2026-05-17 daemon-cleanup)
 
 /** Resolve project root from projectId.
  *  M1.5 inline: scan ~/.claude-loom registered projects OR fall back to cwd.
@@ -49,11 +40,8 @@ const projectIdSchema = z
  *  SECURITY: projectIdSchema (basename only) 経由で zod validation 済 input 前提。
  */
 function resolveProjectRoot(projectId: string): string {
-  // Defense in depth: even if input bypassed zod, basename strip
-  const safe = projectId.replace(/[^A-Za-z0-9_-]/g, "");
-  if (safe !== projectId || safe.length === 0) {
-    throw new Error(`Invalid projectId: ${projectId}`);
-  }
+  // Defense in depth: lib/path-safety.ts SSoT で basename strip
+  const safe = assertSafeProjectId(projectId);
   // Try registered projects in ~/.claude-loom/projects/<projectId>/root
   const registeredRoot = join(homedir(), ".claude-loom", "projects", safe, "root");
   if (existsSync(registeredRoot)) {
@@ -66,26 +54,6 @@ function resolveProjectRoot(projectId: string): string {
 function projectPrefsPath(projectId: string): string {
   const root = resolveProjectRoot(projectId);
   return join(root, ".claude-loom", "project-prefs.json");
-}
-
-// ---------------------------------------------------------------------------
-// Atomic write helper (M1 config.ts pattern: nanoid tmp + rename)
-// ---------------------------------------------------------------------------
-
-function atomicWriteJson(filePath: string, data: unknown): void {
-  mkdirSync(dirname(filePath), { recursive: true });
-  const tmpPath = join(dirname(filePath), `.prefs-${nanoid(8)}.tmp`);
-  writeFileSync(tmpPath, JSON.stringify(data, null, 2), "utf-8");
-  renameSync(tmpPath, filePath);
-}
-
-function readJsonOrDefault<T>(filePath: string, defaultValue: T): T {
-  if (!existsSync(filePath)) return defaultValue;
-  try {
-    return JSON.parse(readFileSync(filePath, "utf-8")) as T;
-  } catch {
-    return defaultValue;
-  }
 }
 
 // ---------------------------------------------------------------------------
@@ -351,16 +319,23 @@ const learnedGuidanceRouter = router({
       })
     )
     .mutation(async ({ input }): Promise<{ success: boolean }> => {
+      const scopeLabel = input.scope === "user" ? "user prefs" : "project prefs";
       if (input.scope === "user") {
         const prefs = readUserPrefs();
-        const agent = prefs.agents?.[input.agentName];
-        const guidance = agent?.learned_guidance?.find(
+        if (!prefs.agents || !prefs.agents[input.agentName]) {
+          throw new TRPCErrorClass({
+            code: "NOT_FOUND",
+            message: `Agent ${input.agentName} not found in ${scopeLabel}`,
+          });
+        }
+        const agent = prefs.agents[input.agentName];
+        const guidance = agent.learned_guidance?.find(
           (g) => g.id === input.guidanceId
         );
         if (!guidance) {
           throw new TRPCErrorClass({
             code: "NOT_FOUND",
-            message: `Guidance not found: ${input.guidanceId} for agent ${input.agentName} in user prefs`,
+            message: `Guidance not found: ${input.guidanceId} for agent ${input.agentName} in ${scopeLabel}`,
           });
         }
         guidance.active = input.active;
@@ -373,14 +348,20 @@ const learnedGuidanceRouter = router({
           });
         }
         const prefs = readProjectPrefs(input.projectId);
-        const agent = prefs.agents?.[input.agentName];
-        const guidance = agent?.learned_guidance?.find(
+        if (!prefs.agents || !prefs.agents[input.agentName]) {
+          throw new TRPCErrorClass({
+            code: "NOT_FOUND",
+            message: `Agent ${input.agentName} not found in ${scopeLabel}`,
+          });
+        }
+        const agent = prefs.agents[input.agentName];
+        const guidance = agent.learned_guidance?.find(
           (g) => g.id === input.guidanceId
         );
         if (!guidance) {
           throw new TRPCErrorClass({
             code: "NOT_FOUND",
-            message: `Guidance not found: ${input.guidanceId} for agent ${input.agentName} in project prefs`,
+            message: `Guidance not found: ${input.guidanceId} for agent ${input.agentName} in ${scopeLabel}`,
           });
         }
         guidance.active = input.active;
@@ -412,13 +393,20 @@ const learnedGuidanceRouter = router({
       })
     )
     .mutation(async ({ input }): Promise<{ success: boolean }> => {
+      const scopeLabel = input.scope === "user" ? "user prefs" : "project prefs";
       if (input.scope === "user") {
         const prefs = readUserPrefs();
-        const agent = prefs.agents?.[input.agentName];
-        if (!agent?.learned_guidance) {
+        if (!prefs.agents || !prefs.agents[input.agentName]) {
           throw new TRPCErrorClass({
             code: "NOT_FOUND",
-            message: `Guidance not found: ${input.guidanceId} for agent ${input.agentName} in user prefs`,
+            message: `Agent ${input.agentName} not found in ${scopeLabel}`,
+          });
+        }
+        const agent = prefs.agents[input.agentName];
+        if (!agent.learned_guidance) {
+          throw new TRPCErrorClass({
+            code: "NOT_FOUND",
+            message: `Guidance not found: ${input.guidanceId} for agent ${input.agentName} in ${scopeLabel}`,
           });
         }
         const idx = agent.learned_guidance.findIndex(
@@ -427,7 +415,7 @@ const learnedGuidanceRouter = router({
         if (idx === -1) {
           throw new TRPCErrorClass({
             code: "NOT_FOUND",
-            message: `Guidance not found: ${input.guidanceId} for agent ${input.agentName} in user prefs`,
+            message: `Guidance not found: ${input.guidanceId} for agent ${input.agentName} in ${scopeLabel}`,
           });
         }
         agent.learned_guidance.splice(idx, 1);
@@ -440,11 +428,17 @@ const learnedGuidanceRouter = router({
           });
         }
         const prefs = readProjectPrefs(input.projectId);
-        const agent = prefs.agents?.[input.agentName];
-        if (!agent?.learned_guidance) {
+        if (!prefs.agents || !prefs.agents[input.agentName]) {
           throw new TRPCErrorClass({
             code: "NOT_FOUND",
-            message: `Guidance not found: ${input.guidanceId} for agent ${input.agentName} in project prefs`,
+            message: `Agent ${input.agentName} not found in ${scopeLabel}`,
+          });
+        }
+        const agent = prefs.agents[input.agentName];
+        if (!agent.learned_guidance) {
+          throw new TRPCErrorClass({
+            code: "NOT_FOUND",
+            message: `Guidance not found: ${input.guidanceId} for agent ${input.agentName} in ${scopeLabel}`,
           });
         }
         const idx = agent.learned_guidance.findIndex(
@@ -453,7 +447,7 @@ const learnedGuidanceRouter = router({
         if (idx === -1) {
           throw new TRPCErrorClass({
             code: "NOT_FOUND",
-            message: `Guidance not found: ${input.guidanceId} for agent ${input.agentName} in project prefs`,
+            message: `Guidance not found: ${input.guidanceId} for agent ${input.agentName} in ${scopeLabel}`,
           });
         }
         agent.learned_guidance.splice(idx, 1);

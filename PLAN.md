@@ -1498,7 +1498,23 @@ Phase 1 MVP 21 milestone (M0 → M5) を 2026-05-04 に main 統合完了 (4 sta
 - **multi-contributor branch hygiene enforcement** (F-proc-004 後段): branch chain depth alert mechanism、PR auto-opening trigger
 - **Phase 2 release engineering** (F-pj-004 後段): [0.0.x] → [0.1.0] migration path doc、external user 向け release prep
 - **F-res-004 external 還元**: uninstall round-trip test pattern を claude-blog-skill 等の他 harness にも適用
-- **M0.X-daemon-refactor** (`refactor/daemon-cleanup` 候補 branch、2026-05-17 で scope codify): daemon/src/ 6,101 行 TypeScript の architectural cleanup。routes/prefs.ts (479) / routes/worktree.ts (389) / routes/consistency.ts (378) / routes/retro.ts (372) が上位 candidate、SRP check / duplicate code 検出 / type safety 改善 / events/types.ts (243) zod schema 統合性 verify。Vitest 138+ test との regression-free 整合性保持が必須。scope は agent → skill migration (`docs/agent-prompt-design` branch、2026-05-17 closure) とは独立した技術負債、別 milestone / PR で focused review 推奨
+- **M0.X-daemon-refactor Phase 1** (`refactor/daemon-cleanup` branch、2026-05-17 closure): daemon/src/ TypeScript audit + Phase 1 targeted fixes 完了。Explore agent audit で 18 issues 検出 (2 Critical / 10 Important / 6 Nice-to-have)、その内 5 issues を本 branch で fix:
+  - CRITICAL-2: `routes/approval.ts:37-46` silent failure → NOT_FOUND throw に修正
+  - IMPORTANT-1: atomic JSON file utility を `lib/json-file.ts` に SSoT 抽出 (prefs / retro の duplicate 解消)
+  - IMPORTANT-2: TRPCError 直接 import を TRPCErrorClass 統一に変更 (personality + worktree)
+  - IMPORTANT-4: prefs learnedGuidance optional chaining を explicit null check に明示化
+  - IMPORTANT-6: path-safety validation を `lib/path-safety.ts` に SSoT 抽出 (projectId / retroId)
+  - regression-free verify: Vitest 546/546 PASS 維持
+- **M0.X-daemon-refactor Phase 2** (next milestone candidate、未着手): Phase 1 で deferred な architectural changes:
+  - CRITICAL-1: module-level DB singleton (test isolation 影響、tRPC middleware 経由 per-request context injection 必要)
+  - IMPORTANT-3: `z.unknown()` 濫用解消 (retro_session_history / learned_patterns 等の sub-schema 明示化)
+  - IMPORTANT-5: broadcaster.emit 型安全化 (typed helper functions 新設、emit 不整合 build-time 検出化)
+  - IMPORTANT-7: dead code removal (frontend audit 必要、export type aliases の actual usage 確認)
+  - IMPORTANT-8: Response DTO 標準化 (Drizzle $inferSelect の snake_case API leak 解消、SPEC §6.2 codify)
+  - IMPORTANT-9: broadcast + state mutation の atomicity (events table redesign 必要)
+  - IMPORTANT-10: DB client singleton consistency (worktree.ts の per-procedure 化を module-level に統一)
+  - NICE-1〜6: consolidation candidates (partial schema helper / typed broadcaster export / retroSession naming / etc.)
+  - scope は SPEC §12 codify 含む architectural change、別 spec phase 推奨
 
 ## マイルストーン M0.X-skill-migration (`docs/agent-prompt-design` branch、2026-05-17 から)
 
