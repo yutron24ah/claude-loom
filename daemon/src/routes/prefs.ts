@@ -351,16 +351,23 @@ const learnedGuidanceRouter = router({
       })
     )
     .mutation(async ({ input }): Promise<{ success: boolean }> => {
+      const scopeLabel = input.scope === "user" ? "user prefs" : "project prefs";
       if (input.scope === "user") {
         const prefs = readUserPrefs();
-        const agent = prefs.agents?.[input.agentName];
-        const guidance = agent?.learned_guidance?.find(
+        if (!prefs.agents || !prefs.agents[input.agentName]) {
+          throw new TRPCErrorClass({
+            code: "NOT_FOUND",
+            message: `Agent ${input.agentName} not found in ${scopeLabel}`,
+          });
+        }
+        const agent = prefs.agents[input.agentName];
+        const guidance = agent.learned_guidance?.find(
           (g) => g.id === input.guidanceId
         );
         if (!guidance) {
           throw new TRPCErrorClass({
             code: "NOT_FOUND",
-            message: `Guidance not found: ${input.guidanceId} for agent ${input.agentName} in user prefs`,
+            message: `Guidance not found: ${input.guidanceId} for agent ${input.agentName} in ${scopeLabel}`,
           });
         }
         guidance.active = input.active;
@@ -373,14 +380,20 @@ const learnedGuidanceRouter = router({
           });
         }
         const prefs = readProjectPrefs(input.projectId);
-        const agent = prefs.agents?.[input.agentName];
-        const guidance = agent?.learned_guidance?.find(
+        if (!prefs.agents || !prefs.agents[input.agentName]) {
+          throw new TRPCErrorClass({
+            code: "NOT_FOUND",
+            message: `Agent ${input.agentName} not found in ${scopeLabel}`,
+          });
+        }
+        const agent = prefs.agents[input.agentName];
+        const guidance = agent.learned_guidance?.find(
           (g) => g.id === input.guidanceId
         );
         if (!guidance) {
           throw new TRPCErrorClass({
             code: "NOT_FOUND",
-            message: `Guidance not found: ${input.guidanceId} for agent ${input.agentName} in project prefs`,
+            message: `Guidance not found: ${input.guidanceId} for agent ${input.agentName} in ${scopeLabel}`,
           });
         }
         guidance.active = input.active;
@@ -412,13 +425,20 @@ const learnedGuidanceRouter = router({
       })
     )
     .mutation(async ({ input }): Promise<{ success: boolean }> => {
+      const scopeLabel = input.scope === "user" ? "user prefs" : "project prefs";
       if (input.scope === "user") {
         const prefs = readUserPrefs();
-        const agent = prefs.agents?.[input.agentName];
-        if (!agent?.learned_guidance) {
+        if (!prefs.agents || !prefs.agents[input.agentName]) {
           throw new TRPCErrorClass({
             code: "NOT_FOUND",
-            message: `Guidance not found: ${input.guidanceId} for agent ${input.agentName} in user prefs`,
+            message: `Agent ${input.agentName} not found in ${scopeLabel}`,
+          });
+        }
+        const agent = prefs.agents[input.agentName];
+        if (!agent.learned_guidance) {
+          throw new TRPCErrorClass({
+            code: "NOT_FOUND",
+            message: `Guidance not found: ${input.guidanceId} for agent ${input.agentName} in ${scopeLabel}`,
           });
         }
         const idx = agent.learned_guidance.findIndex(
@@ -427,7 +447,7 @@ const learnedGuidanceRouter = router({
         if (idx === -1) {
           throw new TRPCErrorClass({
             code: "NOT_FOUND",
-            message: `Guidance not found: ${input.guidanceId} for agent ${input.agentName} in user prefs`,
+            message: `Guidance not found: ${input.guidanceId} for agent ${input.agentName} in ${scopeLabel}`,
           });
         }
         agent.learned_guidance.splice(idx, 1);
@@ -440,11 +460,17 @@ const learnedGuidanceRouter = router({
           });
         }
         const prefs = readProjectPrefs(input.projectId);
-        const agent = prefs.agents?.[input.agentName];
-        if (!agent?.learned_guidance) {
+        if (!prefs.agents || !prefs.agents[input.agentName]) {
           throw new TRPCErrorClass({
             code: "NOT_FOUND",
-            message: `Guidance not found: ${input.guidanceId} for agent ${input.agentName} in project prefs`,
+            message: `Agent ${input.agentName} not found in ${scopeLabel}`,
+          });
+        }
+        const agent = prefs.agents[input.agentName];
+        if (!agent.learned_guidance) {
+          throw new TRPCErrorClass({
+            code: "NOT_FOUND",
+            message: `Guidance not found: ${input.guidanceId} for agent ${input.agentName} in ${scopeLabel}`,
           });
         }
         const idx = agent.learned_guidance.findIndex(
@@ -453,7 +479,7 @@ const learnedGuidanceRouter = router({
         if (idx === -1) {
           throw new TRPCErrorClass({
             code: "NOT_FOUND",
-            message: `Guidance not found: ${input.guidanceId} for agent ${input.agentName} in project prefs`,
+            message: `Guidance not found: ${input.guidanceId} for agent ${input.agentName} in ${scopeLabel}`,
           });
         }
         agent.learned_guidance.splice(idx, 1);
