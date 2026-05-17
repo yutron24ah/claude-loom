@@ -387,6 +387,40 @@ if [ -f "$SPEC_FILE" ]; then
   fi
 fi
 
+# ----- t8 checks: cross-ref rewire (skeleton-n18 and skeleton-n19) -----
+# n18: 古記法 "SPEC §X" が spec/*.md 内に 0 件 (ただし header boilerplate と "SPEC §3.11" は除外)
+# n19: 新記法 cross-file ref "spec/<topic>.md §" が spec/*.md 内に ≥10 件
+
+# ----- Check (n18): no old-style "SPEC §X" refs remain in spec/*.md -----
+# Exclude:
+#   - header boilerplate lines (lines 5-7, containing "master SPEC §3.11.4 SSoT" or migration note)
+#   - valid "SPEC §3.11" refs (master stays in §3.11)
+#   - "master SPEC §3.11" in headers
+n18_count=0
+for spec_file in "$ROOT_DIR/spec/harness.md" "$ROOT_DIR/spec/daemon-and-data.md" "$ROOT_DIR/spec/ui-arch.md" "$ROOT_DIR/spec/retro-system.md" "$ROOT_DIR/spec/install-and-test.md"; do
+  if [ -f "$spec_file" ]; then
+    # Count "SPEC §N" refs excluding "SPEC §3.11" (valid master ref) and "master SPEC §3.11" in headers
+    file_old_refs=$(grep -E "SPEC §[0-9]" "$spec_file" | grep -v "SPEC §3\.11" | grep -v "^>" | wc -l || true)
+    n18_count=$((n18_count + file_old_refs))
+  fi
+done
+if [ "$n18_count" -eq 0 ]; then
+  echo "PASS [skeleton-n18]: no old-style 'SPEC §X' refs (excluding §3.11) remain in spec/*.md"
+else
+  echo "FAIL [skeleton-n18]: $n18_count old-style 'SPEC §X' ref(s) remain in spec/*.md (need 0)"
+  failures=$((failures + 1))
+fi
+
+# ----- Check (n19): ≥10 new-style cross-file refs in spec/*.md -----
+# Match both bare (spec/foo.md §X) and backtick-quoted (`spec/foo.md` §X) forms
+n19_count=$(grep -rE "spec/[a-z-]+\.md.{0,2}§" "$ROOT_DIR/spec/" | wc -l || true)
+if [ "$n19_count" -ge 10 ]; then
+  echo "PASS [skeleton-n19]: $n19_count new-style cross-file refs 'spec/<topic>.md §' found in spec/*.md (≥10)"
+else
+  echo "FAIL [skeleton-n19]: only $n19_count new-style cross-file ref(s) found in spec/*.md (need ≥10)"
+  failures=$((failures + 1))
+fi
+
 if [ "$failures" -gt 0 ]; then
   echo "multi_file_skeleton_test FAILED with $failures violation(s)"
   exit 1

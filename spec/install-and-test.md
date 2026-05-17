@@ -262,7 +262,7 @@ UI 開発時の test 戦略を **2 層化**：
 | **Layer 1: bash + automated test** | `bash tests/run_tests.sh` + `pnpm test` (vitest unit + integration) + `pnpm e2e` (Playwright baseline) | 論理 correctness、build / install / unit behavior、既知 baseline regression |
 | **Layer 2: browser-interactive smoke** | `loom-ui-smoke` skill (`spec/ui-arch.md` §3)、Playwright MCP `browser_*` tool 経由 | **実機での描画・WS 流通・state propagation・navigation・interactivity** が automated test mock の隙間に隠れた gap を検出 |
 
-両 layer を **milestone closure default** として実行、F-proc-005 success record の継続的拡張。Layer 2 は UI 開発を含む milestone のみ適用 (suggest skill、master SPEC §3.10.1)、daemon-only / agent-prompt-only の milestone では skip 可能。
+両 layer を **milestone closure default** として実行、F-proc-005 success record の継続的拡張。Layer 2 は UI 開発を含む milestone のみ適用 (suggest skill、`spec/harness.md` §6.1)、daemon-only / agent-prompt-only の milestone では skip 可能。
 
 #### 3.4.1 Layer 2.5: PM dogfood smoke（M0.X-runtime-mode-recovery 後 retro 2026-05-06-003 F-USER-009 由来、必須）
 

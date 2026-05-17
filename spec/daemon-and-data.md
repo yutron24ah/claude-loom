@@ -169,7 +169,7 @@ daemon → Web UI で push される event の主要型一覧（詳細 payload �
 
 #### 3.1 M0.5 — Approval-Reduction Skills（M0 と M1 の橋渡し）
 
-M0 で構築したハーネスを使った M1+ 開発の前に、承認プロンプト削減のための補助 skill を前倒しで shipping する。SPEC §3 元設計では skill 自動生成は Phase 2 だが、それは「Hermes 型自己進化で skill を**生成する**」フェーズの話。ここで shipping するのは **harness 利用者全員が必ず欲しがる手書き skill**：
+M0 で構築したハーネスを使った M1+ 開発の前に、承認プロンプト削減のための補助 skill を前倒しで shipping する。`SPEC.md` §3 元設計では skill 自動生成は Phase 2 だが、それは「Hermes 型自己進化で skill を**生成する**」フェーズの話。ここで shipping するのは **harness 利用者全員が必ず欲しがる手書き skill**：
 
 - `loom-test`：ハーネステスト一括実行 + 結果サマリ
 - `loom-status`：repo / harness 状態スナップショット
@@ -177,7 +177,7 @@ M0 で構築したハーネスを使った M1+ 開発の前に、承認プロン
 - `loom-review`：single + trio strategy の review skill (single = 1 multi-aspect、trio = 3 parallel aspect specialists)、旧 `loom-review-trio` skill は 2026-05 で本 skill に統合済
 - `templates/settings.json.template`：bundled-script を allowlist に含めた settings 初期値
 
-shipping 規模：4 skill + 1 template + `install.sh` 拡張。SPEC §9.1 のディレクトリ構造に `skills/` が M0.5 から有効化される。
+shipping 規模：4 skill + 1 template + `install.sh` 拡張。`spec/install-and-test.md` §2.1 のディレクトリ構造に `skills/` が M0.5 から有効化される。
 
 ## 4. データモデル（SQLite スキーマ）(旧 master §6)
 
@@ -366,7 +366,7 @@ session_start hook 発火時：
 PM が /loom-spec 実行時に追加判定（init / adopt 分岐）：
   7. 既存ファイル検知（SPEC.md / PLAN.md / CLAUDE.md / README.md / tests/）
      - すべて無し → init モード（テンプレから生成）
-     - いずれかあり → adopt モード（§3.7 のフローに従う）
+     - いずれかあり → adopt モード（`spec/install-and-test.md` §1 のフローに従う）
   8. user に検知レポート提示 → 項目ごとの承認
   9. .claude-loom/project.json を生成 → projects テーブル本登録
 ```
@@ -892,7 +892,7 @@ export type AppliedSummary = z.infer<typeof appliedSummarySchema>;
 **lens 注入 mechanism**:
 - 4 lens template (LENS_PJ / LENS_PROCESS / LENS_META / LENS_RESEARCHER、`skills/loom-retro/SKILL.md`) の dispatch prompt prefix に `applied_summary_path: <path>` を追加
 - lens は category 関連 finding を `Read` tool で参照、stale check を Stage 1 内で自前実行
-- M3.0 retro proc-NEW-1 の「counter-arguer 単独 stale check」を構造的に置換、4 lens 全体が stale 判別能力を獲得（root cause 解決、SPEC §3.9.x P4 理想形）
+- M3.0 retro proc-NEW-1 の「counter-arguer 単独 stale check」を構造的に置換、4 lens 全体が stale 判別能力を獲得（root cause 解決、`spec/retro-system.md` §1.x P4 理想形）
 
 ### 4.9.8 `<project>/.claude-loom/retro/<retro_id>/pending_summary.json` 完全スキーマ（M0.11.2 から）
 

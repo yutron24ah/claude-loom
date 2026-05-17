@@ -16,7 +16,7 @@ M3 milestone の核となる frontend 設計判断を SSoT として集約。spe
 - **lifecycle**: `useEffect(() => { gameRef.current = new Phaser.Game(config); return () => gameRef.current?.destroy() }, [])`
 - **state bridge**: zustand subscribe + Phaser scene event は **agent state → sprite state の単方向 push が主**、双方向 OT は不要
 - **HMR**: Vite HMR で scene 状態保持のため stable ref + `import.meta.hot.dispose` で `game.destroy()` 必須
-- **却下案**: react-phaser-fiber（library 更新ペース遅）/ @phaserjs/react（ecosystem 例少ない）/ canvas 直書き（SPEC §12 Phaser 4 確定値を覆す）
+- **却下案**: react-phaser-fiber（library 更新ペース遅）/ @phaserjs/react（ecosystem 例少ない）/ canvas 直書き（`SPEC.md` §12 Phaser 4 確定値を覆す）
 
 ### 1.2 PLAN.md 双方向同期戦略（β-3 確定）
 
@@ -32,7 +32,7 @@ M3 milestone の核となる frontend 設計判断を SSoT として集約。spe
 - **theme 統合**: tokens.css の CSS variable `var(--color-bar)` 等を SVG 直参照、3 theme (pop/dusk/night) 即反映
 - **scope**: read-only bar + 行 click で Agent Detail navigate（edit / zoom / pan は M5 以降）
 - **実装規模**: 200-400 LoC（library 依存ゼロ、bundle 増ゼロ）
-- **却下案**: gantt-task-react（50KB 増 + theme bridge hack）/ frappe-gantt（React wrapper 自前 + TS 型不在）/ react-google-charts（external CDN 依存、SPEC §3.5 security model と相性悪）
+- **却下案**: gantt-task-react（50KB 増 + theme bridge hack）/ frappe-gantt（React wrapper 自前 + TS 型不在）/ react-google-charts（external CDN 依存、`SPEC.md` §3.5 security model と相性悪）
 
 ### 1.4 Toast event 拡張（M2 5 event → M3 6 event）
 
@@ -109,7 +109,7 @@ backend / frontend 問わず、code 中の文字列リテラル（特に enum / 
 enum / schema / status 値を複数 file で共有する場合：
 
 1. **primary SSoT file 明示**: 当該値の source of truth となる単一 file を define（例: enum ならば DB schema が SSoT、event schema は派生）
-2. **派生 file は import 経由**: primary SSoT file から `import type` or `import { ... }` で参照し、派生定義禁止。型 export pattern (SPEC §12 「daemon が AppRouter / Drizzle schema type を export、frontend が import type ...」) を活用
+2. **派生 file は import 経由**: primary SSoT file から `import type` or `import { ... }` で参照し、派生定義禁止。型 export pattern (`SPEC.md` §12 「daemon が AppRouter / Drizzle schema type を export、frontend が import type ...」) を活用
 3. **import 不可な場合は test cross-check**: `<a>` と `<b>` で同 enum を独立に持つ必然性ある場合（例: zod schema と TS const が別 layer で必要）、両者の値が一致することを assert する test を必ず追加。`tests/REQUIREMENTS.md` に該当 cross-check assertion を REQ 化
 
 ### 2.4 適用対象
@@ -139,7 +139,7 @@ retro 2026-05-04-001 で F-proc-005「t2 E2E verification gate effectiveness」�
 
 ### 3.2 Skill purpose
 
-**画面要件・機能要件・design から test 戦略を derive、Playwright MCP browser tool 経由で実機 verify、構造化 report を返す。** UI 開発時のみ必要、blanket mandate せん **suggest skill** category（SPEC §3.10.1 mandate vs suggest table）。
+**画面要件・機能要件・design から test 戦略を derive、Playwright MCP browser tool 経由で実機 verify、構造化 report を返す。** UI 開発時のみ必要、blanket mandate せん **suggest skill** category（`spec/harness.md` §6.1 mandate vs suggest table）。
 
 ### 3.3 4 stage pipeline (hybrid Option C)
 
@@ -217,7 +217,7 @@ UI 関連 task / milestone closure verification の候補として `loom-ui-smok
 
 ### 4.1 背景
 
-M0.11.3 で `loom-ui-smoke` skill 完成 + Phase 1 functional MVP 検証完了したが、実機 smoke で「automated test green ≠ design vision 達成」を user が指摘：13 cat agent + Stardew 系 pixel RPG room + 3 theme + RPG window chrome の design intent (PIXEL_ART_HANDOFF.md / SPEC §12 visual 方向性) が **placeholder 円 dot のまま** で aesthetic MVP closure 未達成。
+M0.11.3 で `loom-ui-smoke` skill 完成 + Phase 1 functional MVP 検証完了したが、実機 smoke で「automated test green ≠ design vision 達成」を user が指摘：13 cat agent + Stardew 系 pixel RPG room + 3 theme + RPG window chrome の design intent (PIXEL_ART_HANDOFF.md / `SPEC.md` §12 visual 方向性) が **placeholder 円 dot のまま** で aesthetic MVP closure 未達成。
 
 design source: `claude-room-handoff.zip` (Claude Design tool export bundle、`/tmp/claude-room-handoff/claude-room/project/` 配置、index.html + 7 jsx component file + tokens.css + styles.css + 6 PNG asset)。本 milestone (M0.11.4) で full design implementation pass を実施、aesthetic MVP completion を達成。
 
@@ -234,7 +234,7 @@ design は **all SVG + DOM + CSS** で構築 (Phaser 不使用)。M3.0 の Phase
 旧: 「Phaser 4 React 内 mount = 自前 `useEffect` + `useRef`」
 新: 「**DOM/SVG pixel-perfect rendering = `<svg viewBox>` + `<rect shapeRendering="crispEdges">` + `image-rendering: pixelated` CSS**、library 依存ゼロ、design pixel-perfect、HMR 単純」
 
-SPEC §12 確定値表の Phaser 行は **「M3.0 で Phaser 4 試行 → M0.11.4 で DOM/SVG 採用 (rollback)」** と注記、archive value として履歴保存。
+`SPEC.md` §12 確定値表の Phaser 行は **「M3.0 で Phaser 4 試行 → M0.11.4 で DOM/SVG 採用 (rollback)」** と注記、archive value として履歴保存。
 
 ### 4.4 Component port matrix (15 view + 共通 components)
 
@@ -285,7 +285,7 @@ SPEC §12 確定値表の Phaser 行は **「M3.0 で Phaser 4 試行 → M0.11.
 
 ### 4.7 Phaser dependency removal
 
-`ui/package.json` から `phaser` (^4.1.0) dependency 削除、関連 file (`ui/src/views/room/PhaserCanvas.tsx`、`ui/src/views/room/scenes/RoomScene.ts`、`ui/src/views/room/agentSpriteSync.ts`) を **物理削除** (SPEC §3.9.x P4 理想形「symptomatic patch 構造解決後の rollback」と同 pattern、Phaser infra rollback)。Playwright e2e baseline (`ui/e2e/__screenshots__/room-baseline.spec.ts-snapshots/room-pop.png`) は新 design 実装後に再生成。
+`ui/package.json` から `phaser` (^4.1.0) dependency 削除、関連 file (`ui/src/views/room/PhaserCanvas.tsx`、`ui/src/views/room/scenes/RoomScene.ts`、`ui/src/views/room/agentSpriteSync.ts`) を **物理削除** (`spec/retro-system.md` §1.x P4 理想形「symptomatic patch 構造解決後の rollback」と同 pattern、Phaser infra rollback)。Playwright e2e baseline (`ui/e2e/__screenshots__/room-baseline.spec.ts-snapshots/room-pop.png`) は新 design 実装後に再生成。
 
 ## 5. Ceremony Reduction Trinity Marker (旧 master §3.6.13)
 
@@ -293,14 +293,14 @@ claude-loom Phase 1 closure trinity (M0.11.5 / M0.11.6 / M0.11.7) で codify さ
 
 | trinity 章 | milestone | scope | rationale |
 |---|---|---|---|
-| **§3.2** Lazy Daemon ライフサイクル | M0.11.5 | session 開始時の SessionStart hook + slash command dual path で UI auto-launch、cold-start-only browser open | user が `/loom-pm` 起動直後に GUI を自然に視界へ出す ceremony reduction、context = "loom PJ 開始した" → intent = "GUI も見たい" の自動推論 |
-| **§3.6.8.9** PM Auto-Spec Entry | M0.11.6 | PM が context (PLAN.md status / git log / SPEC.md unchanged time) から spec phase 必要性を probe、auto-entry | user が `/loom-spec` 明示宣言不要、context = "milestone 境界 + SPEC drift" → intent = "spec 確認したい" の自動推論 |
-| **§3.6.8.10** PM Auto-Go Entry | M0.11.7 | PM が context (PLAN.md status / spec phase 完了 marker) から impl phase 必要性を probe、auto-entry | user が `/loom-go` 明示宣言不要、context = "spec done + PLAN ready" → intent = "実装着手したい" の自動推論 |
+| `spec/daemon-and-data.md` **§1** Lazy Daemon ライフサイクル | M0.11.5 | session 開始時の SessionStart hook + slash command dual path で UI auto-launch、cold-start-only browser open | user が `/loom-pm` 起動直後に GUI を自然に視界へ出す ceremony reduction、context = "loom PJ 開始した" → intent = "GUI も見たい" の自動推論 |
+| `spec/harness.md` **§4.9** PM Auto-Spec Entry | M0.11.6 | PM が context (PLAN.md status / git log / SPEC.md unchanged time) から spec phase 必要性を probe、auto-entry | user が `/loom-spec` 明示宣言不要、context = "milestone 境界 + SPEC drift" → intent = "spec 確認したい" の自動推論 |
+| `spec/harness.md` **§4.10** PM Auto-Go Entry | M0.11.7 | PM が context (PLAN.md status / spec phase 完了 marker) から impl phase 必要性を probe、auto-entry | user が `/loom-go` 明示宣言不要、context = "spec done + PLAN ready" → intent = "実装着手したい" の自動推論 |
 
 **共通 design principle**:
 - ceremony (明示 slash command 宣言) は default off、context probe で intent を満たせない時のみ user が ceremony で override
 - 全 trinity 章は `spec/harness.md` §4.7 path C (degraded mode = first-class operating mode) と整合、Bash tool 単体で context probe 可能 (Task tool 不要)
-- intent keyword (`/loom-spec` / `/loom-go` invoke 直前の user 文言) を SPEC §3.6.8.9 / §3.6.8.10 に列挙、PM は keyword 検出で auto-entry の信頼度を上げる
+- intent keyword (`/loom-spec` / `/loom-go` invoke 直前の user 文言) を `spec/harness.md` §4.9 / §4.10 に列挙、PM は keyword 検出で auto-entry の信頼度を上げる
 
 **Phase 2 application**: Phase 2 candidate (`Phase 2 candidate pool: UX refinement series`) の優先順位判定軸として、本 marker を 1st-class 評価軸とする。「該当 candidate が ceremony reduction trinity の延長線上にあるか」を design phase で確認すること。
 
@@ -324,9 +324,9 @@ claude.ai/design で詰めた UI 再設計を本実装に書き起こす milesto
 
 | trinity 章 | M0.15 での visual surface 完成 |
 |---|---|
-| §3.2 Lazy Daemon ライフサイクル (M0.11.5) | UI auto-launch flow → M0.15 で実 user-visible 12 画面が live data で動く |
-| §3.6.8.9 PM Auto-Spec Entry (M0.11.6) | ③ Plan view + Room poster で auto-entry 結果が可視化 |
-| §3.6.8.10 PM Auto-Go Entry (M0.11.7) | ② Gantt view で impl phase の dispatch live が可視化 |
+| `spec/daemon-and-data.md` §1 Lazy Daemon ライフサイクル (M0.11.5) | UI auto-launch flow → M0.15 で実 user-visible 12 画面が live data で動く |
+| `spec/harness.md` §4.9 PM Auto-Spec Entry (M0.11.6) | ③ Plan view + Room poster で auto-entry 結果が可視化 |
+| `spec/harness.md` §4.10 PM Auto-Go Entry (M0.11.7) | ② Gantt view で impl phase の dispatch live が可視化 |
 
 M0.15 は Phase 1 trinity が成立させた「dogfood phase の自己再帰的開発 workflow」の **最終 visual surface** を完成させる milestone。Phase 2 Kickoff (M1.0) の事前条件。
 
@@ -353,7 +353,7 @@ claude.ai/design 由来の以下 file 群は **3 役割を兼ねる SSoT**：
 | `redesign/README.md` |  | ✓ (運用 doc) |
 | `redesign/package.json` |  | ✓ (workspace 設定) |
 
-scenarios.js の **fixture 内容** に変更が必要な場合は、(a) `redesign/api/mock-fixtures.ts` を新設して production 用 fixture を別管理する、または (b) 本 SPEC §6 を update して新 milestone scope で再 design する、のいずれか。直接 edit は禁止。
+scenarios.js の **fixture 内容** に変更が必要な場合は、(a) `redesign/api/mock-fixtures.ts` を新設して production 用 fixture を別管理する、または (b) `spec/daemon-and-data.md` §4 を update して新 milestone scope で再 design する、のいずれか。直接 edit は禁止。
 
 **REQ 採番 PM 一括 append rule** (retro 2026-05-12-001 F-proc-004 由来):
 
@@ -377,7 +377,7 @@ PLAN.md M0.15 section が task list の SSoT。本 SPEC は Phase 構成の概�
 
 reviewer mode: single default、trio opt-in は 3 task のみ (⑦ Customization t5 / ⑬ PMChat t13 / Layer 2.5 smoke t20)。
 
-### 6.5 Layer 2.5 dogfood smoke matrix (closure 必須、SPEC §10.4.1 整合)
+### 6.5 Layer 2.5 dogfood smoke matrix (closure 必須、`spec/install-and-test.md` §3.4.1 整合)
 
 milestone tag (`m0.15-complete`) 設置 **直前** に PM 自身が以下を sequential 実行:
 
@@ -385,7 +385,7 @@ milestone tag (`m0.15-complete`) 設置 **直前** に PM 自身が以下を seq
 |---|---|---|
 | 1 | `bash hooks/loom-launch-ui.sh` | daemon (5757) + UI (5173) 両方起動 |
 | 2 | `curl -sf http://127.0.0.1:5757/health` | `{"status":"ok"}` |
-| 3 | `curl -s http://127.0.0.1:5757/mode \| jq .` | SPEC §3.2.1 6 field 充足 |
+| 3 | `curl -s http://127.0.0.1:5757/mode \| jq .` | `spec/daemon-and-data.md` §1.1 6 field 充足 |
 | 4 | `curl -sI http://127.0.0.1:5757/` | `200` + `content-type: text/html` |
 | 5 | 12 画面の SPA route (`/`, `/plan`, `/gantt`, `/retro`, `/consistency`, `/worktree`, `/customization`, `/guidance`, `/sessions`, `/project-settings`, `/tokens`, `/agents/:id`) を curl | 全部 `200` |
 | 6 | browser actual で `?mock=active` 付き 12 画面 visit | white screen 出さず claude.ai/design fixture が表示される |
@@ -414,7 +414,7 @@ UI redesign で既存 baseline screenshot (例: `ui/e2e/__screenshots__/room-bas
 - [x] Layer 2 browser-interactive smoke pass ← t21 (commit af2c07f) で Playwright e2e baseline 19/19 pass、Layer 2 browser-interactive 相当を達成
 - [x] Layer 2.5 dogfood smoke 全 7 step pass ← t20 (commit 58329d8) で PM 直接実行、`docs/smoke-tests/m0.15-dogfood/report.md` に structured report 出力
 - [x] Playwright e2e baseline (12 画面 screenshot + 重要 3 画面 1-click flow) pass ← t21 で 13 screenshot + 3 click flow + 3 room regenerated = 19/19 pass
-- [x] SPEC §3.6.14 + `docs/SCREEN_REQUIREMENTS.md` (12 画面の useScenario shape) + `docs/DOC_CONSISTENCY_CHECKLIST.md` (M0.15 check items) update 済 ← t19 で完了
+- [x] `spec/ui-arch.md` §6 + `docs/SCREEN_REQUIREMENTS.md` (12 画面の useScenario shape) + `docs/DOC_CONSISTENCY_CHECKLIST.md` (M0.15 check items) update 済 ← t19 で完了
 - [x] tag `m0.15-complete` 設置 + retro hook trigger ← t22 (commit 62ce2f1 後) で PM 設置完了、retro-2026-05-12-001 trigger 済
 - [x] `m0`〜`m5-complete` 全 tag 保持 ← t22 closure で git tag -l --sort=-creatordate verify 済
 

@@ -63,7 +63,7 @@ PJ 軸（製品）+ Process 軸（仕事の進め方）+ 外部研究 + 自己�
 - `<project>/.claude-loom/project-prefs.json` — retro auto-update（PJ 学習状態）
 - `~/.claude-loom/user-prefs.json` — retro auto-update（user 横断学習）
 
-merge 規則: project が user を field 単位 override（PJ 固有 policy が user グローバル設定を上書き）。schema 詳細は §6.9.1 / §6.9.2。
+merge 規則: project が user を field 単位 override（PJ 固有 policy が user グローバル設定を上書き）。schema 詳細は `spec/daemon-and-data.md` §4.9.1 / §4.9.2。
 
 ### 1.7 Auto-apply mechanism
 
@@ -98,21 +98,21 @@ retro session 開始時、`loom-retro-pm` agent は **直前 milestone の revie
 - **読込主体**: 4 lens (Stage 1)、特に process-axis lens が「review skip vs pass」audit に使用
 - **PM hint**: `loom-pm` agent は milestone tag 設置時、**final report に reviewer JSON 取得 reference を残す**（dispatch 時の task_id / commit SHA / reviewer agent name）。retro-pm の lazy build accuracy 補強用、PM 自身は file write しない
 
-**schema**: §6.9.5 (zod 完全定義)
+**schema**: `spec/daemon-and-data.md` §4.9.5 (zod 完全定義)
 
 **保存 path 規約**: `<project>/.claude-loom/retro/<retro_id>/verdict_evidence.json`（retro session 単位の per-instance file、prefs と分離）
 
 ### 1.11 Lifecycle Tracking Architecture（M0.11.1 から）
 
-retro 機能の **finding lifecycle + guidance lifecycle** を構造的に追跡する mechanism。SPEC §3.9.x P4 (Root cause first) の理想形：M3.0 retro 由来の symptomatic patch（proc-NEW-1 counter-arguer stale finding detection section）を本 architecture で構造的に置換、symptomatic patch を rollback する cleanup loop の最初の実例。
+retro 機能の **finding lifecycle + guidance lifecycle** を構造的に追跡する mechanism。§1.x P4 (Root cause first) の理想形：M3.0 retro 由来の symptomatic patch（proc-NEW-1 counter-arguer stale finding detection section）を本 architecture で構造的に置換、symptomatic patch を rollback する cleanup loop の最初の実例。
 
 **責務 / write timing**:
 - **書込主体**:
   - `pending.json.<finding>.applied_in` + `apply_history`: aggregator（or PM 中継時 retro-pm）が apply commit 時に update
   - `applied_summary.json`: `loom-retro-pm` が Stage 0 lazy build（retro_id 採番直後 / Stage 1 dispatch 前）
-- **build 戦略**: Lazy build — retro-pm Stage 0 で過去 retro session の `<project>/.claude-loom/retro/*/pending.json` を scan、applied finding 集約 → `<project>/.claude-loom/retro/<retro_id>/applied_summary.json` write。M2.1 §6.9.5 verdict_evidence.json と同 pattern（**retro file architecture = file 永続 + lazy read by lens** SSoT 統一）。
+- **build 戦略**: Lazy build — retro-pm Stage 0 で過去 retro session の `<project>/.claude-loom/retro/*/pending.json` を scan、applied finding 集約 → `<project>/.claude-loom/retro/<retro_id>/applied_summary.json` write。M2.1 `spec/daemon-and-data.md` §4.9.5 verdict_evidence.json と同 pattern（**retro file architecture = file 永続 + lazy read by lens** SSoT 統一）。
 - **読込主体**: 4 lens（Stage 1）、特に「過去 retro で applied 済 finding を re-up しない」stale prevention に使用。lens は agent prompt prefix で渡された `applied_summary_path` を `Read` tool で参照、必要時のみ load（C2 design 確定）。
-- **rollback discipline**: M3.0 retro proc-NEW-1（counter-arguer stale check）は本 architecture 完成時 **rollback 必須**（M0.11.1 task list 内 mandatory）、SPEC §3.9.x P4「symptomatic patch 構造解決後の消滅」理想形 archive 例。
+- **rollback discipline**: M3.0 retro proc-NEW-1（counter-arguer stale check）は本 architecture 完成時 **rollback 必須**（M0.11.1 task list 内 mandatory）、§1.x P4「symptomatic patch 構造解決後の消滅」理想形 archive 例。
 
 **apply commit 時の back-fill 責務**（2026-05-06 retro F-pj-002 + F-meta-003 由来 SSoT）:
 
@@ -126,8 +126,8 @@ retro 機能の **finding lifecycle + guidance lifecycle** を構造的に追跡
 **未 back-fill 時の影響**: `applied_summary.json` 機械的 build 時に approved+applied 済 finding が漏れ、4 lens が同 finding を re-up する echo-chamber risk。本 SSoT は M0.11.5 retro 2026-05-05-001 の 14 finding 全採用 (commit ffd3848) で発生した **back-fill missing drift** を構造的に塞ぐ。
 
 **schema**:
-- `pending.json` 完全 schema: §6.9.6（schema_version 1 → 2 で `applied_in` + `apply_history` field 追加）
-- `applied_summary.json` 完全 schema: §6.9.7
+- `pending.json` 完全 schema: `spec/daemon-and-data.md` §4.9.6（schema_version 1 → 2 で `applied_in` + `apply_history` field 追加）
+- `applied_summary.json` 完全 schema: `spec/daemon-and-data.md` §4.9.7
 
 **保存 path 規約**:
 - `<project>/.claude-loom/retro/<retro_id>/pending.json`（既存、`applied_in` + `apply_history` field 追加）
@@ -152,7 +152,7 @@ Task tool unavailable 時 (degraded mode) に retro-pm が 4 lens dispatch 不�
 - **echo-chamber risk acknowledge**: 通常 protocol の 4 並列 lens + counter-arguer 別 agent による echo-chamber 抑制が degraded mode では適用されず、findings は **retro-pm 単一視点の synthesis**。confidence は通常 retro より低めに評価
 - **findings tag 必須**: degraded mode 由来 findings は全て `degraded_mode_synthesis: true` field を含む、user に透明化
 - **archive markdown disclosure**: archive markdown 末尾に "degraded-mode-synthesis disclosure" section を必須記載、findings の confidence について user に明示
-- **schema_version 出力規律**: retro-pm が pending.json を新規 write する時 `schema_version: 2` 必須 (§6.9.6 v2、§6.9.6.1 SSoT 統一表組参照)、`schema_version: 1.0.0` 等の semver 形式 / v1 形式 出力は invalid (本 retro session で発生した bug の codify)
+- **schema_version 出力規律**: retro-pm が pending.json を新規 write する時 `schema_version: 2` 必須 (`spec/daemon-and-data.md` §4.9.6 v2、§4.9.6.1 SSoT 統一表組参照)、`schema_version: 1.0.0` 等の semver 形式 / v1 形式 出力は invalid (本 retro session で発生した bug の codify)
 - **persistence escalation rule** (2026-05-06 F-meta-001): degraded mode が **3 retro 連続持続** したら本 §1.13 の review 必須。Task tool 復旧条件 (Claude Agent SDK env 制約 / harness 起動 mode 制約) を user + meta lens で再評価、agent definition update or workaround codify を進める
 
 #### 1.13.1 3-strike trigger 後の必須 action items（2026-05-06-002 retro F-proc-003 由来、SSoT）
@@ -191,7 +191,7 @@ degraded mode が 3 retro 連続持続して escalation rule が trigger され�
 **rationale**: 2026-05-05-001 (1-strike) → 2026-05-06-001 (2-strike) → 2026-05-06-002 (3-strike-trigger-1st) → 2026-05-06-003 (4-strike-continuation) の累積で escalation rule の運用が始まった。trigger 後の transparency が無いと「1 度発動したらそれっきり」になり、Phase 2 entry や Task tool 復旧 timing の判断材料が失われる。本 codify で N-strike continuation を継続可視化、6+ で blocker promotion 議論を可能化する。
 
 **guidance lifecycle 統合**:
-`learned_guidance` の auto-prune rule（§6.9.4 末尾拡張参照）: `ttl_sessions` main（`null` = infinite default、`> 0` = N retro 後 auto-deactivate） + `last_used_in` audit（retro 参照時 aggregator update、N session 連続未使用 → meta lens stale guidance finding）。責務分離: auto-deactivate = 決定論的（ttl）、user 承認 prune = dynamic（last_used_in 経由 meta lens proposal）。
+`learned_guidance` の auto-prune rule（`spec/daemon-and-data.md` §4.9.4 末尾拡張参照）: `ttl_sessions` main（`null` = infinite default、`> 0` = N retro 後 auto-deactivate） + `last_used_in` audit（retro 参照時 aggregator update、N session 連続未使用 → meta lens stale guidance finding）。責務分離: auto-deactivate = 決定論的（ttl）、user 承認 prune = dynamic（last_used_in 経由 meta lens proposal）。
 
 ### 1.14 Carryover escalation rule（2026-05-06 retro F-proc-004 由来）
 
@@ -278,8 +278,8 @@ increment 主体: retro-pm Stage 0 build 時 (lazy + idempotent — 既に incre
 - 次 retro Stage 0 で `re_evaluated_in: not null` の pending は **carryover_count increment 対象外** (promote 済として excluded、新 retro の新 finding 側が active carryover として扱われる)
 
 **schema**:
-- `pending.json` 完全 schema: §6.9.6 (schema_version 2 → 3 で `carryover_count` + `last_seen_in` + `expired_at` + `re_evaluated_in` field 追加、§6.9.6.1 表組 update)
-- `pending_summary.json` 完全 schema: §6.9.8 新設
+- `pending.json` 完全 schema: `spec/daemon-and-data.md` §4.9.6 (schema_version 2 → 3 で `carryover_count` + `last_seen_in` + `expired_at` + `re_evaluated_in` field 追加、§4.9.6.1 表組 update)
+- `pending_summary.json` 完全 schema: `spec/daemon-and-data.md` §4.9.8 新設
 - lens output JSON 拡張 (`source_pending_id` + `re_evaluation_verdict`) は `skills/loom-retro/SKILL.md` LENS_*_TEMPLATE 内で codify
 
 **保存 path 規約**:

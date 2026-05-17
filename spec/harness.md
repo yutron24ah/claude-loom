@@ -91,7 +91,7 @@ claude-loom の PM / dev agent prompt に組み込む 5 項目の workflow disci
 
 PM が「parallel batch」と plan で宣言した task を dispatch する場合、**同 message 内に複数 Agent invocation を含めること**。1 message = 1 Agent invocation = sequential dispatch であり、parallel ではない。post-dispatch で self-check を行い、宣言と実装が乖離していたら process-axis finding として retro pending state に記録。
 
-**side-effect note (retro 2026-05-06-003 F-proc-002 由来)**: parallel dispatch では各 subagent の `SessionStart` hook が同時多重発火し、`POST /event` を daemon に集中送信する。daemon が一時的に busy になり `/health` probe timeout → false cold-start trigger を引き起こす可能性あり (Bug A symptom chain の trigger 部分)。Bug A hotfix (SPEC §3.2.3 Boot health-check polling) で start_daemon 側の defense は入ったが、daemon load 根本対策は M0.X-hook-ingest-recovery (Layer 3 POST /event spam fix) scope。parallel batch を multiple subagent で宣言する場面では本 side-effect を念頭に置く。
+**side-effect note (retro 2026-05-06-003 F-proc-002 由来)**: parallel dispatch では各 subagent の `SessionStart` hook が同時多重発火し、`POST /event` を daemon に集中送信する。daemon が一時的に busy になり `/health` probe timeout → false cold-start trigger を引き起こす可能性あり (Bug A symptom chain の trigger 部分)。Bug A hotfix (`spec/daemon-and-data.md` §1.3 Boot health-check polling) で start_daemon 側の defense は入ったが、daemon load 根本対策は M0.X-hook-ingest-recovery (Layer 3 POST /event spam fix) scope。parallel batch を multiple subagent で宣言する場面では本 side-effect を念頭に置く。
 
 ### 4.2 Task tool fallback degraded mode
 
@@ -107,7 +107,7 @@ doc 5 file 以上の更新が必要な場合、複数 subagent 並列 dispatch�
 
 ### 4.5 Reviewer verdict 保存
 
-retro session 開始時、`loom-retro-pm` agent が **直前 milestone の reviewer dispatch evidence を独立 file `<project>/.claude-loom/retro/<retro_id>/verdict_evidence.json` に lazy build + write**。「review skip」と「指摘ゼロ pass」の判別を可能化。詳細規約は §3.9.10 + §6.9.5（zod 完全 schema、M2.1 から）参照。M0.13 で codify された旧設計（`pending.json` 内 field）は M2.1 で refactor、独立 file + zod schema 化に移行済。
+retro session 開始時、`loom-retro-pm` agent が **直前 milestone の reviewer dispatch evidence を独立 file `<project>/.claude-loom/retro/<retro_id>/verdict_evidence.json` に lazy build + write**。「review skip」と「指摘ゼロ pass」の判別を可能化。詳細規約は `spec/retro-system.md` §1.10 + `spec/daemon-and-data.md` §4.9.5（zod 完全 schema、M2.1 から）参照。M0.13 で codify された旧設計（`pending.json` 内 field）は M2.1 で refactor、独立 file + zod schema 化に移行済。
 
 ### 4.6 TDD red commit 履歴 enforcement（2026-05-04 retro F-pj-002 で default inversion）
 
@@ -142,7 +142,7 @@ dev が reviewer dispatch を実施する Step 9 に **3 つの path** を 1st-c
 
 - **path C — self-review with explicit safety checklist (default、2026-05-06 反転)**: dev が Step 9 開始時に **必ず Task tool 利用可能性 probe**（`ToolSearch select:Task` 空結果 → degraded mode 自動 enter、Strategy b unified annotation default 反転と同 pattern）。Task tool deferred 環境での safety checklist 経由 self-review が default：
   1. final report に `self_review: true` + `task_tool_deferred: <bool>` 明示
-  2. 4 観点 self-checklist 必須記載 (code 観点 / security 観点 / test 観点 / SPEC §3.6.10 SSoT cross-check 観点)
+  2. 4 観点 self-checklist 必須記載 (code 観点 / security 観点 / test 観点 / `spec/ui-arch.md` §2 SSoT cross-check 観点)
   3. 各観点で 3 行以上の reasoning + 該当 file:line 参照
   4. PM が follow-up `loom-review` skill dispatch を後で実施する option を残す (path C completion ≠ formal review、interim safety net)
 - **path A — same-session iterate (opt-in、Task tool 利用可能時)**: probe pass + fix scope clear AND context budget 余裕あり → 同 session 内で fix → re-run tests → re-submit
@@ -176,7 +176,7 @@ milestone scope に「**default 値変更**」（auto_launch default true 化、
 
 **方針**: ハイブリッド検知（C 案）— PM 起動時に context を評価し、高信頼なら 1 問確認後 spec phase 自動突入、中信頼なら短い分岐質問、低信頼なら従来の idle PM 動作。`/loom-pm` 起動のたびに ceremony を強制せず、context から intent が読める場合は自動 entry する。
 
-**trinity 位置付け**: M0.11.5（`/loom-pm` 起動時 UI auto-launch、§3.2）→ **本章 M0.11.6**（spec phase auto-entry）→ M0.11.7（`/loom-go` impl phase auto-entry）の 3 本柱で「context から intent 読めるなら ceremony 強制せえ」哲学を段階的に実装。
+**trinity 位置付け**: M0.11.5（`/loom-pm` 起動時 UI auto-launch、`spec/daemon-and-data.md` §1）→ **本章 M0.11.6**（spec phase auto-entry）→ M0.11.7（`/loom-go` impl phase auto-entry）の 3 本柱で「context から intent 読めるなら ceremony 強制せえ」哲学を段階的に実装。
 
 **検知ロジック 2 軸（AND 条件で高信頼判定）**:
 
@@ -197,7 +197,7 @@ milestone scope に「**default 値変更**」（auto_launch default true 化、
 - context 圧縮後の復帰（PM が auto-entry を見送った場合の手動 trigger）
 - 別案件の spec し直し（auto-entry が誤判定した場合の override）
 - low-confidence PM で明示的に spec phase を開始したい場合
-- M0.11.5 SPEC §3.2 の `/loom-spec` trigger list も残置
+- M0.11.5 `spec/daemon-and-data.md` §1 の `/loom-spec` trigger list も残置
 
 **誤爆抑制策まとめ**:
 
@@ -206,25 +206,25 @@ milestone scope に「**default 値変更**」（auto_launch default true 化、
 3. retro process-axis lens で false-positive rate を継続観察、閾値超過で keyword list 見直し
 4. user が意図していない spec entry と気づいた場合 `/loom-spec` で明示 re-entry 可能
 
-**degraded mode との整合（§3.9.13 probe との連携）**:
+**degraded mode との整合（`spec/retro-system.md` §1.13 probe との連携）**:
 
-PM auto-spec entry の context 評価は Bash tool で `git log --oneline -5`, `grep -c "status: todo" PLAN.md`, `ls SPEC.md` 等を probe する形で実現。Task tool 不在時（degraded mode）も Bash tool で代替評価可能、**本機構は degraded mode でも機能する設計**とする。degraded mode での spec entry は sequential self-review（§3.6.8.7 path C）と組み合わせて運用。
+PM auto-spec entry の context 評価は Bash tool で `git log --oneline -5`, `grep -c "status: todo" PLAN.md`, `ls SPEC.md` 等を probe する形で実現。Task tool 不在時（degraded mode）も Bash tool で代替評価可能、**本機構は degraded mode でも機能する設計**とする。degraded mode での spec entry は sequential self-review（§4.7 path C）と組み合わせて運用。
 
-**SSoT 宣言**: 本章（§3.6.8.9）が PM Auto-Spec Entry 機能の SSoT。`agents/loom-pm.md`（t3 担当）+ `commands/loom-pm.md` は本章を参照し実装。他 doc（CLAUDE.md / PLAN.md）からの参照は本章 section 番号を引用。
+**SSoT 宣言**: 本章（§4.9）が PM Auto-Spec Entry 機能の SSoT。`agents/loom-pm.md`（t3 担当）+ `commands/loom-pm.md` は本章を参照し実装。他 doc（CLAUDE.md / PLAN.md）からの参照は本章 section 番号を引用。
 
 ### 4.10 PM Auto-Go Entry（M0.11.7 から）
 
-**方針**: ハイブリッド検知（C 案）— spec phase 完了後、user の直近 message に impl intent を検出した場合、1 問確認後 impl phase（`/loom-go` 相当）に自動突入。曖昧なら短い分岐質問、低信頼なら従来 PM idle。§3.6.8.9 PM Auto-Spec Entry の**論理的延長**として、spec → impl の 2 段階 auto flow を完成させる。
+**方針**: ハイブリッド検知（C 案）— spec phase 完了後、user の直近 message に impl intent を検出した場合、1 問確認後 impl phase（`/loom-go` 相当）に自動突入。曖昧なら短い分岐質問、低信頼なら従来 PM idle。§4.9 PM Auto-Spec Entry の**論理的延長**として、spec → impl の 2 段階 auto flow を完成させる。
 
-**trinity 完成**: §3.2（M0.11.5、UI auto-launch）→ §3.6.8.9（M0.11.6、spec phase auto-entry）→ **本章 §3.6.8.10（M0.11.7、impl phase auto-entry）**の 3 本柱で「context から intent 読めるなら ceremony 強制せえ」哲学の ceremony reduction trinity が SSoT として整う。
+**trinity 完成**: `spec/daemon-and-data.md` §1（M0.11.5、UI auto-launch）→ §4.9（M0.11.6、spec phase auto-entry）→ **本章 §4.10（M0.11.7、impl phase auto-entry）**の 3 本柱で「context から intent 読めるなら ceremony 強制せえ」哲学の ceremony reduction trinity が SSoT として整う。
 
 **検知ロジック 3 軸（AND 条件で高信頼判定）**:
 
 - **軸 1 — PLAN.md state 変化**: 直近 N session で PLAN に新規 task 追加 または 既存 task に `status: todo` が残存 → impl 作業が残っている証拠（Bash probe: `grep -c "status: todo" PLAN.md`）
 - **軸 2 — spec phase 完了 marker**: SPEC.md 編集 commit + PLAN.md 編集 commit が直近 git log に存在 → spec が終わって impl 待ちの状態（Bash probe: `git log --oneline -10 | grep -E "SPEC|PLAN|spec|docs"`）
-- **軸 3 — user message intent**: 「実装」「進めて」「go」「dispatch」「task 振って」「開発して」「コーディング」「始めて」等の impl intent keyword を直近 user message が含む（§3.6.8.9 の spec keyword list と分離、具体 list は t4 で確定）
+- **軸 3 — user message intent**: 「実装」「進めて」「go」「dispatch」「task 振って」「開発して」「コーディング」「始めて」等の impl intent keyword を直近 user message が含む（§4.9 の spec keyword list と分離、具体 list は t4 で確定）
 
-**AND 条件採用 rationale**: 3 軸全 AND は §3.6.8.9 の 2 軸 AND より厳しい条件。「PLAN 残あり + user が雑談してるだけ」の誤発火を spec phase 完了 marker（軸 2）が防ぐ。OR 条件や 2 軸 AND では false-positive が増加し user が望まない impl 突入が多発するため採用しない。
+**AND 条件採用 rationale**: 3 軸全 AND は §4.9 の 2 軸 AND より厳しい条件。「PLAN 残あり + user が雑談してるだけ」の誤発火を spec phase 完了 marker（軸 2）が防ぐ。OR 条件や 2 軸 AND では false-positive が増加し user が望まない impl 突入が多発するため採用しない。
 
 **3 信頼レベルと動作**:
 
@@ -238,24 +238,24 @@ PM auto-spec entry の context 評価は Bash tool で `git log --oneline -5`, `
 - context 圧縮後の復帰（PM が auto-entry を見送った場合の手動 trigger）
 - 別案件の impl やり直し（auto-entry が誤判定した場合の override）
 - 低信頼 PM で明示的に impl phase を開始したい場合
-- M0.11.5 SPEC §3.2 の `/loom-go` trigger list にも残置
+- M0.11.5 `spec/daemon-and-data.md` §1 の `/loom-go` trigger list にも残置
 
-**§3.6.8.9 との関係（sibling chapter / 検知ロジックパターン共有）**:
+**§4.9 との関係（sibling chapter / 検知ロジックパターン共有）**:
 
-本章は §3.6.8.9 PM Auto-Spec Entry の sibling chapter。検知ロジックパターン（3 信頼レベル / AND 条件 / override 残置 / false-positive 抑制）は §3.6.8.9 と同形式を採用し重複記述を避ける。ロジック実装は agent prompt 層（t3）で §3.6.8.9 の Session Start Hook を拡張統合する形で実現。
+本章は §4.9 PM Auto-Spec Entry の sibling chapter。検知ロジックパターン（3 信頼レベル / AND 条件 / override 残置 / false-positive 抑制）は §4.9 と同形式を採用し重複記述を避ける。ロジック実装は agent prompt 層（t3）で §4.9 の Session Start Hook を拡張統合する形で実現。
 
 **誤爆抑制策まとめ**:
 
-1. 高信頼判定は 3 軸全 AND（§3.6.8.9 の 2 軸より厳格）
+1. 高信頼判定は 3 軸全 AND（§4.9 の 2 軸より厳格）
 2. 中信頼以下では **必ず 1 問確認**を挟む（silent 突入禁止）
 3. retro process-axis lens で false-positive rate を継続観察、閾値超過で keyword list / 軸定義見直し
 4. user が意図していない impl entry と気づいた場合 `/loom-go` で明示 re-entry 可能
 
-**degraded mode との整合（§3.9.13 probe との連携）**:
+**degraded mode との整合（`spec/retro-system.md` §1.13 probe との連携）**:
 
 PM auto-go entry の context 評価は Bash tool で `grep -c "status: todo" PLAN.md`, `git log --oneline -10` 等を probe する形で実現。Task tool 不在時（degraded mode）も Bash tool 単体で代替評価可能、**本機構は degraded mode でも機能する設計**とする。
 
-**SSoT 宣言**: 本章（§3.6.8.10）が PM Auto-Go Entry 機能の SSoT。`agents/loom-pm.md`（t3 担当）は本章を参照し実装。他 doc（CLAUDE.md / PLAN.md）からの参照は本章 section 番号を引用。
+**SSoT 宣言**: 本章（§4.10）が PM Auto-Go Entry 機能の SSoT。`agents/loom-pm.md`（t3 担当）は本章を参照し実装。他 doc（CLAUDE.md / PLAN.md）からの参照は本章 section 番号を引用。
 
 ### 4.11 Post-tag hotfix protocol（retro 2026-05-06-003 F-pj-001 由来）
 
@@ -274,7 +274,7 @@ milestone tag 設置後に同 branch 上で発覚した bug への hotfix を **
 
 **rationale**: post-tag hotfix を「process bug の繰り返し」と判定するか「正規化された pattern」と認めるかは retro でしか判断できない。本 protocol は precedent 2 連続を受けて後者と認め、構造的な codify で次回以降の運用 ambiguity を解消する。同時に、retro scope に必ず含めることで「tag 設置 = 完成」の illusion を構造的に解体し、Layer 2.5 (§10.4.1) との pair で trust recovery process を成立させる。
 
-**SSoT 宣言**: 本章（§3.6.8.11）が post-tag hotfix protocol の SSoT。`agents/loom-pm.md` milestone closure workflow + `agents/loom-retro-pm.md` retro scope 定義は本章を参照する。
+**SSoT 宣言**: 本章（§4.11）が post-tag hotfix protocol の SSoT。`agents/loom-pm.md` milestone closure workflow + `agents/loom-retro-pm.md` retro scope 定義は本章を参照する。
 
 ## 5. コミット + ブランチ規約 (旧 master §3.8)
 
@@ -324,7 +324,7 @@ agent prompt 内の skill 参照は **mandate**（強制）と **suggest**（推
 | 場面 | mandate skill | 理由 |
 |---|---|---|
 | TDD discipline（実装/修正時） | `loom-tdd-cycle` | claude-loom の Red→Green→Refactor→Review cycle 規律 |
-| commit 前 review gate | `loom-review` (strategy=single default / strategy=trio opt-in via review_mode) | Reviewer verdict を quality gate とする SPEC §3.6.8.7 規約 |
+| commit 前 review gate | `loom-review` (strategy=single default / strategy=trio opt-in via review_mode) | Reviewer verdict を quality gate とする §4.7 規約 |
 | milestone 完了後 retro | `loom-retro` | 4 lens × counter-argument の 3 段階プロトコル必須 |
 | harness self-test | `loom-test` | claude-loom 固有の install/agent/command/skill test |
 | harness status 確認 | `loom-status` | claude-loom 固有のスナップショット |
@@ -347,7 +347,7 @@ agent prompt 記述形式: `「X 時の候補として Y skill。他の skill / 
 **運用原則**:
 - mandate skill の追加は SPEC 改訂を伴う（品質ゲート増設）
 - suggest skill の追加は agent prompt 単体更新で可
-- retro lens は suggest skill の活用機会を検出し finding 化する（`process-axis` lens の責務、§3.9 参照）
+- retro lens は suggest skill の活用機会を検出し finding 化する（`process-axis` lens の責務、`spec/retro-system.md` §1 参照）
 
 ### 6.2 Agent prompt 設計原則（M0.17 から）
 
@@ -362,7 +362,7 @@ claude-loom の `agents/*.md` は **Claude Code に loom-specific なロール�
 - **Size guideline**: PM 200-250 行 / developer 150-200 行 / reviewer 100-150 行（specialized 80-120 行）/ retro-pm 150-200 行 / retro lens 80-120 行
 - **SPEC → prompt の単方向 flow**: prompt 側で新 rule を発明せえへん。SPEC §X.X SSoT がある内容は引用 1 行に圧縮、過去の retro 由来 tactical rule は SPEC 昇格後に prompt 反映
 
-agent prompt の新規作成・改修時は本 SPEC §3.10.2 + `docs/AGENT_PROMPT_DESIGN.md` の verification checklist 9 項目を満たすこと。
+agent prompt の新規作成・改修時は §6.2 + `docs/AGENT_PROMPT_DESIGN.md` の verification checklist 9 項目を満たすこと。
 
 ## 7. アクター（エージェント）定義 (旧 master §4)
 
@@ -379,17 +379,17 @@ agent prompt の新規作成・改修時は本 SPEC §3.10.2 + `docs/AGENT_PROMP
 ### 7.2 各ロールの責務
 
 #### 7.2.1 PM (loom-pm)
-- **プロジェクトライフサイクル管理**：init（新規）/ adopt（既存）/ maintain（継続）の 3 段階を仕分けて処理（§3.7）
+- **プロジェクトライフサイクル管理**：init（新規）/ adopt（既存）/ maintain（継続）の 3 段階を仕分けて処理（`spec/install-and-test.md` §1）
 - ユーザーと spec 作成（spec-driven dev）
 - 実装計画立案（タスク分解 + 開発者人数 N の提案、ユーザー手直し可）
 - Developer への作業割り振り（Task tool）
 - **doc 整合性の自動見張り**（中核責務、§7 参照）
-- **全ドキュメントの保守**（SPEC / PLAN / CLAUDE / README / docs/**/*.md / tests/REQUIREMENTS.md、§3.7.4）
+- **全ドキュメントの保守**（SPEC / PLAN / CLAUDE / README / docs/**/*.md / tests/REQUIREMENTS.md、`spec/install-and-test.md` §1.4）
 - Plan View の更新（TodoWrite + 構造化 plan ファイル）
 - 進捗の集約とユーザーへの報告
 - skill / hook の提案（Phase 2）
 
-> CLAUDE.md / README.md など既存ファイルがある場合は **non-destructive 原則** を守る（§3.7.2）。loom-managed マーカーの範囲のみを書き換え可能。
+> CLAUDE.md / README.md など既存ファイルがある場合は **non-destructive 原則** を守る（`spec/install-and-test.md` §1.2）。loom-managed マーカーの範囲のみを書き換え可能。
 
 #### 7.2.2 Developer (loom-developer)
 - TDD ループの実行：
@@ -415,7 +415,7 @@ review は agent 単位の persistent role ではなく **`skills/loom-review/SK
 
 #### 7.2.4 Retro PM (loom-retro-pm)
 
-retro session orchestrator (persistent role)。Stage 0 file build (verdict_evidence / applied_summary / command_frequency) + Stage 4 presentation (conversation / report mode) を直接担当。Stage 1-3 (lens / counter-argument / aggregation) は `skills/loom-retro/SKILL.md` の template を read して `general-purpose` subagent + template injection で dispatch する。詳細責務: §3.9。
+retro session orchestrator (persistent role)。Stage 0 file build (verdict_evidence / applied_summary / command_frequency) + Stage 4 presentation (conversation / report mode) を直接担当。Stage 1-3 (lens / counter-argument / aggregation) は `skills/loom-retro/SKILL.md` の template を read して `general-purpose` subagent + template injection で dispatch する。詳細責務: `spec/retro-system.md` §1。
 
 #### 7.2.5 Retro pipeline (`loom-retro` skill、agent file なし)
 
