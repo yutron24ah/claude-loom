@@ -1575,15 +1575,30 @@ claude-loom が promote する spec/plan 駆動開発の **構造規約として
 
 **M0.X-spec-plan-multi-file 完成基準**：`SPEC.md §3.11` 新設 + sub-section §3.11.1〜.5 完備、`templates/multi-file-spec-skeleton/SPEC.md.template` + `spec/_sample-topic.md.template` 作成、`agents/loom-pm.md` 内 `multi-file` 言及 ≥2、`commands/loom-spec.md` 内 multi-file brainstorm prompt 追加、`skills/loom-write-plan/SKILL.md` に Phase-split + milestone-folder pattern 追加、`docs/DOC_CONSISTENCY_CHECKLIST.md` に multi-file mode 4 項目追加、`./tests/run_tests.sh multi_file_skeleton` PASS、`./tests/run_tests.sh` 全 PASS 維持、`tag m0.x-spec-plan-complete` 設置、main への PR open (branch hygiene 遵守)。
 
-## マイルストーン M0.X-spec-plan-multi-file-dogfood (Stage 2 placeholder、M0.X-spec-plan-multi-file 完了後)
+## マイルストーン M0.X-spec-plan-multi-file-dogfood (`refactor/spec-plan-multi-file-dogfood` branch、2026-05-17 から)
 
-詳細: 未作成（M0.X-spec-plan-multi-file 完了後、`loom-write-plan` skill で生成）
-設計書: `docs/plans/specs/2026-05-17-spec-plan-multi-file-thinking-design.md` §8.2 (SSoT)
+詳細: `docs/plans/2026-05-17-claude-loom-m0.x-spec-plan-multi-file-dogfood.md`
+設計書: `docs/plans/specs/2026-05-17-spec-plan-multi-file-dogfood-design.md`
+親設計書: `docs/plans/specs/2026-05-17-spec-plan-multi-file-thinking-design.md` §8.2 (Stage 2 SSoT)
 
-claude-loom 自身の **dogfood migration**: M0.X-spec-plan-multi-file で codify した新思想を自リポに適用、現状 monolithic な `SPEC.md` (2865 行) を解体 → master + `spec/<topic 群>.md` へ移管。同時に SPEC 内に混入してる milestone 詳細 (M1/M2 ステージ層 / アクター層、現 SPEC.md 1846〜2435 行) を PLAN / docs/plans 側へ移管し、SPEC の「時間非依存の真実」原則を回復。PM brainstorm が新思想の最初の dogfood テストケースとなり、retro で skill 調整 feedback を得る。
+claude-loom 自身の **dogfood migration** (Stage 2)。M0.X-spec-plan-multi-file で codify した multi-file 思想を SPEC.md (2954 行) に実適用、Mixed 5 topics axis で master + `spec/{harness,daemon-and-data,ui-arch,retro-system,install-and-test}.md` へ carve。本 milestone の真の目的は **新思想の practical validation** であり、完了後 retro で axis 妥当性 / 参照記法 grep 容易性 / size threshold 妥当性を検証。
 
-完成基準 (placeholder、loom-write-plan skill で詳細化時に確定):
-- claude-loom `SPEC.md` master + `spec/<topic 群>.md` (axis は PM brainstorm で動的決定) へ migration
-- SPEC.md 内 milestone 詳細 (現 1846〜2435 行) を PLAN.md / docs/plans 側へ移管、SPEC は「時間非依存の真実」原則を回復
-- 既存 agent prompts / retro report に残る `SPEC.md §X` 記法は **書き換えない** (design spec §5.1 SSoT、新規記述から段階的適用)
-- 全 test PASS 維持 + tag + main merge (branch hygiene 遵守)
+設計合意 (2026-05-17 brainstorm session):
+- axis: Mixed 5 topics (Stage 1 axis ガイドライン準拠、harness/daemon/ui の 3 柱 + retro 独立 + install/test 軽量)
+- M1/M2 milestone 詳細 (現 SPEC.md 1935〜2524 行、約 590 行) の PLAN/docs/plans 移管は **Stage 3 分離** (M0.X-spec-purity-restoration 仮称)
+- sequential carve (t2-t7 全て SPEC.md modify、parallel batch 不可 — planned_files overlap)
+- 既存 agent prompts / retro report の `SPEC.md §X` 古記法は **書き換えない** (design spec §5.1 SSoT)
+- topic file 内 § は §1 から local 振り直し (SPEC §3.11.4 SSoT)
+
+- [x] PLAN.md M0.X-spec-plan-multi-file-dogfood entry 追加 (placeholder → actual milestone) (本タスク) <!-- id: m0.x-spec-plan-dogfood-t1 status: done -->
+- [ ] spec/harness.md 新設 + master pointer 化 (§3.6.5 / §3.6.6 / §3.6.7 / §3.6.8 / §3.8 / §3.10 / §4 / §5 carve) <!-- id: m0.x-spec-plan-dogfood-t2 status: todo planned_files: SPEC.md, spec/harness.md -->
+- [ ] spec/daemon-and-data.md 新設 + master pointer 化 (§3.2 / §3.3 / §3.6 WS / §6 carve) <!-- id: m0.x-spec-plan-dogfood-t3 status: todo planned_files: SPEC.md, spec/daemon-and-data.md -->
+- [ ] spec/ui-arch.md 新設 + master pointer 化 (§3.6.9 / §3.6.10 / §3.6.11 / §3.6.12 / §3.6.13 / §3.6.14 / §3.6.15 carve) <!-- id: m0.x-spec-plan-dogfood-t4 status: todo planned_files: SPEC.md, spec/ui-arch.md -->
+- [ ] spec/retro-system.md 新設 + master pointer 化 (§3.9 carve) <!-- id: m0.x-spec-plan-dogfood-t5 status: todo planned_files: SPEC.md, spec/retro-system.md -->
+- [ ] spec/install-and-test.md 新設 + master pointer 化 (§3.7 / §9 / §10 carve) <!-- id: m0.x-spec-plan-dogfood-t6 status: todo planned_files: SPEC.md, spec/install-and-test.md -->
+- [ ] master SPEC.md cleanup + Topic Index (§15) 新設 <!-- id: m0.x-spec-plan-dogfood-t7 status: todo planned_files: SPEC.md -->
+- [ ] cross-ref rewire (master + 全 topic、broken link 検出 + 修正、新 file path 記法へ移行) <!-- id: m0.x-spec-plan-dogfood-t8 status: todo planned_files: SPEC.md, spec/harness.md, spec/daemon-and-data.md, spec/ui-arch.md, spec/retro-system.md, spec/install-and-test.md -->
+- [ ] tests/multi_file_skeleton_test.sh 拡張 (skeleton-n〜r、Stage 2 migration verify) <!-- id: m0.x-spec-plan-dogfood-t9 status: todo planned_files: tests/multi_file_skeleton_test.sh -->
+- [ ] doc consistency check 実走査 (用語整合 / cross-ref / scope 重複 / master index 整合性 の 4 項目) + 修正 <!-- id: m0.x-spec-plan-dogfood-t10 status: todo planned_files: 検出結果次第 -->
+
+**M0.X-spec-plan-multi-file-dogfood 完成基準**：`spec/` directory 配下に harness.md + daemon-and-data.md + ui-arch.md + retro-system.md + install-and-test.md の 5 topic file 全存在、master SPEC.md が ≤1000 行 (size threshold 内) へ収束、master SPEC.md §15 Topic Index 確立、各 topic file が back-pointer header + §1 から local renumber、master + 全 topic file 内の `spec/<topic>.md §X.Y` 形式 cross-ref が dead link 0、`bash tests/run_tests.sh multi_file_skeleton` 24+/24+ assertion PASS、`./tests/run_tests.sh` 全 PASS 維持、`tag m0.x-spec-plan-dogfood-complete` 設置、main への PR open (branch hygiene 遵守)。retro で新思想の practical validation 実施 (axis 妥当性 / 参照記法 grep 容易性 / size threshold 妥当性) を完成基準に含める。
