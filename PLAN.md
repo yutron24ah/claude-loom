@@ -1591,7 +1591,7 @@ claude-loom 自身の **dogfood migration** (Stage 2)。M0.X-spec-plan-multi-fil
 - topic file 内 § は §1 から local 振り直し (SPEC §3.11.4 SSoT)
 
 - [x] PLAN.md M0.X-spec-plan-multi-file-dogfood entry 追加 (placeholder → actual milestone) (本タスク) <!-- id: m0.x-spec-plan-dogfood-t1 status: done -->
-- [ ] spec/harness.md 新設 + master pointer 化 (§3.6.5 / §3.6.6 / §3.6.7 / §3.6.8 / §3.8 / §3.10 / §4 / §5 carve) <!-- id: m0.x-spec-plan-dogfood-t2 status: todo planned_files: SPEC.md, spec/harness.md -->
+- [x] spec/harness.md 新設 + master pointer 化 (§3.6.5 / §3.6.6 / §3.6.7 / §3.6.8 / §3.8 / §3.10 / §4 / §5 carve) <!-- id: m0.x-spec-plan-dogfood-t2 status: done committed_sha: 80adeb1 path: loom-developer (Path C self-review、TDD red→green、486 行 spec/harness.md + SPEC.md 2954→2509 行 -445 行、harness test 39/39 + multi_file_skeleton n1-n5 追加 + spec_311 regression 修正で全 PASS、t8 forward refs 7 件 報告) planned_files: SPEC.md, spec/harness.md, tests/multi_file_skeleton_test.sh, tests/spec_311_multi_file_test.sh -->
 - [ ] spec/daemon-and-data.md 新設 + master pointer 化 (§3.2 / §3.3 / §3.6 WS / §6 carve) <!-- id: m0.x-spec-plan-dogfood-t3 status: todo planned_files: SPEC.md, spec/daemon-and-data.md -->
 - [ ] spec/ui-arch.md 新設 + master pointer 化 (§3.6.9 / §3.6.10 / §3.6.11 / §3.6.12 / §3.6.13 / §3.6.14 / §3.6.15 carve) <!-- id: m0.x-spec-plan-dogfood-t4 status: todo planned_files: SPEC.md, spec/ui-arch.md -->
 - [ ] spec/retro-system.md 新設 + master pointer 化 (§3.9 carve) <!-- id: m0.x-spec-plan-dogfood-t5 status: todo planned_files: SPEC.md, spec/retro-system.md -->
