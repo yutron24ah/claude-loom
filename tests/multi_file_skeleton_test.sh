@@ -344,6 +344,34 @@ if [ -f "$SPEC_FILE" ]; then
   fi
 fi
 
+# ----- t6 checks: spec/install-and-test.md migration (skeleton-n15 through skeleton-n16) -----
+INSTALL_AND_TEST_MD="$ROOT_DIR/spec/install-and-test.md"
+
+# ----- Check (n15): spec/install-and-test.md file exists with ≥3 top-level sections -----
+if [ -f "$INSTALL_AND_TEST_MD" ]; then
+  n15_count=$(grep -c "^## " "$INSTALL_AND_TEST_MD" || true)
+  if [ "$n15_count" -ge 3 ]; then
+    echo "PASS [skeleton-n15]: spec/install-and-test.md exists with $n15_count top-level sections (##) (≥3)"
+  else
+    echo "FAIL [skeleton-n15]: spec/install-and-test.md exists but has only $n15_count top-level sections (##) (need ≥3)"
+    failures=$((failures + 1))
+  fi
+else
+  echo "FAIL [skeleton-n15]: spec/install-and-test.md not found at $INSTALL_AND_TEST_MD"
+  failures=$((failures + 1))
+fi
+
+# ----- Check (n16): SPEC.md has ≥3 pointer lines to spec/install-and-test.md -----
+if [ -f "$SPEC_FILE" ]; then
+  n16_count=$(grep -c "spec/install-and-test.md" "$SPEC_FILE" || true)
+  if [ "$n16_count" -ge 3 ]; then
+    echo "PASS [skeleton-n16]: SPEC.md has $n16_count pointer line(s) to spec/install-and-test.md (≥3)"
+  else
+    echo "FAIL [skeleton-n16]: SPEC.md has $n16_count pointer line(s) to spec/install-and-test.md (need ≥3)"
+    failures=$((failures + 1))
+  fi
+fi
+
 if [ "$failures" -gt 0 ]; then
   echo "multi_file_skeleton_test FAILED with $failures violation(s)"
   exit 1
