@@ -27,6 +27,7 @@ import { homedir } from "node:os";
 import { nanoid } from "nanoid";
 import { router, publicProcedure, TRPCErrorClass } from "../trpc.js";
 import { broadcaster } from "../events/broadcaster.js";
+import { projectIdSchema, assertSafeProjectId } from "../lib/path-safety.js";
 
 // ---------------------------------------------------------------------------
 // File paths
@@ -35,12 +36,8 @@ import { broadcaster } from "../events/broadcaster.js";
 const USER_PREFS_PATH = join(homedir(), ".claude-loom", "user-prefs.json");
 
 // SECURITY: projectId は basename only、path traversal 防止
-// 形式: nanoid (英数字 + ハイフン + アンダースコア) のみ許容
-const projectIdSchema = z
-  .string()
-  .regex(/^[A-Za-z0-9_-]+$/, "projectId must be alphanumeric with - or _ only")
-  .min(1)
-  .max(64);
+// projectIdSchema + assertSafeProjectId は lib/path-safety.ts の SSoT を re-use
+// (audit IMPORTANT-6、2026-05-17 daemon-cleanup)
 
 /** Resolve project root from projectId.
  *  M1.5 inline: scan ~/.claude-loom registered projects OR fall back to cwd.
@@ -49,11 +46,8 @@ const projectIdSchema = z
  *  SECURITY: projectIdSchema (basename only) 経由で zod validation 済 input 前提。
  */
 function resolveProjectRoot(projectId: string): string {
-  // Defense in depth: even if input bypassed zod, basename strip
-  const safe = projectId.replace(/[^A-Za-z0-9_-]/g, "");
-  if (safe !== projectId || safe.length === 0) {
-    throw new Error(`Invalid projectId: ${projectId}`);
-  }
+  // Defense in depth: lib/path-safety.ts SSoT で basename strip
+  const safe = assertSafeProjectId(projectId);
   // Try registered projects in ~/.claude-loom/projects/<projectId>/root
   const registeredRoot = join(homedir(), ".claude-loom", "projects", safe, "root");
   if (existsSync(registeredRoot)) {

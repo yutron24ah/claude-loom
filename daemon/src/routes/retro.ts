@@ -24,6 +24,7 @@ import { join, dirname, basename } from "node:path";
 import { homedir } from "node:os";
 import { nanoid } from "nanoid";
 import { router, publicProcedure, TRPCErrorClass } from "../trpc.js";
+import { retroIdSchema } from "../lib/path-safety.js";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -148,11 +149,8 @@ function generateRetroId(): string {
 // Zod schemas
 // ---------------------------------------------------------------------------
 
-// SECURITY: retroId は basename only、path traversal 防止
-// 形式: YYYY-MM-DD-NNN（generateRetroId と整合）
-const retroIdSchema = z
-  .string()
-  .regex(/^\d{4}-\d{2}-\d{2}-\d{3}$/, "retroId must match YYYY-MM-DD-NNN format");
+// SECURITY: retroIdSchema は lib/path-safety.ts の SSoT を re-use
+// (audit IMPORTANT-6、2026-05-17 daemon-cleanup)
 
 const retroSessionSchema = z.object({
   retroId: z.string(),
