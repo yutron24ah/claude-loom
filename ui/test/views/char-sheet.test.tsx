@@ -39,10 +39,12 @@ describe('CharSheet — 13 agents visible', () => {
   });
 
   it('renders group section headers', () => {
+    // M0.18 Phase 0: 'retro' group split into 'retro-lens' + 'retro-stage'
     render(<CharSheet />);
     expect(screen.getByText('CORE')).toBeInTheDocument();
     expect(screen.getByText('REVIEWERS')).toBeInTheDocument();
-    expect(screen.getByText('RETRO BOARD')).toBeInTheDocument();
+    expect(screen.getByText('RETRO LENSES')).toBeInTheDocument();
+    expect(screen.getByText('RETRO STAGES')).toBeInTheDocument();
   });
 });
 

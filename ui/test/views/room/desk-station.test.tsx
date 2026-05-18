@@ -19,6 +19,8 @@ afterEach(() => {
 // Minimal RosterEntry fixture for testing
 const testCat: RosterEntry = {
   id: 'dev',
+  kind: 'persistent',
+  summonedBy: null,
   role: 'Developer',
   jp: 'デベロッパー',
   name: 'サバ',
