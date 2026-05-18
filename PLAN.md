@@ -1624,7 +1624,7 @@ PR #18-#21 取込 (`M0.X-skill-migration` / `refactor/daemon-cleanup` / `feat/m0
 
 ### Phase 0: prereq — roster.ts + skills registry 拡張 (sequential)
 
-- [ ] roster.ts に `kind: 'persistent' | 'spirit'` + `summonedBy: string` field 追加、SKILLS registry 統合 (3 persistent + 10 spirit + 2 skills × sub-scope) <!-- id: m0.18-t0 status: todo planned_files: ui/src/views/room/roster.ts, ui/src/data/roster.ts, ui/src/data/skills.ts, ui/test/data/roster.test.ts, ui/test/data/skills.test.ts -->
+- [x] roster.ts に `kind: 'persistent' | 'spirit'` + `summonedBy: string` field 追加、SKILLS registry 統合 (3 persistent + 10 spirit + 2 skills × sub-scope) <!-- id: m0.18-t0 status: done committed_sha: 8e69ebb path: C (loom-developer self-review、Task tool deferred = subagent nested dispatch 制約、4 観点 self-checklist 全 PASS、TDD red→green 確認 tdd_red_confirmed: true、REQ-115 + REQ-116 採番、71 new tests + ui 1037/1037 PASS + harness 39/39 PASS + tsc improvement -27、SSoT option b 採用: data/roster.ts SSoT + views/room/roster.ts re-export、handoff_required: false、formal reviewer follow-up は Phase 4 closure でまとめ) planned_files: ui/src/views/room/roster.ts, ui/src/data/roster.ts, ui/src/data/skills.ts, ui/test/data/roster.test.ts, ui/test/data/skills.test.ts, ui/src/views/char-sheet/CharSheet.tsx, ui/test/components/cat-sprite.test.tsx, ui/test/views/agent-detail-attention.test.tsx, ui/test/views/agent-detail-panel.test.tsx, ui/test/views/char-sheet.test.tsx, ui/test/views/room/desk-station.test.tsx, ui/test/views/room/phase-d-polish.test.tsx, tests/REQUIREMENTS.md -->
 
 ### Phase 1: P0 major (3 view rewrite、**parallel batch + worktree isolation 必須**)
 
