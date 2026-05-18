@@ -1,13 +1,17 @@
 /* ===========================================================================
- * customization.css — Customization screen styles (M0.17 Round 2 Phase B mass-production)
- * Owns: .cust-* classes for views/customization/CustomizationView.tsx
+ * customization.css — Customization screen styles (M0.18 Phase 1 t1 rewrite)
+ * Owns: .cust-* classes for 2-pane tree layout
+ *   Left pane: TreeNav (260px) — .cust-tree, .cust-tree__node, etc.
+ *   Right pane: LeafEditor (1fr) — .cust-editor, .cust-editor__hd, etc.
  *
+ * M0.17 G6 規律準拠: tokens.css 経由で色/サイズ/spacing、動的値のみ inline 許可
  * Tokens consumed: --p-bg-sky, --p-paper, --p-tint, --p-border,
- *   --p-text, --p-text-muted, --p-accent, --p-accent-soft, --p-warn
+ *   --p-text, --p-text-muted, --p-accent, --p-accent-soft, --p-warn,
+ *   --p-success, --p-stone
  * =========================================================================== */
 
 /* ---------------------------------------------------------------------------
- * Root container — full-bleed absolute, scrollable
+ * Root container
  * --------------------------------------------------------------------------- */
 
 .cust-screen {
@@ -44,209 +48,295 @@
   font-weight: 700;
 }
 
-/* WHY: btn-px ghost/primary class applied to the save/cancel buttons themselves */
 .cust-header__btn {
   font-size: 9px;
   padding: 3px 8px;
 }
 
 /* ---------------------------------------------------------------------------
- * 2-column layout grid (left: table, right: scope chain)
+ * 2-pane layout: 260px tree + 1fr editor
  * --------------------------------------------------------------------------- */
 
 .cust-layout {
   display: grid;
-  grid-template-columns: 1fr 280px;
-  gap: 14px;
-  align-items: flex-start;
+  grid-template-columns: 260px 1fr;
+  gap: 12px;
+  align-items: stretch;
 }
 
 /* ---------------------------------------------------------------------------
- * Agent table (left column)
+ * Tree pane (left 260px)
  * --------------------------------------------------------------------------- */
 
-.cust-table {
+.cust-tree {
   background: var(--p-paper);
   border: 2px solid var(--p-border);
+  padding: 8px 0;
+  max-height: 600px;
+  overflow: auto;
 }
 
-/* Table header row (column labels) */
-.cust-table__header {
-  display: grid;
-  grid-template-columns: 200px 1fr 1.4fr 60px;
-  font-size: 9px;
-  color: var(--p-text-muted);
-  letter-spacing: 0.06em;
-  padding: 6px 10px;
-  border-bottom: 2px solid var(--p-border);
+/* Tree node — leaf or parent */
+/* WHY: isSelected background stays inline (dynamic per node) */
+.cust-tree__node {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 6px;
+  cursor: pointer;
+  font-size: 10px;
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  border-left: 3px solid transparent;
+  user-select: none;
+}
+
+.cust-tree__node:hover {
   background: var(--p-tint);
 }
 
-.cust-table__header-chain {
-  text-align: right;
+.cust-tree__node--selected {
+  background: var(--p-accent-soft);
+  border-left-color: var(--p-accent);
 }
 
-/* ---------------------------------------------------------------------------
- * Agent row — data row in the table
- * WHY: isOpen background is dynamic, stays inline
- * --------------------------------------------------------------------------- */
-
-.cust-agent-row {
-  display: grid;
-  grid-template-columns: 200px 1fr 1.4fr 60px;
-  align-items: center;
-  padding: 6px 10px;
-  border-bottom: 1px dashed var(--p-border);
+.cust-tree__chevron {
+  width: 10px;
+  font-size: 9px;
+  color: var(--p-text-muted);
+  flex-shrink: 0;
 }
 
-/* Agent identity cell */
-.cust-agent-row__identity {
-  display: flex;
-  gap: 6px;
-  align-items: center;
+.cust-tree__bullet {
+  width: 10px;
+  flex-shrink: 0;
 }
 
-.cust-agent-row__name {
-  font-size: 11px;
-  font-weight: 700;
+.cust-tree__label {
+  flex: 1;
+  font-weight: 600;
+  color: var(--p-text);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.cust-agent-row__id {
+.cust-tree__label--parent {
+  font-weight: 700;
+  color: var(--p-text-muted);
+}
+
+.cust-tree__count {
   font-size: 8px;
   color: var(--p-text-muted);
-  font-family: ui-monospace, monospace;
 }
 
-/* Model selector cell */
-.cust-model-selector {
-  display: flex;
-  gap: 3px;
-}
-
-/* WHY: model button bg/color are dynamic (active model vs tint), stays inline */
-.cust-model-btn {
-  all: unset;
-  cursor: pointer;
-  padding: 2px 8px;
-  font-size: 9px;
-  font-weight: 700;
-  border: 1.5px solid var(--p-border);
-}
-
-/* Preset selector cell */
-.cust-preset-selector {
-  display: flex;
-  gap: 3px;
-  flex-wrap: wrap;
-}
-
-/* WHY: preset button bg/color are dynamic (active preset vs tint), stays inline */
-.cust-preset-btn {
-  all: unset;
-  cursor: pointer;
-  padding: 2px 6px;
-  font-size: 9px;
-  border: 1.5px solid var(--p-border);
-}
-
-/* Chain expand button */
-/* WHY: chain expand color is dynamic (overridden → warn, else muted), stays inline */
-.cust-chain-btn {
-  all: unset;
-  cursor: pointer;
-  text-align: right;
-  font-size: 9px;
-  font-weight: 700;
-}
-
-/* ---------------------------------------------------------------------------
- * Chain detail panel (right column)
- * --------------------------------------------------------------------------- */
-
-.cust-chain-panel {
-  background: var(--p-paper);
-  border: 2px solid var(--p-border);
-  padding: 10px;
-  position: sticky;
-  top: 16px;
-}
-
-.cust-chain-panel__label {
-  font-size: 9px;
+/* Tree legend */
+.cust-tree__legend {
+  padding: 8px 10px;
+  font-size: 8px;
   color: var(--p-text-muted);
-  letter-spacing: 0.06em;
-  margin-bottom: 8px;
-}
-
-.cust-chain-panel__hint {
-  font-size: 10px;
-  color: var(--p-text-muted);
+  border-top: 1px dashed var(--p-border);
+  margin-top: 6px;
   line-height: 1.5;
 }
 
-.cust-chain-panel__agent-name {
-  font-size: 11px;
+/* ---------------------------------------------------------------------------
+ * Shared badge
+ * --------------------------------------------------------------------------- */
+
+.cust-badge {
+  font-size: 7px;
+  padding: 1px 4px;
+  border: 1px solid var(--p-border);
   font-weight: 700;
-  margin-bottom: 8px;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
-/* Chain step (relative positioned container for dot + line) */
-.cust-chain-step {
-  position: relative;
-  padding-left: 14px;
-  padding-bottom: 12px;
+.cust-badge--write {
+  background: var(--p-warn);
+  color: white;
 }
 
-.cust-chain-step--last {
-  padding-bottom: 0;
+.cust-badge--agent {
+  background: var(--p-success);
+  color: white;
 }
 
-/* WHY: dot background is dynamic (scopeColor(step.scope)), stays inline */
-.cust-chain-step__dot {
-  position: absolute;
-  left: 0;
-  top: 4px;
-  width: 8px;
-  height: 8px;
+.cust-badge--skill {
+  background: var(--p-accent-soft);
+  color: var(--p-accent);
+}
+
+/* ---------------------------------------------------------------------------
+ * Editor pane (right 1fr)
+ * --------------------------------------------------------------------------- */
+
+.cust-editor {
+  background: var(--p-paper);
+  border: 2px solid var(--p-border);
+  padding: 14px;
+  min-height: 540px;
+}
+
+.cust-editor--empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cust-editor__hint {
+  padding: 24px;
+  text-align: center;
+  color: var(--p-text-muted);
+  font-size: 10px;
+}
+
+/* Editor header */
+.cust-editor__hd {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid var(--p-border);
+}
+
+.cust-editor__hd-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.cust-editor__hd-path {
+  font-size: 9px;
+  color: var(--p-text-muted);
+  font-family: ui-monospace, monospace;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cust-editor__hd-name {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.cust-editor__hd-role {
+  font-size: 9px;
+  font-weight: 400;
+  color: var(--p-text-muted);
+  margin-left: 8px;
+}
+
+/* Editor section */
+.cust-editor__section {
+  margin-bottom: 16px;
+}
+
+.cust-editor__label {
+  font-size: 9px;
+  color: var(--p-text-muted);
+  letter-spacing: 0.06em;
+  margin-bottom: 4px;
+}
+
+/* Model row — agent only */
+.cust-editor__model-row {
+  display: flex;
+  border: 2px solid var(--p-border);
+  width: fit-content;
+}
+
+/* WHY: model button bg/color are dynamic (active model vs transparent), stays inline */
+.cust-editor__model-btn {
+  padding: 4px 12px;
+  font-size: 10px;
+  font-weight: 700;
+  font-family: ui-monospace, monospace;
+  cursor: pointer;
+  border-right: 1px solid var(--p-border);
+}
+
+.cust-editor__model-btn:last-child {
+  border-right: none;
+}
+
+.cust-editor__note {
+  font-size: 8px;
+  color: var(--p-text-muted);
+  margin-top: 4px;
+  font-style: italic;
+}
+
+/* Preset grid */
+.cust-editor__preset-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+
+/* WHY: preset button bg/color are dynamic (active vs tint), stays inline */
+.cust-editor__preset-btn {
+  padding: 6px 8px;
+  cursor: pointer;
+  font-size: 9px;
   border: 1.5px solid var(--p-border);
 }
 
-.cust-chain-step__line {
-  position: absolute;
-  left: 3px;
-  top: 14px;
-  bottom: 0;
-  width: 2px;
-  background: var(--p-border);
+.cust-editor__preset-name {
+  font-weight: 700;
 }
 
-/* WHY: scope tag color is dynamic (scopeColor), stays inline */
-.cust-chain-step__scope-tag {
-  font-size: 9px;
-  font-weight: 700;
+.cust-editor__preset-desc {
+  font-size: 8px;
+  opacity: 0.8;
+  margin-top: 2px;
+}
+
+/* Custom override text block */
+.cust-editor__custom-text {
+  padding: 8px;
+  background: var(--p-tint);
+  border: 1.5px solid var(--p-border);
+  border-left: 3px solid var(--p-accent);
+  font-size: 10px;
+  font-family: ui-monospace, monospace;
+  min-height: 32px;
+  color: var(--p-text-muted);
+}
+
+/* Learned guidance row */
+.cust-editor__guidance-row {
+  display: flex;
+  gap: 10px;
+  font-size: 10px;
+  margin-bottom: 12px;
+}
+
+.cust-editor__guidance-box {
+  flex: 1;
+  padding: 8px;
+  background: var(--p-tint);
+  border: 1.5px solid var(--p-border);
+}
+
+.cust-editor__guidance-label {
+  font-size: 8px;
+  color: var(--p-text-muted);
   letter-spacing: 0.06em;
 }
 
-.cust-chain-step__values {
-  font-size: 10px;
-  color: var(--p-text);
+.cust-editor__guidance-count,
+.cust-editor__guidance-preview {
+  font-size: 13px;
+  font-weight: 700;
   margin-top: 2px;
 }
 
-.cust-chain-step__note {
-  font-size: 9px;
-  font-style: italic;
-  color: var(--p-text-muted);
-  margin-top: 2px;
-}
-
-/* Footer info box */
-.cust-chain-panel__footer {
-  margin-top: 10px;
-  padding: 6px;
+/* Footer info */
+.cust-editor__footer {
+  padding: 6px 10px;
   font-size: 9px;
   color: var(--p-text-muted);
   background: var(--p-tint);
