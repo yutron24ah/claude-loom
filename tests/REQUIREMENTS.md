@@ -369,3 +369,19 @@ m0.17-complete tag 設置後 (commit 170d323)、PR #12 push で CI が Linux Pla
 - **REQ-115**: `ui/src/data/roster.ts` の ROSTER 13 entry に `kind: 'persistent' | 'spirit'` + `summonedBy: string | null` field 追加 + `GroupType` を `'core' | 'review' | 'retro-lens' | 'retro-stage'` に更新 (旧 `'retro'` を `'retro-lens'` + `'retro-stage'` に細分割)。3 persistent (pm / dev / retro-pm) + 10 spirit (4 review + 4 retro-lens + 2 retro-stage)。spirit は `summonedBy` に skill identifier path (例: `"loom-review/single"`) を持ち、persistent は `null`。`ui/src/views/room/roster.ts` は SSoT を `ui/src/data/roster.ts` に移転し re-export に整理。`ui/src/views/char-sheet/CharSheet.tsx` の `GROUP_TITLE` / `GROUPS` を新 GroupType 4 値に更新。`ui/test/data/roster.test.ts` でカバー。
 
 - **REQ-116**: `ui/src/data/skills.ts` 新設。`Skill` / `Strategy` / `Lens` / `Stage` interface 定義 + `SKILLS` registry (2 skill: loom-review + loom-retro)。loom-review は strategies 4 (single / trio.code / trio.security / trio.test)、loom-retro は lenses 4 (pj-axis / process-axis / meta-axis / researcher) + stages 2 (counter-arguer / aggregator)。aggregator stage に `writePermission: true` marker。全 spiritId が ROSTER spirit entries と完全一致 (cross-reference)。`ui/test/data/skills.test.ts` でカバー。
+
+## M0.18 Phase 1 t1: CustomizationView 2-pane tree rewrite
+
+- **REQ-117**: CUSTOM-TREE-001 — `CustomizationView` tree が Agents root (`data-testid="tree-root-agents"`) と Skills root (`data-testid="tree-root-skills"`) の 2 root node を描画する。commit `6de5248`。`ui/test/views/customization/customization-tree.test.tsx` でカバー。
+
+- **REQ-118**: CUSTOM-TREE-002 — Agents root 展開時に 3 persistent agent leaves (`tree-leaf-agents/loom-pm` / `tree-leaf-agents/loom-developer` / `tree-leaf-agents/loom-retro-pm`) を表示、かつ exactly 3 件である。commit `6de5248`。`ui/test/views/customization/customization-tree.test.tsx` でカバー。
+
+- **REQ-119**: CUSTOM-TREE-003 — loom-review 展開時に 4 strategy leaves (single / trio/code / trio/security / trio/test) を表示。commit `6de5248`。`ui/test/views/customization/customization-tree.test.tsx` でカバー。
+
+- **REQ-120**: CUSTOM-TREE-004 — loom-retro 展開時に lenses 4 (pj-axis / process-axis / meta-axis / researcher) + stages 2 (counter-arguer / aggregator) を表示。commit `6de5248`。`ui/test/views/customization/customization-tree.test.tsx` でカバー。
+
+- **REQ-121**: CUSTOM-TREE-005 — aggregator leaf (`tree-leaf-skills/loom-retro/stages/aggregator`) 内に `data-testid="badge-write"` の WRITE badge を表示、non-aggregator leaves には表示しない。commit `6de5248`。`ui/test/views/customization/customization-tree.test.tsx` でカバー。
+
+- **REQ-122**: CUSTOM-TREE-006 — agent leaf 選択時 (`leaf-editor-model-selector` testid) model 選択が表示、skill scope leaf 選択時は非表示。commit `6de5248`。`ui/test/views/customization/customization-tree.test.tsx` でカバー。
+
+- **REQ-123**: CUSTOM-TREE-007 — Agents root に `(3)` count 表示、Skills root に `(2)` count 表示。commit `6de5248`。`ui/test/views/customization/customization-tree.test.tsx` でカバー。

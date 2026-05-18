@@ -4,13 +4,13 @@
  * 2-pane tree (left 260px hierarchical tree + right 1fr leaf editor).
  * Tree shape: Agents(3) + Skills(2) with sub-scopes, WRITE badge for aggregator.
  *
- * REQ-115: CUSTOM-TREE-001 — tree Agents(3) + Skills(2) 2 root nodes
- * REQ-116: CUSTOM-TREE-002 — Agents expand shows 3 persistent
- * REQ-117: CUSTOM-TREE-003 — loom-review expand shows 4 strategies
- * REQ-118: CUSTOM-TREE-004 — loom-retro expand shows lenses(4) + stages(2)
- * REQ-119: CUSTOM-TREE-005 — aggregator leaf has WRITE badge
- * REQ-120: CUSTOM-TREE-006 — agent leaf shows model selector, skill leaf hides it
- * REQ-121: CUSTOM-TREE-007 — count display Agents(3) / Skills(2)
+ * REQ-117: CUSTOM-TREE-001 — tree Agents(3) + Skills(2) 2 root nodes
+ * REQ-118: CUSTOM-TREE-002 — Agents expand shows 3 persistent
+ * REQ-119: CUSTOM-TREE-003 — loom-review expand shows 4 strategies
+ * REQ-120: CUSTOM-TREE-004 — loom-retro expand shows lenses(4) + stages(2)
+ * REQ-121: CUSTOM-TREE-005 — aggregator leaf has WRITE badge
+ * REQ-122: CUSTOM-TREE-006 — agent leaf shows model selector, skill leaf hides it
+ * REQ-123: CUSTOM-TREE-007 — count display Agents(3) / Skills(2)
  */
 import { describe, it, expect, afterEach, vi } from 'vitest';
 import { render, screen, cleanup, fireEvent, within } from '@testing-library/react';
