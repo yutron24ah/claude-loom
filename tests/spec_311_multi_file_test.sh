@@ -30,18 +30,20 @@ else
   echo "PASS [spec-311]: §3.11.1–§3.11.5 sub-section count=$subsection_count (exactly 5)"
 fi
 
-# ----- Check 3: §3.11 placed between §3.10.2 and §4 -----
-line_3102=$(grep -n "^#### 3\.10\.2" "$SPEC" | head -1 | cut -d: -f1)
+# ----- Check 3: §3.11 placed between §3.10 and §4 -----
+# Note: §3.10.2 content was migrated to spec/harness.md §6.2 (M0.X-spec-plan-multi-file-dogfood t2)
+# Use §3.10 header as stable anchor instead
+line_310=$(grep -n "^### 3\.10" "$SPEC" | head -1 | cut -d: -f1)
 line_311=$(grep -n "^### 3\.11" "$SPEC" | head -1 | cut -d: -f1)
 line_sec4=$(grep -n "^## 4\." "$SPEC" | head -1 | cut -d: -f1)
 
-if [ -z "$line_3102" ] || [ -z "$line_311" ] || [ -z "$line_sec4" ]; then
-  echo "FAIL [spec-311]: anchor lines not found (§3.10.2=$line_3102, §3.11=$line_311, §4=$line_sec4)"
+if [ -z "$line_310" ] || [ -z "$line_311" ] || [ -z "$line_sec4" ]; then
+  echo "FAIL [spec-311]: anchor lines not found (§3.10=$line_310, §3.11=$line_311, §4=$line_sec4)"
   failures=$((failures + 1))
-elif [ "$line_311" -gt "$line_3102" ] && [ "$line_311" -lt "$line_sec4" ]; then
-  echo "PASS [spec-311]: §3.11 positioned between §3.10.2 (line $line_3102) and §4 (line $line_sec4) at line $line_311"
+elif [ "$line_311" -gt "$line_310" ] && [ "$line_311" -lt "$line_sec4" ]; then
+  echo "PASS [spec-311]: §3.11 positioned between §3.10 (line $line_310) and §4 (line $line_sec4) at line $line_311"
 else
-  echo "FAIL [spec-311]: §3.11 not properly positioned (§3.10.2=$line_3102, §3.11=$line_311, §4=$line_sec4)"
+  echo "FAIL [spec-311]: §3.11 not properly positioned (§3.10=$line_310, §3.11=$line_311, §4=$line_sec4)"
   failures=$((failures + 1))
 fi
 

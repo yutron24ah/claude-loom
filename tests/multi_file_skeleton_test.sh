@@ -192,6 +192,255 @@ if [ -f "$DOC_CHECKLIST" ]; then
   fi
 fi
 
+# ----- t2 checks: spec/harness.md migration (skeleton-n1 through skeleton-n5) -----
+HARNESS_MD="$ROOT_DIR/spec/harness.md"
+
+# ----- Check (n1): spec/harness.md file exists -----
+if [ -f "$HARNESS_MD" ]; then
+  echo "PASS [skeleton-n1]: spec/harness.md exists"
+else
+  echo "FAIL [skeleton-n1]: spec/harness.md not found at $HARNESS_MD"
+  failures=$((failures + 1))
+fi
+
+# ----- Check (n2): spec/harness.md has exactly 8 top-level sections (## headings) -----
+if [ -f "$HARNESS_MD" ]; then
+  n2_count=$(grep -c "^## " "$HARNESS_MD" || true)
+  if [ "$n2_count" -ge 8 ]; then
+    echo "PASS [skeleton-n2]: spec/harness.md has $n2_count top-level sections (##) (≥8)"
+  else
+    echo "FAIL [skeleton-n2]: spec/harness.md has $n2_count top-level sections (## ) (need ≥8)"
+    failures=$((failures + 1))
+  fi
+fi
+
+# ----- Check (n3): spec/harness.md starts at §1 (local renumber confirmed) -----
+if [ -f "$HARNESS_MD" ]; then
+  if grep -qE "^## 1\." "$HARNESS_MD"; then
+    echo "PASS [skeleton-n3]: spec/harness.md starts at §1 (local renumber confirmed)"
+  else
+    echo "FAIL [skeleton-n3]: spec/harness.md does not start at §1 (need '## 1.' heading)"
+    failures=$((failures + 1))
+  fi
+fi
+
+# ----- Check (n4): SPEC.md has ≥8 pointer lines to spec/harness.md -----
+# Note: pointer format is `spec/harness.md` §N — grep for path only then verify § on same line
+if [ -f "$SPEC_FILE" ]; then
+  n4_count=$(grep -c "spec/harness.md" "$SPEC_FILE" || true)
+  if [ "$n4_count" -ge 8 ]; then
+    echo "PASS [skeleton-n4]: SPEC.md has $n4_count pointer lines to spec/harness.md (≥8)"
+  else
+    echo "FAIL [skeleton-n4]: SPEC.md has $n4_count pointer lines to spec/harness.md (need ≥8)"
+    failures=$((failures + 1))
+  fi
+fi
+
+# ----- Check (n5): spec/harness.md has back-pointer header to master SPEC.md -----
+if [ -f "$HARNESS_MD" ]; then
+  if grep -q "SPEC.md" "$HARNESS_MD"; then
+    echo "PASS [skeleton-n5]: spec/harness.md has back-pointer to master SPEC.md"
+  else
+    echo "FAIL [skeleton-n5]: spec/harness.md missing back-pointer to master SPEC.md"
+    failures=$((failures + 1))
+  fi
+fi
+
+# ----- t3 checks: spec/daemon-and-data.md migration (skeleton-n6 through skeleton-n9) -----
+DAEMON_AND_DATA_MD="$ROOT_DIR/spec/daemon-and-data.md"
+
+# ----- Check (n6): spec/daemon-and-data.md file exists -----
+if [ -f "$DAEMON_AND_DATA_MD" ]; then
+  echo "PASS [skeleton-n6]: spec/daemon-and-data.md exists"
+else
+  echo "FAIL [skeleton-n6]: spec/daemon-and-data.md not found at $DAEMON_AND_DATA_MD"
+  failures=$((failures + 1))
+fi
+
+# ----- Check (n7): spec/daemon-and-data.md has ≥4 top-level sections (## headings) -----
+if [ -f "$DAEMON_AND_DATA_MD" ]; then
+  n7_count=$(grep -c "^## " "$DAEMON_AND_DATA_MD" || true)
+  if [ "$n7_count" -ge 4 ]; then
+    echo "PASS [skeleton-n7]: spec/daemon-and-data.md has $n7_count top-level sections (##) (≥4)"
+  else
+    echo "FAIL [skeleton-n7]: spec/daemon-and-data.md has $n7_count top-level sections (## ) (need ≥4)"
+    failures=$((failures + 1))
+  fi
+fi
+
+# ----- Check (n8): spec/daemon-and-data.md starts at §1 (local renumber confirmed) -----
+if [ -f "$DAEMON_AND_DATA_MD" ]; then
+  if grep -qE "^## 1\." "$DAEMON_AND_DATA_MD"; then
+    echo "PASS [skeleton-n8]: spec/daemon-and-data.md starts at §1 (local renumber confirmed)"
+  else
+    echo "FAIL [skeleton-n8]: spec/daemon-and-data.md does not start at §1 (need '## 1.' heading)"
+    failures=$((failures + 1))
+  fi
+fi
+
+# ----- Check (n9): SPEC.md has ≥4 pointer lines to spec/daemon-and-data.md -----
+if [ -f "$SPEC_FILE" ]; then
+  n9_count=$(grep -c "spec/daemon-and-data.md" "$SPEC_FILE" || true)
+  if [ "$n9_count" -ge 4 ]; then
+    echo "PASS [skeleton-n9]: SPEC.md has $n9_count pointer lines to spec/daemon-and-data.md (≥4)"
+  else
+    echo "FAIL [skeleton-n9]: SPEC.md has $n9_count pointer lines to spec/daemon-and-data.md (need ≥4)"
+    failures=$((failures + 1))
+  fi
+fi
+
+# ----- t4 checks: spec/ui-arch.md migration (skeleton-n10 through skeleton-n12) -----
+UI_ARCH_MD="$ROOT_DIR/spec/ui-arch.md"
+
+# ----- Check (n10): spec/ui-arch.md file exists -----
+if [ -f "$UI_ARCH_MD" ]; then
+  echo "PASS [skeleton-n10]: spec/ui-arch.md exists"
+else
+  echo "FAIL [skeleton-n10]: spec/ui-arch.md not found at $UI_ARCH_MD"
+  failures=$((failures + 1))
+fi
+
+# ----- Check (n11): spec/ui-arch.md has ≥7 top-level sections (## headings) -----
+if [ -f "$UI_ARCH_MD" ]; then
+  n11_count=$(grep -c "^## " "$UI_ARCH_MD" || true)
+  if [ "$n11_count" -ge 7 ]; then
+    echo "PASS [skeleton-n11]: spec/ui-arch.md has $n11_count top-level sections (##) (≥7)"
+  else
+    echo "FAIL [skeleton-n11]: spec/ui-arch.md has $n11_count top-level sections (##) (need ≥7)"
+    failures=$((failures + 1))
+  fi
+fi
+
+# ----- Check (n12): SPEC.md has ≥7 pointer lines to spec/ui-arch.md -----
+if [ -f "$SPEC_FILE" ]; then
+  n12_count=$(grep -c "spec/ui-arch.md" "$SPEC_FILE" || true)
+  if [ "$n12_count" -ge 7 ]; then
+    echo "PASS [skeleton-n12]: SPEC.md has $n12_count pointer lines to spec/ui-arch.md (≥7)"
+  else
+    echo "FAIL [skeleton-n12]: SPEC.md has $n12_count pointer lines to spec/ui-arch.md (need ≥7)"
+    failures=$((failures + 1))
+  fi
+fi
+
+# ----- t5 checks: spec/retro-system.md migration (skeleton-n13 through skeleton-n14) -----
+RETRO_SYSTEM_MD="$ROOT_DIR/spec/retro-system.md"
+
+# ----- Check (n13): spec/retro-system.md file exists -----
+if [ -f "$RETRO_SYSTEM_MD" ]; then
+  echo "PASS [skeleton-n13]: spec/retro-system.md exists"
+else
+  echo "FAIL [skeleton-n13]: spec/retro-system.md not found at $RETRO_SYSTEM_MD"
+  failures=$((failures + 1))
+fi
+
+# ----- Check (n14): SPEC.md has ≥1 pointer line to spec/retro-system.md -----
+if [ -f "$SPEC_FILE" ]; then
+  n14_count=$(grep -c "spec/retro-system.md" "$SPEC_FILE" || true)
+  if [ "$n14_count" -ge 1 ]; then
+    echo "PASS [skeleton-n14]: SPEC.md has $n14_count pointer line(s) to spec/retro-system.md (≥1)"
+  else
+    echo "FAIL [skeleton-n14]: SPEC.md has $n14_count pointer line(s) to spec/retro-system.md (need ≥1)"
+    failures=$((failures + 1))
+  fi
+fi
+
+# ----- t6 checks: spec/install-and-test.md migration (skeleton-n15 through skeleton-n16) -----
+INSTALL_AND_TEST_MD="$ROOT_DIR/spec/install-and-test.md"
+
+# ----- Check (n15): spec/install-and-test.md file exists with ≥3 top-level sections -----
+if [ -f "$INSTALL_AND_TEST_MD" ]; then
+  n15_count=$(grep -c "^## " "$INSTALL_AND_TEST_MD" || true)
+  if [ "$n15_count" -ge 3 ]; then
+    echo "PASS [skeleton-n15]: spec/install-and-test.md exists with $n15_count top-level sections (##) (≥3)"
+  else
+    echo "FAIL [skeleton-n15]: spec/install-and-test.md exists but has only $n15_count top-level sections (##) (need ≥3)"
+    failures=$((failures + 1))
+  fi
+else
+  echo "FAIL [skeleton-n15]: spec/install-and-test.md not found at $INSTALL_AND_TEST_MD"
+  failures=$((failures + 1))
+fi
+
+# ----- Check (n16): SPEC.md has ≥3 pointer lines to spec/install-and-test.md -----
+if [ -f "$SPEC_FILE" ]; then
+  n16_count=$(grep -c "spec/install-and-test.md" "$SPEC_FILE" || true)
+  if [ "$n16_count" -ge 3 ]; then
+    echo "PASS [skeleton-n16]: SPEC.md has $n16_count pointer line(s) to spec/install-and-test.md (≥3)"
+  else
+    echo "FAIL [skeleton-n16]: SPEC.md has $n16_count pointer line(s) to spec/install-and-test.md (need ≥3)"
+    failures=$((failures + 1))
+  fi
+fi
+
+# ----- t7 check: master SPEC.md Topic Index existence (skeleton-n17) -----
+# Verifies that the §15 Topic Index section has been added to master SPEC.md
+# (M0.X-spec-plan-multi-file-dogfood t7 integrity check)
+
+# ----- Check (n17): SPEC.md has exactly 1 "## 15. Topic Index" section -----
+if [ -f "$SPEC_FILE" ]; then
+  n17_count=$(grep -cE "^## 15\. Topic Index" "$SPEC_FILE" || true)
+  if [ "$n17_count" -eq 1 ]; then
+    echo "PASS [skeleton-n17]: SPEC.md has Topic Index §15 section (count=$n17_count)"
+  else
+    echo "FAIL [skeleton-n17]: SPEC.md Topic Index §15 section not found (need exactly 1, got $n17_count)"
+    failures=$((failures + 1))
+  fi
+fi
+
+# ----- t8 checks: cross-ref rewire (skeleton-n18 and skeleton-n19) -----
+# n18: 古記法 "SPEC §X" が spec/*.md 内に 0 件 (ただし header boilerplate と "SPEC §3.11" は除外)
+# n19: 新記法 cross-file ref "spec/<topic>.md §" が spec/*.md 内に ≥10 件
+
+# ----- Check (n18): no old-style "SPEC §X" refs remain in spec/*.md -----
+# Exclude:
+#   - header boilerplate lines (lines 5-7, containing "master SPEC §3.11.4 SSoT" or migration note)
+#   - valid "SPEC §3.11" refs (master stays in §3.11)
+#   - "master SPEC §3.11" in headers
+n18_count=0
+for spec_file in "$ROOT_DIR/spec/harness.md" "$ROOT_DIR/spec/daemon-and-data.md" "$ROOT_DIR/spec/ui-arch.md" "$ROOT_DIR/spec/retro-system.md" "$ROOT_DIR/spec/install-and-test.md"; do
+  if [ -f "$spec_file" ]; then
+    # Count "SPEC §N" refs excluding "SPEC §3.11" (valid master ref) and "master SPEC §3.11" in headers
+    file_old_refs=$(grep -E "SPEC §[0-9]" "$spec_file" | grep -v "SPEC §3\.11" | grep -v "^>" | wc -l || true)
+    n18_count=$((n18_count + file_old_refs))
+  fi
+done
+if [ "$n18_count" -eq 0 ]; then
+  echo "PASS [skeleton-n18]: no old-style 'SPEC §X' refs (excluding §3.11) remain in spec/*.md"
+else
+  echo "FAIL [skeleton-n18]: $n18_count old-style 'SPEC §X' ref(s) remain in spec/*.md (need 0)"
+  failures=$((failures + 1))
+fi
+
+# ----- Check (n19): ≥10 new-style cross-file refs in spec/*.md -----
+# Match both bare (spec/foo.md §X) and backtick-quoted (`spec/foo.md` §X) forms
+n19_count=$(grep -rE "spec/[a-z-]+\.md.{0,2}§" "$ROOT_DIR/spec/" | wc -l || true)
+if [ "$n19_count" -ge 10 ]; then
+  echo "PASS [skeleton-n19]: $n19_count new-style cross-file refs 'spec/<topic>.md §' found in spec/*.md (≥10)"
+else
+  echo "FAIL [skeleton-n19]: only $n19_count new-style cross-file ref(s) found in spec/*.md (need ≥10)"
+  failures=$((failures + 1))
+fi
+
+# ----- t9 checks: skeleton-p (back-pointer header in each topic file) -----
+# Each topic file must contain "master は [SPEC.md](../SPEC.md)" in its header block.
+TOPIC_FILES=("harness" "daemon-and-data" "ui-arch" "retro-system" "install-and-test")
+BACK_POINTER_PATTERN="master は \[SPEC\.md\]\(\.\./SPEC\.md\)"
+
+for topic in "${TOPIC_FILES[@]}"; do
+  bp_file="$ROOT_DIR/spec/${topic}.md"
+  if [ -f "$bp_file" ]; then
+    if grep -qE "$BACK_POINTER_PATTERN" "$bp_file"; then
+      echo "PASS [skeleton-p-${topic}]: spec/${topic}.md has back-pointer header"
+    else
+      echo "FAIL [skeleton-p-${topic}]: spec/${topic}.md missing back-pointer header"
+      failures=$((failures + 1))
+    fi
+  else
+    echo "FAIL [skeleton-p-${topic}]: spec/${topic}.md not found"
+    failures=$((failures + 1))
+  fi
+done
+
 if [ "$failures" -gt 0 ]; then
   echo "multi_file_skeleton_test FAILED with $failures violation(s)"
   exit 1
