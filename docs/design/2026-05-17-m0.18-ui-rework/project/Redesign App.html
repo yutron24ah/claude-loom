@@ -1,0 +1,490 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <title>claude-loom — Redesign App (modular)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="styles.css?v=5" />
+  <style>
+    /* === Production app shell ===================================== */
+    html, body, #root { height: 100%; }
+    body { margin: 0; background: var(--p-bg-sky); color: var(--p-text);
+      font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; }
+
+    .shell { display: grid; grid-template-rows: 36px 1fr 24px; height: 100vh; }
+
+    .top {
+      display: flex; align-items: center; gap: 14px; padding: 0 12px;
+      background: var(--p-paper); border-bottom: 3px solid var(--p-border);
+      font-size: 11px;
+    }
+    .top__brand { display: flex; align-items: center; gap: 6px; font-weight: 700; letter-spacing: 0.04em; }
+    .top__brand .logo { width: 14px; height: 14px; background: var(--p-accent); border: 2px solid var(--p-border); }
+    .top__pj {
+      display: inline-flex; align-items: center; gap: 6px; padding: 2px 8px;
+      border: 2px solid var(--p-border); background: var(--p-tint); cursor: pointer;
+      font-size: 10px; font-weight: 700;
+    }
+    .top__metrics { display: flex; gap: 6px; margin-left: auto; }
+    .top__metrics .m {
+      display: flex; gap: 6px; align-items: center; padding: 2px 8px;
+      border: 2px solid var(--p-border); background: var(--p-paper);
+      font-size: 9px; font-weight: 700; letter-spacing: 0.04em;
+    }
+    .top__metrics .m .v { color: var(--p-accent); }
+    .top__metrics .m .v.ok { color: var(--p-success); }
+    .top__metrics .m .v.warn { color: var(--p-warn); }
+    .top__metrics .m .v.err { color: var(--p-error); }
+    .top__menu {
+      all: unset; cursor: pointer; padding: 4px 8px; font-size: 14px;
+      border: 2px solid var(--p-border); background: var(--p-paper);
+    }
+    .top__conn {
+      display: inline-flex; align-items: center; gap: 6px; font-size: 9px;
+      padding: 2px 6px; border: 2px solid var(--p-border); background: var(--p-paper);
+    }
+    .top__conn .dot { width: 7px; height: 7px; }
+
+    .main { position: relative; display: grid; grid-template-columns: auto 1fr; min-height: 0; }
+
+    .drawer {
+      width: 168px; background: var(--p-paper); border-right: 3px solid var(--p-border);
+      display: flex; flex-direction: column; overflow: hidden;
+      transition: width 0.18s ease;
+    }
+    .drawer.collapsed { width: 40px; }
+    .drawer__group {
+      padding: 8px 6px 4px; font-size: 8px; font-weight: 700;
+      color: var(--p-text-muted); letter-spacing: 0.08em;
+    }
+    .drawer.collapsed .drawer__group { display: none; }
+    .nav-link {
+      all: unset; cursor: pointer; display: flex; gap: 8px; align-items: center;
+      padding: 6px 10px; font-size: 11px; font-weight: 700; border-left: 3px solid transparent;
+      white-space: nowrap;
+    }
+    .nav-link:hover { background: var(--p-tint); }
+    .nav-link.active { background: var(--p-accent-soft); border-left-color: var(--p-accent); color: var(--p-accent); }
+    .nav-link .ico { width: 14px; height: 14px; flex-shrink: 0; display: inline-grid; place-items: center;
+      font-size: 9px; border: 1.5px solid var(--p-border); background: var(--p-tint); color: var(--p-text); }
+    .nav-link.active .ico { background: var(--p-accent); color: white; }
+    .drawer.collapsed .nav-link .lbl { display: none; }
+
+    .content { position: relative; min-width: 0; overflow: hidden; background: var(--p-bg-sky); }
+    .content > .room { position: absolute; inset: 0; border: none; }
+
+    .statusbar {
+      display: flex; align-items: center; gap: 14px; padding: 0 12px;
+      background: var(--p-paper); border-top: 3px solid var(--p-border);
+      font-size: 9px; color: var(--p-text-muted); letter-spacing: 0.04em;
+    }
+    .statusbar .seg { display: inline-flex; gap: 6px; align-items: center; }
+    .statusbar .seg .dot { width: 6px; height: 6px; }
+    .statusbar .right { margin-left: auto; }
+
+    /* idle hush + coldstart + rail (carried from previous) */
+    .idle-hush::after {
+      content: ""; position: absolute; inset: 0; pointer-events: none;
+      background: rgba(15, 19, 32, 0.18); mix-blend-mode: multiply;
+    }
+    .coldstart {
+      position: absolute; left: 50%; top: 38%; transform: translate(-50%, -50%);
+      background: var(--p-paper); border: 3px solid var(--p-border);
+      box-shadow: 4px 4px 0 0 var(--p-shadow);
+      padding: 14px 18px; max-width: 440px; z-index: 5; pointer-events: auto;
+    }
+    .coldstart h3 { margin: 0 0 6px; font-size: 13px; }
+    .coldstart p { margin: 0 0 8px; font-size: 11px; color: var(--p-text-muted); line-height: 1.5; }
+    .coldstart code { background: var(--p-tint); border: 1px solid var(--p-border); padding: 1px 5px; font-size: 10px; }
+    .coldstart .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+    .coldstart .row + .row { margin-top: 6px; }
+
+    /* PM chat panel — right column (Slack-style) */
+    .pm-chat {
+      position: absolute; right: 0; top: 0; bottom: 0; width: 340px;
+      background: var(--p-paper); border-left: 3px solid var(--p-border);
+      display: flex; flex-direction: column; z-index: 5; pointer-events: auto;
+    }
+    .pm-chat__tabs {
+      display: flex; border-bottom: 2px solid var(--p-border); background: var(--p-tint);
+    }
+    .pm-chat__tab {
+      flex: 1; padding: 6px 10px; font-size: 10px; font-weight: 700; letter-spacing: 0.06em;
+      background: transparent; border: 0; cursor: pointer; color: var(--p-text-muted);
+      border-right: 1px solid var(--p-border);
+    }
+    .pm-chat__tab:last-child { border-right: 0; }
+    .pm-chat__tab.active { background: var(--p-paper); color: var(--p-text); box-shadow: inset 0 -2px 0 var(--p-accent); }
+    .pm-chat__close {
+      width: 28px; padding: 0; font-size: 11px; cursor: pointer;
+      background: transparent; border: 0; border-left: 1px solid var(--p-border); color: var(--p-text-muted);
+    }
+    .pm-chat__close:hover { color: var(--p-text); }
+    .pm-chat-handle {
+      position: absolute; right: 0; top: 12px; z-index: 6;
+      writing-mode: vertical-rl; transform: rotate(180deg);
+      padding: 12px 6px; font-size: 11px; font-weight: 700; letter-spacing: 0.1em;
+      background: var(--p-paper); border: 2px solid var(--p-border); border-right: 0;
+      color: var(--p-text); cursor: pointer;
+      box-shadow: -3px 3px 0 var(--p-border);
+    }
+    .pm-chat-handle:hover { background: var(--p-tint); }
+    /* Cat character walking out of desk to deliver to another zone */
+    .cat-walker {
+      animation: cat-walk-trip 8s ease-in-out infinite;
+      z-index: 4;
+    }
+    .cat-walker::after {
+      content: "→ 持参中"; position: absolute; left: 50px; top: -2px; white-space: nowrap;
+      font-size: 8px; padding: 1px 4px; background: var(--p-paper);
+      border: 1px solid var(--p-border); color: var(--p-text-muted);
+      animation: cat-bubble 8s ease-in-out infinite;
+    }
+    @keyframes cat-walk-trip {
+      0%, 5%   { transform: translate(0, 0); }
+      45%, 55% { transform: translate(var(--walk-dx), var(--walk-dy)); }
+      95%, 100% { transform: translate(0, 0); }
+    }
+    @keyframes cat-bubble {
+      0%, 8%   { opacity: 0; }
+      12%, 48% { opacity: 1; }
+      52%, 100% { opacity: 0; }
+    }
+    .pm-chat__tab .badge {
+      display: inline-block; min-width: 14px; padding: 0 4px; margin-left: 4px;
+      background: var(--p-warn); color: white; font-size: 8px; border-radius: 7px;
+    }
+    .pm-chat__head {
+      padding: 6px 10px; border-bottom: 2px solid var(--p-border);
+      font-size: 10px; font-weight: 700; letter-spacing: 0.06em;
+      display: flex; align-items: center; gap: 6px;
+      background: var(--p-tint);
+    }
+    .pm-chat__dot {
+      width: 8px; height: 8px; border-radius: 50%; background: var(--p-ok);
+      box-shadow: 0 0 6px var(--p-ok); animation: pmpulse 1.6s infinite;
+    }
+    @keyframes pmpulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+    .pm-chat__meta { margin-left: auto; font-size: 8px; font-weight: 400; color: var(--p-text-muted); }
+    .pm-chat__log {
+      flex: 1; overflow-y: auto; padding: 10px 12px;
+      display: flex; flex-direction: column; gap: 10px;
+    }
+    .pm-msg__who { font-size: 9px; font-weight: 700; color: var(--p-accent); margin-bottom: 2px; letter-spacing: 0.04em; }
+    .pm-msg__who span { font-weight: 400; color: var(--p-text-muted); margin-left: 4px; }
+    .pm-msg__text { font-size: 11px; line-height: 1.5; }
+    .pm-msg--user .pm-msg__text {
+      background: var(--p-tint); padding: 4px 8px; border-left: 2px solid var(--p-text);
+    }
+    .pm-msg--pm .pm-msg__who { color: var(--p-ok); }
+    .pm-chat__input {
+      border-top: 2px solid var(--p-border); padding: 6px;
+      display: flex; gap: 6px; background: var(--p-paper);
+    }
+    .pm-chat__input textarea {
+      flex: 1; resize: none; font: inherit; font-size: 11px;
+      border: 1px solid var(--p-border); padding: 4px 6px; outline: none;
+      background: var(--p-paper); color: var(--p-text);
+    }
+    .pm-chat__input textarea:focus { border-color: var(--p-text); }
+    .pm-chat__input button {
+      padding: 0 12px; font-size: 10px; font-weight: 700;
+      background: var(--p-text); color: var(--p-paper); border: 0; cursor: pointer;
+    }
+    .pm-chat__input button:disabled { opacity: 0.3; cursor: not-allowed; }
+
+    /* PM toast (med/low risk approvals) */
+    .pm-toast {
+      position: absolute; right: 356px; top: 12px; width: 240px; z-index: 6;
+      background: var(--p-paper); border: 2px solid var(--p-border);
+      box-shadow: 4px 4px 0 var(--p-border);
+      padding: 8px 10px; font-size: 10px;
+      animation: pmtoastIn 0.2s ease-out;
+    }
+    @keyframes pmtoastIn { from { transform: translateY(-8px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    .pm-toast + .pm-toast { top: 92px; }
+    .pm-toast--med { border-color: var(--p-warn); }
+    .pm-toast__head { display: flex; gap: 6px; align-items: center; margin-bottom: 4px; }
+    .pm-toast__risk {
+      font-size: 8px; font-weight: 700; padding: 1px 5px;
+      background: var(--p-warn); color: white;
+    }
+    .pm-toast--low .pm-toast__risk { background: var(--p-text-muted); }
+    .pm-toast__from { font-size: 9px; color: var(--p-text-muted); }
+    .pm-toast__tool { font-weight: 700; font-size: 10px; margin-bottom: 2px; }
+    .pm-toast__args {
+      display: block; font-size: 9px; padding: 3px 5px;
+      background: var(--p-tint); border: 1px solid var(--p-border);
+      word-break: break-all; margin-bottom: 6px;
+    }
+    .pm-toast__actions { display: flex; gap: 4px; justify-content: flex-end; }
+    .pm-toast__actions button {
+      padding: 2px 8px; font-size: 9px; font-weight: 700; cursor: pointer; border: 1px solid var(--p-border);
+    }
+    .pm-toast__actions .reject { background: var(--p-paper); color: var(--p-text); }
+    .pm-toast__actions .allow { background: var(--p-text); color: var(--p-paper); border-color: var(--p-text); }
+
+    /* PM modal (high risk — blocking) */
+    .pm-modal-bg {
+      position: absolute; inset: 0; background: rgba(15, 19, 32, 0.55);
+      display: flex; align-items: center; justify-content: center; z-index: 20;
+      animation: pmmodalIn 0.15s ease-out;
+    }
+    @keyframes pmmodalIn { from { opacity: 0; } to { opacity: 1; } }
+    .pm-modal {
+      background: var(--p-paper); border: 3px solid var(--p-bad);
+      box-shadow: 8px 8px 0 var(--p-border);
+      width: 460px; padding: 16px 18px;
+    }
+    .pm-modal__risk { font-size: 11px; font-weight: 700; color: var(--p-bad); margin-bottom: 6px; letter-spacing: 0.04em; }
+    .pm-modal__from { font-size: 11px; color: var(--p-text-muted); margin-bottom: 8px; }
+    .pm-modal__tool { font-size: 13px; font-weight: 700; margin-bottom: 4px; }
+    .pm-modal__args {
+      font-size: 11px; padding: 8px 10px; margin: 0 0 10px;
+      background: var(--p-tint); border: 1px solid var(--p-border);
+      white-space: pre-wrap; word-break: break-all;
+    }
+    .pm-modal__why { font-size: 11px; margin-bottom: 12px; line-height: 1.5; }
+    .pm-modal__actions { display: flex; gap: 8px; justify-content: flex-end; }
+    .pm-modal__actions button {
+      padding: 6px 14px; font-size: 11px; font-weight: 700; cursor: pointer; border: 2px solid var(--p-border);
+    }
+    .pm-modal__actions .reject { background: var(--p-text); color: var(--p-paper); border-color: var(--p-text); }
+    .pm-modal__actions .allow { background: var(--p-paper); color: var(--p-text); }
+    .btn-px.primary { background: var(--p-text); color: var(--p-paper); border: 0; padding: 6px 14px; font-size: 11px; font-weight: 700; cursor: pointer; }
+    .rail {
+      position: absolute; right: 0; top: 0; bottom: 0; width: 280px;
+      background: var(--p-paper); border-left: 3px solid var(--p-border);
+      display: flex; flex-direction: column; z-index: 4;
+      transition: transform 0.2s ease;
+    }
+    .rail.collapsed { transform: translateX(280px); }
+    .rail__hdr {
+      display: flex; align-items: center; gap: 8px; padding: 6px 10px;
+      border-bottom: 2px solid var(--p-border); font-size: 10px; font-weight: 700;
+      letter-spacing: 0.04em;
+    }
+    .rail__hdr .x { margin-left: auto; cursor: pointer; padding: 0 4px; }
+    .rail__tabs { display: flex; border-bottom: 2px solid var(--p-border); }
+    .rail__tab {
+      flex: 1; padding: 4px 6px; font-size: 9px; font-weight: 700;
+      letter-spacing: 0.04em; cursor: pointer; text-align: center;
+      border-right: 1px solid var(--p-border); background: var(--p-tint);
+    }
+    .rail__tab:last-child { border-right: none; }
+    .rail__tab.active { background: var(--p-paper); color: var(--p-accent); }
+    .rail__body { flex: 1; overflow: auto; padding: 6px 8px; font-size: 10px; line-height: 1.45; }
+    .rail__line { padding: 3px 0; border-bottom: 1px dashed var(--p-border); white-space: pre-wrap; word-break: break-word; }
+    .rail__line .ts { color: var(--p-text-muted); font-size: 8px; margin-right: 4px; }
+    .rail__line .who { font-weight: 700; color: var(--p-accent); margin-right: 4px; }
+    .rail__line.tool .tool { background: var(--p-warn); color: white; padding: 0 4px; font-size: 8px; font-weight: 700; margin-right: 4px; }
+    .rail-toggle {
+      position: absolute; right: 8px; top: 8px; z-index: 4;
+      padding: 3px 8px; font-size: 9px; font-weight: 700; cursor: pointer;
+      background: var(--p-paper); border: 2px solid var(--p-border);
+      box-shadow: 2px 2px 0 0 var(--p-shadow); letter-spacing: 0.04em;
+    }
+
+    /* scenario picker */
+    .scenario-picker {
+      position: absolute; right: 296px; top: 8px; z-index: 5;
+      display: flex; gap: 4px; padding: 4px;
+      background: var(--p-paper); border: 2px solid var(--p-border);
+      box-shadow: 2px 2px 0 0 var(--p-shadow);
+    }
+    .scenario-picker.no-rail { right: 8px; }
+    .scenario-picker__label {
+      font-size: 8px; padding: 0 4px; color: var(--p-text-muted);
+      letter-spacing: 0.06em; display: inline-flex; align-items: center;
+    }
+    .scenario-picker__btn {
+      all: unset; cursor: pointer; padding: 3px 8px; font-size: 9px; font-weight: 700;
+      letter-spacing: 0.04em; border: 1.5px solid var(--p-border); background: var(--p-tint);
+    }
+    .scenario-picker__btn.on { background: var(--p-accent); color: white; }
+
+    /* "coming soon" placeholder for screens not yet redesigned */
+    .placeholder-screen {
+      position: absolute; inset: 0; display: grid; place-items: center;
+      background: var(--p-bg-sky);
+    }
+    .placeholder-screen__card {
+      max-width: 480px; padding: 20px 24px;
+      background: var(--p-paper); border: 3px solid var(--p-border);
+      box-shadow: 4px 4px 0 0 var(--p-shadow); text-align: center;
+    }
+    .placeholder-screen__card h3 { margin: 0 0 8px; font-size: 14px; }
+    .placeholder-screen__card p { margin: 0; font-size: 11px; color: var(--p-text-muted); line-height: 1.5; }
+    .placeholder-screen__card .tag {
+      display: inline-block; padding: 2px 6px; margin-bottom: 10px;
+      background: var(--p-warn); color: white; font-size: 9px; font-weight: 700;
+      letter-spacing: 0.06em; border: 2px solid var(--p-border);
+    }
+  </style>
+
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+  <!-- Order matters: cat sprite + ROSTER → scenarios store → screens -->
+  <script type="text/babel" src="cat.jsx"></script>
+  <script src="redesign/scenarios.js"></script>
+  <script type="text/babel" src="redesign/screens/room.jsx"></script>
+  <script type="text/babel" src="redesign/screens/gantt.jsx"></script>
+  <script type="text/babel" src="redesign/screens/retro.jsx"></script>
+  <script type="text/babel" src="redesign/screens/consistency.jsx"></script>
+  <script type="text/babel" src="redesign/screens/plan.jsx"></script>
+  <script type="text/babel" src="redesign/screens/customization.jsx"></script>
+  <script type="text/babel" src="redesign/screens/guidance.jsx"></script>
+  <script type="text/babel" src="redesign/screens/worktree.jsx"></script>
+  <script type="text/babel" src="redesign/screens/agent-detail.jsx"></script>
+  <script type="text/babel" src="redesign/screens/sessions.jsx"></script>
+  <script type="text/babel" src="redesign/screens/tokens.jsx"></script>
+  <script type="text/babel" src="redesign/screens/settings.jsx"></script>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { RoomScreen, GanttScreen, RetroScreen, ConsistencyScreen, PlanScreen,
+            CustomizationScreen, GuidanceScreen, WorktreeScreen, AgentDetailDrawer,
+            SessionsScreen, TokensScreen, SettingsScreen,
+            useScenario, ScenarioPicker } = window;
+
+    const NAV_GROUPS = [
+      { label: "OPERATE", items: [
+        { id: "room",          ico: "▦", label: "Room",         ready: true },
+        { id: "plan",          ico: "≡", label: "Plan",         ready: true },
+        { id: "gantt",         ico: "▭", label: "Gantt",        ready: true },
+        { id: "sessions",      ico: "❐", label: "Sessions",     ready: true },
+        { id: "consistency",   ico: "△", label: "Consistency",  ready: true },
+      ]},
+      { label: "MANAGE", items: [
+        { id: "worktree",      ico: "⌗", label: "Worktree",     ready: true },
+        { id: "retro",         ico: "◆", label: "Retro",        ready: true },
+        { id: "customization", ico: "✦", label: "Customization",ready: true },
+        { id: "guidance",      ico: "❉", label: "Guidance",     ready: true },
+      ]},
+      { label: "SETTINGS", items: [
+        { id: "tokens",            ico: "$", label: "Tokens",            ready: true },
+        { id: "project-settings",  ico: "⚙", label: "Project Settings",  ready: true },
+      ]},
+    ];
+
+    const TopBar = ({ pj, onDrawerToggle, conn, metrics }) => (
+      <div className="top">
+        <button className="top__menu" onClick={onDrawerToggle} title="Toggle drawer">☰</button>
+        <div className="top__brand"><div className="logo" /> claude-loom</div>
+        <button className="top__pj" title="プロジェクト切替">
+          ◆ {pj} <span style={{ color: "var(--p-text-muted)" }}>▾</span>
+        </button>
+        <div className="top__metrics">
+          <div className="m">PARALLEL <span className={`v ${metrics.parallel < 0.5 ? "warn" : "ok"}`}>{Math.round(metrics.parallel*100)}%</span></div>
+          <div className="m">TASK TOOL <span className={`v ${metrics.taskTool}`}>{metrics.taskToolLabel}</span></div>
+          <div className="m">TDD ORDER <span className={`v ${metrics.tddViolations ? "warn" : "ok"}`}>{metrics.tddViolations} VIOLATIONS</span></div>
+          <div className="m">VERDICT <span className={`v ${metrics.verdict === "PASS" ? "ok" : "err"}`}>{metrics.verdict}</span></div>
+        </div>
+        <div className="top__conn">
+          <span className={`dot ${conn === "connected" ? "busy" : "fail"}`} />
+          <span>{conn === "connected" ? "WS connected" : "再接続中…"}</span>
+        </div>
+      </div>
+    );
+
+    const Drawer = ({ collapsed, active, setActive }) => (
+      <div className={`drawer${collapsed ? " collapsed" : ""}`}>
+        {NAV_GROUPS.map(g => (
+          <React.Fragment key={g.label}>
+            <div className="drawer__group">{g.label}</div>
+            {g.items.map(it => (
+              <button key={it.id}
+                className={`nav-link${active === it.id ? " active" : ""}`}
+                title={it.label} onClick={() => setActive(it.id)}>
+                <span className="ico">{it.ico}</span>
+                <span className="lbl">
+                  {it.label}
+                  {!it.ready && <span style={{ marginLeft: 4, fontSize: 8, color: "var(--p-text-muted)", fontWeight: 400 }}>WIP</span>}
+                </span>
+              </button>
+            ))}
+          </React.Fragment>
+        ))}
+        <div style={{ flex: 1 }} />
+        <div className="drawer__group" style={{ paddingBottom: 8 }}>v0.13 · 127.0.0.1:5757</div>
+      </div>
+    );
+
+    const StatusBar = ({ scenario }) => (
+      <div className="statusbar">
+        <span className="seg"><span className="dot busy" /> WS connected</span>
+        <span className="seg">scenario: <strong style={{ color: "var(--p-text)" }}>{scenario.label}</strong></span>
+        <span className="seg">events seen: 1,247 (last 1h)</span>
+        <span className="right">claude-loom @ <code>~/work/{scenario.project}</code></span>
+      </div>
+    );
+
+    const Placeholder = ({ id, label }) => (
+      <div className="placeholder-screen">
+        <div className="placeholder-screen__card">
+          <div className="tag">WIP</div>
+          <h3>{label} は次の iteration で再設計予定</h3>
+          <p>
+            このページは <code>redesign/screens/{id}.jsx</code> にまだ実装されていません。<br />
+            データ shape は <code>redesign/scenarios.js</code> に既に定義済みなので、<br />
+            そこから <code>useScenario()</code> を介して必要な slice を読みます。
+          </p>
+        </div>
+      </div>
+    );
+
+    const App = () => {
+      const scenario = useScenario();
+      const [drawerCollapsed, setDrawerCollapsed] = React.useState(false);
+      const [railCollapsed, setRailCollapsed] = React.useState(false);
+      const [active, setActive] = React.useState("room");
+      const [sel, setSel] = React.useState(null);
+
+      const m = scenario.disciplineMetrics;
+
+      const renderScreen = () => {
+        switch (active) {
+          case "room":          return <RoomScreen sel={sel} setSel={setSel} railCollapsed={railCollapsed} setRailCollapsed={setRailCollapsed} />;
+          case "plan":          return <PlanScreen />;
+          case "gantt":         return <GanttScreen />;
+          case "consistency":   return <ConsistencyScreen />;
+          case "retro":         return <RetroScreen />;
+          case "worktree":      return <WorktreeScreen />;
+          case "customization": return <CustomizationScreen />;
+          case "guidance":      return <GuidanceScreen />;
+          case "sessions":      return <SessionsScreen />;
+          case "tokens":        return <TokensScreen />;
+          case "project-settings": return <SettingsScreen />;
+          default:
+            return <Placeholder id={active} label={NAV_GROUPS.flatMap(g => g.items).find(i => i.id === active)?.label || active} />;
+        }
+      };
+
+      const showRail = active === "room" && !railCollapsed;
+
+      return (
+        <div className="shell">
+          <TopBar pj={scenario.project}
+            onDrawerToggle={() => setDrawerCollapsed(c => !c)}
+            conn={scenario.conn} metrics={m} />
+          <div className="main">
+            <Drawer collapsed={drawerCollapsed} active={active} setActive={setActive} />
+            <div className="content">
+              {renderScreen()}
+              <ScenarioPicker style={{ right: showRail ? 296 : 8 }} />
+            </div>
+          </div>
+          <StatusBar scenario={scenario} />
+          {sel && <AgentDetailDrawer agentId={sel} onClose={() => setSel(null)} />}
+        </div>
+      );
+    };
+
+    ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+  </script>
+</body>
+</html>

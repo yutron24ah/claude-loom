@@ -1,0 +1,366 @@
+/* =============================================================
+ * room.css — Room canvas styles
+ * Owns: .desk-station, .desk-station__bubble, .desk-station__monitor,
+ *       .desk-station__cat, .desk-station__desk, .desk-station__nameplate,
+ *       .desk-station__tdd, .subroom-clone, .room-poster, .room-sign,
+ *       .agent-detail-panel
+ *
+ * WHY a separate file: per G1, *all* visual surface for the room lives
+ * in CSS, not in TSX inline styles. shell.css owns the app frame;
+ * room.css owns the office interior.
+ *
+ * Tokens consumed: see tokens.css.patch
+ * ============================================================= */
+
+/* ── Desk station ────────────────────────────────────────────── */
+.desk-station {
+  position: absolute;
+  width: var(--desk-width);
+  z-index: var(--z-room-agents);
+}
+.desk-station__btn {
+  all: unset;
+  cursor: pointer;
+  display: block;
+  width: 100%;
+  padding: 4px;
+  box-sizing: border-box;
+}
+.desk-station__btn--selected {
+  outline: 3px solid var(--p-accent);
+  outline-offset: 2px;
+}
+
+/* speech bubble (currentTool / currentReasoning) */
+.desk-station__bubble {
+  position: relative;
+  display: inline-block;
+  margin-left: 10px;
+  margin-bottom: 4px;
+  background: var(--bubble-bg);
+  border: 2px solid var(--bubble-border);
+  padding: 3px 6px;
+  font-size: 9px;
+  line-height: 1.3;
+  max-width: 130px;
+  box-shadow: var(--bubble-shadow);
+  font-weight: 700;
+}
+.desk-station__bubble::after {
+  content: "";
+  position: absolute;
+  left: 14px;
+  bottom: -5px;
+  width: 6px;
+  height: 6px;
+  background: var(--bubble-bg);
+  border-right: 2px solid var(--bubble-border);
+  border-bottom: 2px solid var(--bubble-border);
+  transform: rotate(45deg);
+}
+.desk-station__bubble-tool {
+  background: var(--p-warn);
+  color: white;
+  padding: 0 4px;
+  margin-right: 4px;
+  font-size: 8px;
+}
+.desk-station__bubble-reason {
+  font-style: italic;
+  font-weight: 500;
+}
+.desk-station__bubble-sub {
+  font-weight: 500;
+}
+
+/* cat sprite over monitor */
+.desk-station__cat-wrap {
+  position: relative;
+  height: 56px;
+  margin-left: 18px;
+}
+.desk-station__cat {
+  position: absolute;
+  left: 0;
+  top: 0;
+}
+
+/* monitor + desk stack */
+.desk-station__pc {
+  position: relative;
+  margin-top: -16px;
+  width: var(--desk-width);
+}
+.desk-station__monitor {
+  width: var(--desk-monitor-w);
+  height: var(--desk-monitor-h);
+  margin-left: 16px;
+  background: var(--p-screen);
+  border: 2px solid var(--p-border);
+  position: relative;
+  box-shadow: inset 0 0 0 2px var(--p-screen-glow);
+}
+.desk-station__monitor--fail {
+  background: var(--p-error);
+  box-shadow: none;
+}
+.desk-station__monitor--idle {
+  background: #2a2f3e;
+  box-shadow: none;
+  opacity: 0.55;
+}
+.desk-station__monitor-lines {
+  position: absolute;
+  left: 4px;
+  top: 4px;
+  right: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.desk-station__monitor-line {
+  height: 2px;
+  background: var(--p-screen-glow);
+}
+.desk-station__status-dot {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  width: 10px;
+  height: 10px;
+  border: 2px solid var(--p-border);
+}
+/* status dot color modifiers — match DeskStatus type */
+.desk-station__status-dot--busy   { background: var(--p-success); }
+.desk-station__status-dot--idle   { background: var(--p-stone); }
+.desk-station__status-dot--review { background: var(--p-accent); }
+.desk-station__status-dot--fail   { background: var(--p-error); }
+.desk-station__status-dot--tdd    { background: var(--p-warn); }
+
+/* monitor code-line width modifiers */
+.desk-station__monitor-line--w70 { width: 70%; }
+.desk-station__monitor-line--w50 { width: 50%; }
+.desk-station__monitor-line--w85 { width: 85%; }
+.desk-station__monitor-line--w40 { width: 40%; }
+.desk-station__stand {
+  width: 12px;
+  height: 4px;
+  margin-left: 42px;
+  background: var(--p-stone);
+  border: 2px solid var(--p-border);
+  border-top: none;
+}
+.desk-station__top {
+  width: var(--desk-width);
+  height: 8px;
+  background: var(--p-wood);
+  border: 2px solid var(--p-border);
+}
+.desk-station__front {
+  width: var(--desk-width);
+  height: 4px;
+  background: var(--p-wood-dark);
+  border-left: 2px solid var(--p-border);
+  border-right: 2px solid var(--p-border);
+  border-bottom: 2px solid var(--p-border);
+}
+
+/* nameplate */
+.desk-station__nameplate {
+  margin-top: 4px;
+  font-size: 9px;
+  text-align: center;
+  color: var(--p-text);
+  font-weight: 700;
+}
+.desk-station__role {
+  color: var(--p-text-muted);
+  font-weight: 400;
+}
+.desk-station__label-sub {
+  margin-top: 1px;
+  font-size: 7px;
+  text-align: center;
+  color: var(--p-text-muted);
+}
+
+/* TDD phase tag */
+.desk-station__tdd {
+  display: block;
+  margin: 2px auto 0;
+  padding: 1px 4px;
+  font-size: 8px;
+  background: var(--p-warn);
+  color: white;
+  border: 1px solid var(--p-border);
+  width: fit-content;
+  font-weight: 700;
+}
+
+/* ── Subroom clone (worktree mini-cats) ──────────────────────── */
+.subroom-clone {
+  position: absolute;
+  z-index: var(--z-room-agents);
+  background: transparent;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+.subroom-clone__sprite {
+  width: var(--subroom-clone-size);
+  height: var(--subroom-clone-size);
+}
+.subroom-clone__label {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 8px;
+  padding: 1px 4px;
+  background: var(--p-paper);
+  border: 1px solid var(--p-border);
+  white-space: nowrap;
+}
+.subroom-clone__dot {
+  width: 5px;
+  height: 5px;
+  border: 1px solid var(--p-border);
+}
+.subroom-clone__dot--busy   { background: var(--p-success); }
+.subroom-clone__dot--review { background: var(--p-accent); }
+.subroom-clone__dot--idle   { background: var(--p-stone); }
+
+/* ── Wall posters ────────────────────────────────────────────── */
+.room-poster {
+  position: absolute;
+  background: var(--p-paper);
+  border: 3px solid var(--p-border);
+  box-shadow: 4px 4px 0 0 var(--p-shadow);
+  padding: 6px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  z-index: var(--z-room-decor);
+  cursor: pointer;
+}
+.room-poster:hover {
+  background: var(--p-tint);
+}
+.room-poster__header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  font-weight: 700;
+}
+.room-poster__title {
+  font-weight: 700;
+}
+.room-poster__hint {
+  margin-left: auto;
+  font-size: 8px;
+  font-weight: 400;
+  color: var(--p-text-muted);
+}
+.room-poster__body {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  flex: 1;
+}
+.room-poster__col {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.room-poster__section-label {
+  font-size: 8px;
+  color: var(--p-text-muted);
+  letter-spacing: 0.06em;
+  font-weight: 700;
+}
+.room-poster__row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 9px;
+}
+.room-poster__row-name {
+  flex-shrink: 0;
+  font-weight: 700;
+}
+.room-poster__row-meta {
+  margin-left: auto;
+  font-size: 8px;
+  color: var(--p-text-muted);
+}
+.room-poster__bar {
+  flex: 1;
+  height: 5px;
+  background: var(--p-tint);
+  border: 1px solid var(--p-border);
+  position: relative;
+}
+.room-poster__bar-fill {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+}
+.room-poster__bar-now {
+  position: absolute;
+  top: -1px;
+  bottom: -1px;
+  width: 1px;
+  background: var(--p-accent);
+}
+.room-poster__check {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border: 1px solid var(--p-border);
+  text-align: center;
+  font-size: 7px;
+  line-height: 9px;
+  flex-shrink: 0;
+}
+.room-poster__check--in_progress {
+  color: var(--p-warn);
+}
+.room-poster__check--completed {
+  background: var(--p-success);
+  color: white;
+}
+.room-poster__check-text {
+  font-size: 9px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.room-poster__check-text--completed {
+  text-decoration: line-through;
+  color: var(--p-text-muted);
+}
+
+/* ── Room signs (branch / clock / island labels) ─────────────── */
+.room-sign {
+  position: absolute;
+  z-index: var(--z-room-decor);
+  padding: 2px 6px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  background: var(--p-paper);
+  border: 2px solid var(--p-border);
+  box-shadow: 2px 2px 0 var(--p-shadow);
+}
+
+/* ── Agent detail panel ──────────────────────────────────────── */
+.agent-detail-panel {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  z-index: var(--z-agent-detail);
+}

@@ -473,3 +473,136 @@ reviewer mode: single default、CI workflow 変更 (Phase 2 t3) は security 観
 - [ ] `learned_guidance lg-2026-05-13-001` (project-prefs.json local persist、ttl: until-m0.16-complete) を §7 で formal 規律として昇格、ttl expire
 - [ ] tag `m0.16-complete` 設置 + retro hook trigger
 - [ ] `m0`〜`m0.15-complete` 全 tag 保持
+
+## 8. Skill Migration UI Rework (M0.18 から、retro 不要)
+
+PR #18-#21 取込 (`M0.X-skill-migration` / `refactor/daemon-cleanup` / `feat/m0.11.2-pending-lifecycle-{spec,impl}`) で backend 意味論が変化したことを UI 側に反映する rework。M0.17 (UI Redesign Port Correction) が骨格を整え、本 milestone が **意味論差し替え** を完成させて Phase 2 entry の foundation を整える。chat6 (2026-05-18) で assistant 自身が「UI 壊れてない、新階層が見えてないだけ、別 PR で skill-keyed path 追加」と回答 → 本 milestone がその follow-up に該当。
+
+### 8.1 Scope と前提
+
+- **対象**: skill migration / pending lifecycle / cleanup 由来の UI 4 axis 差し替え
+  1. Room: 5 desk hardcoded → 3 persistent + 10 ephemeral spirits (skill template dispatch)
+  2. Customization: agents flat table → agents (3) + skills (2 sub-scope) tree 2-pane
+  3. Retro: FINDINGS list + action plan → KPT 4 column board + lifecycle pip + admin
+  4. Cross-cutting: LearnedGuidance scope filter / SessionList rename / TokenMeter gate / NOT_FOUND toast / Sidebar dead export
+- **対象外**: PM chat actual claude CLI spawn (UI Status Report A、Phase 5 t17 別 milestone 維持)、PR #18-#21 backend 自体の再 review (取込済前提)、HTML QA matrix の stand-alone GUI integration (YAGNI、test variant 化で代替)
+- **前提**: M0.17 closure 済 (UI Redesign Port Correction 完了)、PR #18-#21 main 取込済 (commit `2315d66` `M0.X-skill-migration` 等)、design package `docs/design/2026-05-17-m0.18-ui-rework/` 永続保存済 (handoff bundle: UI Status Report.md / Frontend改修方針.md / QA Test Matrix.html + qa-suite.js / Redesign App.html + cat.jsx + styles.css)
+
+### 8.2 3 New Mental Models
+
+PR #18-#21 が UI に与える 3 新概念。Source: `docs/design/2026-05-17-m0.18-ui-rework/project/Frontend改修方針.md` 0 章 (Before → After 概念マッピング) SSoT。
+
+#### 8.2.1 Spirit Summoning (Room)
+
+- ROSTER 再編: 13 agent flat → 3 persistent (`kind: "persistent"`: pm/dev/retro-pm) + 10 ephemeral (`kind: "spirit"`, `summonedBy: <skill-identifier>`)
+- spirit motion 3 flavor (per-room `.room--{rpg,office,hybrid}` 切替、Tweaks default: hybrid):
+  - **RPG**: glow + 0.6→1.1→1.0 scale + 360ms steps(6) で召喚、accent 魔法陣 footprint
+  - **Office**: door SVG (`.room-door`) からスライド入場 700ms steps(8)、SUMMON GATE 装飾
+  - **Hybrid (推奨)**: RPG の glow 控えめ + 直近召喚を半透明 echo として残置 (32% opacity, grayscale 0.6)
+- 新規 plaque: `<SummonQueue>` 壁掛け、`active` / `queued` / `leaving` 3 状態で「誰が呼ばれていつ消えるか」可視化
+- skill registry SSoT: `cat.jsx::SKILLS` を `ui/src/data/skills.ts` (or 同等) に port、Customization tree が consume
+
+#### 8.2.2 Customization Tree (Customization)
+
+- 既存 flat AgentRow + ChainDetailPanel → 左 hierarchical tree (260px) / 右 leaf editor (1fr) の 2-pane
+- tree shape (Source: `docs/design/2026-05-17-m0.18-ui-rework/project/Frontend改修方針.md §1.2` SSoT):
+  ```
+  ▾ Agents (3)
+    • loom-pm / loom-developer / loom-retro-pm
+  ▾ Skills (2)
+    ▾ loom-review
+      ▾ strategies: single / trio.code / trio.security / trio.test
+    ▾ loom-retro
+      ▾ lenses: pj-axis / process-axis / meta-axis / researcher
+      ▾ stages: counter-arguer / aggregator [WRITE]
+  ```
+- aggregator scope は `WRITE` badge (skill registry の `writePermission: true` 由来)、leaf + editor 両方に表示
+- leaf 種別 badge: `PERSISTENT AGENT` / `SKILL SCOPE` 区別
+- editor 内: model 選択は agent のみ表示、skill scope では非表示
+
+state shape (new):
+```jsonc
+{
+  "agents": { "loom-pm": {...}, "loom-developer": {...}, "loom-retro-pm": {...} },
+  "skills": {
+    "loom-review": { "strategies": { "single": {...}, "trio": { "code": {...}, "security": {...}, "test": {...} } } },
+    "loom-retro":  { "lenses": {...}, "stages": {...} }
+  }
+}
+```
+
+実装ファイル: `views/customization/{CustomizationView,TreeNav,LeafEditor}.tsx`、daemon-side prefs schema 拡張 (skills.* path) は backward-compat (chat6 assistant 証言)。
+
+#### 8.2.3 Retro KPT Board + Lifecycle (Retro)
+
+- 既存 LensCard + transcript + FindingRow → KPT 4 column (KEEP / PROBLEM / CARRYOVER / TRY) board に再編
+- `spec/retro-system.md §1.16` Pending Lifecycle Architecture (M0.11.2 spec、PR #20-#21 取込) を UI に **表示** 化:
+  - finding card に `carryover_count pip` (▢▢▣ = 2/3 で次 retro expire) + `last_seen_in` / `re_evaluated_in` metadata + verdict 4-way badge (`🔄 promoted` / `⏳ auto-expire` / `❌ lens-drop` / `null`)
+  - `pending_summary.json` を carryover 集約 source として CARRYOVER column read
+- admin section (header の `⚙ admin` で expand):
+  - `↻ Reconstruct from archive markdown` ボタン → `trpc.retro.reconstructFromArchive(retroId)` invoke (daemon 側 procedure 既存、`daemon/src/routes/retro.ts:366` SSoT)
+  - `📄 pending_summary.json 再生成`
+  - `↺ approval.decide retry (NOT_FOUND 検知時)` (PR #19 NOT_FOUND throw 由来、本 milestone §8.2.4 と連携)
+- `reconstructed_from_archive: true` marker finding は小さい marker で通常 card と区別
+
+実装ファイル: `views/retro/{RetroView,KptColumn,CarryoverCard,AdminPanel}.tsx`、`live/useRetroLifecycle.ts` hook 新設 (pending_summary + pending.json から carryover reduce)。
+
+#### 8.2.4 Cross-cutting (LearnedGuidance / SessionList / TokenMeter / Toast / Sidebar)
+
+- **LearnedGuidance**: scope filter pill `all / Agents (3) / loom-review / loom-retro` + `keyKind: "agent" | "skill"` badge + `keyPath` (例 `skills/loom-review/strategies/trio/code`) 表示
+- **SessionList**: `reviewer_agent` column → `reviewer (skill)` rename、値を skill identifier に reformat (`loom-review/trio.code` 等)、DB 互換性は projection 関数で吸収
+- **TokenMeter**: `useTokenUsage({ enabled: !!session.active })` で session 起動前は polling 抑止
+- **NOT_FOUND toast**: `approval.decide` の TRPCError NOT_FOUND throw を `onError` catch → `toastBus.push({ kind: 'error', text: 'approval event が見つかりません (期限切れ?)', action: 'retry' })`、retry action は同 payload 再送
+- **Sidebar.tsx**: M0.17 で AppShell Drawer + TopBar に置換済の前提、`ui/src/routing/Sidebar.tsx` 残存していたら削除確認
+
+### 8.3 Phase 構成 (5 phase / 11 task) — PLAN SSoT 参照
+
+`PLAN.md` M0.18 section が task list の SSoT。本 SPEC は Phase 概要のみ:
+
+1. **Phase 0 prereq** (t0, sequential, ~0.5d): roster.ts 拡張 (`kind` / `summonedBy` / SKILLS registry、`ui/src/views/room/roster.ts` + `ui/src/data/skills.ts`)
+2. **Phase 1 P0 major** (t1-t3, **parallel batch + worktree isolation 必須**, ~4d): CustomizationView tree / RetroView KPT+lifecycle / RoomView Spirit+SummonQueue、planned_files 完全 disjoint
+3. **Phase 2 P1** (t4-t5, parallel batch, ~0.75d): LearnedGuidance scope filter / SessionList rename
+4. **Phase 3 P1 minor** (t6-t8, sequential, ~0.5d): TokenMeter gate / NOT_FOUND toast / Sidebar dead export
+5. **Phase 4 doc+qa+closure** (t9-t11, sequential, ~0.75d): QA case variant / SCREEN_REQUIREMENTS+DOC_CONSISTENCY update / Layer 2.5 dogfood + act + tag
+
+合計見積もり: ~6 日 (`docs/design/2026-05-17-m0.18-ui-rework/project/Frontend改修方針.md §4` 一致)。
+reviewer mode: **single default 全 task** (user 判断 2026-05-18)。
+commit handoff: Strategy a (各 dev 自身が commit、`committed_sha` 必須)。
+worktree isolation: Phase 1 parallel batch dispatch 時 `isolation: "worktree"` parameter 必須 (`CLAUDE.md` `Parallel batch claim 規律` SSoT、retro 2026-05-06-004 由来)。`project-prefs.worktree.max_concurrent: 5` 内に収まる (Phase 1 = 3 worktree、Phase 2 = 2 worktree、上限超過なし)。
+
+### 8.4 QA Test Matrix Integration
+
+`docs/design/2026-05-17-m0.18-ui-rework/project/QA Test Matrix.html` + `qa-suite.js` (4250 行) を test case SSoT として **Vitest + Playwright test に variant 化** (user 判断 2026-05-18):
+
+- **case prefix mapping** → test file naming convention:
+  - `SPIRIT-*` → `ui/test/views/room/*spirit*.test.tsx` + `ui/e2e/m0.18-spirit-*.spec.ts`
+  - `CUSTOM-TREE-*` → `ui/test/views/customization/*tree*.test.tsx` + `ui/e2e/m0.18-customization-tree-*.spec.ts`
+  - `RETRO-LC-*` (lifecycle) → `ui/test/views/retro/*lifecycle*.test.tsx`
+  - `RETRO-ADM-*` (admin) → `ui/test/views/retro/*admin*.test.tsx`
+  - `GD-SCOPE-*` → `ui/test/views/guidance/*scope*.test.tsx`
+  - `SES-LBL-*` → `ui/test/views/session-list/*rename*.test.tsx`
+  - `ERR-NF-*` → `ui/test/notifications/*not-found*.test.tsx`
+- **3 layer status (UI / WIRE / BACKEND)** 概念は test naming で表現:
+  - `UI` layer = render assertion (sub-element 存在 / state 表示)
+  - `WIRE` layer = onClick / hook mutation 呼び出し
+  - `BACKEND` layer = tRPC call が正しい payload で発射 (mock backend assertion)
+- HTML matrix 自体は `docs/design/2026-05-17-m0.18-ui-rework/project/` に dogfood reference として保存維持、stand-alone GUI integration は YAGNI (chat5 で「ドキュメントも画面案も全面更新」採択、QA matrix は automated test 側に内包)
+
+### 8.5 完成基準
+
+- [ ] `ui/src/views/room/roster.ts` + `ui/src/data/skills.ts` に `kind: 'persistent' | 'spirit'` + `summonedBy: string` + SKILLS registry 統合 (3 persistent + 10 spirit + 2 skills × sub-scope)
+- [ ] CustomizationView 2-pane tree 全面書き換え、Agents (3) + Skills (2 with sub-scope) 表示、aggregator `WRITE` badge、leaf editor (model 選択 agent only / skill scope では非表示)
+- [ ] RetroView KPT 4 column + carryover pip + verdict 4-way badge + admin section (reconstruct/regen/retry 3 ボタン)、`useRetroLifecycle` hook が pending_summary.json + pending.json から carryover reduce
+- [ ] RoomView 3 persistent desk + 10 ephemeral spirit、3 motion flavor (rpg/office/hybrid) per `.room--*` class 切替、SummonQueue 壁掛け、`useDispatchQueue` hook 新設、Tweaks default hybrid
+- [ ] LearnedGuidance scope filter pill 4 値 + `keyKind` badge + `keyPath` 表示、aggregator `WRITE` badge
+- [ ] SessionList `reviewer_agent` column → `reviewer (skill)` rename、値 skill identifier reformat
+- [ ] TokenMeter `useTokenUsage({ enabled: !!session.active })` gate
+- [ ] approval.decide NOT_FOUND TRPCError catch + toastBus.push error + retry action
+- [ ] Sidebar.tsx 残存有無確認・削除 (M0.17 closure 想定下)
+- [ ] QA case variant Vitest + Playwright (~30 case 想定、7 prefix × 4-5 each)、`pnpm --filter @claude-loom/ui test` 全 PASS + `pnpm --filter @claude-loom/ui exec playwright test` baseline regenerate + 全 PASS
+- [ ] `bash tests/run_tests.sh` 全 PASS 維持 (harness regression なし)
+- [ ] `docs/SCREEN_REQUIREMENTS.md` / `docs/DOC_CONSISTENCY_CHECKLIST.md` / `SPEC.md §15 Topic Index` update
+- [ ] Layer 2.5 dogfood smoke (PM 自身が `bash hooks/loom-launch-ui.sh` + curl + jq で各 endpoint verify) + Step 8 `act` (Docker 不在時 graceful skip 規律遵守)
+- [ ] `tag m0.18-complete` 設置 + retro hook trigger (M0.16+M0.17+M0.18 まとめ retro 提案、user 判断 2026-05-18)
+- [ ] `m0`〜`m0.17-complete` 全 tag 保持
+- [ ] main 取込 PR open via branch hygiene 規律

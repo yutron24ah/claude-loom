@@ -1605,3 +1605,63 @@ retro candidate (本 milestone dogfood 由来、closure 後 retro 用):
 - F-pj-NEW (仮): SPEC §3.11.4 参照記法説明 table の "例" 列に書いた `spec/architecture.md §3.2` 等の example 文字列が broken link scanner の false positive を生む。M4 doc 整合性エンジン v1 設計時に「example marker」schema 検討必要 (backtick + `<!-- example -->` annotation 等)
 
 **M0.X-spec-plan-multi-file-dogfood 完成基準**：`spec/` directory 配下に harness.md + daemon-and-data.md + ui-arch.md + retro-system.md + install-and-test.md の 5 topic file 全存在、master SPEC.md が ≤1000 行 (size threshold 内) へ収束、master SPEC.md §15 Topic Index 確立、各 topic file が back-pointer header + §1 から local renumber、master + 全 topic file 内の `spec/<topic>.md §X.Y` 形式 cross-ref が dead link 0、`bash tests/run_tests.sh multi_file_skeleton` 24+/24+ assertion PASS、`./tests/run_tests.sh` 全 PASS 維持、`tag m0.x-spec-plan-dogfood-complete` 設置、main への PR open (branch hygiene 遵守)。retro で新思想の practical validation 実施 (axis 妥当性 / 参照記法 grep 容易性 / size threshold 妥当性) を完成基準に含める。
+
+## マイルストーン M0.18-skill-migration-ui-rework (`feat/m0.18-skill-migration-ui-rework` branch、2026-05-18 から)
+
+詳細: `spec/ui-arch.md §8` が SSoT
+design bundle: `docs/design/2026-05-17-m0.18-ui-rework/`
+親設計書: `docs/design/2026-05-17-m0.18-ui-rework/project/Frontend改修方針.md` (Tier 1/2/3) + `UI Status Report.md` (現状診断、2026-05-17)
+
+PR #18-#21 取込 (`M0.X-skill-migration` / `refactor/daemon-cleanup` / `feat/m0.11.2-pending-lifecycle-{spec,impl}`) で backend 意味論が変化した状況に対し、UI 側の 4 axis 差し替え (Room: 5 desk → 3 persistent + 10 ephemeral spirit / Customization: agents flat → tree 2-pane / Retro: FINDINGS → KPT 4 column + lifecycle / Cross-cutting 5 minor)。M0.17 (UI Redesign Port Correction) が骨格を整え、本 milestone が **意味論差し替え** を完成させ Phase 2 entry の foundation を整える。
+
+設計合意 (chat5/chat6 + 2026-05-18 brainstorm session):
+- scope: Tier 1 P0 (3 view major) + Tier 2 P1 (2 view enhancement) + Tier 3 P1 (3 minor) 全部含める (~6 日見積もり)
+- QA Test Matrix.html: Vitest + Playwright test に variant 化、HTML matrix は `docs/design/2026-05-17-m0.18-ui-rework/project/` に dogfood reference として保存
+- PM chat actual claude CLI spawn (UI Status Report A、Phase 5 t17) は本 milestone scope 外
+- commit handoff: Strategy a (各 dev 自身が commit、`committed_sha` 必須)、Phase 1 parallel batch は worktree isolation 必須 (`CLAUDE.md` `Parallel batch claim 規律` 準拠)
+- reviewer mode: single default 全 task
+- M0.17 retro: 本 milestone closure 後に M0.16+M0.17+M0.18 まとめて Phase boundary retro
+
+### Phase 0: prereq — roster.ts + skills registry 拡張 (sequential)
+
+- [ ] roster.ts に `kind: 'persistent' | 'spirit'` + `summonedBy: string` field 追加、SKILLS registry 統合 (3 persistent + 10 spirit + 2 skills × sub-scope) <!-- id: m0.18-t0 status: todo planned_files: ui/src/views/room/roster.ts, ui/src/data/roster.ts, ui/src/data/skills.ts, ui/test/data/roster.test.ts, ui/test/data/skills.test.ts -->
+
+### Phase 1: P0 major (3 view rewrite、**parallel batch + worktree isolation 必須**)
+
+- [ ] CustomizationView 2-pane tree 全面書き換え、TreeNav + LeafEditor 分割、agents (3) + skills (2 sub-scope) hierarchical 表示、aggregator `WRITE` badge、leaf editor (model 選択 agent only / skill scope では非表示)、CUSTOM-TREE-* prefix の Vitest case 5+ <!-- id: m0.18-t1 status: todo planned_files: ui/src/views/customization/CustomizationView.tsx, ui/src/views/customization/TreeNav.tsx, ui/src/views/customization/LeafEditor.tsx, ui/src/styles/screens/customization.css, ui/test/views/customization.test.tsx -->
+
+- [ ] RetroView KPT 4 column (KEEP/PROBLEM/CARRYOVER/TRY) + lifecycle (carryover pip + verdict 4-way badge + `last_seen_in`/`re_evaluated_in` metadata) + admin section (reconstruct/regen/retry 3 ボタン)、`useRetroLifecycle` hook 新設、RETRO-LC-* + RETRO-ADM-* prefix Vitest case 8+ <!-- id: m0.18-t2 status: todo planned_files: ui/src/views/retro/RetroView.tsx, ui/src/views/retro/KptColumn.tsx, ui/src/views/retro/CarryoverCard.tsx, ui/src/views/retro/AdminPanel.tsx, ui/src/live/useRetroLifecycle.ts, ui/src/styles/screens/retro.css, ui/test/views/retro.test.tsx -->
+
+- [ ] RoomView 3 persistent desk + 10 ephemeral spirit、3 motion flavor (rpg/office/hybrid) per `.room--*` class 切替、SummonQueue 壁掛け、`useDispatchQueue` hook 新設、Tweaks default hybrid、SPIRIT-* prefix Vitest case 5+ <!-- id: m0.18-t3 status: todo planned_files: ui/src/views/room/RoomView.tsx, ui/src/views/room/Spirit.tsx, ui/src/views/room/SpiritEcho.tsx, ui/src/views/room/RoomDoor.tsx, ui/src/views/room/SummonQueue.tsx, ui/src/live/useDispatchQueue.ts, ui/src/styles/screens/room.css, ui/test/views/room/spirit.test.tsx -->
+
+planned_files audit: t1 (customization), t2 (retro), t3 (room) は完全 disjoint。`isolation: "worktree"` parameter 必須 (`CLAUDE.md` `Parallel batch claim 規律` + retro 2026-05-06-004)。
+
+### Phase 2: P1 enhancement (parallel batch)
+
+- [ ] LearnedGuidance scope filter pill 4 値 (all / Agents (3) / loom-review / loom-retro) + `keyKind` badge + `keyPath` 表示、aggregator `WRITE` badge、GD-SCOPE-* prefix Vitest case 3+ <!-- id: m0.18-t4 status: todo planned_files: ui/src/views/guidance/LearnedGuidanceView.tsx, ui/src/styles/screens/guidance.css, ui/test/views/guidance.test.tsx -->
+
+- [ ] SessionList `reviewer_agent` → `reviewer (skill)` column rename + 値 skill identifier reformat (`loom-review/trio.code` 等)、projection 関数で DB 互換性吸収、SES-LBL-* prefix Vitest case 3+ <!-- id: m0.18-t5 status: todo planned_files: ui/src/views/session-list/SessionListView.tsx, ui/test/views/session-list.test.tsx -->
+
+planned_files audit: t4 (guidance), t5 (session-list) disjoint。worktree isolation 推奨 (parallel batch 同 message dispatch)。
+
+### Phase 3: P1 minor (sequential)
+
+- [ ] TokenMeter `useTokenUsage({ enabled: !!session.active })` gate、session 起動前は polling 抑止 <!-- id: m0.18-t6 status: todo planned_files: ui/src/live/useTokenUsage.ts, ui/src/views/tokens/TokenMeterView.tsx, ui/test/live/use-token-usage.test.ts -->
+
+- [ ] approval.decide NOT_FOUND TRPCError onError catch + toastBus.push error + retry action、ERR-NF-* prefix Vitest case 3+ <!-- id: m0.18-t7 status: todo planned_files: ui/src/notifications/toastBus.ts, ui/src/live/useApprovalMutations.ts, ui/test/notifications/not-found-toast.test.tsx -->
+
+- [ ] Sidebar.tsx 残存有無確認、AppShell Drawer + TopBar で完全置換済なら削除、import 跡 grep clean <!-- id: m0.18-t8 status: todo planned_files: ui/src/routing/Sidebar.tsx (削除候補) -->
+
+### Phase 4: doc + QA integration + closure
+
+- [ ] QA Test Matrix prefix 全 7 種 (SPIRIT/CUSTOM-TREE/RETRO-LC/RETRO-ADM/GD-SCOPE/SES-LBL/ERR-NF) を Vitest + Playwright case として実装 verify、Playwright baseline regenerate (3 view 新 visual snapshot)、`pnpm --filter @claude-loom/ui test` + `pnpm --filter @claude-loom/ui exec playwright test` 全 PASS <!-- id: m0.18-t9 status: todo planned_files: ui/test/views/**/*.test.tsx, ui/e2e/m0.18-*.spec.ts, ui/e2e/__screenshots__/m0.18-*.png -->
+
+- [ ] `docs/SCREEN_REQUIREMENTS.md` 各 view 更新 (customization tree / retro KPT+lifecycle / room spirit summoning)、`docs/DOC_CONSISTENCY_CHECKLIST.md` M0.18 check items 追加、`SPEC.md §15 Topic Index` 修正済 (本 milestone) verify <!-- id: m0.18-t10 status: todo planned_files: docs/SCREEN_REQUIREMENTS.md, docs/DOC_CONSISTENCY_CHECKLIST.md -->
+
+- [ ] Layer 2.5 dogfood smoke (PM 自身が `bash hooks/loom-launch-ui.sh` + `curl /health` + `jq /mode` + `curl -I /` で各 endpoint verify) + Step 8 `act -W .github/workflows/ci.yml pull_request --container-architecture linux/amd64` (Docker 不在時 graceful skip)、`tag m0.18-complete` 設置、main 取込 PR open、retro hook trigger (M0.16+M0.17+M0.18 まとめ retro 提案) <!-- id: m0.18-t11 status: todo planned_files: (tag + git のみ) -->
+
+retro candidate (本 milestone 観察用、closure 後 retro でまとめて評価):
+- F-pj-NEW (仮): cat.jsx ROSTER 13 entry に書かれた `group: 'core' | 'review' | 'retro-lens' | 'retro-stage'` の new grouping を本 milestone で初導入、Phase 2 で AgentDetailPanel の filter UI 候補
+- F-proc-NEW (仮): handoff bundle (claude.ai/design export) の binary fetch 経路を本 milestone で確立 (gzip tarball、`/tmp/loom-design-fetched/` 展開 → `docs/design/<date>-<milestone>/` 永続)、Phase 2 で再利用 pattern としての codify 候補
+
+**M0.18-skill-migration-ui-rework 完成基準**: `spec/ui-arch.md §8.5` が SSoT。Phase 0 → 1 → 2 → 3 → 4 順実施、Phase 1 worktree isolation parallel batch、Phase 2 parallel batch、Phase 3-4 sequential、reviewer single default 全 task、Strategy a commit handoff、tag `m0.18-complete` + retro hook trigger、main 取込 PR open、`m0`〜`m0.17-complete` 全 tag 保持。
