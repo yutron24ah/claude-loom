@@ -231,7 +231,7 @@
 }
 
 /* ===========================================================================
- * LearnedGuidanceView (legacy mock, rpg-frame) — .lg-* namespace
+ * LearnedGuidanceView (legacy mock + M0.18 scope filter, rpg-frame) — .lg-* namespace
  * =========================================================================== */
 
 /* ---------------------------------------------------------------------------
@@ -262,6 +262,85 @@
   margin-left: auto;
   font-size: 10px;
   color: var(--p-text-muted);
+}
+
+/* ---------------------------------------------------------------------------
+ * Scope filter pill row (M0.18 t4) — .lg-scope-filter-row / .lg-scope-pill
+ * --------------------------------------------------------------------------- */
+
+.lg-scope-filter-row {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+  align-items: center;
+}
+
+.lg-scope-pill {
+  padding: 3px 10px;
+  font-size: 10px;
+  font-family: ui-monospace, monospace;
+  border: 1.5px solid var(--p-border);
+  background: var(--p-tint);
+  color: var(--p-text-muted);
+  cursor: pointer;
+  /* WHY: active state uses data-attr — bg/color change handled by modifier class */
+}
+
+.lg-scope-pill--active {
+  background: var(--p-accent);
+  color: white;
+  border-color: var(--p-accent);
+}
+
+.lg-scope-pill__count {
+  font-size: 9px;
+  opacity: 0.85;
+}
+
+/* ---------------------------------------------------------------------------
+ * KeyKind badge + WRITE badge (M0.18 t4) — .lg-badge
+ * --------------------------------------------------------------------------- */
+
+.lg-badge {
+  font-size: 8px;
+  font-weight: 700;
+  padding: 1px 5px;
+  border: 1px solid;
+  letter-spacing: 0.03em;
+}
+
+/* WHY: AGENT badge — green (success token) to signal persistent agent key */
+.lg-badge--agent {
+  background: var(--p-success);
+  color: white;
+  border-color: var(--p-success);
+}
+
+/* WHY: SKILL badge — accent color to signal skill-scoped key */
+.lg-badge--skill {
+  background: var(--p-accent);
+  color: white;
+  border-color: var(--p-accent);
+}
+
+/* WHY: WRITE badge — warn color, only on aggregator scope */
+.lg-badge--write {
+  background: var(--p-warn);
+  color: white;
+  border-color: var(--p-warn);
+}
+
+/* ---------------------------------------------------------------------------
+ * keyPath display (M0.18 t4)
+ * --------------------------------------------------------------------------- */
+
+.lg-item__keypath {
+  font-size: 9px;
+  font-family: ui-monospace, monospace;
+  color: var(--p-text-muted);
+  margin-bottom: 4px;
+  opacity: 0.8;
 }
 
 /* ---------------------------------------------------------------------------
