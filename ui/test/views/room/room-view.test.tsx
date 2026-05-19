@@ -1,5 +1,12 @@
 /**
- * RoomView TDD tests — M0.17 t6 updated (Phase 2 port correction)
+ * RoomView TDD tests — M0.18 t3 updated (Spirit Summoning rewrite)
+ *
+ * WHY updated (M0.18 t3):
+ *   - PERSISTENT DESKS ONLY: DeskStation is rendered only for kind="persistent"
+ *     agents (pm / dev / retro-pm). Review and retro spirits are ephemeral.
+ *     WHY: spec/ui-arch.md §8.2.1 — 3 persistent desks + 10 ephemeral spirits.
+ *   - spiritMode prop added (default='hybrid').
+ *   - Desk count changed: 5 → 3 (only pm + dev + retro-pm have desks).
  *
  * WHY updated (M0.17 t4+t5+t6):
  *   - RoomView no longer accepts width/height props (uses ResizeObserver internally)
@@ -11,11 +18,10 @@
  * Tests verify:
  *   1. Room canvas renders (data-testid="room-canvas")
  *   2. RoomBackground SVG present
- *   3. DeskStation monitors render (6 agents)
+ *   3. DeskStation monitors render (3 persistent agents: pm + dev + retro-pm)
  *   4. Agent click → AgentDetailPanel (without initialSelected prop)
  *   5. Poster click → navigate() called (not modal)
  *   6. SubroomClone renders when scenario has worktrees
- *   7. RetroGathering renders in retro mode (via internal state, no toggle button test)
  */
 import { describe, it, expect, afterEach, vi } from 'vitest';
 
@@ -157,11 +163,14 @@ describe('RoomView — Phase B components (normal mode)', () => {
     expect(container.querySelector('.room-island--review')).not.toBeInTheDocument();
   });
 
-  it('renders 5 DeskStation components (pm + dev + rev-code + rev-test + rev-sec)', () => {
+  // WHY 3 not 5: m0.18-t3 Spirit Summoning rewrite — only persistent agents
+  // (pm + dev + retro-pm) have DeskStations. Review/retro spirits are ephemeral
+  // and appear via Spirit Summoning, not desks. spec/ui-arch.md §8.2.1 SSoT.
+  it('renders 3 DeskStation components (pm + dev + retro-pm, persistent only)', () => {
     const { container } = render(<RoomView />);
     // Each DeskStation renders a monitor-screen testid
     const monitors = container.querySelectorAll('[data-testid="monitor-screen"]');
-    expect(monitors).toHaveLength(5);
+    expect(monitors).toHaveLength(3);
   });
 
   it('renders no SubroomClone ghost cats when worktrees is empty', () => {

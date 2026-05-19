@@ -385,3 +385,37 @@ m0.17-complete tag 設置後 (commit 170d323)、PR #12 push で CI が Linux Pla
 - **REQ-122**: CUSTOM-TREE-006 — agent leaf 選択時 (`leaf-editor-model-selector` testid) model 選択が表示、skill scope leaf 選択時は非表示。commit `6de5248`。`ui/test/views/customization/customization-tree.test.tsx` でカバー。
 
 - **REQ-123**: CUSTOM-TREE-007 — Agents root に `(3)` count 表示、Skills root に `(2)` count 表示。commit `6de5248`。`ui/test/views/customization/customization-tree.test.tsx` でカバー。
+
+## M0.18 Phase 1 t2: RetroView KPT + lifecycle + admin
+
+- **REQ-124**: RETRO-KPT-001 — RetroView が KPT 3 カラム (`data-testid="kpt-column-keep"` / `kpt-column-problem"` / `kpt-column-try"`) を描画。commit `e2ed79e`。`ui/test/views/retro/retro-kpt.test.tsx` でカバー。
+- **REQ-125**: RETRO-KPT-002 — RetroView が lifecycle tab strip を描画 (`data-testid="lifecycle-tab-prep"` / `"lifecycle-tab-discuss"` / `"lifecycle-tab-close"`)。commit `e2ed79e`。`ui/test/views/retro/retro-kpt.test.tsx` でカバー。
+- **REQ-126**: RETRO-KPT-003 — RetroView が admin panel (`data-testid="admin-panel"`) を描画。commit `e2ed79e`。`ui/test/views/retro/retro-kpt.test.tsx` でカバー。
+- **REQ-127**: RETRO-LENS-001 — RetroView の LensCard が CatSprite を roster id 対応で描画、unknown agent は fallback emoji `👤`。commit `e2ed79e`。`ui/test/views/retro/retro-kpt.test.tsx` でカバー。
+- **REQ-128**: RETRO-LC-001 — RetroView lifecycle tab クリックで active tab が切替わる。commit `e2ed79e`。`ui/test/views/retro/retro-kpt.test.tsx` でカバー。
+- **REQ-129**: RETRO-ADMIN-001 — admin panel が loom-retro start / close ボタンを描画。commit `e2ed79e`。`ui/test/views/retro/retro-kpt.test.tsx` でカバー。
+- **REQ-130**: RETRO-WRITE-001 — KPT write mode mutation が tRPC `retro.addKptItem` を呼ぶ。commit `e2ed79e`。`ui/test/views/retro/retro-write.test.tsx` でカバー。
+
+## M0.18 Phase 1 t3: RoomView Spirit Summoning rewrite
+
+- **REQ-133**: SP-ROSTER-01 — ROSTER から `kind="persistent"` を filter すると 3 体 (pm / dev / retro-pm)。`ui/test/views/room/spirit/spirit.test.tsx` でカバー。
+
+- **REQ-134**: SP-ROSTER-02 — ROSTER から `kind="spirit"` を filter すると 10 体、全エントリに `summonedBy` 文字列が存在。`ui/test/views/room/spirit/spirit.test.tsx` でカバー。
+
+- **REQ-135**: SP-ROSTER-03 — SKILLS の `loom-retro.stages.aggregator` だけ `writePermission: true`、他は falsy。`ui/test/views/room/spirit/spirit.test.tsx` でカバー。
+
+- **REQ-136**: SP-MOTION-RPG-01 — `RoomView spiritMode="rpg"` で `data-testid="room-canvas"` に `room--rpg` クラスが付く。`ui/test/views/room/spirit/spirit.test.tsx` でカバー。
+
+- **REQ-137**: SP-MOTION-OFF-01 — `RoomView spiritMode="office"` で `room--office` クラス + `.room-door` 要素が存在。`ui/test/views/room/spirit/spirit.test.tsx` でカバー。
+
+- **REQ-138**: SP-MOTION-HYB-01 — `RoomView` prop なし (default=hybrid) で `room--hybrid` クラスが付く。`ui/test/views/room/spirit/spirit.test.tsx` でカバー。
+
+- **REQ-139**: SP-DESK-01 — `RoomView` で `[data-testid="monitor-screen"]` が exactly 3 件のみ (persistent agents pm / dev / retro-pm のみ DeskStation を持つ)。`ui/test/views/room/spirit/spirit.test.tsx` でカバー。
+
+- **REQ-140**: Spirit component — `.spirit` 要素に `data-spirit-id` attribute を持つ、`leaving=true` 時に `.spirit--leaving` クラスを追加。`ui/test/views/room/spirit/spirit.test.tsx` でカバー。
+
+- **REQ-141**: SpiritEcho component — `.spirit-echo` 要素を描画。`ui/test/views/room/spirit/spirit.test.tsx` でカバー。
+
+- **REQ-142**: RoomDoor component — `.room-door` 要素を描画、`open=true` 時に `.room-door--open` クラスを追加。`ui/test/views/room/spirit/spirit.test.tsx` でカバー。
+
+- **REQ-143**: SummonQueue component — `.summon-queue` 要素を描画、items の status に応じて `.summon-queue__state--active` / `--queued` / `--leaving` クラスを付与。`ui/test/views/room/spirit/spirit.test.tsx` でカバー。

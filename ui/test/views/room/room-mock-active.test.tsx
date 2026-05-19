@@ -116,27 +116,27 @@ describe('RoomView × scenario.active', () => {
     expect(texts.some((t) => t.includes('Edit'))).toBe(true);
   });
 
-  it('renders rev-code cat with bubble showing currentTool = "Read"', () => {
+  // WHY removed (m0.18-t3): rev-code is now an ephemeral spirit (kind='spirit'),
+  // not a DeskStation. It has no speech-bubble in the room canvas.
+  // Spirit Summoning renders spirits separately, not as DeskStations.
+
+  // WHY 3 not 5 (m0.18-t3 Spirit Summoning rewrite):
+  // Only persistent agents (pm + dev + retro-pm) have DeskStations.
+  // Review spirits (rev-code / rev-test / rev-sec) are ephemeral — they enter
+  // via Spirit Summoning. spec/ui-arch.md §8.2.1 SSoT.
+  it('renders 3 desk monitors (persistent only: pm + dev + retro-pm)', () => {
     render(<RoomView />);
+    const monitors = screen.getAllByTestId('monitor-screen');
+    expect(monitors).toHaveLength(3);
+  });
+
+  it('renders pm and dev speech bubbles (persistent agents with active state)', () => {
+    render(<RoomView />);
+    // active fixture sets pm.currentReasoning + dev.currentTool='Edit'
+    // Only persistent agents (pm + dev) generate speech bubbles from DeskStation
     const bubbles = screen.getAllByTestId('speech-bubble');
     const texts = bubbles.map((el) => el.textContent ?? '');
-    expect(texts.some((t) => t.includes('Read'))).toBe(true);
-  });
-
-  it('renders all 5 desk monitors regardless of agent status', () => {
-    render(<RoomView />);
-    // WHY 5 not 6: M0.17 t6 ROOM_AGENT_IDS = ['pm','dev','rev-code','rev-test','rev-sec'].
-    // The old 'rev' desk (6th) was merged/removed in the redesign port.
-    const monitors = screen.getAllByTestId('monitor-screen');
-    expect(monitors).toHaveLength(5);
-  });
-
-  it('renders idle cat (rev-sec) with no speech bubble', () => {
-    render(<RoomView />);
-    // active fixture leaves rev-sec in idle with lastSeenAt only.
-    // It must NOT produce a bubble (no currentTool / currentReasoning).
-    const bubbles = screen.getAllByTestId('speech-bubble');
-    // 4 bubbles expected: pm (reasoning) + dev (Edit) + rev-code (Read) + rev-test (Bash)
-    expect(bubbles).toHaveLength(4);
+    // At least pm (reasoning) + dev (Edit) should have bubbles
+    expect(texts.some((t) => t.includes('Edit'))).toBe(true);
   });
 });
