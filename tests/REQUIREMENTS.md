@@ -455,3 +455,11 @@ m0.17-complete tag 設置後 (commit 170d323)、PR #12 push で CI が Linux Pla
 - **REQ-157**: TM-GATE-02 — `TokenMeterView` は `scenario.key === ACTIVE_SCENARIO_KEY` のとき `useTokenUsage({ enabled: true })` を呼び出す。`ui/test/live/use-token-usage.test.tsx` でカバー。
 
 - **REQ-158**: TM-GATE-03 — `scenario.key !== ACTIVE_SCENARIO_KEY` 時に `useTokenUsage` が `enabled: false` を受け取った場合、hook 内 `isActive = isConnected && enabled` が `false` となり `setInterval` が発火しない。`useTokenUsage` の既存 useEffect guard (`if (!isActive) return`) がこのパスを担保。`ui/test/live/use-token-usage.test.tsx` でカバー。
+
+## M0.18 Phase 3 t7: approval.decide NOT_FOUND TRPCError toast + retry action
+
+- **REQ-159**: ERR-NF-01 — `useApprovalMutations` が `TRPC_CODES.NOT_FOUND === 'NOT_FOUND'` の typed const を export する。call-site での raw 文字列比較禁止規律に準拠 (`TRPC_CODES` typed object を参照)。`ui/test/notifications/not-found-toast.test.tsx` でカバー。commit `<sha>` (m0.18-t7)。
+
+- **REQ-160**: ERR-NF-02 — `approval.decide` 呼び出しの `onError` で `TRPCClientError.data.code === TRPC_CODES.NOT_FOUND` を catch し、`toastBus` に `{ kind: 'error', message: 'approval event が見つかりません (期限切れ?)', action: 'retry', event: 'approval_not_found', ttl_ms: null }` の toast を emit する (crash しない)。mapping 表に存在しない旧 code は無視 (NOT_FOUND only catch、他 error は既存挙動維持)。`ui/test/notifications/not-found-toast.test.tsx` でカバー。commit `<sha>` (m0.18-t7)。
+
+- **REQ-161**: ERR-NF-03 — `useApprovalMutations().retryLastDecide()` が最後に試行した payload で `approval.decide` を再 invoke する。toast の `action: 'retry'` signal と組み合わせて retry ボタン UX を実現。`ui/test/notifications/not-found-toast.test.tsx` でカバー。commit `<sha>` (m0.18-t7)。
