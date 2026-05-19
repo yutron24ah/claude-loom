@@ -10,15 +10,19 @@
  *
  * Write hookup (transcript replay) deferred to Phase 5 post-M0.15.
  * M0.15 t8: read-only visual port, useScenario() driven.
+ * M0.18 t5: reviewer_agent → "reviewer (skill)" rename + projection function.
  *
  * data-testid map:
- *   session-list              → outer container
- *   session-search-input      → text search <input>
- *   session-filter-agent      → agent filter <select>
- *   session-filter-verdict    → verdict filter <select>
- *   session-entry             → one row per session (in left list)
- *   session-verdict-badge     → PASS/FAIL badge chip per entry
- *   session-detail-panel      → right panel (selected session details)
+ *   session-list                    → outer container
+ *   session-search-input            → text search <input>
+ *   session-filter-agent            → agent filter <select>
+ *   session-filter-verdict          → verdict filter <select>
+ *   session-entry                   → one row per session (in left list)
+ *   session-verdict-badge           → PASS/FAIL badge chip per entry
+ *   session-detail-panel            → right panel (selected session details)
+ *   session-reviewer-label          → "reviewer (skill)" label row (detail panel)
+ *   session-reviewer-value          → projected skill identifier value (detail panel)
+ *   session-reviewer-unmapped-badge → "(unmapped)" badge for unknown DB values
  */
 import React, { useState } from 'react';
 import { useScenario } from '@claude-loom/redesign/api/websocket';
@@ -41,6 +45,38 @@ const VERDICT_BG: Record<SessionVerdict, string> = {
 function fmtDur(sec: number): string {
   const m = Math.floor(sec / 60);
   return m >= 60 ? `${Math.floor(m / 60)}h${m % 60}m` : `${m}m`;
+}
+
+// ---------------------------------------------------------------------------
+// reviewer_agent → skill identifier projection (M0.18 t5, REQ-150..155)
+// WHY: DB stores legacy agent identifiers; UI displays canonical skill identifiers.
+//      typed object avoids string literal scatter (Principle: avoid string literals).
+// ---------------------------------------------------------------------------
+
+/** Mapping from DB reviewer_agent value → display skill identifier (SSoT). */
+const REVIEWER_AGENT_SKILL_MAP = {
+  'loom-reviewer': 'loom-review/single',
+  'loom-code-reviewer': 'loom-review/trio.code',
+  'loom-security-reviewer': 'loom-review/trio.security',
+  'loom-test-reviewer': 'loom-review/trio.test',
+} as const satisfies Record<string, string>;
+
+type ReviewerAgentDbKey = keyof typeof REVIEWER_AGENT_SKILL_MAP;
+
+/**
+ * Project a DB reviewer_agent value to its skill identifier.
+ * Returns the mapped skill identifier, or `null` (with `isMapped=false`) for unknown values.
+ *
+ * WHY: Encapsulates the mapping logic so SessionDetailPanel never does string comparison.
+ */
+function projectReviewerAgent(raw: string): { skillId: string; isMapped: boolean } {
+  if (Object.prototype.hasOwnProperty.call(REVIEWER_AGENT_SKILL_MAP, raw)) {
+    return {
+      skillId: REVIEWER_AGENT_SKILL_MAP[raw as ReviewerAgentDbKey],
+      isMapped: true,
+    };
+  }
+  return { skillId: raw, isMapped: false };
 }
 
 // ---------------------------------------------------------------------------
@@ -166,6 +202,35 @@ function SessionDetailPanel({ session, rosterById, projectName }: SessionDetailP
           {session.verdict}
         </span>
       </div>
+
+      {/* Reviewer (skill) row — REQ-150..155 (M0.18 t5) */}
+      {session.reviewer_agent != null && (() => {
+        const { skillId, isMapped } = projectReviewerAgent(session.reviewer_agent);
+        return (
+          <div className="sess-detail__reviewer-row">
+            <span
+              data-testid="session-reviewer-label"
+              className="sess-detail__reviewer-label"
+            >
+              reviewer (skill)
+            </span>
+            <span
+              data-testid="session-reviewer-value"
+              className="sess-detail__reviewer-value"
+            >
+              {skillId}
+              {!isMapped && (
+                <span
+                  data-testid="session-reviewer-unmapped-badge"
+                  className="sess-detail__reviewer-unmapped"
+                >
+                  {' '}(unmapped)
+                </span>
+              )}
+            </span>
+          </div>
+        );
+      })()}
 
       {/* Files + Related grid */}
       <div className="sess-detail__grid">

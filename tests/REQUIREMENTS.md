@@ -419,3 +419,17 @@ m0.17-complete tag 設置後 (commit 170d323)、PR #12 push で CI が Linux Pla
 - **REQ-142**: RoomDoor component — `.room-door` 要素を描画、`open=true` 時に `.room-door--open` クラスを追加。`ui/test/views/room/spirit/spirit.test.tsx` でカバー。
 
 - **REQ-143**: SummonQueue component — `.summon-queue` 要素を描画、items の status に応じて `.summon-queue__state--active` / `--queued` / `--leaving` クラスを付与。`ui/test/views/room/spirit/spirit.test.tsx` でカバー。
+
+## M0.18 Phase 1 t5: SessionList reviewer_agent → reviewer (skill) rename
+
+- **REQ-150**: SES-LBL-01 — `SessionDetailPanel` が `reviewer_agent` field 存在時に `data-testid="session-reviewer-label"` の text `"reviewer (skill)"` を描画する。`ui/test/views/session-list/ses-lbl.test.tsx` でカバー。
+
+- **REQ-151**: SES-LBL-02 — DB 値 `"loom-reviewer"` が `data-testid="session-reviewer-value"` に `"loom-review/single"` として表示される。raw DB 値は非表示。`ui/test/views/session-list/ses-lbl.test.tsx` でカバー。
+
+- **REQ-152**: SES-LBL-03 — DB 値 `"loom-code-reviewer"` が `"loom-review/trio.code"` として表示される。`ui/test/views/session-list/ses-lbl.test.tsx` でカバー。
+
+- **REQ-153**: SES-LBL-04 — mapping 表に存在しない旧 DB 値は raw text + `data-testid="session-reviewer-unmapped-badge"` の灰色バッジで表示される。`ui/test/views/session-list/ses-lbl.test.tsx` でカバー。
+
+- **REQ-154**: SES-LBL-05 — `reviewer_agent` field が absent (undefined) のとき、`session-reviewer-label` / `session-reviewer-value` は描画されない。`ui/test/views/session-list/ses-lbl.test.tsx` でカバー。
+
+- **REQ-155**: SES-LBL-06 — 4 件全 mapping (`loom-reviewer→loom-review/single` / `loom-code-reviewer→loom-review/trio.code` / `loom-security-reviewer→loom-review/trio.security` / `loom-test-reviewer→loom-review/trio.test`) が正しく projection される。`projectReviewerAgent()` が `REVIEWER_AGENT_SKILL_MAP` typed object を参照し文字列直接比較禁止規律に準拠。`ui/test/views/session-list/ses-lbl.test.tsx` でカバー。
