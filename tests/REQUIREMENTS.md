@@ -447,3 +447,11 @@ m0.17-complete tag 設置後 (commit 170d323)、PR #12 push で CI が Linux Pla
 - **REQ-154**: SES-LBL-05 — `reviewer_agent` field が absent (undefined) のとき、`session-reviewer-label` / `session-reviewer-value` は描画されない。`ui/test/views/session-list/ses-lbl.test.tsx` でカバー。
 
 - **REQ-155**: SES-LBL-06 — 4 件全 mapping (`loom-reviewer→loom-review/single` / `loom-code-reviewer→loom-review/trio.code` / `loom-security-reviewer→loom-review/trio.security` / `loom-test-reviewer→loom-review/trio.test`) が正しく projection される。`projectReviewerAgent()` が `REVIEWER_AGENT_SKILL_MAP` typed object を参照し文字列直接比較禁止規律に準拠。`ui/test/views/session-list/ses-lbl.test.tsx` でカバー。
+
+## M0.18 Phase 3 t6: TokenMeter polling gate (session.active 連動)
+
+- **REQ-156**: TM-GATE-01 — `TokenMeterView` は `scenario.key !== ACTIVE_SCENARIO_KEY` のとき `useTokenUsage({ enabled: false })` を呼び出す。`idle` / `failed` 各 key で polling 抑止を verify。`ui/test/live/use-token-usage.test.tsx` でカバー。文字列直接比較禁止規律に準拠 (`ACTIVE_SCENARIO_KEY` typed constant を使用)。
+
+- **REQ-157**: TM-GATE-02 — `TokenMeterView` は `scenario.key === ACTIVE_SCENARIO_KEY` のとき `useTokenUsage({ enabled: true })` を呼び出す。`ui/test/live/use-token-usage.test.tsx` でカバー。
+
+- **REQ-158**: TM-GATE-03 — `scenario.key !== ACTIVE_SCENARIO_KEY` 時に `useTokenUsage` が `enabled: false` を受け取った場合、hook 内 `isActive = isConnected && enabled` が `false` となり `setInterval` が発火しない。`useTokenUsage` の既存 useEffect guard (`if (!isActive) return`) がこのパスを担保。`ui/test/live/use-token-usage.test.tsx` でカバー。

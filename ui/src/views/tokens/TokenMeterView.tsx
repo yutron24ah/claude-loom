@@ -24,8 +24,9 @@
  *
  * SPEC §3.6.10: TOKEN_TYPE constants imported (no raw string literals).
  */
-import { useTokenUsage, TOKEN_TYPE } from '../../live/useTokenUsage';
+import { useTokenUsage, TOKEN_TYPE, ACTIVE_SCENARIO_KEY } from '../../live/useTokenUsage';
 import type { TokenSeriesPoint } from '../../live/useTokenUsage';
+import { useScenario } from '@claude-loom/redesign/api/websocket';
 import '../../styles/screens/tokens.css';
 
 // ---------------------------------------------------------------------------
@@ -129,8 +130,15 @@ function TokenCount({ label, value, testId, maxValue }: TokenCountProps): JSX.El
 // ---------------------------------------------------------------------------
 
 export function TokenMeterView(): JSX.Element {
+  // WHY: Gate polling on session activity (m0.18-t6, REQ-156..158).
+  // When no Claude session is active, suppress polling to avoid unnecessary
+  // daemon hits for empty data (SPEC §6.10 polling gate design).
+  // ACTIVE_SCENARIO_KEY is a typed constant — no raw string literal comparison.
+  const scenario = useScenario();
+  const sessionActive = scenario.key === ACTIVE_SCENARIO_KEY;
+
   const { inputTokens, outputTokens, cacheTokens, series, isLoading, error } =
-    useTokenUsage();
+    useTokenUsage({ enabled: sessionActive });
 
   // WHY: max across all counts to scale exp-bars proportionally
   const maxTokens = Math.max(1, inputTokens, outputTokens, cacheTokens);
