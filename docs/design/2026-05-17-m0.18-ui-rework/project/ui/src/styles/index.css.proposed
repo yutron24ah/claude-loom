@@ -1,0 +1,40 @@
+/*
+ * PROPOSED index.css — adds shell.css import.
+ *
+ * Diff vs current ui/src/styles/index.css:
+ *   + @import './shell.css';            (line 14)
+ *   - (no other changes — tokens.css + Tailwind preflight kept as-is)
+ *
+ * WHY: shell.css carries the layout grid (.shell, .top, .drawer, .statusbar),
+ * the PMChatPanel surface (.pm-chat, .pm-modal, .pm-toast), the Live Stream
+ * rail (.rail), and ScenarioPicker styles. Without it, AppShell.tsx renders
+ * with raw flow layout (TopBar collapses, Drawer overflows).
+ */
+
+/* Design tokens (CSS variables — theme-aware via [data-theme] attribute) */
+@import './tokens.css';
+
+/* App shell layout — ported from redesign/Redesign App.html (M0.15) */
+@import './shell.css';
+
+/* Room canvas styles — replaces TSX inline styles per G6 */
+@import './room.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    background-color: rgb(var(--bg));
+    color: rgb(var(--text));
+    font-family: var(--font-sans);
+    font-size: var(--fs-base);
+    line-height: var(--lh-body);
+  }
+}

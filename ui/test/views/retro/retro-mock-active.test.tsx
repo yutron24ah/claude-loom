@@ -1,130 +1,102 @@
 /**
- * RetroView × scenario.active — redesign port smoke tests (M0.15 t12)
+ * RetroView × scenario.active — smoke tests updated for M0.18 t2 KPT board.
  *
- * WHY: The existing retro.test.tsx covers the old RetroView (hardcoded MOCK_* fixture,
- * RPG style). This suite mocks useScenario (the new redesign hook) to verify the
- * redesign-driven RetroView renders:
- *   - retroSession title + verdict (PASS)
- *   - 4 lens cards (retro-pj, retro-proc, retro-meta, user)
- *   - user lens with isUser highlight
- *   - 4 findings with severity badge + category
- *   - transcript timeline with kind icons (intro/report/finding/rebuttal/verdict)
- *   - action plan tally (immediate: 3, milestone: 4, deferred: 1)
+ * WHY: The original M0.15 t12 test mocked useScenario() and tested
+ * the 2-column LensCard+FindingRow layout. M0.18 t2 replaces that layout
+ * with a KPT 4-column board. This test suite is updated to:
+ *   - mock useRetroLifecycle (new hook replacing useScenario for RetroView)
+ *   - verify KPT board renders with problem items, carryover items, try items
+ *   - verify admin panel toggle works
  *
- * REQ-072 acceptance criteria.
+ * The full RETRO-LC-* and RETRO-ADM-* test suite is in test/views/retro.test.tsx.
+ * This file is a smoke test to verify the import/render path from the
+ * retro/ subdirectory.
+ *
+ * REQ-115 (KPT board smoke).
  */
 import { describe, it, expect, afterEach, vi } from 'vitest';
-import { render, screen, cleanup } from '@testing-library/react';
-import type { Scenario } from '@claude-loom/redesign/api/types';
+import { render, screen, fireEvent, cleanup } from '@testing-library/react';
 
-// WHY: Mock useScenario so the component never touches the real WS store.
-vi.mock('@claude-loom/redesign/api/websocket', () => ({
-  useScenario: () =>
-    ({
-      retroSession: {
-        id: 'retro-2026-04-29',
-        title: 'Retro #M0.12 — 2026-04-29',
-        startedAt: '2026-04-29T17:30:00+09:00',
-        durationSec: 1820,
-        verdict: 'PASS',
-        actionPlan: { immediate: 3, milestone: 4, deferred: 1 },
-        lenses: [
-          { id: 'retro-pj',   lensName: 'PJ Judge',      count: 3, sev: ['high', 'med', 'low'] },
-          { id: 'retro-proc', lensName: 'Process Judge',  count: 2, sev: ['high', 'med'] },
-          { id: 'retro-meta', lensName: 'Meta Judge',     count: 1, sev: ['med'] },
-          { id: 'user',       lensName: 'User Lens',      count: 2, sev: ['high', 'low'], isUser: true },
-        ],
-        transcript: [
-          { ts: 0,   who: 'retro-pm',       kind: 'intro',   text: 'M0.12 振り返り、開始しまーす。' },
-          { ts: 45,  who: 'retro-research',  kind: 'report',  text: '発射回数 14 件、並列度 47%...' },
-          { ts: 120, who: 'retro-pj',        kind: 'finding', refId: 'R-3', sev: 'high', text: 'PR #42 の verdict が証拠不足。' },
-          { ts: 200, who: 'retro-proc',      kind: 'finding', refId: 'R-1', sev: 'high', text: 'TDD red 順序が 1 commit 飛んでる。' },
-          { ts: 300, who: 'retro-counter',   kind: 'rebuttal', text: 'R-3 に対する反証: 証拠は十分と見なせる。' },
-          { ts: 400, who: 'retro-meta',      kind: 'finding', refId: 'R-4', sev: 'med', text: 'reviewer の personality が混ざっている。' },
-          { ts: 500, who: 'user',            kind: 'report',  text: '並列度がここ 3 日で 60% → 40%。' },
-          { ts: 600, who: 'retro-agg',       kind: 'verdict', text: '総合 PASS。action plan 確定。' },
-        ],
-        findings: [
-          { id: 'R-1', sev: 'high', lens: 'retro-proc', title: 'TDD red 順序が 1 commit 飛んでる', target: 'auth.test.ts:42', status: 'open', category: 'process' },
-          { id: 'R-2', sev: 'high', lens: 'retro-pj',   title: 'PR #42 の verdict 証拠が薄い',    target: 'PR #42',          status: 'open', category: 'review' },
-          { id: 'R-3', sev: 'high', lens: 'user',       title: '並列度がここ 3 日で 60% → 40%', target: 'metrics',         status: 'open', category: 'process' },
-          { id: 'R-4', sev: 'med',  lens: 'retro-meta', title: 'reviewer の personality が混ざっている', target: 'config', status: 'deferred', category: 'meta' },
-        ],
+// WHY: mock useRetroLifecycle so this smoke test is self-contained.
+vi.mock('../../../src/live/useRetroLifecycle', () => ({
+  useRetroLifecycle: () => ({
+    keepItems: [],
+    problemItems: [
+      { id: 'R-1', sev: 'high', lens: 'retro-proc', title: 'TDD red 順序が飛んでる', target: 'auth.test.ts', status: 'open', category: 'process' },
+    ],
+    carryoverItems: [
+      {
+        finding_id: 'pj-001',
+        origin_retro_id: 'retro-2026-04-01',
+        lens: 'pj-axis',
+        category: 'process',
+        risk: 'medium',
+        summary: 'pre-existing test failures',
+        status: 'pending',
+        carryover_count: 1,
+        last_seen_in: 'retro-2026-05-01',
+        expired_at: null,
+        re_evaluated_in: null,
       },
-    } as unknown as Scenario),
+    ],
+    tryItems: [
+      { id: 'A-1', title: 'Add cleanup milestone', from: 'R-1' },
+    ],
+    isLoading: false,
+    error: null,
+  }),
 }));
 
-// Import after mock
+// WHY: mock trpc so AdminPanel doesn't need TRPCProvider in test render.
+vi.mock('../../../src/trpc/client', () => ({
+  trpc: {
+    retro: {
+      reconstructFromArchive: {
+        useQuery: vi.fn(() => ({ data: undefined, isLoading: false, refetch: vi.fn() })),
+      },
+    },
+  },
+}));
+
+// Import after mocks
 import { RetroView } from '../../../src/views/retro/RetroView';
 
 afterEach(() => {
   cleanup();
 });
 
-describe('RetroView × scenario.active', () => {
-  it('renders retroSession title + verdict (PASS)', () => {
-    render(<RetroView />);
-    // Title from retroSession.title
-    expect(screen.getByTestId('retro-session-title').textContent).toContain('Retro #M0.12 — 2026-04-29');
-    // Verdict badge shows PASS
-    const verdictBadge = screen.getByTestId('retro-verdict-badge');
-    expect(verdictBadge.textContent).toContain('PASS');
+describe('RetroView × scenario.active (M0.18 KPT smoke)', () => {
+  it('renders KPT board 4 columns', () => {
+    render(<RetroView retroId="retro-2026-05-16" />);
+    expect(screen.getByTestId('kpt-col-keep')).toBeDefined();
+    expect(screen.getByTestId('kpt-col-problem')).toBeDefined();
+    expect(screen.getByTestId('kpt-col-carryover')).toBeDefined();
+    expect(screen.getByTestId('kpt-col-try')).toBeDefined();
   });
 
-  it('renders 4 lens cards (retro-pj, retro-proc, retro-meta, user)', () => {
-    render(<RetroView />);
-    expect(screen.getByTestId('lens-card-retro-pj')).toBeDefined();
-    expect(screen.getByTestId('lens-card-retro-proc')).toBeDefined();
-    expect(screen.getByTestId('lens-card-retro-meta')).toBeDefined();
-    expect(screen.getByTestId('lens-card-user')).toBeDefined();
-    // Lens names rendered
-    expect(screen.getByText('PJ Judge')).toBeDefined();
-    expect(screen.getByText('Process Judge')).toBeDefined();
-    expect(screen.getByText('Meta Judge')).toBeDefined();
-    expect(screen.getByText('User Lens')).toBeDefined();
+  it('renders problem item in PROBLEM column', () => {
+    render(<RetroView retroId="retro-2026-05-16" />);
+    expect(screen.getByTestId('problem-card-R-1')).toBeDefined();
   });
 
-  it('renders user lens with isUser highlight', () => {
-    render(<RetroView />);
-    const userCard = screen.getByTestId('lens-card-user');
-    // isUser=true → data-is-user attribute or highlight class
-    expect(userCard.getAttribute('data-is-user')).toBe('true');
+  it('renders carryover item in CARRYOVER column', () => {
+    render(<RetroView retroId="retro-2026-05-16" />);
+    expect(screen.getByTestId('carryover-card-pj-001')).toBeDefined();
   });
 
-  it('renders 4 findings with severity badge + category', () => {
-    render(<RetroView />);
-    // 4 findings
-    const findings = screen.getAllByTestId('finding-item');
-    expect(findings.length).toBe(4);
-    // Each finding has sev badge and category badge
-    const r1 = screen.getByTestId('finding-R-1');
-    expect(r1.querySelector('[data-testid="finding-sev"]')?.textContent).toContain('high');
-    expect(r1.querySelector('[data-testid="finding-category"]')?.textContent).toContain('process');
-    const r4 = screen.getByTestId('finding-R-4');
-    expect(r4.querySelector('[data-testid="finding-sev"]')?.textContent).toContain('med');
-    expect(r4.querySelector('[data-testid="finding-category"]')?.textContent).toContain('meta');
+  it('renders try item in TRY column', () => {
+    render(<RetroView retroId="retro-2026-05-16" />);
+    expect(screen.getByTestId('try-card-A-1')).toBeDefined();
   });
 
-  it('renders transcript timeline with kind icons (intro/report/finding/rebuttal/verdict)', () => {
-    render(<RetroView />);
-    // transcript entries are all visible (cursor = transcript.length - 1 by default)
-    const entries = screen.getAllByTestId('transcript-entry');
-    expect(entries.length).toBe(8);
-    // Kind labels rendered — use getAllByTestId since some kinds appear multiple times
-    expect(screen.getAllByTestId('transcript-kind-intro').length).toBeGreaterThan(0);
-    expect(screen.getAllByTestId('transcript-kind-report').length).toBeGreaterThan(0);
-    expect(screen.getAllByTestId('transcript-kind-finding').length).toBeGreaterThan(0);
-    expect(screen.getAllByTestId('transcript-kind-rebuttal').length).toBeGreaterThan(0);
-    expect(screen.getAllByTestId('transcript-kind-verdict').length).toBeGreaterThan(0);
+  it('renders admin toggle button', () => {
+    render(<RetroView retroId="retro-2026-05-16" />);
+    expect(screen.getByTestId('admin-toggle')).toBeDefined();
   });
 
-  it('renders action plan tally (immediate: 3, milestone: 4, deferred: 1)', () => {
-    render(<RetroView />);
-    const actionPlan = screen.getByTestId('action-plan');
-    expect(actionPlan).toBeDefined();
-    // Tally values
-    expect(screen.getByTestId('action-plan-immediate').textContent).toContain('3');
-    expect(screen.getByTestId('action-plan-milestone').textContent).toContain('4');
-    expect(screen.getByTestId('action-plan-deferred').textContent).toContain('1');
+  it('expands admin panel on toggle click', () => {
+    render(<RetroView retroId="retro-2026-05-16" />);
+    fireEvent.click(screen.getByTestId('admin-toggle'));
+    expect(screen.getByTestId('admin-panel-content')).toBeDefined();
   });
 });

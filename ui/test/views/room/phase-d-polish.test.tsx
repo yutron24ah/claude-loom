@@ -30,6 +30,8 @@ import type { RosterEntry } from '../../../src/data/roster';
 
 const testCat: RosterEntry = {
   id: 'dev',
+  kind: 'persistent',
+  summonedBy: null,
   role: 'Developer',
   jp: 'デベロッパー',
   name: 'サバ',

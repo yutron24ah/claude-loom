@@ -267,6 +267,9 @@ export interface SessionItem {
   relatedFindings: string[];
   relatedRetro?: string;
   summary: string;
+  /** WHY: M0.18 t5 — reviewer agent DB legacy field. Displayed via
+   * projectReviewerAgent() as skill identifier. Optional: absent in older records. */
+  reviewer_agent?: string;
 }
 
 // -------------------------------------------------------------

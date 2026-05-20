@@ -1,102 +1,30 @@
 /**
- * CustomizationView × scenario.active — redesign port smoke tests (M0.15 t5)
+ * CustomizationView × mock-active — M0.18 Phase 1 t1 rewrite
  *
- * WHY: The existing customization.test.tsx mocks against hardcoded MOCK_SETTINGS
- * (the old fixture). This suite mocks useScenario (the new redesign hook) to verify
- * the redesign-driven CustomizationView renders:
- *   - 13 agent rows with effective model + preset from scenario.customization
- *   - scope chain trace expandable for agents with chain.length > 1 (override)
- *   - scope tag (default/user/project) per chain layer
- *   - preset emoji + name from PRESETS constant
- *   - model color indicator from MODELS constant
+ * WHY: Old suite tested flat 13-agent row structure (agent-row testids,
+ * chain-detail-panel, chain-expand-btn). M0.18 rewrites the view to 2-pane tree.
+ * Tests updated to verify tree-based rendering with mock-active scenario data.
  *
- * REQ-065 acceptance criteria.
+ * REQ-065 acceptance criteria (updated for tree structure).
  */
 import { describe, it, expect, afterEach, vi } from 'vitest';
 import { render, screen, cleanup, fireEvent } from '@testing-library/react';
 import type { Scenario } from '@claude-loom/redesign/api/types';
 
-// WHY: Mock useCustomizationMutation so tests don't need a tRPC provider (M0.15 t16).
+// WHY: Mock useCustomizationMutation so tests don't need a tRPC provider.
 vi.mock('../../../src/live/useCustomizationMutations', () => ({
   useCustomizationMutation: () => ({ mutate: vi.fn(), isPending: false }),
 }));
 
-// WHY: Mock useScenario so the component never touches the real WS store.
-// The mock fixture mirrors the scenario.customization shape from scenarios.js.
+// WHY: Mock useScenario — tree CustomizationView uses static LEAVES metadata.
+// The flat customization shape is no longer read by the view (Phase 1 scope).
 vi.mock('@claude-loom/redesign/api/websocket', () => ({
   useScenario: () =>
     ({
       customization: {
-        pm: {
-          effective: { model: 'opus', preset: 'default' },
-          chain: [{ scope: 'default', model: 'opus', preset: 'default' }],
-        },
-        dev: {
-          effective: { model: 'sonnet', preset: 'friendly-mentor' },
-          chain: [
-            { scope: 'default', model: 'sonnet', preset: 'default' },
-            { scope: 'project', preset: 'friendly-mentor', note: 'TDD red 順序の遵守を最優先で。' },
-          ],
-        },
-        'rev-sec': {
-          effective: { model: 'opus', preset: 'detective' },
-          chain: [
-            { scope: 'default', model: 'sonnet', preset: 'default' },
-            { scope: 'user', model: 'opus', preset: 'detective', note: 'OWASP top 10 を必ず根拠に。' },
-          ],
-        },
-        rev: {
-          effective: { model: 'sonnet', preset: 'default' },
-          chain: [{ scope: 'default', model: 'sonnet', preset: 'default' }],
-        },
-        'rev-code': {
-          effective: { model: 'sonnet', preset: 'strict-drill' },
-          chain: [
-            { scope: 'default', model: 'sonnet', preset: 'default' },
-            { scope: 'project', preset: 'strict-drill' },
-          ],
-        },
-        'rev-test': {
-          effective: { model: 'haiku', preset: 'default' },
-          chain: [
-            { scope: 'default', model: 'sonnet', preset: 'default' },
-            { scope: 'user', model: 'haiku' },
-          ],
-        },
-        'retro-pm': {
-          effective: { model: 'opus', preset: 'default' },
-          chain: [{ scope: 'default', model: 'opus', preset: 'default' }],
-        },
-        'retro-counter': {
-          effective: { model: 'opus', preset: 'strict-drill' },
-          chain: [
-            { scope: 'default', model: 'opus', preset: 'default' },
-            { scope: 'user', preset: 'strict-drill' },
-          ],
-        },
-        'retro-meta': {
-          effective: { model: 'opus', preset: 'detective' },
-          chain: [
-            { scope: 'default', model: 'opus', preset: 'default' },
-            { scope: 'user', preset: 'detective' },
-          ],
-        },
-        'retro-pj': {
-          effective: { model: 'sonnet', preset: 'default' },
-          chain: [{ scope: 'default', model: 'sonnet', preset: 'default' }],
-        },
-        'retro-research': {
-          effective: { model: 'sonnet', preset: 'default' },
-          chain: [{ scope: 'default', model: 'sonnet', preset: 'default' }],
-        },
-        'retro-proc': {
-          effective: { model: 'sonnet', preset: 'default' },
-          chain: [{ scope: 'default', model: 'sonnet', preset: 'default' }],
-        },
-        'retro-agg': {
-          effective: { model: 'opus', preset: 'default' },
-          chain: [{ scope: 'default', model: 'opus', preset: 'default' }],
-        },
+        pm:             { effective: { model: 'opus',   preset: 'default' },         chain: [] },
+        dev:            { effective: { model: 'sonnet', preset: 'friendly-mentor' }, chain: [] },
+        'retro-pm':     { effective: { model: 'opus',   preset: 'default' },         chain: [] },
       },
     }) as unknown as Scenario,
 }));
@@ -107,93 +35,50 @@ afterEach(() => {
   cleanup();
 });
 
-describe('CustomizationView × scenario.active', () => {
-  it('renders all 13 agent rows with effective model + preset', () => {
+describe('CustomizationView × scenario.active (M0.18 tree)', () => {
+  it('renders the tree root nodes (Agents + Skills)', () => {
     render(<CustomizationView />);
-    // 13 agent rows from scenario.customization (not MOCK_SETTINGS hardcoded)
-    const rows = screen.getAllByTestId('agent-row');
-    expect(rows).toHaveLength(13);
-    // Each row should display the effective model as a button (aria-pressed=true)
-    const pressedButtons = screen.getAllByRole('button', { pressed: true } as any);
-    expect(pressedButtons.length).toBeGreaterThanOrEqual(13); // at least 1 active model per agent
+    expect(screen.getByTestId('tree-root-agents')).toBeInTheDocument();
+    expect(screen.getByTestId('tree-root-skills')).toBeInTheDocument();
   });
 
-  it('renders chain trace expandable for agents with override (chain.length > 1)', () => {
+  it('renders 3 persistent agent leaves (not 13)', () => {
     render(<CustomizationView />);
-    // dev has chain.length=2, so its chain button should be shown with warning color or special styling
-    // Each row has a "chain expand" button — for overridden agents it shows chain length > 1
-    const chainButtons = screen.getAllByTestId('chain-expand-btn');
-    expect(chainButtons.length).toBe(13);
-
-    // dev chain has 2 layers — the button should indicate override
-    // Find the dev agent row by data-agent-id attribute
-    const devRow = document.querySelector('[data-agent-id="dev"]');
-    expect(devRow).toBeTruthy();
-    const chainBtn = devRow!.querySelector('[data-testid="chain-expand-btn"]');
-    expect(chainBtn).toBeTruthy();
-    // dev has 2 chain layers, should show "2 ▸" or similar
-    expect(chainBtn?.textContent).toMatch(/2/);
+    // M0.18: only 3 persistent agents in tree (pm/developer/retro-pm)
+    expect(screen.getByTestId('tree-leaf-agents/loom-pm')).toBeInTheDocument();
+    expect(screen.getByTestId('tree-leaf-agents/loom-developer')).toBeInTheDocument();
+    expect(screen.getByTestId('tree-leaf-agents/loom-retro-pm')).toBeInTheDocument();
   });
 
-  it('renders scope tag (default/user/project) for each chain layer when expanded', () => {
+  it('renders skill scope leaves for loom-review strategies', () => {
     render(<CustomizationView />);
-    // Expand the rev-sec agent's chain (has user scope override)
-    const revSecRow = document.querySelector('[data-agent-id="rev-sec"]');
-    expect(revSecRow).toBeTruthy();
-    const chainBtn = revSecRow!.querySelector('[data-testid="chain-expand-btn"]');
-    expect(chainBtn).toBeTruthy();
-    fireEvent.click(chainBtn!);
-
-    // After expansion the chain detail panel should show scope tags
-    const scopeTags = screen.getAllByTestId('chain-scope-tag');
-    expect(scopeTags.length).toBeGreaterThanOrEqual(2); // default + user
-    const scopeTexts = scopeTags.map(t => t.textContent?.toUpperCase() ?? '');
-    expect(scopeTexts).toContain('DEFAULT');
-    expect(scopeTexts).toContain('USER');
+    expect(screen.getByTestId('tree-leaf-skills/loom-review/strategies/single')).toBeInTheDocument();
+    expect(screen.getByTestId('tree-leaf-skills/loom-review/strategies/trio/code')).toBeInTheDocument();
+    expect(screen.getByTestId('tree-leaf-skills/loom-review/strategies/trio/security')).toBeInTheDocument();
+    expect(screen.getByTestId('tree-leaf-skills/loom-review/strategies/trio/test')).toBeInTheDocument();
   });
 
-  it('renders preset emoji + name from PRESETS constant', () => {
+  it('renders WRITE badge for aggregator in tree leaf', () => {
     render(<CustomizationView />);
-    // dev effective preset = 'friendly-mentor', PRESETS has emoji "🌱" + name "Friendly Mentor"
-    // The preset buttons should show emoji + name for each PRESET
-    // At least 'friendly-mentor' preset button should be visible for the dev row
-    const devRow = document.querySelector('[data-agent-id="dev"]');
-    expect(devRow).toBeTruthy();
-    // The active preset for dev is friendly-mentor
-    const presetBtns = devRow!.querySelectorAll('[data-testid^="preset-btn-"]');
-    expect(presetBtns.length).toBeGreaterThanOrEqual(4); // all 4 presets shown per row
-    // The active one should contain emoji — find the friendly-mentor button
-    const friendlyMentorBtn = devRow!.querySelector('[data-testid="preset-btn-friendly-mentor"]');
-    expect(friendlyMentorBtn).toBeTruthy();
-    // emoji 🌱 should appear in button text
-    expect(friendlyMentorBtn?.textContent).toContain('🌱');
+    const aggLeaf = screen.getByTestId('tree-leaf-skills/loom-retro/stages/aggregator');
+    expect(aggLeaf.querySelector('[data-testid="badge-write"]')).toBeTruthy();
   });
 
-  it('renders model color indicator from MODELS constant', () => {
+  it('clicking agent leaf shows model selector in leaf editor', () => {
     render(<CustomizationView />);
-    // The model buttons for pm (effective=opus) should have color background for opus
-    const pmRow = document.querySelector('[data-agent-id="pm"]');
-    expect(pmRow).toBeTruthy();
-    const opusBtn = pmRow!.querySelector('[data-testid="model-option-opus"]');
-    expect(opusBtn).toBeTruthy();
-    // The opus button for pm should be aria-pressed=true (it's the effective model)
-    expect(opusBtn?.getAttribute('aria-pressed')).toBe('true');
-    // The button should have inline style with background color (from MODELS constant)
-    const style = (opusBtn as HTMLElement)?.style;
-    expect(style?.background).toBeTruthy();
+    fireEvent.click(screen.getByTestId('tree-leaf-agents/loom-pm'));
+    expect(screen.getByTestId('leaf-editor-model-selector')).toBeInTheDocument();
+  });
+
+  it('clicking skill scope leaf hides model selector in leaf editor', () => {
+    render(<CustomizationView />);
+    fireEvent.click(screen.getByTestId('tree-leaf-skills/loom-review/strategies/single'));
+    expect(screen.queryByTestId('leaf-editor-model-selector')).not.toBeInTheDocument();
   });
 
   it('renders dirty state indicator when save/cancel buttons are present', () => {
     render(<CustomizationView />);
-    // The view should show 取消 (cancel) and 保存 (save) buttons per the design spec
     expect(screen.getByRole('button', { name: /取消/ })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /保存/ })).toBeInTheDocument();
-  });
-
-  it('renders SCOPE CHAIN detail panel description in initial state', () => {
-    render(<CustomizationView />);
-    // When no chain is expanded, the right panel shows explanatory text
-    // The panel should contain "SCOPE CHAIN" header
-    expect(screen.getByTestId('chain-detail-panel')).toBeInTheDocument();
   });
 });

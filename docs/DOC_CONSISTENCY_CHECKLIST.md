@@ -328,3 +328,42 @@ REVIEW.md (`docs/m0.17-design-review.md`) を SSoT として、M0.15 UI Redesign
 - [ ] **Layer 2.5 dogfood smoke 8 step (SPEC §3.6.15.4 + §10.4.1)**: PM 直接実行 + `docs/smoke-tests/m0.17-dogfood/report.md` 構造化 report 出力 ← t18 PM closure で実施予定
 - [ ] **closure tag chain 保持**: `m0.17-complete` 設置時 `m0` 〜 `m0.16-complete` の全 tag が保持 (`git tag -l --sort=-creatordate | grep -E 'm[0-9]'` で verify) ← t19 PM closure で verify 予定
 - [ ] **main への PR open**: branch hygiene learned_guidance lg-2026-05-12-001 遵守、tag 設置直後に `gh pr create` で main 取込 PR を open ← t19 PM closure で実施予定
+
+## M0.18 Skill Migration UI Rework 関連 check
+
+`spec/ui-arch.md §8` / `ui/src/views/{room,customization,retro}/` を編集した時:
+
+**3 view 意味論差し替え完了確認**:
+
+- [ ] **Room Spirit Summoning**: `ui/src/data/roster.ts` に `kind: 'persistent' | 'spirit'` + `summonedBy: string | null` field が追加され、3 persistent (pm/dev/retro-pm) + 10 ephemeral spirit (4 review + 4 retro-lens + 2 retro-stage) が定義されとること。`ui/src/data/skills.ts` の SKILLS registry と spirit entries が cross-reference 整合 (REQ-115/REQ-116)
+- [ ] **SummonQueue + useDispatchQueue**: `ui/src/views/room/SummonQueue.tsx` が `active` / `queued` / `leaving` 3 状態を描画し、`ui/src/live/useDispatchQueue` hook (or 同等) が daemon dispatch event を subscribe しとること (spec/ui-arch.md §8.2.1)
+- [ ] **spirit motion 3 flavor**: `.room--rpg` / `.room--office` / `.room--hybrid` CSS class 切替が実装済み、Tweaks default が hybrid であること (spec/ui-arch.md §8.2.1)
+- [ ] **Customization tree 2-pane**: `ui/src/views/customization/{CustomizationView,TreeNav,LeafEditor}.tsx` が Agents (3) + Skills (2 sub-scope) 階層 tree を描画し、aggregator に `WRITE` badge、leaf editor で agent only model 選択が機能すること (REQ-117..REQ-123、spec/ui-arch.md §8.2.2)
+- [ ] **Retro KPT 4 column**: `ui/src/views/retro/{RetroView,KptColumn,CarryoverCard,AdminPanel}.tsx` が KEEP / PROBLEM / CARRYOVER / TRY の 4 column + `carryover_count pip` + `verdict 4-way badge` + admin section (reconstruct/regen/retry 3 ボタン) を描画 (REQ-115..REQ-122、spec/ui-arch.md §8.2.3)
+- [ ] **useRetroLifecycle hook**: `pending_summary.json` + `pending.json` から carryover findings を reduce し RetroView の CARRYOVER column に供給しとること (spec/retro-system.md §1.16)
+
+**5 cross-cutting 完了確認**:
+
+- [ ] **LearnedGuidance scope filter**: `GuidanceView` (or 同等) に scope filter pill 4 値 (`all` / `Agents (N)` / `loom-review` / `loom-retro`) + `keyKind` badge + `keyPath` 表示 + WRITE badge が実装済み (REQ-144..REQ-149、GD-SCOPE-* test prefix)
+- [ ] **SessionList reviewer rename**: `SessionDetailPanel` (or 同等) の `reviewer_agent` column が `reviewer (skill)` ラベルに変更され、`projectReviewerAgent()` projection 関数が `REVIEWER_AGENT_SKILL_MAP` typed object 経由で 4 mapping を正しく変換 (REQ-150..REQ-155、SES-LBL-* test prefix)
+- [ ] **TokenMeter gate**: `useTokenUsage({ enabled: !!session.active })` で session 未起動時の polling が抑止されとること (spec/ui-arch.md §8.2.4)
+- [ ] **NOT_FOUND toast**: `approval.decide` の `TRPC_CODES.NOT_FOUND` catch → `toastBus` push + `retryLastDecide()` による retry 実装が完了 (REQ-159..REQ-161、ERR-NF-* test prefix)
+- [ ] **Sidebar.tsx 削除確認**: M0.17 で AppShell Drawer + TopBar に置換済みの `ui/src/routing/Sidebar.tsx` 残存がないこと (`find ui/src -name "Sidebar.tsx"` で確認)
+
+**QA Test Matrix 実装確認**:
+
+- [ ] **Vitest test 7 prefix 実装**: `ui/test/views/room/*spirit*` / `ui/test/views/customization/*tree*` / `ui/test/views/retro/*lifecycle*` / `ui/test/views/retro/*admin*` / `ui/test/views/guidance/*scope*` / `ui/test/views/session-list/*rename*` / `ui/test/notifications/*not-found*` が全 pass (spec/ui-arch.md §8.4 case prefix mapping)
+- [ ] **Playwright baseline 生成**: `ui/e2e/__screenshots__/` に M0.18 scope の room-spirit / customization-tree / retro-kpt の `*-darwin.png` baseline が存在 (t9 でも確認)
+- [ ] **Vitest regression 0**: 全 Vitest 1118+ test pass (m0.18 完了時点の count が閾値以上であること)
+
+**SCREEN_REQUIREMENTS 各 view 更新確認**:
+
+- [ ] `docs/SCREEN_REQUIREMENTS.md` §3.7 が KPT 4 column board + lifecycle pip + admin section に更新済み (M0.18 意味論差し替え)
+- [ ] `docs/SCREEN_REQUIREMENTS.md` §3.8 が agents (3) + skills (2 sub-scope) tree 2-pane に更新済み
+- [ ] `docs/SCREEN_REQUIREMENTS.md` §3.13 新設（Room Spirit Summoning）済み
+- [ ] `docs/SCREEN_REQUIREMENTS.md` §3.5 / §3.10 / §5.1 / §5.2 の cross-cutting 注記追加済み
+
+**REQ 採番範囲確認**:
+
+- [ ] `tests/REQUIREMENTS.md` REQ-115..REQ-161 (m0.18 milestone REQ range) が採番済み・記述あり (`grep -c "REQ-1[1-6][0-9]" tests/REQUIREMENTS.md` で 47 行以上)
+- [ ] REQ-115 (roster kind/summonedBy) から REQ-161 (ERR-NF-03 retryLastDecide) までの各 REQ ID に committed_sha 参照が記録されとること

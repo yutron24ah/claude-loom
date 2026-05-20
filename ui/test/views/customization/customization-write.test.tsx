@@ -1,13 +1,12 @@
 /**
- * CustomizationView × write API hookup (REQ-077, M0.15 t16)
+ * CustomizationView × write API hookup (REQ-077, M0.15 t16 / M0.18 Phase 1 t1)
  *
  * WHY: Verifies that the "保存" button in CustomizationView calls
- * useCustomizationMutation.mutate() with the current draft state.
- * The noop onClick(() => undefined) was replaced by the mutation call.
+ * useCustomizationMutation.mutate() with the current state.
+ * The 2-pane tree rewrite maintains backward-compat write pathway.
  *
- * Mock strategy: mock both useScenario (data source) and
- * useCustomizationMutation (write mutation) at the module boundary.
- * This ensures the test verifies the wiring without a real daemon.
+ * M0.18: tree selection state drives what agentId is passed to mutate().
+ * Model selection now happens in LeafEditor (not per-row inline buttons).
  */
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, screen, cleanup, fireEvent } from '@testing-library/react';
@@ -23,60 +22,7 @@ vi.mock('../../../src/live/useCustomizationMutations', () => ({
 vi.mock('@claude-loom/redesign/api/websocket', () => ({
   useScenario: () =>
     ({
-      customization: {
-        pm: {
-          effective: { model: 'opus', preset: 'default' },
-          chain: [{ scope: 'default', model: 'opus', preset: 'default' }],
-        },
-        dev: {
-          effective: { model: 'sonnet', preset: 'default' },
-          chain: [{ scope: 'default', model: 'sonnet', preset: 'default' }],
-        },
-        rev: {
-          effective: { model: 'sonnet', preset: 'default' },
-          chain: [{ scope: 'default', model: 'sonnet', preset: 'default' }],
-        },
-        'rev-code': {
-          effective: { model: 'sonnet', preset: 'default' },
-          chain: [{ scope: 'default', model: 'sonnet', preset: 'default' }],
-        },
-        'rev-sec': {
-          effective: { model: 'sonnet', preset: 'default' },
-          chain: [{ scope: 'default', model: 'sonnet', preset: 'default' }],
-        },
-        'rev-test': {
-          effective: { model: 'haiku', preset: 'default' },
-          chain: [{ scope: 'default', model: 'haiku', preset: 'default' }],
-        },
-        'retro-pm': {
-          effective: { model: 'opus', preset: 'default' },
-          chain: [{ scope: 'default', model: 'opus', preset: 'default' }],
-        },
-        'retro-counter': {
-          effective: { model: 'opus', preset: 'default' },
-          chain: [{ scope: 'default', model: 'opus', preset: 'default' }],
-        },
-        'retro-meta': {
-          effective: { model: 'opus', preset: 'default' },
-          chain: [{ scope: 'default', model: 'opus', preset: 'default' }],
-        },
-        'retro-pj': {
-          effective: { model: 'sonnet', preset: 'default' },
-          chain: [{ scope: 'default', model: 'sonnet', preset: 'default' }],
-        },
-        'retro-research': {
-          effective: { model: 'sonnet', preset: 'default' },
-          chain: [{ scope: 'default', model: 'sonnet', preset: 'default' }],
-        },
-        'retro-proc': {
-          effective: { model: 'sonnet', preset: 'default' },
-          chain: [{ scope: 'default', model: 'sonnet', preset: 'default' }],
-        },
-        'retro-agg': {
-          effective: { model: 'opus', preset: 'default' },
-          chain: [{ scope: 'default', model: 'opus', preset: 'default' }],
-        },
-      },
+      customization: {},
     }) as unknown as Scenario,
 }));
 
@@ -102,13 +48,10 @@ describe('CustomizationView × write API', () => {
     expect(mutateFn).not.toHaveBeenCalled();
   });
 
-  it('model selection triggers draft update (aria-pressed changes)', () => {
+  it('tree renders leaf-editor by default (loom-developer selected)', () => {
     render(<CustomizationView />);
-    // Click the sonnet model button for "pm" agent row
-    const pmRow = document.querySelector('[data-agent-id="pm"]');
-    expect(pmRow).not.toBeNull();
-    // The opus model should be aria-pressed=true for pm
-    const opusBtn = pmRow!.querySelector('[data-testid="model-option-opus"]') as HTMLButtonElement;
-    expect(opusBtn.getAttribute('aria-pressed')).toBe('true');
+    // Default selection is loom-developer (agent kind), so model selector is visible
+    expect(screen.getByTestId('leaf-editor')).toBeInTheDocument();
+    expect(screen.getByTestId('leaf-editor-model-selector')).toBeInTheDocument();
   });
 });

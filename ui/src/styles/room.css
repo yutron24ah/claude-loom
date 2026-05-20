@@ -366,3 +366,193 @@
   right: 14px;
   z-index: var(--z-agent-detail);
 }
+
+/* =============================================================
+ * Spirit Summoning — m0.18-t3
+ * Owns: .spirit, .spirit-echo, .room-door, .summon-queue
+ * Motion flavors: .room--rpg / .room--office / .room--hybrid
+ * Source: spec/ui-arch.md §8.2.1
+ * ============================================================= */
+
+/* ── Spirit sprite ────────────────────────────────────────────── */
+.spirit {
+  all: unset;
+  position: absolute;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  z-index: var(--z-room-agents);
+  font-size: 9px;
+  padding: 4px;
+}
+
+.spirit__name {
+  font-weight: 700;
+  font-size: 9px;
+  color: var(--p-text);
+}
+
+.spirit__role {
+  font-size: 8px;
+  color: var(--p-text-muted);
+}
+
+/* Leaving state — triggers exit keyframe */
+.spirit--leaving {
+  animation: spirit-leave 400ms steps(4) forwards;
+}
+
+@keyframes spirit-leave {
+  0%   { opacity: 1; transform: scale(1); }
+  50%  { opacity: 0.5; transform: scale(1.05); }
+  100% { opacity: 0; transform: scale(0); }
+}
+
+/* ── Spirit Echo (Hybrid mode) ────────────────────────────────── */
+.spirit-echo {
+  position: absolute;
+  opacity: 0.32;
+  filter: grayscale(0.6);
+  pointer-events: none;
+  z-index: calc(var(--z-room-agents) - 1);
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--p-text);
+}
+
+.spirit-echo__name {
+  display: block;
+  font-size: 9px;
+}
+
+/* ── Room Door (Office mode) ─────────────────────────────────── */
+.room-door {
+  position: absolute;
+  z-index: var(--z-room-decor);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.room-door__svg {
+  display: block;
+  image-rendering: pixelated;
+}
+
+/* Door panel slides open in office mode */
+.room-door--open .room-door__panel {
+  animation: door-slide 700ms steps(8) forwards;
+}
+
+@keyframes door-slide {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(34px); }
+}
+
+.room-door__label {
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--p-text-muted);
+  text-align: center;
+}
+
+/* ── SummonQueue plaque ─────────────────────────────────────── */
+.summon-queue {
+  position: absolute;
+  z-index: var(--z-room-decor);
+  background: var(--p-paper);
+  border: 2px solid var(--p-border);
+  padding: 6px 8px;
+  min-width: 120px;
+  box-shadow: 3px 3px 0 var(--p-shadow);
+}
+
+.summon-queue__header {
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--p-text-muted);
+  margin-bottom: 4px;
+  text-transform: uppercase;
+}
+
+.summon-queue__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.summon-queue__item {
+  font-size: 9px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 4px;
+  border: 1px solid transparent;
+}
+
+.summon-queue__skill-id {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.summon-queue__ttl {
+  font-size: 8px;
+  color: var(--p-text-muted);
+  flex-shrink: 0;
+}
+
+/* Status modifiers */
+.summon-queue__state--active {
+  background: color-mix(in srgb, var(--p-success) 15%, transparent);
+  border-color: var(--p-success);
+}
+
+.summon-queue__state--queued {
+  background: color-mix(in srgb, var(--p-warn) 15%, transparent);
+  border-color: var(--p-warn);
+}
+
+.summon-queue__state--leaving {
+  background: color-mix(in srgb, var(--p-stone) 15%, transparent);
+  border-color: var(--p-stone);
+  opacity: 0.6;
+}
+
+/* ── Room motion flavor classes ─────────────────────────────── */
+
+/* RPG flavor: glow filter + scale keyframe on spirit sprites */
+.room--rpg .spirit {
+  filter: drop-shadow(0 0 6px var(--p-accent));
+  animation: spirit-rpg-summon 360ms steps(6) both;
+}
+
+@keyframes spirit-rpg-summon {
+  0%   { transform: scale(0.6); opacity: 0; }
+  60%  { transform: scale(1.1); opacity: 1; }
+  100% { transform: scale(1.0); opacity: 1; }
+}
+
+/* Office flavor: spirit slides in from right (door direction) */
+.room--office .spirit {
+  animation: spirit-office-slide 700ms steps(8) both;
+}
+
+@keyframes spirit-office-slide {
+  0%   { transform: translateX(80px); opacity: 0; }
+  100% { transform: translateX(0); opacity: 1; }
+}
+
+/* Hybrid flavor: RPG glow at 40% intensity (subdued) */
+.room--hybrid .spirit {
+  filter: drop-shadow(0 0 3px color-mix(in srgb, var(--p-accent) 40%, transparent));
+}

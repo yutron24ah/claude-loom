@@ -28,6 +28,8 @@ afterEach(() => {
 
 const mockAgent = {
   id: 'dev',
+  kind: 'persistent' as const,
+  summonedBy: null,
   name: 'サバ',
   role: 'Developer',
   jp: 'デベロッパー',

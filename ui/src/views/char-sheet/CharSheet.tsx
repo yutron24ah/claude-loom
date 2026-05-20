@@ -1,8 +1,9 @@
 /**
  * CharSheet — character sheet for all 13 cat agents.
  * WHY: ported from ui/prototype/char-sheet.jsx; shows breed/name/quote per agent.
- * Grouped by core / review / retro with section dividers (pixel RPG aesthetic).
+ * Grouped by core / review / retro-lens / retro-stage with section dividers (pixel RPG aesthetic).
  * M0.11.4 t15: rewritten to use rpg-frame / rpg-title / CatSprite (Phase B SSoT).
+ * M0.18 t0: updated for new GroupType split ('retro' → 'retro-lens' + 'retro-stage').
  */
 import { CatSprite } from '../../components/CatSprite';
 import { ROSTER } from '../room/roster';
@@ -13,12 +14,13 @@ export interface CharSheetProps {
 }
 
 const GROUP_TITLE: Record<GroupType, { jp: string; en: string }> = {
-  core:   { jp: 'コア — PJ 駆動',      en: 'CORE' },
-  review: { jp: 'レビュアー — 監視猫', en: 'REVIEWERS' },
-  retro:  { jp: 'Retro — 観察役 7体',  en: 'RETRO BOARD' },
+  core:         { jp: 'コア — PJ 駆動',          en: 'CORE' },
+  review:       { jp: 'レビュアー — 監視猫',       en: 'REVIEWERS' },
+  'retro-lens': { jp: 'Retro Lens — 観察役 4体', en: 'RETRO LENSES' },
+  'retro-stage':{ jp: 'Retro Stage — 仕上げ 2体', en: 'RETRO STAGES' },
 };
 
-const GROUPS: GroupType[] = ['core', 'review', 'retro'];
+const GROUPS: GroupType[] = ['core', 'review', 'retro-lens', 'retro-stage'];
 
 export function CharSheet({ width = 920 }: CharSheetProps): JSX.Element {
   return (

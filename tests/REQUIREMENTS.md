@@ -362,4 +362,104 @@ m0.17-complete tag 設置後 (commit 170d323)、PR #12 push で CI が Linux Pla
 
 - **REQ-114**: M0.17 R3 Polish Phase meta entry — user feedback「なんで100%じゃないねん」を契機に、Round 2 review の 87% target を **ceiling じゃなく floor** として扱う Round 3 polish phase 全体 (Phase D + E) の codify。`memory/feedback_100_percent_expectation.md` 新設で PM 早期収束禁止規律 + review target % を floor 扱い + user 体感判定 priority を構造化。**Phase D** (commit `800a185`、PR #16): Room concrete gap 6 件 close (R-1 desk width token split / R-2 monitor lines 4→3 / R-3 bubble kind tool|reason / R-4 PMChatPanel STREAM tab 統合 / R-5 pm-chat-handle collapsed / R-6 wall sign mispositioning fix、R-6 は dev 独自検証で「verify only」想定を refute し misposition を発見)。**Phase E** (commit `fa11af7`、PR #17): 11 非 Room screens の redesign source SSoT 比較で code-level structural diff 集中 close、**initial 実装で見落とされとった重要 missing functionality 発見** (AgentDetailPanel の RECENT DISPATCHES section 完全欠落 / WorktreeView の create dialog 欠落 / TokensView の period selector + CatSprite 欠落 / ConsistencyView の filter button + empty state UX 不足 等)。**verification**: Vitest UI 984/984 維持 + daemon 546/546 + bash 42/42 + Playwright 19/19 + tsc 0 new error + 0 regression、Playwright Room baseline 4 枚 darwin retake、6 stacked PR (#12..#17) all mergeable + CI green。**体感再現度**: 30〜40% → 95%+ (Room 95% Phase D 後 + その他 95%+ Phase E 後)。**rationale**: R2 review の 87% は initial 実装の missing functionality を含むため structural polish round が必要、user feedback driven iteration が真の polish path、subjective polish (色 / pixel) より code-level structural diff alignment の優先が ROI 高い (Phase E で 4 件の missing functionality を発見できた dogfood evidence)。M0.17 post-tag-hotfix series 第 5+6 件、SPEC §3.6.8.11 規律遵守 (tag `m0.17-complete` 不変、stacked branch 化で commit annotation 代替、retro scope 必須 inclusion)。
 
+## M0.18 Task 4: LearnedGuidanceView scope filter + keyKind badge + keyPath
+
+- **REQ-144**: `LearnedGuidanceView` に scope filter pill 4 値 (`all` / `Agents (N)` / `loom-review` / `loom-retro`) を追加。各 pill は `data-testid="scope-filter-pill"` + `data-active` attribute で active 状態を保持。`all` pill がデフォルト active。test: `ui/test/views/guidance/guidance-scope.test.tsx` GD-SCOPE-01 / GD-SCOPE-02。
+
+- **REQ-145**: `Agents pill` クリックで `keyKind === "agent"` の entry のみ表示。フィルタ後 DOM の全 `[data-testid="guidance-item"]` の `data-keykind` 属性が `"agent"` になる。test: GD-SCOPE-03。
+
+- **REQ-146**: `loom-review pill` クリックで `keyPath.startsWith("skills/loom-review/")` の entry のみ表示。フィルタ後 DOM の全 `[data-testid="guidance-item"]` の `data-keypath` が `skills/loom-review/` で始まる。test: GD-SCOPE-04。
+
+- **REQ-147**: `loom-retro pill` クリックで `keyPath.startsWith("skills/loom-retro/")` の entry のみ表示。フィルタ後 DOM の全 `[data-testid="guidance-item"]` の `data-keypath` が `skills/loom-retro/` で始まる。test: GD-SCOPE-05。
+
+- **REQ-148**: 各 guidance card に `data-testid="keykind-badge"` badge を表示。`keyKind === "agent"` の場合テキスト `AGENT` (`.lg-badge--agent` 緑背景)、`keyKind === "skill"` の場合テキスト `SKILL` (`.lg-badge--skill` accent 背景)。test: GD-SCOPE-06。
+
+- **REQ-149**: `keyPath === "skills/loom-retro/stages/aggregator"` の entry には `data-testid="write-badge"` badge (`.lg-badge--write` warn 背景、テキスト `WRITE`) を追加表示。また各 card に `data-testid="guidance-keypath"` で keyPath 文字列を表示 (例: `agents/loom-pm` / `skills/loom-review/strategies/trio/code`)。test: GD-SCOPE-07 / GD-SCOPE-08。
+
 - **REQ-090**: M0.16 closure marker として `m0.16-complete` tag を設置し、retro hook trigger + `lg-2026-05-13-001` ttl expire を完了。tag 設置時点で M0.16 全 11 task (t1-t11) が `status: done` (t4 のみ post-closure-verify scope で本 PR merge 後 user invoke、それ以外 done)。Layer 1 (ui 1007 + daemon 546 + bash run_tests.sh 41+1pass) + Layer 2 (Playwright t21 baseline + click flow、M0.16 t1+t2 で darwin migrate 済) + Layer 2.5 (8 step、Step 8 graceful skip dogfood validated) 全 PASS。tag annotation に M0.16 scope summary + REQ-084..090 + tag chain (m0〜m0.15-complete + m0.16-complete) 含める。`.claude-loom/project-prefs.json` の `agents.loom-pm.learned_guidance[].id == "lg-2026-05-13-001"` を `active: false / ttl: expired / expired_at: "2026-05-13" / expired_by: "m0.16-complete (SPEC §3.6.15 + §3.6.14.5 Step 8 formal codify)"` に切替え、暫定規律から formal SPEC 規律へ移行。`pending.json` の retro 2026-05-12-001 F-res-002 entry に M0.16 完了 reference 追記。retro hook で user に「M0.16 完了、retro しとく？」提案、user 判断に従う。**rationale**: M0.16 Phase 4 (t11、PM direct) — milestone closure marker 設置 + learned_guidance loop の structural validation (lg-2026-05-13-001 が暫定→SPEC formal 規律で代替され ttl expire するという M0.11 codify した learned_guidance ttl/decay 機構の dogfood)。Phase 2 hardening continuation の第 2 milestone 完成、M0.15 → M0.16 で dogfood-trinity continuation marker chain が継続 (Phase 1 trinity → UI Redesign Port → Playwright OS-aware Baseline)。
+
+## M0.18 Phase 0: roster kind/summonedBy extension + skills registry
+
+- **REQ-115**: `ui/src/data/roster.ts` の ROSTER 13 entry に `kind: 'persistent' | 'spirit'` + `summonedBy: string | null` field 追加 + `GroupType` を `'core' | 'review' | 'retro-lens' | 'retro-stage'` に更新 (旧 `'retro'` を `'retro-lens'` + `'retro-stage'` に細分割)。3 persistent (pm / dev / retro-pm) + 10 spirit (4 review + 4 retro-lens + 2 retro-stage)。spirit は `summonedBy` に skill identifier path (例: `"loom-review/single"`) を持ち、persistent は `null`。`ui/src/views/room/roster.ts` は SSoT を `ui/src/data/roster.ts` に移転し re-export に整理。`ui/src/views/char-sheet/CharSheet.tsx` の `GROUP_TITLE` / `GROUPS` を新 GroupType 4 値に更新。`ui/test/data/roster.test.ts` でカバー。
+
+- **REQ-116**: `ui/src/data/skills.ts` 新設。`Skill` / `Strategy` / `Lens` / `Stage` interface 定義 + `SKILLS` registry (2 skill: loom-review + loom-retro)。loom-review は strategies 4 (single / trio.code / trio.security / trio.test)、loom-retro は lenses 4 (pj-axis / process-axis / meta-axis / researcher) + stages 2 (counter-arguer / aggregator)。aggregator stage に `writePermission: true` marker。全 spiritId が ROSTER spirit entries と完全一致 (cross-reference)。`ui/test/data/skills.test.ts` でカバー。
+
+## M0.18 Phase 1 t1: CustomizationView 2-pane tree rewrite
+
+- **REQ-117**: CUSTOM-TREE-001 — `CustomizationView` tree が Agents root (`data-testid="tree-root-agents"`) と Skills root (`data-testid="tree-root-skills"`) の 2 root node を描画する。commit `6de5248`。`ui/test/views/customization/customization-tree.test.tsx` でカバー。
+
+- **REQ-118**: CUSTOM-TREE-002 — Agents root 展開時に 3 persistent agent leaves (`tree-leaf-agents/loom-pm` / `tree-leaf-agents/loom-developer` / `tree-leaf-agents/loom-retro-pm`) を表示、かつ exactly 3 件である。commit `6de5248`。`ui/test/views/customization/customization-tree.test.tsx` でカバー。
+
+- **REQ-119**: CUSTOM-TREE-003 — loom-review 展開時に 4 strategy leaves (single / trio/code / trio/security / trio/test) を表示。commit `6de5248`。`ui/test/views/customization/customization-tree.test.tsx` でカバー。
+
+- **REQ-120**: CUSTOM-TREE-004 — loom-retro 展開時に lenses 4 (pj-axis / process-axis / meta-axis / researcher) + stages 2 (counter-arguer / aggregator) を表示。commit `6de5248`。`ui/test/views/customization/customization-tree.test.tsx` でカバー。
+
+- **REQ-121**: CUSTOM-TREE-005 — aggregator leaf (`tree-leaf-skills/loom-retro/stages/aggregator`) 内に `data-testid="badge-write"` の WRITE badge を表示、non-aggregator leaves には表示しない。commit `6de5248`。`ui/test/views/customization/customization-tree.test.tsx` でカバー。
+
+- **REQ-122**: CUSTOM-TREE-006 — agent leaf 選択時 (`leaf-editor-model-selector` testid) model 選択が表示、skill scope leaf 選択時は非表示。commit `6de5248`。`ui/test/views/customization/customization-tree.test.tsx` でカバー。
+
+- **REQ-123**: CUSTOM-TREE-007 — Agents root に `(3)` count 表示、Skills root に `(2)` count 表示。commit `6de5248`。`ui/test/views/customization/customization-tree.test.tsx` でカバー。
+
+## M0.18 Phase 1 t2: RetroView KPT + lifecycle + admin
+
+- **REQ-124**: RETRO-KPT-001 — RetroView が KPT 3 カラム (`data-testid="kpt-column-keep"` / `kpt-column-problem"` / `kpt-column-try"`) を描画。commit `e2ed79e`。`ui/test/views/retro/retro-kpt.test.tsx` でカバー。
+- **REQ-125**: RETRO-KPT-002 — RetroView が lifecycle tab strip を描画 (`data-testid="lifecycle-tab-prep"` / `"lifecycle-tab-discuss"` / `"lifecycle-tab-close"`)。commit `e2ed79e`。`ui/test/views/retro/retro-kpt.test.tsx` でカバー。
+- **REQ-126**: RETRO-KPT-003 — RetroView が admin panel (`data-testid="admin-panel"`) を描画。commit `e2ed79e`。`ui/test/views/retro/retro-kpt.test.tsx` でカバー。
+- **REQ-127**: RETRO-LENS-001 — RetroView の LensCard が CatSprite を roster id 対応で描画、unknown agent は fallback emoji `👤`。commit `e2ed79e`。`ui/test/views/retro/retro-kpt.test.tsx` でカバー。
+- **REQ-128**: RETRO-LC-001 — RetroView lifecycle tab クリックで active tab が切替わる。commit `e2ed79e`。`ui/test/views/retro/retro-kpt.test.tsx` でカバー。
+- **REQ-129**: RETRO-ADMIN-001 — admin panel が loom-retro start / close ボタンを描画。commit `e2ed79e`。`ui/test/views/retro/retro-kpt.test.tsx` でカバー。
+- **REQ-130**: RETRO-WRITE-001 — KPT write mode mutation が tRPC `retro.addKptItem` を呼ぶ。commit `e2ed79e`。`ui/test/views/retro/retro-write.test.tsx` でカバー。
+
+## M0.18 Phase 1 t3: RoomView Spirit Summoning rewrite
+
+- **REQ-133**: SP-ROSTER-01 — ROSTER から `kind="persistent"` を filter すると 3 体 (pm / dev / retro-pm)。`ui/test/views/room/spirit/spirit.test.tsx` でカバー。
+
+- **REQ-134**: SP-ROSTER-02 — ROSTER から `kind="spirit"` を filter すると 10 体、全エントリに `summonedBy` 文字列が存在。`ui/test/views/room/spirit/spirit.test.tsx` でカバー。
+
+- **REQ-135**: SP-ROSTER-03 — SKILLS の `loom-retro.stages.aggregator` だけ `writePermission: true`、他は falsy。`ui/test/views/room/spirit/spirit.test.tsx` でカバー。
+
+- **REQ-136**: SP-MOTION-RPG-01 — `RoomView spiritMode="rpg"` で `data-testid="room-canvas"` に `room--rpg` クラスが付く。`ui/test/views/room/spirit/spirit.test.tsx` でカバー。
+
+- **REQ-137**: SP-MOTION-OFF-01 — `RoomView spiritMode="office"` で `room--office` クラス + `.room-door` 要素が存在。`ui/test/views/room/spirit/spirit.test.tsx` でカバー。
+
+- **REQ-138**: SP-MOTION-HYB-01 — `RoomView` prop なし (default=hybrid) で `room--hybrid` クラスが付く。`ui/test/views/room/spirit/spirit.test.tsx` でカバー。
+
+- **REQ-139**: SP-DESK-01 — `RoomView` で `[data-testid="monitor-screen"]` が exactly 3 件のみ (persistent agents pm / dev / retro-pm のみ DeskStation を持つ)。`ui/test/views/room/spirit/spirit.test.tsx` でカバー。
+
+- **REQ-140**: Spirit component — `.spirit` 要素に `data-spirit-id` attribute を持つ、`leaving=true` 時に `.spirit--leaving` クラスを追加。`ui/test/views/room/spirit/spirit.test.tsx` でカバー。
+
+- **REQ-141**: SpiritEcho component — `.spirit-echo` 要素を描画。`ui/test/views/room/spirit/spirit.test.tsx` でカバー。
+
+- **REQ-142**: RoomDoor component — `.room-door` 要素を描画、`open=true` 時に `.room-door--open` クラスを追加。`ui/test/views/room/spirit/spirit.test.tsx` でカバー。
+
+- **REQ-143**: SummonQueue component — `.summon-queue` 要素を描画、items の status に応じて `.summon-queue__state--active` / `--queued` / `--leaving` クラスを付与。`ui/test/views/room/spirit/spirit.test.tsx` でカバー。
+
+## M0.18 Phase 1 t5: SessionList reviewer_agent → reviewer (skill) rename
+
+- **REQ-150**: SES-LBL-01 — `SessionDetailPanel` が `reviewer_agent` field 存在時に `data-testid="session-reviewer-label"` の text `"reviewer (skill)"` を描画する。`ui/test/views/session-list/ses-lbl.test.tsx` でカバー。
+
+- **REQ-151**: SES-LBL-02 — DB 値 `"loom-reviewer"` が `data-testid="session-reviewer-value"` に `"loom-review/single"` として表示される。raw DB 値は非表示。`ui/test/views/session-list/ses-lbl.test.tsx` でカバー。
+
+- **REQ-152**: SES-LBL-03 — DB 値 `"loom-code-reviewer"` が `"loom-review/trio.code"` として表示される。`ui/test/views/session-list/ses-lbl.test.tsx` でカバー。
+
+- **REQ-153**: SES-LBL-04 — mapping 表に存在しない旧 DB 値は raw text + `data-testid="session-reviewer-unmapped-badge"` の灰色バッジで表示される。`ui/test/views/session-list/ses-lbl.test.tsx` でカバー。
+
+- **REQ-154**: SES-LBL-05 — `reviewer_agent` field が absent (undefined) のとき、`session-reviewer-label` / `session-reviewer-value` は描画されない。`ui/test/views/session-list/ses-lbl.test.tsx` でカバー。
+
+- **REQ-155**: SES-LBL-06 — 4 件全 mapping (`loom-reviewer→loom-review/single` / `loom-code-reviewer→loom-review/trio.code` / `loom-security-reviewer→loom-review/trio.security` / `loom-test-reviewer→loom-review/trio.test`) が正しく projection される。`projectReviewerAgent()` が `REVIEWER_AGENT_SKILL_MAP` typed object を参照し文字列直接比較禁止規律に準拠。`ui/test/views/session-list/ses-lbl.test.tsx` でカバー。
+
+## M0.18 Phase 3 t6: TokenMeter polling gate (session.active 連動)
+
+- **REQ-156**: TM-GATE-01 — `TokenMeterView` は `scenario.key !== ACTIVE_SCENARIO_KEY` のとき `useTokenUsage({ enabled: false })` を呼び出す。`idle` / `failed` 各 key で polling 抑止を verify。`ui/test/live/use-token-usage.test.tsx` でカバー。文字列直接比較禁止規律に準拠 (`ACTIVE_SCENARIO_KEY` typed constant を使用)。
+
+- **REQ-157**: TM-GATE-02 — `TokenMeterView` は `scenario.key === ACTIVE_SCENARIO_KEY` のとき `useTokenUsage({ enabled: true })` を呼び出す。`ui/test/live/use-token-usage.test.tsx` でカバー。
+
+- **REQ-158**: TM-GATE-03 — `scenario.key !== ACTIVE_SCENARIO_KEY` 時に `useTokenUsage` が `enabled: false` を受け取った場合、hook 内 `isActive = isConnected && enabled` が `false` となり `setInterval` が発火しない。`useTokenUsage` の既存 useEffect guard (`if (!isActive) return`) がこのパスを担保。`ui/test/live/use-token-usage.test.tsx` でカバー。
+
+## M0.18 Phase 3 t7: approval.decide NOT_FOUND TRPCError toast + retry action
+
+- **REQ-159**: ERR-NF-01 — `useApprovalMutations` が `TRPC_CODES.NOT_FOUND === 'NOT_FOUND'` の typed const を export する。call-site での raw 文字列比較禁止規律に準拠 (`TRPC_CODES` typed object を参照)。`ui/test/notifications/not-found-toast.test.tsx` でカバー。commit `<sha>` (m0.18-t7)。
+
+- **REQ-160**: ERR-NF-02 — `approval.decide` 呼び出しの `onError` で `TRPCClientError.data.code === TRPC_CODES.NOT_FOUND` を catch し、`toastBus` に `{ kind: 'error', message: 'approval event が見つかりません (期限切れ?)', action: 'retry', event: 'approval_not_found', ttl_ms: null }` の toast を emit する (crash しない)。mapping 表に存在しない旧 code は無視 (NOT_FOUND only catch、他 error は既存挙動維持)。`ui/test/notifications/not-found-toast.test.tsx` でカバー。commit `<sha>` (m0.18-t7)。
+
+- **REQ-161**: ERR-NF-03 — `useApprovalMutations().retryLastDecide()` が最後に試行した payload で `approval.decide` を再 invoke する。toast の `action: 'retry'` signal と組み合わせて retry ボタン UX を実現。`ui/test/notifications/not-found-toast.test.tsx` でカバー。commit `<sha>` (m0.18-t7)。

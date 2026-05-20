@@ -42,6 +42,18 @@ export type TokenType = (typeof TOKEN_TYPE)[keyof typeof TOKEN_TYPE];
  */
 export const TOKEN_POLL_INTERVAL_MS = 30_000;
 
+/**
+ * Typed constant for the scenario key that represents an active Claude session.
+ *
+ * WHY: Hard constraint — raw string literals in comparisons are forbidden
+ * (SPEC §3.6.10, feedback_avoid_string_literals.md). TokenMeterView uses this
+ * constant (not `'active'` inline) to gate polling via `enabled`.
+ *
+ * Satisfies ScenarioKey from @claude-loom/redesign/api/types.
+ * 'm0.18-t6 REQ-156..158' — polling gate enablement SSoT.
+ */
+export const ACTIVE_SCENARIO_KEY = 'active' as const;
+
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------

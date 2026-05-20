@@ -1,0 +1,959 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<title>claude-room QA Test Suite</title>
+<style>
+  :root {
+    --p-bg:       #f3eedf;
+    --p-bg2:      #e8e0c7;
+    --p-paper:    #ffffff;
+    --p-paper2:   #f7f2e1;
+    --p-paper3:   #ebe4d0;
+    --p-ink:      #1b1b22;
+    --p-ink-mut:  #6b6655;
+    --p-border:   #1b1b22;
+    --p-rule:     #c8bfa3;
+
+    --p-accent:   #d97757;
+    --p-accent-2: #b3553b;
+    --p-ok:       #4f8c4a;
+    --p-warn:     #c9a23f;
+    --p-bad:      #b94a3e;
+    --p-na:       #8a8579;
+    --p-block:    #6b6655;
+    --p-zone-dev: #c0d6c6;
+    --p-zone-pm:  #d6c5dc;
+    --p-zone-rev: #d8cfb4;
+    --p-zone-ov:  #e9d5c6;
+    --p-shadow:   #1b1b22;
+
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    --sans: ui-monospace, "SF Mono", Menlo, "Hiragino Kaku Gothic ProN", "Yu Gothic UI", sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--p-bg);
+    color: var(--p-ink);
+    font-family: var(--sans);
+    font-size: 13px;
+    line-height: 1.55;
+    padding: 24px 28px 96px;
+  }
+  code { font-family: var(--mono); font-size: 11px; background: rgba(0,0,0,0.05); padding: 1px 5px; }
+
+  /* ---- Header ---- */
+  .hd {
+    display: flex; align-items: center; gap: 14px;
+    margin-bottom: 18px; color: var(--p-ink);
+  }
+  .hd__logo {
+    width: 28px; height: 28px;
+    background:
+      linear-gradient(135deg, var(--p-accent) 0 50%, var(--p-accent-2) 50% 100%);
+    border: 2px solid var(--p-ink);
+    box-shadow: 3px 3px 0 0 var(--p-shadow);
+  }
+  .hd__title { font-size: 18px; font-weight: 700; letter-spacing: 1px; }
+  .hd__sub   { font-size: 11px; color: var(--p-ink-mut); letter-spacing: 2px; }
+  .hd__spacer { flex: 1; }
+
+  /* ---- Toolbar ---- */
+  .toolbar {
+    display: flex; gap: 8px; flex-wrap: wrap; align-items: center;
+    background: var(--p-paper);
+    border: 2px solid var(--p-border);
+    box-shadow: 4px 4px 0 0 var(--p-shadow);
+    padding: 10px 12px;
+    margin-bottom: 14px;
+  }
+  .toolbar__group {
+    display: flex; align-items: center; gap: 6px;
+    border-right: 1px dashed var(--p-rule);
+    padding-right: 10px;
+  }
+  .toolbar__group:last-of-type { border-right: 0; padding-right: 0; }
+  .toolbar__label {
+    font-size: 10px; letter-spacing: 1.5px;
+    color: var(--p-ink-mut); font-weight: 700;
+  }
+  .btn-px {
+    all: unset; cursor: pointer;
+    font-family: var(--mono); font-size: 11px; font-weight: 700;
+    padding: 4px 10px;
+    background: var(--p-paper2);
+    border: 2px solid var(--p-border);
+    box-shadow: 2px 2px 0 0 var(--p-shadow);
+    color: var(--p-ink);
+  }
+  .btn-px:hover { transform: translate(-1px,-1px); box-shadow: 3px 3px 0 0 var(--p-shadow); }
+  .filter-pill {
+    all: unset; cursor: pointer;
+    font-family: var(--mono); font-size: 10px; font-weight: 700;
+    padding: 3px 8px;
+    border: 1.5px solid var(--p-border);
+    background: var(--p-paper2);
+  }
+  .filter-pill.on { background: var(--p-ink); color: var(--p-paper); }
+  .search {
+    all: unset;
+    font-family: var(--mono); font-size: 11px;
+    padding: 4px 8px;
+    background: var(--p-paper2);
+    border: 1.5px solid var(--p-border);
+    min-width: 220px;
+  }
+  .search:focus { background: white; outline: 1px solid var(--p-accent); }
+
+  /* ---- Stats ---- */
+  .stats {
+    display: grid; grid-template-columns: repeat(7, minmax(0,1fr));
+    gap: 6px; margin-bottom: 14px;
+  }
+  .stat {
+    background: var(--p-paper);
+    border: 2px solid var(--p-border);
+    box-shadow: 3px 3px 0 0 var(--p-shadow);
+    padding: 10px 12px;
+  }
+  .stat__lbl { font-size: 9px; letter-spacing: 2px; color: var(--p-ink-mut); font-weight: 700; margin-bottom: 4px; }
+  .stat__val { font-family: var(--mono); font-size: 20px; font-weight: 700; }
+  .stat__val .small { font-size: 11px; color: var(--p-ink-mut); }
+  .stat--ok   .stat__val { color: var(--p-ok); }
+  .stat--warn .stat__val { color: var(--p-warn); }
+  .stat--bad  .stat__val { color: var(--p-bad); }
+
+  /* ---- Progress bar ---- */
+  .progress {
+    height: 8px; background: var(--p-paper);
+    border: 2px solid var(--p-border);
+    box-shadow: 3px 3px 0 0 var(--p-shadow);
+    margin-bottom: 18px; display: flex;
+  }
+  .progress > div { height: 100%; }
+  .progress__pass  { background: var(--p-ok); }
+  .progress__wip   { background: var(--p-warn); }
+  .progress__fail  { background: var(--p-bad); }
+  .progress__block { background: var(--p-block); }
+  .progress__na    { background: var(--p-na); }
+
+  /* ---- Section ---- */
+  section.screen {
+    background: var(--p-paper);
+    border: 2px solid var(--p-border);
+    box-shadow: 4px 4px 0 0 var(--p-shadow);
+    margin-bottom: 14px;
+  }
+  .screen__hd {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 12px;
+    background: var(--p-paper2);
+    border-bottom: 2px solid var(--p-border);
+    font-family: var(--mono);
+    cursor: pointer;
+    user-select: none;
+  }
+  .screen__hd:hover { background: var(--p-paper3); }
+  .screen__caret { font-family: var(--mono); width: 12px; }
+  .screen__zone {
+    font-size: 9px; letter-spacing: 2px; font-weight: 700;
+    padding: 2px 6px;
+    border: 1.5px solid var(--p-border);
+  }
+  .zone-shell   { background: var(--p-zone-pm); }
+  .zone-room    { background: var(--p-zone-dev); }
+  .zone-panel   { background: var(--p-zone-rev); }
+  .zone-overlay { background: var(--p-zone-ov); }
+  .screen__title { font-size: 14px; font-weight: 700; flex: 1; }
+  .screen__path  { font-size: 10px; color: var(--p-ink-mut); }
+  .screen__prog  { font-size: 10px; color: var(--p-ink-mut); font-family: var(--mono); }
+  .screen__body  { padding: 10px 14px 14px; }
+  section.collapsed .screen__body { display: none; }
+
+  /* ---- Group ---- */
+  .group {
+    border-top: 1px dashed var(--p-rule);
+    padding-top: 10px;
+    margin-top: 10px;
+  }
+  .group:first-child { border-top: 0; padding-top: 0; margin-top: 0; }
+  .group__hd {
+    display: flex; align-items: baseline; gap: 8px;
+    margin-bottom: 6px;
+  }
+  .group__name {
+    font-size: 11px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 1.2px;
+  }
+  .group__count { font-size: 10px; color: var(--p-ink-mut); font-family: var(--mono); }
+
+  /* ---- Case ---- */
+  .case {
+    border: 1.5px solid var(--p-border);
+    background: white;
+    box-shadow: 2px 2px 0 0 var(--p-shadow);
+    margin-bottom: 6px;
+  }
+  .case__head {
+    display: flex; align-items: center; gap: 8px;
+    padding: 6px 10px;
+    cursor: pointer; user-select: none;
+  }
+  .case__head:hover { background: rgba(217,119,87,0.06); }
+  .case__caret { font-family: var(--mono); width: 12px; color: var(--p-ink-mut); }
+  .case__id {
+    font-family: var(--mono); font-size: 10px; font-weight: 700;
+    color: var(--p-ink-mut); min-width: 130px;
+  }
+  .case__pri {
+    display: inline-block; width: 14px; height: 14px;
+    border: 1.5px solid var(--p-border);
+    line-height: 11px; text-align: center;
+    font-size: 9px; font-weight: 700; font-family: var(--mono);
+  }
+  .case__pri.p0 { background: var(--p-bad);    color: var(--p-paper); }
+  .case__pri.p1 { background: var(--p-warn);   color: var(--p-ink); }
+  .case__pri.p2 { background: var(--p-zone-pm); }
+  .case__name { font-weight: 600; flex: 1; font-size: 12px; }
+  .case__link {
+    font-family: var(--mono); font-size: 9px; font-weight: 700;
+    padding: 1px 5px;
+    background: var(--p-accent);
+    color: var(--p-paper);
+    border: 1px solid var(--p-border);
+  }
+  .case__scen {
+    font-family: var(--mono); font-size: 9px;
+    color: var(--p-ink-mut);
+    padding: 1px 4px;
+    border: 1px dashed var(--p-rule);
+  }
+  .case__scen.idle   { background: #efeae3; }
+  .case__scen.active { background: #d8efd1; }
+  .case__scen.failed { background: #f1cdc9; }
+  .case__scen.any    { background: transparent; }
+
+  /* ---- Body (steps / expected) ---- */
+  .case__body {
+    display: none;
+    padding: 8px 14px 12px;
+    border-top: 1px dashed var(--p-rule);
+    background: #fafaf3;
+  }
+  .case.expanded .case__body { display: block; }
+  .case.expanded .case__caret::before { content: "▾"; }
+  .case .case__caret::before { content: "▸"; }
+
+  .body-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-bottom: 10px;
+  }
+  .body-block { }
+  .body-block__hd {
+    font-family: var(--mono); font-size: 9px; font-weight: 700;
+    letter-spacing: 1.5px; color: var(--p-ink-mut);
+    margin-bottom: 4px;
+  }
+  .body-block ol, .body-block ul {
+    margin: 0; padding-left: 18px;
+    font-size: 11px; line-height: 1.6;
+  }
+  .body-block li { margin-bottom: 2px; }
+  .body-block.pre  ul li::marker { color: var(--p-warn); }
+  .body-block.steps ol li::marker { color: var(--p-accent); font-weight: 700; }
+  .body-block.expect ul li::marker { content: "✓ "; color: var(--p-ok); font-weight: 700; }
+
+  /* ---- Status + notes ---- */
+  .case__foot {
+    display: flex; gap: 10px; align-items: center;
+    padding-top: 8px;
+    border-top: 1px dashed var(--p-rule);
+  }
+  .case__foot .label {
+    font-family: var(--mono); font-size: 9px; font-weight: 700;
+    color: var(--p-ink-mut); letter-spacing: 1.5px;
+  }
+  .pill {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 2px 8px;
+    border: 1.5px solid var(--p-border);
+    background: var(--p-paper2);
+    font-size: 10px; font-family: var(--mono); font-weight: 700;
+    letter-spacing: 0.5px;
+    cursor: pointer; user-select: none;
+  }
+  .pill[data-state="pass"]    { background: var(--p-ok);   color: var(--p-paper); }
+  .pill[data-state="fail"]    { background: var(--p-bad);  color: var(--p-paper); }
+  .pill[data-state="block"]   { background: var(--p-block); color: var(--p-paper); }
+  .pill[data-state="wip"]     { background: var(--p-warn); color: var(--p-ink); }
+  .pill[data-state="na"]      { background: var(--p-na);   color: var(--p-paper); }
+
+  /* small status indicator on collapsed case head */
+  .case__state-mini {
+    width: 8px; height: 8px;
+    border: 1.5px solid var(--p-border);
+    background: var(--p-paper2);
+  }
+  .case[data-state="pass"]  .case__state-mini { background: var(--p-ok); }
+  .case[data-state="fail"]  .case__state-mini { background: var(--p-bad); }
+  .case[data-state="block"] .case__state-mini { background: var(--p-block); }
+  .case[data-state="wip"]   .case__state-mini { background: var(--p-warn); }
+  .case[data-state="na"]    .case__state-mini { background: var(--p-na); }
+
+  /* dim cases that are pass to reduce visual noise */
+  .case[data-state="pass"] { opacity: 0.55; }
+  .case[data-state="na"]   { opacity: 0.45; }
+  .case[data-state="fail"] { border-color: var(--p-bad); }
+
+  /* --- Layered status (UI / WIRE / BACKEND) --- */
+  .case__layers {
+    display: flex; gap: 4px; flex-wrap: wrap;
+  }
+  .layer-pill {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 2px 8px;
+    border: 1.5px solid var(--p-border);
+    background: var(--p-paper2);
+    font-size: 10px; font-family: var(--mono); font-weight: 700;
+    cursor: pointer; user-select: none;
+  }
+  .layer-pill__tag {
+    font-size: 9px; font-weight: 700;
+    padding: 0 4px;
+    background: rgba(0,0,0,0.14);
+    border-radius: 2px;
+    letter-spacing: 0.5px;
+  }
+  .layer-pill[data-state="pass"]    { background: var(--p-ok);   color: var(--p-paper); }
+  .layer-pill[data-state="fail"]    { background: var(--p-bad);  color: var(--p-paper); }
+  .layer-pill[data-state="block"]   { background: var(--p-block); color: var(--p-paper); }
+  .layer-pill[data-state="wip"]     { background: var(--p-warn); color: var(--p-ink); }
+  .layer-pill[data-state="na"]      { background: var(--p-na);   color: var(--p-paper); }
+  .layer-pill[data-state="pass"]  .layer-pill__tag,
+  .layer-pill[data-state="fail"]  .layer-pill__tag,
+  .layer-pill[data-state="block"] .layer-pill__tag,
+  .layer-pill[data-state="na"]    .layer-pill__tag { background: rgba(0,0,0,0.28); color: white; }
+
+  /* multi-layer mini indicator on case head */
+  .case__state-mini--multi {
+    display: inline-flex; gap: 1px;
+    width: auto; height: auto;
+    border: none; background: transparent !important;
+  }
+  .case__state-mini--multi span {
+    width: 6px; height: 8px;
+    border: 1px solid var(--p-border);
+    background: var(--p-paper2);
+  }
+  .case__state-mini--multi span[data-state="pass"]  { background: var(--p-ok); }
+  .case__state-mini--multi span[data-state="fail"]  { background: var(--p-bad); }
+  .case__state-mini--multi span[data-state="block"] { background: var(--p-block); }
+  .case__state-mini--multi span[data-state="wip"]   { background: var(--p-warn); }
+  .case__state-mini--multi span[data-state="na"]    { background: var(--p-na); }
+
+  input.note {
+    flex: 1; font-family: var(--mono); font-size: 11px;
+    background: transparent;
+    border: 0; border-bottom: 1px dashed var(--p-rule);
+    padding: 2px 0; outline: none;
+  }
+  input.note:focus { border-bottom-color: var(--p-accent); background: white; }
+
+  .hidden { display: none !important; }
+
+  .legend {
+    margin-top: 22px; color: var(--p-ink);
+    font-size: 11px; opacity: 0.78; line-height: 1.7;
+  }
+  .legend .pill { vertical-align: middle; }
+
+  /* Sticky toolbar */
+  .toolbar { position: sticky; top: 0; z-index: 5; background: var(--p-paper); }
+</style>
+</head>
+<body>
+
+<div class="hd">
+  <div class="hd__logo"></div>
+  <div>
+    <div class="hd__title">claude-room QA Test Suite</div>
+    <div class="hd__sub">M0.17 + PR#18〜#21 (skill migration / lifecycle / refactor) ・ 全パスで UI 完全実装の保証</div>
+  </div>
+  <div class="hd__spacer"></div>
+  <div class="hd__sub" id="autosave">AUTOSAVED ▸ localStorage</div>
+</div>
+
+<div class="toolbar">
+  <input type="search" class="search" id="search" placeholder="search id / name / detail…" />
+  <div class="toolbar__group">
+    <span class="toolbar__label">STATUS</span>
+    <button class="filter-pill on" data-fstate="all">all</button>
+    <button class="filter-pill" data-fstate="untested">untested</button>
+    <button class="filter-pill" data-fstate="pass">pass</button>
+    <button class="filter-pill" data-fstate="fail">fail</button>
+    <button class="filter-pill" data-fstate="block">block</button>
+    <button class="filter-pill" data-fstate="wip">wip</button>
+  </div>
+  <div class="toolbar__group">
+    <span class="toolbar__label">PRI</span>
+    <button class="filter-pill on" data-fpri="all">all</button>
+    <button class="filter-pill" data-fpri="0">P0</button>
+    <button class="filter-pill" data-fpri="1">P1</button>
+    <button class="filter-pill" data-fpri="2">P2</button>
+  </div>
+  <div class="toolbar__group">
+    <span class="toolbar__label">ZONE</span>
+    <button class="filter-pill on" data-fzone="all">all</button>
+    <button class="filter-pill" data-fzone="shell">shell</button>
+    <button class="filter-pill" data-fzone="room">room</button>
+    <button class="filter-pill" data-fzone="panel">panel</button>
+    <button class="filter-pill" data-fzone="overlay">overlay</button>
+  </div>
+  <div class="toolbar__group">
+    <span class="toolbar__label">SCENARIO</span>
+    <button class="filter-pill on" data-fscen="all">all</button>
+    <button class="filter-pill" data-fscen="any">any</button>
+    <button class="filter-pill" data-fscen="idle">idle</button>
+    <button class="filter-pill" data-fscen="active">active</button>
+    <button class="filter-pill" data-fscen="failed">failed</button>
+  </div>
+  <div class="toolbar__group">
+    <span class="toolbar__label">LAYER</span>
+    <button class="filter-pill on" data-flayer="all">all</button>
+    <button class="filter-pill" data-flayer="ui">UI</button>
+    <button class="filter-pill" data-flayer="wire">WIRE</button>
+    <button class="filter-pill" data-flayer="backend">BACK</button>
+    <button class="filter-pill" data-flayer="any-fail">!any-fail</button>
+  </div>
+  <div class="toolbar__group" style="margin-left:auto">
+    <button class="btn-px" id="expandAll">expand</button>
+    <button class="btn-px" id="collapseAll">collapse</button>
+    <button class="btn-px" id="exportJson">export</button>
+    <button class="btn-px" id="resetAll">reset</button>
+  </div>
+</div>
+
+<div class="progress" id="progress"></div>
+<div class="stats" id="stats"></div>
+<div id="sheet"></div>
+
+<div class="legend">
+  <p>
+    <strong>使い方</strong>: case の header クリックで pre / steps / expected が展開。
+    footer の <span class="pill" data-state="untested">untested</span> を click で
+    pass → fail → block → wip → na をサイクル。すべて localStorage に自動保存。
+  </p>
+  <p>
+    <strong>3 段階状態 (Layered)</strong>:
+    <span class="layer-pill" data-state="pass"><span class="layer-pill__tag">U</span>pass</span>
+    <span class="layer-pill" data-state="fail"><span class="layer-pill__tag">W</span>fail</span>
+    <span class="layer-pill" data-state="block"><span class="layer-pill__tag">B</span>block</span>
+    のように 3 layer を独立に管理する case あり：
+    <code>U = UI 描画</code> /
+    <code>W = onClick 配線</code> /
+    <code>B = backend 実動作</code>。
+    集計 status は「全 pass → pass / どれか fail → fail / 混在 → wip」。
+    <strong>LAYER フィルタ <code>!any-fail</code></strong> でどこかが fail な case のみ抽出。
+  </p>
+  <p>
+    <strong>Priority</strong>:
+    <span class="case__pri p0">0</span> blocker（一つでも fail で merge 不可）／
+    <span class="case__pri p1">1</span> 重大／
+    <span class="case__pri p2">2</span> 雑多。
+    <strong>Scenario</strong>: <code>any</code> 任意 / <code>idle</code> 全員寝 /
+    <code>active</code> Dev実行中 / <code>failed</code> fail+TDD違反。
+    URL に <code>?mock=&lt;scenario&gt;</code> を付けて切替してから検証。
+  </p>
+</div>
+
+<script src="qa-suite.js"></script>
+<script>
+/* ============================================================
+   State store
+   ============================================================ */
+const STATES = ['untested','pass','fail','block','wip','na'];
+const LAYER_LABEL = { ui: 'U', wire: 'W', backend: 'B' };
+const LS_KEY = 'claude-room-qa-suite-v3';
+const LS_EXP_KEY = 'claude-room-qa-suite-v3-expanded';
+
+let state = {};
+let expanded = {};
+let sectionsCollapsed = {};
+
+try { state    = JSON.parse(localStorage.getItem(LS_KEY))     || {}; } catch {}
+try { expanded = JSON.parse(localStorage.getItem(LS_EXP_KEY)) || {}; } catch {}
+// migrate v2 → v3 (one-time)
+if (Object.keys(state).length === 0) {
+  try {
+    const v2 = JSON.parse(localStorage.getItem('claude-room-qa-suite-v2') || '{}');
+    if (v2 && Object.keys(v2).length) state = v2;
+  } catch {}
+}
+
+let saveTimer;
+function save() {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => {
+    localStorage.setItem(LS_KEY, JSON.stringify(state));
+    localStorage.setItem(LS_EXP_KEY, JSON.stringify(expanded));
+    flash();
+  }, 200);
+}
+function flash() {
+  const el = document.getElementById('autosave');
+  el.style.color = '#d97757';
+  setTimeout(() => el.style.color = '', 400);
+}
+function ensure(id) {
+  if (!state[id]) state[id] = { state: 'untested', note: '' };
+  return state[id];
+}
+function isLayered(c) { return Array.isArray(c.layers) && c.layers.length > 1; }
+function getLayerState(id, layer) {
+  const raw = state[id];
+  return (raw && raw.layers && raw.layers[layer]) || 'untested';
+}
+function setLayerState(id, layer, value) {
+  if (!state[id]) state[id] = { note: '' };
+  if (!state[id].layers) state[id].layers = {};
+  state[id].layers[layer] = value;
+}
+function aggregateState(c) {
+  if (!isLayered(c)) return ensure(c.id).state;
+  const vals = c.layers.map(L => getLayerState(c.id, L));
+  if (vals.every(v => v === 'pass')) return 'pass';
+  if (vals.some(v => v === 'fail')) return 'fail';
+  if (vals.some(v => v === 'block')) return 'block';
+  if (vals.every(v => v === 'na')) return 'na';
+  if (vals.some(v => v !== 'untested' && v !== 'na')) return 'wip';
+  return 'untested';
+}
+
+function eachCase(fn) {
+  for (const sec of QA_SUITE) for (const g of sec.groups) for (const c of g.cases) fn(c, g, sec);
+}
+function findCase(id) {
+  for (const sec of QA_SUITE) for (const g of sec.groups)
+    for (const c of g.cases) if (c.id === id) return c;
+  return null;
+}
+
+/* ============================================================
+   Renderer
+   ============================================================ */
+function escapeHtml(s) {
+  return (s+'').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+
+function render() {
+  const sheet = document.getElementById('sheet');
+  sheet.innerHTML = '';
+
+  for (const sec of QA_SUITE) {
+    const totals = countSection(sec);
+    const isCol = sectionsCollapsed[sec.id];
+    const secEl = document.createElement('section');
+    secEl.className = 'screen' + (isCol ? ' collapsed' : '');
+    secEl.dataset.zone = sec.zone;
+    secEl.dataset.sectionId = sec.id;
+    secEl.innerHTML = `
+      <div class="screen__hd" data-action="toggle-section">
+        <span class="screen__caret">${isCol ? '▸' : '▾'}</span>
+        <span class="screen__zone zone-${sec.zone}">${sec.zone.toUpperCase()}</span>
+        <span class="screen__title">${escapeHtml(sec.title)}</span>
+        <span class="screen__path">${escapeHtml(sec.path)}</span>
+        <span class="screen__prog">${totals.pass}/${totals.total} pass · ${totals.fail} fail · ${totals.block} block · ${totals.wip} wip</span>
+      </div>
+      <div class="screen__body"></div>
+    `;
+    const body = secEl.querySelector('.screen__body');
+    for (const g of sec.groups) {
+      const groupEl = document.createElement('div');
+      groupEl.className = 'group';
+      const gCount = g.cases.length;
+      const gPass = g.cases.filter(c => ensure(c.id).state === 'pass').length;
+      groupEl.innerHTML = `
+        <div class="group__hd">
+          <div class="group__name">${escapeHtml(g.name)}</div>
+          <div class="group__count">${gPass}/${gCount}</div>
+        </div>
+      `;
+      for (const c of g.cases) {
+        groupEl.appendChild(renderCase(c));
+      }
+      body.appendChild(groupEl);
+    }
+    sheet.appendChild(secEl);
+  }
+
+  renderStats();
+  applyFilters();
+}
+
+function renderCase(c) {
+  const layered = isLayered(c);
+  const agg = aggregateState(c);
+  const st = ensure(c.id);
+  const isExp = !!expanded[c.id];
+  const el = document.createElement('div');
+  el.className = 'case' + (isExp ? ' expanded' : '');
+  el.dataset.caseId = c.id;
+  el.dataset.pri = c.pri;
+  el.dataset.state = agg;
+  el.dataset.scenario = c.scenario || 'any';
+  el.dataset.layers = layered ? c.layers.join(',') : '';
+  el.dataset.searchable = (
+    c.id + ' ' + c.name + ' ' + (c.steps||[]).join(' ') + ' ' + (c.expected||[]).join(' ')
+  ).toLowerCase();
+
+  const pre    = (c.pre || []).filter(Boolean);
+  const steps  = (c.steps || []).filter(Boolean);
+  const expect = (c.expected || []).filter(Boolean);
+
+  const miniHtml = layered
+    ? `<span class="case__state-mini case__state-mini--multi">${c.layers.map(L => {
+        const lv = getLayerState(c.id, L);
+        return `<span data-state="${lv}" title="${LAYER_LABEL[L]}: ${lv}"></span>`;
+      }).join('')}</span>`
+    : `<span class="case__state-mini" title="${st.state}"></span>`;
+
+  const statusHtml = layered
+    ? `<div class="case__layers">${c.layers.map(L => {
+        const lv = getLayerState(c.id, L);
+        return `<span class="layer-pill" data-action="cycle-layer" data-layer="${L}" data-state="${lv}"><span class="layer-pill__tag">${LAYER_LABEL[L]}</span>${lv}</span>`;
+      }).join('')}</div>`
+    : `<span class="pill" data-action="cycle-state" data-state="${st.state}">${st.state}</span>`;
+
+  el.innerHTML = `
+    <div class="case__head" data-action="toggle-case">
+      <span class="case__caret"></span>
+      ${miniHtml}
+      <span class="case__id">${c.id}</span>
+      <span class="case__pri p${c.pri}" title="priority">${c.pri}</span>
+      <span class="case__name">${escapeHtml(c.name)}</span>
+      ${c.link ? `<span class="case__link" title="${escapeHtml(c.link)}">${escapeHtml(c.link)}</span>` : ''}
+      <span class="case__scen ${c.scenario || 'any'}">${c.scenario || 'any'}</span>
+    </div>
+    <div class="case__body">
+      <div class="body-grid">
+        ${pre.length ? `
+          <div class="body-block pre">
+            <div class="body-block__hd">PRE</div>
+            <ul>${pre.map(s => `<li>${escapeHtml(s)}</li>`).join('')}</ul>
+          </div>
+        ` : '<div></div>'}
+        ${steps.length ? `
+          <div class="body-block steps">
+            <div class="body-block__hd">STEPS</div>
+            <ol>${steps.map(s => `<li>${escapeHtml(s)}</li>`).join('')}</ol>
+          </div>
+        ` : '<div></div>'}
+      </div>
+      ${expect.length ? `
+        <div class="body-block expect">
+          <div class="body-block__hd">EXPECTED — すべて満たせば pass</div>
+          <ul>${expect.map(s => `<li>${escapeHtml(s)}</li>`).join('')}</ul>
+        </div>
+      ` : ''}
+      <div class="case__foot">
+        <span class="label">STATUS</span>
+        ${statusHtml}
+        <input class="note" type="text" placeholder="memo / actual result…" value="${escapeHtml(st.note || '')}" />
+      </div>
+    </div>
+  `;
+  return el;
+}
+
+function countSection(sec) {
+  let total=0, pass=0, fail=0, block=0, wip=0, na=0, untested=0;
+  for (const g of sec.groups) for (const c of g.cases) {
+    total++;
+    const s = aggregateState(c);
+    if (s==='pass') pass++; else if (s==='fail') fail++;
+    else if (s==='block') block++; else if (s==='wip') wip++;
+    else if (s==='na') na++; else untested++;
+  }
+  return { total, pass, fail, block, wip, na, untested };
+}
+
+function renderStats() {
+  let total=0,pass=0,fail=0,block=0,wip=0,na=0,untested=0,p0Fail=0,p0Total=0,p0Pass=0;
+  // layer-level counters
+  const layerCount = { ui: {t:0,p:0}, wire: {t:0,p:0}, backend: {t:0,p:0} };
+  eachCase((c)=>{
+    total++;
+    const s = aggregateState(c);
+    if (s==='pass') pass++;
+    else if (s==='fail') { fail++; if (c.pri===0) p0Fail++; }
+    else if (s==='block') block++;
+    else if (s==='wip') wip++;
+    else if (s==='na') na++;
+    else untested++;
+    if (c.pri===0) { p0Total++; if (s==='pass') p0Pass++; }
+    if (isLayered(c)) {
+      for (const L of c.layers) {
+        layerCount[L].t++;
+        if (getLayerState(c.id, L) === 'pass') layerCount[L].p++;
+      }
+    }
+  });
+  const pct = total ? Math.round((pass / total) * 100) : 0;
+  const p0pct = p0Total ? Math.round((p0Pass / p0Total) * 100) : 0;
+
+  const layerPct = (L) => layerCount[L].t ? Math.round(layerCount[L].p/layerCount[L].t*100) : 0;
+  document.getElementById('stats').innerHTML = `
+    <div class="stat"><div class="stat__lbl">TOTAL</div><div class="stat__val">${total}</div></div>
+    <div class="stat stat--ok"><div class="stat__lbl">PASS</div><div class="stat__val">${pass} <span class="small">${pct}%</span></div></div>
+    <div class="stat stat--bad"><div class="stat__lbl">FAIL</div><div class="stat__val">${fail}</div></div>
+    <div class="stat stat--warn"><div class="stat__lbl">WIP</div><div class="stat__val">${wip}</div></div>
+    <div class="stat ${p0Fail ? 'stat--bad' : (p0Pass===p0Total ? 'stat--ok' : '')}">
+      <div class="stat__lbl">P0 STATUS</div>
+      <div class="stat__val">${p0Pass}/${p0Total} <span class="small">${p0Fail ? `${p0Fail} fail!` : '✓'}</span></div>
+    </div>
+    <div class="stat"><div class="stat__lbl">LAYER U</div><div class="stat__val">${layerCount.ui.p}/${layerCount.ui.t} <span class="small">${layerPct('ui')}%</span></div></div>
+    <div class="stat"><div class="stat__lbl">LAYER W</div><div class="stat__val">${layerCount.wire.p}/${layerCount.wire.t} <span class="small">${layerPct('wire')}%</span></div></div>
+    <div class="stat"><div class="stat__lbl">LAYER B</div><div class="stat__val">${layerCount.backend.p}/${layerCount.backend.t} <span class="small">${layerPct('backend')}%</span></div></div>
+  `;
+
+  // Progress bar
+  const bar = document.getElementById('progress');
+  const seg = (n, cls) => n ? `<div class="${cls}" style="width:${(n/total*100).toFixed(2)}%"></div>` : '';
+  bar.innerHTML = seg(pass,'progress__pass') + seg(wip,'progress__wip') +
+                  seg(fail,'progress__fail') + seg(block,'progress__block') +
+                  seg(na,'progress__na');
+}
+
+function updateCaseStateUI(caseEl) {
+  const id = caseEl.dataset.caseId;
+  const c = findCase(id);
+  if (!c) return;
+  const agg = aggregateState(c);
+  caseEl.dataset.state = agg;
+  if (isLayered(c)) {
+    // refresh layer pills
+    for (const L of c.layers) {
+      const pill = caseEl.querySelector(`.layer-pill[data-layer="${L}"]`);
+      if (pill) {
+        const lv = getLayerState(id, L);
+        pill.dataset.state = lv;
+        pill.innerHTML = `<span class="layer-pill__tag">${LAYER_LABEL[L]}</span>${lv}`;
+      }
+      const miniSpan = caseEl.querySelectorAll('.case__state-mini--multi > span');
+      c.layers.forEach((L2, idx) => {
+        const v = getLayerState(id, L2);
+        if (miniSpan[idx]) {
+          miniSpan[idx].dataset.state = v;
+          miniSpan[idx].title = `${LAYER_LABEL[L2]}: ${v}`;
+        }
+      });
+    }
+  } else {
+    const s = ensure(id).state;
+    const pill = caseEl.querySelector('[data-action="cycle-state"]');
+    if (pill) { pill.dataset.state = s; pill.textContent = s; }
+    const mini = caseEl.querySelector('.case__state-mini');
+    if (mini) mini.title = s;
+  }
+}
+
+/* ============================================================
+   Filters
+   ============================================================ */
+function applyFilters() {
+  const fstate = document.querySelector('[data-fstate].on').dataset.fstate;
+  const fpri   = document.querySelector('[data-fpri].on').dataset.fpri;
+  const fzone  = document.querySelector('[data-fzone].on').dataset.fzone;
+  const fscen  = document.querySelector('[data-fscen].on').dataset.fscen;
+  const flayer = document.querySelector('[data-flayer].on').dataset.flayer;
+  const q = (document.getElementById('search').value || '').toLowerCase().trim();
+
+  document.querySelectorAll('section.screen').forEach(sec => {
+    const okZone = fzone === 'all' || sec.dataset.zone === fzone;
+    let anyVisible = false;
+    sec.querySelectorAll('.case').forEach(c => {
+      const layers = (c.dataset.layers || '').split(',').filter(Boolean);
+      let okLayer = true;
+      if (flayer === 'any-fail') {
+        // show case if ANY layer fails OR aggregate fails
+        if (layers.length) {
+          const caseObj = findCase(c.dataset.caseId);
+          okLayer = caseObj.layers.some(L => getLayerState(c.dataset.caseId, L) === 'fail');
+        } else {
+          okLayer = c.dataset.state === 'fail';
+        }
+      } else if (flayer !== 'all') {
+        okLayer = layers.includes(flayer);
+      }
+      const okState = fstate === 'all' || c.dataset.state === fstate;
+      const okPri   = fpri === 'all' || c.dataset.pri === fpri;
+      const okScen  = fscen === 'all' || c.dataset.scenario === fscen;
+      const okQuery = !q || c.dataset.searchable.includes(q);
+      const show = okZone && okState && okPri && okScen && okLayer && okQuery;
+      c.classList.toggle('hidden', !show);
+      if (show) anyVisible = true;
+    });
+    sec.querySelectorAll('.group').forEach(g => {
+      const has = [...g.querySelectorAll('.case')].some(c => !c.classList.contains('hidden'));
+      g.classList.toggle('hidden', !has);
+    });
+    sec.classList.toggle('hidden', !anyVisible);
+  });
+}
+
+/* ============================================================
+   Events
+   ============================================================ */
+document.addEventListener('click', (e) => {
+  // Section toggle
+  const secHd = e.target.closest('[data-action="toggle-section"]');
+  if (secHd) {
+    const sec = secHd.closest('section');
+    const id = sec.dataset.sectionId;
+    sectionsCollapsed[id] = !sectionsCollapsed[id];
+    sec.classList.toggle('collapsed');
+    secHd.querySelector('.screen__caret').textContent = sectionsCollapsed[id] ? '▸' : '▾';
+    return;
+  }
+
+  // Case toggle
+  const head = e.target.closest('[data-action="toggle-case"]');
+  if (head && !e.target.closest('[data-action="cycle-state"]') && !e.target.closest('input')) {
+    const c = head.closest('.case');
+    const id = c.dataset.caseId;
+    expanded[id] = !expanded[id];
+    c.classList.toggle('expanded', expanded[id]);
+    save();
+    return;
+  }
+
+  // State cycle (single layer)
+  const pill = e.target.closest('[data-action="cycle-state"]');
+  if (pill) {
+    e.stopPropagation();
+    const caseEl = pill.closest('.case');
+    const id = caseEl.dataset.caseId;
+    const cur = ensure(id).state;
+    const next = STATES[(STATES.indexOf(cur)+1) % STATES.length];
+    ensure(id).state = next;
+    updateCaseStateUI(caseEl);
+    save();
+    renderStats();
+    refreshGroupCounters(caseEl);
+    applyFilters();
+    return;
+  }
+
+  // Layer cycle (multi-layer)
+  const layerPill = e.target.closest('[data-action="cycle-layer"]');
+  if (layerPill) {
+    e.stopPropagation();
+    const caseEl = layerPill.closest('.case');
+    const id = caseEl.dataset.caseId;
+    const layer = layerPill.dataset.layer;
+    const cur = getLayerState(id, layer);
+    const next = STATES[(STATES.indexOf(cur)+1) % STATES.length];
+    setLayerState(id, layer, next);
+    updateCaseStateUI(caseEl);
+    save();
+    renderStats();
+    refreshGroupCounters(caseEl);
+    applyFilters();
+    return;
+  }
+
+  // Filter pills
+  const f = e.target.closest('.filter-pill');
+  if (f) {
+    [...f.parentElement.querySelectorAll('.filter-pill')].forEach(g => g.classList.remove('on'));
+    f.classList.add('on');
+    applyFilters();
+    return;
+  }
+
+  // Toolbar buttons
+  if (e.target.id === 'expandAll') {
+    document.querySelectorAll('.case').forEach(c => {
+      c.classList.add('expanded');
+      expanded[c.dataset.caseId] = true;
+    });
+    save();
+  }
+  if (e.target.id === 'collapseAll') {
+    document.querySelectorAll('.case').forEach(c => {
+      c.classList.remove('expanded');
+      expanded[c.dataset.caseId] = false;
+    });
+    save();
+  }
+  if (e.target.id === 'resetAll') {
+    if (!confirm('全 case の status とメモを消去します。よろしいですか？')) return;
+    state = {}; localStorage.setItem(LS_KEY, '{}');
+    render();
+  }
+  if (e.target.id === 'exportJson') {
+    const out = { generatedAt: new Date().toISOString(), summary: {}, results: {} };
+    let total=0,pass=0,fail=0;
+    eachCase((c, g, sec) => {
+      total++;
+      const agg = aggregateState(c);
+      if (agg==='pass') pass++;
+      if (agg==='fail') fail++;
+      const entry = {
+        section: sec.id,
+        group: g.id,
+        priority: c.pri,
+        scenario: c.scenario || 'any',
+        name: c.name,
+        state: agg,
+        note: (state[c.id] && state[c.id].note) || '',
+        link: c.link || '',
+      };
+      if (isLayered(c)) {
+        entry.layers = {};
+        for (const L of c.layers) entry.layers[L] = getLayerState(c.id, L);
+      }
+      out.results[c.id] = entry;
+    });
+    out.summary = { total, pass, fail, passPct: Math.round(pass/total*100) };
+    const blob = new Blob([JSON.stringify(out, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `claude-room-qa-${new Date().toISOString().slice(0,10)}.json`;
+    a.click();
+  }
+});
+
+function refreshGroupCounters(caseEl) {
+  const groupEl = caseEl.closest('.group');
+  if (!groupEl) return;
+  const allCases = [...groupEl.querySelectorAll('.case')];
+  const passCount = allCases.filter(c => c.dataset.state === 'pass').length;
+  groupEl.querySelector('.group__count').textContent = `${passCount}/${allCases.length}`;
+  const sec = caseEl.closest('section');
+  const sid = sec.dataset.sectionId;
+  const secObj = QA_SUITE.find(s => s.id === sid);
+  if (secObj) {
+    const t = countSection(secObj);
+    sec.querySelector('.screen__prog').textContent =
+      `${t.pass}/${t.total} pass · ${t.fail} fail · ${t.block} block · ${t.wip} wip`;
+  }
+}
+
+document.addEventListener('input', (e) => {
+  if (e.target.classList.contains('note')) {
+    const c = e.target.closest('.case');
+    ensure(c.dataset.caseId).note = e.target.value;
+    save();
+  }
+  if (e.target.id === 'search') applyFilters();
+});
+
+render();
+</script>
+</body>
+</html>

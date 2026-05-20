@@ -4,10 +4,12 @@
  * SCREEN_REQUIREMENTS §3.10 / §4.9
  * Ported from ui/prototype/screens-c.jsx LearnedGuidanceView.
  * M0.11.4 t15: rewritten to use rpg-frame / rpg-title / chip / dot (Phase A SSoT).
+ * M0.18 t4: scope filter pills + keyKind badge + keyPath display + WRITE badge.
  * Toggle and delete buttons are noop in this milestone; real mutations wired in M3+
  * via prefsRouter.learnedGuidance.toggle / .delete.
  * Types aligned with daemon LearnedGuidanceEntry (routes/prefs.ts).
  */
+import React, { useState } from 'react';
 import { CatSprite } from '../../components/CatSprite';
 import { ROSTER, type RosterEntry } from '../room/roster';
 import '../../styles/screens/guidance.css';
@@ -18,6 +20,15 @@ import '../../styles/screens/guidance.css';
 
 export type GuidanceCategory = 'tdd' | 'review' | 'security' | 'test' | 'process' | 'other';
 export type GuidanceScope = 'user' | 'project';
+
+/** WHY typed enum: keyKind — avoids string literal scatter in filter logic */
+export type KeyKind = 'agent' | 'skill';
+
+/** WHY typed enum: scope filter pill values — avoids string literal scatter */
+export type ScopeFilter = 'all' | 'agents' | 'loom-review' | 'loom-retro';
+
+/** Aggregator keyPath (skills/loom-retro/stages/aggregator) — WRITE badge scope */
+const AGGREGATOR_KEY_PATH = 'skills/loom-retro/stages/aggregator';
 
 export interface MockGuidanceItem {
   /** guidance id (nanoid in real impl) */
@@ -34,10 +45,14 @@ export interface MockGuidanceItem {
   useCount: number;
   ttl: string;
   scope: GuidanceScope;
+  /** WHY M0.18: distinguishes agent-keyed vs skill-scoped guidance */
+  keyKind: KeyKind;
+  /** WHY M0.18: hierarchical path — e.g. "agents/loom-pm" or "skills/loom-review/strategies/trio/code" */
+  keyPath: string;
 }
 
 // -------------------------------------------------------------------------
-// Mock data — 5+ guidance items across multiple agents
+// Mock data — 6+ guidance items across agents + skill scopes
 // -------------------------------------------------------------------------
 
 const MOCK_GUIDANCE: MockGuidanceItem[] = [
@@ -53,6 +68,8 @@ const MOCK_GUIDANCE: MockGuidanceItem[] = [
     useCount: 12,
     ttl: '永続',
     scope: 'user',
+    keyKind: 'agent',
+    keyPath: 'agents/loom-developer',
   },
   {
     id: 'g-002',
@@ -66,6 +83,8 @@ const MOCK_GUIDANCE: MockGuidanceItem[] = [
     useCount: 8,
     ttl: 'permanent',
     scope: 'project',
+    keyKind: 'skill',
+    keyPath: 'skills/loom-review/strategies/trio/code',
   },
   {
     id: 'g-003',
@@ -79,6 +98,8 @@ const MOCK_GUIDANCE: MockGuidanceItem[] = [
     useCount: 3,
     ttl: 'permanent',
     scope: 'project',
+    keyKind: 'skill',
+    keyPath: 'skills/loom-review/strategies/trio/security',
   },
   {
     id: 'g-004',
@@ -92,6 +113,8 @@ const MOCK_GUIDANCE: MockGuidanceItem[] = [
     useCount: 5,
     ttl: 'expired',
     scope: 'user',
+    keyKind: 'skill',
+    keyPath: 'skills/loom-review/strategies/single',
   },
   {
     id: 'g-005',
@@ -105,6 +128,8 @@ const MOCK_GUIDANCE: MockGuidanceItem[] = [
     useCount: 19,
     ttl: 'permanent',
     scope: 'user',
+    keyKind: 'agent',
+    keyPath: 'agents/loom-pm',
   },
   {
     id: 'g-006',
@@ -118,11 +143,28 @@ const MOCK_GUIDANCE: MockGuidanceItem[] = [
     useCount: 7,
     ttl: 'permanent',
     scope: 'user',
+    keyKind: 'skill',
+    keyPath: 'skills/loom-retro/lenses/process-axis',
+  },
+  {
+    id: 'g-007',
+    agentId: 'retro-agg',
+    agentName: 'マル',
+    active: true,
+    category: 'process',
+    fromSource: 'retro-2026-04-18',
+    text: 'aggregator は findings を 3 行以内に要約し action plan と照合する。',
+    addedAt: '2026-04-18',
+    useCount: 4,
+    ttl: 'permanent',
+    scope: 'project',
+    keyKind: 'skill',
+    keyPath: AGGREGATOR_KEY_PATH,
   },
 ];
 
 // -------------------------------------------------------------------------
-// Helpers — typed map avoids string literal scatter (Principle: avoid string literals)
+// Helpers — typed maps avoid string literal scatter (Principle: avoid string literals)
 // -------------------------------------------------------------------------
 
 /** WHY typed constant: category → dot class mapping, avoids repeat switch */
@@ -136,8 +178,66 @@ const CATEGORY_DOT_CLASS: Record<GuidanceCategory, string> = {
 };
 
 // -------------------------------------------------------------------------
+// Filter helpers — pure functions, typed
+// -------------------------------------------------------------------------
+
+/** WHY: typed filter predicate — returns true if item passes the given scope filter */
+function matchesScopeFilter(item: MockGuidanceItem, filter: ScopeFilter): boolean {
+  switch (filter) {
+    case 'all':         return true;
+    case 'agents':      return item.keyKind === 'agent';
+    case 'loom-review': return item.keyPath.startsWith('skills/loom-review/');
+    case 'loom-retro':  return item.keyPath.startsWith('skills/loom-retro/');
+  }
+}
+
+/** Count entries matching a given scope filter */
+function countForFilter(items: MockGuidanceItem[], filter: ScopeFilter): number {
+  return items.filter((i) => matchesScopeFilter(i, filter)).length;
+}
+
+// -------------------------------------------------------------------------
 // Sub-components
 // -------------------------------------------------------------------------
+
+interface ScopeFilterPillProps {
+  label: string;
+  count?: number;
+  filter: ScopeFilter;
+  active: boolean;
+  onClick: () => void;
+}
+
+function ScopeFilterPill({ label, count, active, onClick }: ScopeFilterPillProps): JSX.Element {
+  return (
+    <button
+      data-testid="scope-filter-pill"
+      data-active={active}
+      className={`lg-scope-pill${active ? ' lg-scope-pill--active' : ''}`}
+      onClick={onClick}
+    >
+      {label}
+      {count !== undefined && (
+        <span className="lg-scope-pill__count"> ({count})</span>
+      )}
+    </button>
+  );
+}
+
+interface KeyKindBadgeProps {
+  keyKind: KeyKind;
+}
+
+function KeyKindBadge({ keyKind }: KeyKindBadgeProps): JSX.Element {
+  return (
+    <span
+      data-testid="keykind-badge"
+      className={keyKind === 'agent' ? 'lg-badge lg-badge--agent' : 'lg-badge lg-badge--skill'}
+    >
+      {keyKind === 'agent' ? 'AGENT' : 'SKILL'}
+    </span>
+  );
+}
 
 interface GuidanceItemCardProps {
   item: MockGuidanceItem;
@@ -145,10 +245,14 @@ interface GuidanceItemCardProps {
 }
 
 function GuidanceItemCard({ item, agent }: GuidanceItemCardProps): JSX.Element {
+  const isAggregator = item.keyPath === AGGREGATOR_KEY_PATH;
+
   return (
     <div
       data-testid="guidance-item"
       data-active={item.active}
+      data-keykind={item.keyKind}
+      data-keypath={item.keyPath}
       className="lg-item"
       style={{ opacity: item.active ? 1 : 0.5 }}
     >
@@ -172,7 +276,7 @@ function GuidanceItemCard({ item, agent }: GuidanceItemCardProps): JSX.Element {
 
       {/* Body */}
       <div className="lg-item__body">
-        {/* Agent + category + source + scope */}
+        {/* Agent + category + source + scope + keyKind badge + WRITE badge */}
         <div className="lg-item__meta-row">
           <span data-testid="guidance-agent-name" className="lg-item__agent-name">
             {item.agentName}
@@ -194,6 +298,17 @@ function GuidanceItemCard({ item, agent }: GuidanceItemCardProps): JSX.Element {
           {!item.active && (
             <span className="chip lg-chip--inactive">inactive</span>
           )}
+          {/* WHY M0.18: keyKind badge — AGENT (green) or SKILL (accent) */}
+          <KeyKindBadge keyKind={item.keyKind} />
+          {/* WHY M0.18: WRITE badge only for aggregator scope */}
+          {isAggregator && (
+            <span data-testid="write-badge" className="lg-badge lg-badge--write">WRITE</span>
+          )}
+        </div>
+
+        {/* WHY M0.18: keyPath display — hierarchical path for audit traceability */}
+        <div data-testid="guidance-keypath" className="lg-item__keypath">
+          {item.keyPath}
         </div>
 
         {/* Guidance text */}
@@ -237,6 +352,16 @@ export function LearnedGuidanceView(): JSX.Element {
   const activeCount = MOCK_GUIDANCE.filter((g) => g.active).length;
   const totalCount = MOCK_GUIDANCE.length;
 
+  /** WHY typed state: typed enum prevents string literal scatter */
+  const [scopeFilter, setScopeFilter] = useState<ScopeFilter>('all');
+
+  const filtered = MOCK_GUIDANCE.filter((item) => matchesScopeFilter(item, scopeFilter));
+
+  // Pill config — count is pre-computed to display even when pill is inactive
+  const agentCount = countForFilter(MOCK_GUIDANCE, 'agents');
+  const reviewCount = countForFilter(MOCK_GUIDANCE, 'loom-review');
+  const retroCount = countForFilter(MOCK_GUIDANCE, 'loom-retro');
+
   return (
     <div
       data-testid="guidance-view"
@@ -255,9 +380,40 @@ export function LearnedGuidanceView(): JSX.Element {
         </span>
       </div>
 
+      {/* WHY M0.18: scope filter pill row — 4 values per GD-SCOPE-01 */}
+      <div className="lg-scope-filter-row">
+        <ScopeFilterPill
+          label="all"
+          filter="all"
+          active={scopeFilter === 'all'}
+          onClick={() => setScopeFilter('all')}
+        />
+        <ScopeFilterPill
+          label="Agents"
+          count={agentCount}
+          filter="agents"
+          active={scopeFilter === 'agents'}
+          onClick={() => setScopeFilter('agents')}
+        />
+        <ScopeFilterPill
+          label="loom-review"
+          count={reviewCount}
+          filter="loom-review"
+          active={scopeFilter === 'loom-review'}
+          onClick={() => setScopeFilter('loom-review')}
+        />
+        <ScopeFilterPill
+          label="loom-retro"
+          count={retroCount}
+          filter="loom-retro"
+          active={scopeFilter === 'loom-retro'}
+          onClick={() => setScopeFilter('loom-retro')}
+        />
+      </div>
+
       {/* Guidance list */}
       <div className="lg-list">
-        {MOCK_GUIDANCE.map((item) => (
+        {filtered.map((item) => (
           <GuidanceItemCard
             key={item.id}
             item={item}

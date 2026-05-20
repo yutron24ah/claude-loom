@@ -1,44 +1,26 @@
 /**
- * CustomizationView TDD tests
- * WHY: verify customization shows 13 agents with model + personality selectors.
- * SCREEN_REQUIREMENTS §3.8 / §4.7
+ * CustomizationView TDD tests — M0.18 Phase 1 t1 rewrite
+ * WHY: M0.18 rewrites flat AgentRow + ChainDetailPanel to 2-pane tree
+ * (Agents (3) + Skills (2 with sub-scopes)). Old flat-table tests are
+ * replaced with tree-focused tests.
  *
- * Updated for M0.15 t5 redesign port:
- * - useScenario() replaces MOCK_SETTINGS hardcoded fixture
- * - visual layout uses inline styles (not rpg-frame/chip CSS classes)
- * - personality shown as preset buttons (not personality-display sub-component)
- * - scope shown in chain detail panel (not scope-badge per row)
+ * SCREEN_REQUIREMENTS §3.8 / §4.7
+ * REQ-115 through REQ-121 (CUSTOM-TREE-001 through CUSTOM-TREE-007)
+ * covered in ui/test/views/customization/customization-tree.test.tsx
+ *
+ * This file covers basic render + header + save/cancel buttons (regression guard).
  */
 import { describe, it, expect, afterEach, vi } from 'vitest';
 import { render, screen, cleanup } from '@testing-library/react';
-import type { Scenario } from '@claude-loom/redesign/api/types';
 
-// WHY: Mock useCustomizationMutation so tests don't need a tRPC provider (M0.15 t16).
+// WHY: Mock useCustomizationMutation so tests don't need a tRPC provider.
 vi.mock('../../src/live/useCustomizationMutations', () => ({
   useCustomizationMutation: () => ({ mutate: vi.fn(), isPending: false }),
 }));
 
-// WHY: Mock useScenario so the component never touches the real WS store.
-// Provides the minimal customization shape the redesign view needs.
+// WHY: Mock useScenario — tree CustomizationView no longer depends on flat customization shape.
 vi.mock('@claude-loom/redesign/api/websocket', () => ({
-  useScenario: () =>
-    ({
-      customization: {
-        pm:             { effective: { model: 'opus',   preset: 'default' },         chain: [{ scope: 'default', model: 'opus', preset: 'default' }] },
-        dev:            { effective: { model: 'sonnet', preset: 'friendly-mentor' }, chain: [{ scope: 'default', model: 'sonnet', preset: 'default' }, { scope: 'project', preset: 'friendly-mentor' }] },
-        rev:            { effective: { model: 'sonnet', preset: 'default' },         chain: [{ scope: 'default', model: 'sonnet', preset: 'default' }] },
-        'rev-code':     { effective: { model: 'sonnet', preset: 'strict-drill' },    chain: [{ scope: 'default', model: 'sonnet', preset: 'default' }, { scope: 'project', preset: 'strict-drill' }] },
-        'rev-sec':      { effective: { model: 'opus',   preset: 'detective' },       chain: [{ scope: 'default', model: 'sonnet', preset: 'default' }, { scope: 'user', model: 'opus', preset: 'detective' }] },
-        'rev-test':     { effective: { model: 'haiku',  preset: 'default' },         chain: [{ scope: 'default', model: 'sonnet', preset: 'default' }, { scope: 'user', model: 'haiku' }] },
-        'retro-pm':     { effective: { model: 'opus',   preset: 'default' },         chain: [{ scope: 'default', model: 'opus', preset: 'default' }] },
-        'retro-counter':{ effective: { model: 'opus',   preset: 'strict-drill' },    chain: [{ scope: 'default', model: 'opus', preset: 'default' }, { scope: 'user', preset: 'strict-drill' }] },
-        'retro-meta':   { effective: { model: 'opus',   preset: 'detective' },       chain: [{ scope: 'default', model: 'opus', preset: 'default' }, { scope: 'user', preset: 'detective' }] },
-        'retro-pj':     { effective: { model: 'sonnet', preset: 'default' },         chain: [{ scope: 'default', model: 'sonnet', preset: 'default' }] },
-        'retro-research':{ effective: { model: 'sonnet', preset: 'default' },        chain: [{ scope: 'default', model: 'sonnet', preset: 'default' }] },
-        'retro-proc':   { effective: { model: 'sonnet', preset: 'default' },         chain: [{ scope: 'default', model: 'sonnet', preset: 'default' }] },
-        'retro-agg':    { effective: { model: 'opus',   preset: 'default' },         chain: [{ scope: 'default', model: 'opus', preset: 'default' }] },
-      },
-    }) as unknown as Scenario,
+  useScenario: () => ({ customization: {} }),
 }));
 
 import { CustomizationView } from '../../src/views/customization/CustomizationView';
@@ -57,69 +39,56 @@ describe('CustomizationView — basic render', () => {
     render(<CustomizationView />);
     expect(screen.getByTestId('customization-title')).toBeInTheDocument();
   });
-});
 
-describe('CustomizationView — 13 agents visible', () => {
-  it('renders exactly 13 agent rows (data-testid=agent-row)', () => {
+  it('renders tree navigation pane', () => {
     render(<CustomizationView />);
-    const rows = screen.getAllByTestId('agent-row');
-    expect(rows).toHaveLength(13);
+    expect(screen.getByTestId('tree-root-agents')).toBeInTheDocument();
+    expect(screen.getByTestId('tree-root-skills')).toBeInTheDocument();
   });
 
-  it('renders PM agent row (ニケ)', () => {
+  it('renders leaf editor pane', () => {
     render(<CustomizationView />);
-    expect(screen.getByText('ニケ')).toBeInTheDocument();
-  });
-
-  it('renders Developer agent row (サバ)', () => {
-    render(<CustomizationView />);
-    expect(screen.getByText('サバ')).toBeInTheDocument();
+    expect(screen.getByTestId('leaf-editor')).toBeInTheDocument();
   });
 });
 
-describe('CustomizationView — model selector', () => {
-  it('renders model selector groups (data-testid=model-selector)', () => {
+describe('CustomizationView — tree structure (M0.18)', () => {
+  it('shows Agents root with count (3)', () => {
     render(<CustomizationView />);
-    const selectors = screen.getAllByTestId('model-selector');
-    expect(selectors).toHaveLength(13);
+    const agentsRoot = screen.getByTestId('tree-root-agents');
+    expect(agentsRoot).toHaveTextContent('3');
   });
 
-  it('renders opus option in model selectors', () => {
+  it('shows Skills root with count (2)', () => {
     render(<CustomizationView />);
-    const opusOptions = screen.getAllByTestId('model-option-opus');
-    expect(opusOptions.length).toBeGreaterThanOrEqual(1);
+    const skillsRoot = screen.getByTestId('tree-root-skills');
+    expect(skillsRoot).toHaveTextContent('2');
   });
 
-  it('renders sonnet option in model selectors', () => {
+  it('shows 3 persistent agent leaves by default (expanded)', () => {
     render(<CustomizationView />);
-    const sonnetOptions = screen.getAllByTestId('model-option-sonnet');
-    expect(sonnetOptions.length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByTestId('tree-leaf-agents/loom-pm')).toBeInTheDocument();
+    expect(screen.getByTestId('tree-leaf-agents/loom-developer')).toBeInTheDocument();
+    expect(screen.getByTestId('tree-leaf-agents/loom-retro-pm')).toBeInTheDocument();
   });
 
-  it('renders haiku option in model selectors', () => {
+  it('shows skill leaves by default (expanded)', () => {
     render(<CustomizationView />);
-    const haikuOptions = screen.getAllByTestId('model-option-haiku');
-    expect(haikuOptions.length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByTestId('tree-leaf-skills/loom-review/strategies/single')).toBeInTheDocument();
+    expect(screen.getByTestId('tree-leaf-skills/loom-retro/stages/aggregator')).toBeInTheDocument();
+  });
+
+  it('shows WRITE badge on aggregator leaf', () => {
+    render(<CustomizationView />);
+    const aggregatorLeaf = screen.getByTestId('tree-leaf-skills/loom-retro/stages/aggregator');
+    expect(aggregatorLeaf.querySelector('[data-testid="badge-write"]')).toBeInTheDocument();
   });
 });
 
-describe('CustomizationView — preset buttons (redesign port)', () => {
-  it('renders preset buttons for each agent (4 presets per row)', () => {
+describe('CustomizationView — leaf editor default state', () => {
+  it('shows model selector for default selection (loom-developer = agent)', () => {
     render(<CustomizationView />);
-    // 13 rows × 4 presets = 52 total preset buttons
-    const defaultBtns = screen.getAllByTestId('preset-btn-default');
-    expect(defaultBtns).toHaveLength(13);
-  });
-
-  it('renders chain expand buttons for each agent (data-testid=chain-expand-btn)', () => {
-    render(<CustomizationView />);
-    const chainBtns = screen.getAllByTestId('chain-expand-btn');
-    expect(chainBtns).toHaveLength(13);
-  });
-
-  it('renders chain detail panel (data-testid=chain-detail-panel)', () => {
-    render(<CustomizationView />);
-    expect(screen.getByTestId('chain-detail-panel')).toBeInTheDocument();
+    expect(screen.getByTestId('leaf-editor-model-selector')).toBeInTheDocument();
   });
 });
 

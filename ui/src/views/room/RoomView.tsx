@@ -1,40 +1,31 @@
 /**
- * RoomView (proposed v2) — responsive, design-faithful port.
+ * RoomView (v3) — Spirit Summoning rewrite per m0.18-t3.
  *
- * Diff vs current ui/src/views/room/RoomView.tsx:
+ * Changes from v2:
  *
- * 1. SIZE: prop `width`/`height` removed. Component fills its parent and
- *    uses ResizeObserver to track size. Matches redesign/screens/room.jsx
- *    L385-393 (the only correct way to fill an absolute-positioned content
- *    region whose width depends on whether PMChatPanel is mounted).
+ * 1. PERSISTENT DESKS ONLY: DeskStation is now rendered only for
+ *    `kind: "persistent"` agents (pm / dev / retro-pm). Review and retro
+ *    spirits are ephemeral — they appear via Spirit Summoning, not desks.
+ *    WHY: spec/ui-arch.md §8.2.1 — 3 persistent desks + 10 ephemeral spirits.
  *
- * 2. ZONES: Islands import removed. Zones are now painted *inside*
- *    RoomBackground as low-opacity rugs (see RoomBackground.proposed.tsx).
+ * 2. SPIRIT MODE FLAVORS: `spiritMode` prop controls per-room animation class:
+ *    - 'rpg'    → .room--rpg (glow + scale keyframe)
+ *    - 'office' → .room--office + <RoomDoor> right-wall door
+ *    - 'hybrid' → .room--hybrid + <SpiritEcho> for most-recently summoned (default)
+ *    WHY: Tweaks default is hybrid per spec §8.2.1.
  *
- * 3. POSITIONS: hard-coded {x,y} table replaced with W/H/floorY ratio
- *    formula matching redesign source L334-345:
- *      pm        → (W*0.78, floorY + 50)
- *      dev       → (W*0.18, floorY + 80)
- *      rev-code  → (W*0.62, floorY + (H-floorY)*0.55 + 40)
- *      rev-test  → (W*0.74, ...)
- *      rev-sec   → (W*0.86, ...)
+ * 3. SUMMON QUEUE: <SummonQueue> wall-plaque renders active / queued / leaving
+ *    dispatch items derived from useDispatchQueue() hook.
  *
- * 4. WORKTREE CLONES: cloned mini-cats now sit *above the dev desk*,
- *    not glued to its right. Position formula:
- *      x = positions.dev.x + 60 + i * 56
- *      y = positions.dev.y - 60
+ * 4. SPIRIT ECHO: Hybrid mode shows last-summoned spirit at 32% opacity,
+ *    grayscale(0.6) via <SpiritEcho> component + room.css classes.
  *
- * 5. MODAL OVERLAYS REMOVED: showGantt / showPlan / showConsistency
- *    state and the four <div className="room-modal"> blocks are deleted.
- *    Posters now navigate via React Router (the AppShell handles routing
- *    to /gantt, /plan, /consistency). Source of routing: single
- *    location.pathname check in AppShell.
+ * Position table:
+ *   pm         → (W*0.78, floorY + 50)
+ *   dev        → (W*0.18, floorY + 80)
+ *   retro-pm   → (W*0.50, floorY + 65)   WHY: centre of room, Retro PM role
  *
- * 6. LIVE RAIL: when PM is not running, mount <LiveRail/> (new file) so
- *    the right column always has *something* showing instead of empty space.
- *
- * 7. RETRO MODE: dormant retroMode state removed (B5/B6). The /retro route
- *    in the Drawer MANAGE group provides retro access. No in-room toggle.
+ * Spirit positions orbit the floor row, derived dynamically from index.
  */
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -46,6 +37,11 @@ import { ConsistencyPoster } from './wall-posters/ConsistencyPoster';
 import { DeskStation, type DeskStatus, type BubbleShape } from './DeskStation';
 import { SubroomClone } from './SubroomClone';
 import { AgentDetailPanel } from './AgentDetailPanel';
+import { Spirit } from './Spirit';
+import { SpiritEcho } from './SpiritEcho';
+import { RoomDoor } from './RoomDoor';
+import { SummonQueue } from './SummonQueue';
+import { useDispatchQueue } from '../../live/useDispatchQueue';
 import { ROSTER } from '../../data/roster';
 import type { RosterEntry } from '../../data/roster';
 import { useViewStore } from '../../store/view';
@@ -54,11 +50,17 @@ import type { AgentState } from '@claude-loom/redesign/api/types';
 import { usePMSession } from '../../live/usePMSession';
 
 // ---------------------------------------------------------------------------
-// The 5 agents that have a *desk* in the open office.
-// retro agents are accessed via the /retro route (Drawer MANAGE group).
+// Spirit motion flavor type — spec §8.2.1
 // ---------------------------------------------------------------------------
-const ROOM_AGENT_IDS = ['pm', 'dev', 'rev-code', 'rev-test', 'rev-sec'] as const;
-type RoomAgentId = (typeof ROOM_AGENT_IDS)[number];
+export type SpiritMode = 'rpg' | 'office' | 'hybrid';
+
+// ---------------------------------------------------------------------------
+// Persistent desk agents — only these 3 get a DeskStation.
+// WHY: Review spirits (rev / rev-code / rev-sec / rev-test) and retro spirits
+// are ephemeral (kind: 'spirit') and enter via Spirit Summoning, not desks.
+// ---------------------------------------------------------------------------
+const PERSISTENT_DESK_IDS = ['pm', 'dev', 'retro-pm'] as const;
+type PersistentDeskId = (typeof PERSISTENT_DESK_IDS)[number];
 
 interface Size {
   w: number;
@@ -66,21 +68,39 @@ interface Size {
 }
 
 // ---------------------------------------------------------------------------
-// Position table derived from W/H/floorY.
-// Source of truth: redesign/screens/room.jsx L334-345.
+// Position table for the 3 persistent desk agents.
 // ---------------------------------------------------------------------------
-function buildPositions(
+function buildPersistentPositions(
+  W: number,
+  _H: number,
+  floorY: number,
+): Record<PersistentDeskId, { x: number; y: number }> {
+  return {
+    pm:        { x: W * 0.78, y: floorY + 50 },
+    dev:       { x: W * 0.18, y: floorY + 80 },
+    'retro-pm': { x: W * 0.50, y: floorY + 65 },
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Spirit positions — orbit the floor zone in a loose arc.
+// Up to 10 spirits; each gets a slot around the room perimeter.
+// ---------------------------------------------------------------------------
+function spiritPosition(
   W: number,
   H: number,
   floorY: number,
-): Record<RoomAgentId, { x: number; y: number }> {
-  const reviewRowY = floorY + (H - floorY) * 0.55 + 40;
+  index: number,
+): { x: number; y: number } {
+  const cols = 5;
+  const col = index % cols;
+  const row = Math.floor(index / cols);
+  const baseX = W * 0.12 + col * (W * 0.17);
+  const baseY = floorY + 160 + row * 90;
+  // Clamp to visible area
   return {
-    pm: { x: W * 0.78, y: floorY + 50 },
-    dev: { x: W * 0.18, y: floorY + 80 },
-    'rev-code': { x: W * 0.62, y: reviewRowY },
-    'rev-test': { x: W * 0.74, y: reviewRowY },
-    'rev-sec': { x: W * 0.86, y: reviewRowY },
+    x: Math.min(baseX, W - 80),
+    y: Math.min(baseY, H - 80),
   };
 }
 
@@ -100,8 +120,6 @@ function truncate(s: string, n: number): string {
 }
 
 // WHY: typed bubble shape matches redesign source room.jsx L23-27 (R-3).
-// kind='tool'   → yellow label + optional sub (currentReasoning)
-// kind='reason' → italic quoted text (truncated to 38 chars)
 function toBubble(state: AgentState | undefined): BubbleShape | undefined {
   if (!state) return undefined;
   if (state.currentTool) return { kind: 'tool', text: state.currentTool, sub: state.currentReasoning };
@@ -112,13 +130,24 @@ function toBubble(state: AgentState | undefined): BubbleShape | undefined {
 // ---------------------------------------------------------------------------
 // RoomView component
 // ---------------------------------------------------------------------------
-export function RoomView(): JSX.Element {
+export interface RoomViewProps {
+  /**
+   * Spirit motion flavor — controls animation class on the room container.
+   * Default: 'hybrid' (per Tweaks default, spec §8.2.1).
+   */
+  spiritMode?: SpiritMode;
+}
+
+export function RoomView({ spiritMode = 'hybrid' }: RoomViewProps = {}): JSX.Element {
   const scenario = useScenario();
   const navigate = useNavigate();
   const pm = usePMSession();
   const ref = useRef<HTMLDivElement | null>(null);
   const [size, setSize] = useState<Size>({ w: 1200, h: 700 });
   const [sel, setSel] = useState<string | null>(null);
+  const [leavingSpirits, setLeavingSpirits] = useState<Set<string>>(new Set());
+
+  const { items: queueItems } = useDispatchQueue();
 
   // Subscribe to container size — fills whatever the AppShell content gives us.
   useEffect(() => {
@@ -137,9 +166,15 @@ export function RoomView(): JSX.Element {
   const { w: W, h: H } = size;
   const floorY = H * 0.43;
   const wallTop = 28;
-  const positions = buildPositions(W, H, floorY);
+  const persistentPositions = buildPersistentPositions(W, H, floorY);
 
-  const isIdleAll = ROOM_AGENT_IDS.every(
+  // The 3 persistent roster entries (pm / dev / retro-pm)
+  const persistentEntries: RosterEntry[] = ROSTER.filter((r) => r.kind === 'persistent') as RosterEntry[];
+
+  // The 10 ephemeral spirit roster entries
+  const spiritEntries: RosterEntry[] = ROSTER.filter((r) => r.kind === 'spirit') as RosterEntry[];
+
+  const isIdleAll = PERSISTENT_DESK_IDS.every(
     (id) => (scenario.agents[id]?.status ?? 'idle') === 'idle',
   );
 
@@ -148,10 +183,16 @@ export function RoomView(): JSX.Element {
     : null;
   const devCat = ROSTER.find((r) => r.id === 'dev')!;
 
+  // Most recently summoned spirit (for hybrid echo)
+  const lastSpiritEntry = spiritEntries[spiritEntries.length - 1] ?? null;
+
+  // Room mode class — spec §8.2.1
+  const roomModeClass = `room--${spiritMode}`;
+
   return (
     <div
       ref={ref}
-      className={`room ${isIdleAll ? 'idle-hush' : ''}`}
+      className={`room ${roomModeClass}${isIdleAll ? ' idle-hush' : ''}`}
       data-testid="room-canvas"
       style={{ position: 'absolute', inset: 0, overflow: 'hidden' }}
     >
@@ -184,43 +225,87 @@ export function RoomView(): JSX.Element {
         onClick={() => navigate('/consistency')}
       />
 
-      {/* === DeskStation agents === */}
-      {ROOM_AGENT_IDS.map((id) => {
-          const cat = ROSTER.find((r) => r.id === id);
-          if (!cat) return null;
-          const p = positions[id];
-          const state = scenario.agents[id];
-          // WHY: state.walkTo is an agent id (string). Convert to pixel offset
-          // by looking up the target desk position, matching redesign room.jsx L460-462.
-          const walkTargetId = state?.walkTo as string | undefined;
-          const walkTarget = walkTargetId ? positions[walkTargetId as RoomAgentId] : undefined;
-          const walkTo = walkTarget
-            ? { dx: walkTarget.x - p.x, dy: walkTarget.y - p.y }
-            : undefined;
-          return (
-            <DeskStation
-              key={id}
-              x={p.x}
-              y={p.y}
-              cat={cat}
-              status={toDeskStatus(state)}
-              bubble={toBubble(state)}
-              scroll={state?.status !== 'idle'}
-              label={
-                state?.status === 'idle' && state?.lastSeenAt
-                  ? `last: ${state.lastSeenAt}`
-                  : cat.role
-              }
-              selected={sel === id}
-              walkTo={walkTo}
-              onClick={() => {
-                const next = sel === id ? null : id;
-                setSel(next);
-                useViewStore.getState().setSelectedAgentId(next);
-              }}
-            />
-          );
-        })}
+      {/* === Office mode: door SVG on right wall === */}
+      {spiritMode === 'office' && (
+        <RoomDoor
+          x={W - 60}
+          y={floorY - 20}
+          open={queueItems.some((i) => i.status === 'active')}
+        />
+      )}
+
+      {/* === DeskStation agents — PERSISTENT ONLY (3 desks) === */}
+      {persistentEntries.map((cat) => {
+        const id = cat.id as PersistentDeskId;
+        const p = persistentPositions[id];
+        if (!p) return null;
+        const state = scenario.agents[id];
+        const walkTargetId = state?.walkTo as string | undefined;
+        const walkTargetPos = walkTargetId
+          ? persistentPositions[walkTargetId as PersistentDeskId]
+          : undefined;
+        const walkTo = walkTargetPos
+          ? { dx: walkTargetPos.x - p.x, dy: walkTargetPos.y - p.y }
+          : undefined;
+        return (
+          <DeskStation
+            key={id}
+            x={p.x}
+            y={p.y}
+            cat={cat}
+            status={toDeskStatus(state)}
+            bubble={toBubble(state)}
+            scroll={state?.status !== 'idle'}
+            label={
+              state?.status === 'idle' && state?.lastSeenAt
+                ? `last: ${state.lastSeenAt}`
+                : cat.role
+            }
+            selected={sel === id}
+            walkTo={walkTo}
+            onClick={() => {
+              const next = sel === id ? null : id;
+              setSel(next);
+              useViewStore.getState().setSelectedAgentId(next);
+            }}
+          />
+        );
+      })}
+
+      {/* === Ephemeral spirits (kind: 'spirit') — 10 entries from ROSTER === */}
+      {spiritEntries.map((entry, idx) => {
+        const pos = spiritPosition(W, H, floorY, idx);
+        return (
+          <Spirit
+            key={entry.id}
+            entry={entry}
+            x={pos.x}
+            y={pos.y}
+            leaving={leavingSpirits.has(entry.id)}
+            onClick={() => {
+              const next = sel === entry.id ? null : entry.id;
+              setSel(next);
+              useViewStore.getState().setSelectedAgentId(next);
+            }}
+          />
+        );
+      })}
+
+      {/* === Hybrid mode: echo of last summoned spirit at 32% opacity === */}
+      {spiritMode === 'hybrid' && lastSpiritEntry && (
+        <SpiritEcho
+          entry={lastSpiritEntry}
+          x={W * 0.5}
+          y={floorY + 140}
+        />
+      )}
+
+      {/* === SummonQueue wall plaque === */}
+      <SummonQueue
+        x={W * 0.04}
+        y={floorY - 60}
+        items={queueItems}
+      />
 
       {/* === Worktree clones — sit *above* the dev desk === */}
       {scenario.worktrees
@@ -229,8 +314,8 @@ export function RoomView(): JSX.Element {
         .map((w, i) => (
           <SubroomClone
             key={i}
-            x={positions.dev.x + 60 + i * 56}
-            y={positions.dev.y - 60}
+            x={persistentPositions.dev.x + 60 + i * 56}
+            y={persistentPositions.dev.y - 60}
             cat={devCat}
             branch={w.branch}
             status={w.status === 'failed' ? 'review' : (w.status as 'busy' | 'review' | 'idle')}

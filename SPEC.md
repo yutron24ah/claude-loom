@@ -529,7 +529,7 @@ CREATE TABLE consistency_findings (
 |---|---|---|
 | harness | agents / skills / commands customization / worktree / coexistence / process discipline / commit + branch 規約 / superpowers independence / actor 定義 / 標準 workflow | [spec/harness.md](spec/harness.md) |
 | daemon-and-data | Lazy Daemon ライフサイクル / 中央指令室モデル / WebSocket メッセージスキーマ / SQLite データモデル | [spec/daemon-and-data.md](spec/daemon-and-data.md) |
-| ui-arch | M3 UI Architecture / SSoT cross-check rule / UI Smoke Test / Design Implementation / Ceremony Reduction / UI Redesign Port / Playwright e2e | [spec/ui-arch.md](spec/ui-arch.md) |
+| ui-arch | M3 UI Architecture / SSoT cross-check rule / UI Smoke Test / Design Implementation / Ceremony Reduction / UI Redesign Port / Playwright e2e / Skill Migration UI Rework | [spec/ui-arch.md](spec/ui-arch.md) |
 | retro-system | Retro 機能全機能 (4 lens / counter-argument / aggregator / pending lifecycle 等) | [spec/retro-system.md](spec/retro-system.md) |
 | install-and-test | プロジェクトライフサイクルと adopt 戦略 / 配布・インストール / テスト戦略 | [spec/install-and-test.md](spec/install-and-test.md) |
 
@@ -559,3 +559,4 @@ CREATE TABLE consistency_findings (
 - 2026-05-03: §3.6.10 新設「SSoT cross-check rule」+ Coding 原則「文字列リテラル回避、enum/定数経由比較」codify（retro 2026-05-03-001 pj-002 由来、M3.1 t3 で偶然発見した SSoT enum drift bug を構造 pattern として spec 化、user feedback memory 「avoid string literals, prefer typed constants/enums」を SSoT 昇格）
 - 2026-05-05: §3.6.11 新設「UI Smoke Test Skill」+ §10.4 新設「Browser-interactive verification layer」（retro 2026-05-04-001 F-proc-005 拡張、Phase 1 MVP main 統合直後 4 件 critical bug 発覚を構造的に塞ぐ skill 設計、user feedback memory「UI smoke test capability」を SSoT 昇格、M0.11.3 milestone で実装）
 - 2026-05-05: §3.6.12 新設「Design Implementation」+ §3.6.9.1 改訂 (Phaser α-1 → DOM/SVG α-2 strategy A 採用、claude-room-handoff.zip design bundle 受領、Phase 1 aesthetic MVP completion を M0.11.4 milestone で実装、Phaser dependency rollback)
+- 2026-05-18: spec/ui-arch.md §8 新設「Skill Migration UI Rework」(M0.18-skill-migration-ui-rework、PR #18-#21 取込 UI 反映 rework、3 new mental models: Spirit Summoning / Customization Tree / Retro KPT+Lifecycle + Cross-cutting 5 minor、design bundle `docs/design/2026-05-17-m0.18-ui-rework/` 受領、handoff source: UI Status Report.md / Frontend改修方針.md / QA Test Matrix.html / Redesign App.html / cat.jsx / styles.css、Phase 1 parallel batch + worktree isolation 必須、reviewer single default 全 task、retro M0.16+M0.17+M0.18 closure 後まとめ)

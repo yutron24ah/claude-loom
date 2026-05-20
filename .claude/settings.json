@@ -40,7 +40,10 @@
       "Bash(bash install.sh)",
       "Bash(/Users/kokiiphone/Documents/work/claude-loom/skills/loom-test/scripts/run.sh)",
       "Bash(/Users/kokiiphone/Documents/work/claude-loom/skills/loom-test/scripts/run.sh *)",
-      "Bash(/Users/kokiiphone/Documents/work/claude-loom/skills/loom-status/scripts/status.sh)"
+      "Bash(/Users/kokiiphone/Documents/work/claude-loom/skills/loom-status/scripts/status.sh)",
+      "Bash(pnpm *)",
+      "Bash(pnpm)",
+      "Bash(git *)"
     ],
     "additionalDirectories": [
       "/tmp"

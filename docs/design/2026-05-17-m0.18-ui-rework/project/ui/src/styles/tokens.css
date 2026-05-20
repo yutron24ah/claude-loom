@@ -1,0 +1,730 @@
+/* ============================================================
+   claude-loom UI — Design Tokens + RPG Primitives
+   Section 1: Kintai DS base tokens (Tailwind rgb-integer compatible)
+   Section 2: RPG 3 theme palette (--p-* hex variables)
+   Section 3: Semantic element styles (html/body, h1, label, etc.)
+   Section 4: Pixel base + RPG window chrome
+   Section 5: Room primitives (BEM)
+   Section 6: Subroom primitives
+
+   WHY (Section 1 hex→rgb): space-separated rgb integers allow
+   Tailwind's `rgb(var(--x) / <alpha-value>)` opacity modifier syntax.
+   WHY (Section 2 hex): --p-* palette is consumed directly as CSS values
+   in SVG and DOM room components, not via Tailwind utilities, so hex is fine.
+
+   Theme switching (Kintai DS): set [data-theme="dusk"] or [data-theme="night"]
+   on <html> to override Section 1 variables.
+   Theme switching (RPG palette): add .theme-dusk or .theme-night to root element.
+   ============================================================ */
+
+/* ============================================================
+   Section 1: Kintai DS base tokens (rgb space-separated integers)
+   ============================================================ */
+
+:root {
+  /* ---------- Color: primitives ---------- */
+  /* #f8f9fb -> 248 249 251 */
+  --bg:            248 249 251;
+  /* #ffffff -> 255 255 255 */
+  --surface:       255 255 255;
+  /* #4f46e5 -> 79 70 229 */
+  --primary:       79 70 229;
+  /* #4338ca -> 67 56 202 */
+  --primary-hover: 67 56 202;
+  /* #1f2937 -> 31 41 55 */
+  --text:          31 41 55;
+  /* #6b7280 -> 107 114 128 */
+  --text-muted:    107 114 128;
+  /* #e5e7eb -> 229 231 235 */
+  --border:        229 231 235;
+  /* #dc2626 -> 220 38 38 */
+  --error:         220 38 38;
+  /* #059669 -> 5 150 105 */
+  --success:       5 150 105;
+  /* #f3f4f6 -> 243 244 246 */
+  --tint-slate-100: 243 244 246;
+
+  /* ---------- Color: semantic aliases ---------- */
+  /* WHY: single-name tokens for consistent usage across components */
+  --fg1:          var(--text);
+  --fg2:          var(--text-muted);
+  --bg1:          var(--bg);
+  --bg2:          var(--surface);
+  --bg3:          var(--tint-slate-100);
+  --accent:       var(--primary);
+  --accent-hover: var(--primary-hover);
+  --focus-ring:   rgba(79, 70, 229, 0.12);
+  --shadow-indigo-tint: rgba(79, 70, 229, 0.06);
+
+  /* ---------- Gantt-specific tokens ---------- */
+  /* WHY: Gantt SVG uses fill="var(--color-bar)" directly so theme switching
+     propagates to SVG elements without JS. Mapped from semantic aliases. */
+  --color-bar:       rgb(var(--accent));
+  --color-bar-text:  rgb(var(--surface));
+  --color-border:    rgb(var(--border));
+  --color-bg3:       rgb(var(--bg3));
+  --color-fg1:       rgb(var(--fg1));
+  --color-muted:     rgb(var(--text-muted));
+  --color-error:     rgb(var(--error));
+
+  /* ---------- Type: family ---------- */
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI",
+               "Hiragino Sans", "Yu Gothic UI", sans-serif;
+
+  /* ---------- Type: scale (px) ---------- */
+  --fs-xs:   12px;  /* hint, footer */
+  --fs-sm:   13px;  /* label */
+  --fs-body: 14px;  /* lead */
+  --fs-md:   15px;  /* input, button */
+  --fs-base: 16px;  /* body default */
+  --fs-h1:   22px;  /* page title */
+
+  /* ---------- Type: weight ---------- */
+  --fw-normal:   400;
+  --fw-semibold: 600;
+  --fw-bold:     700;
+
+  /* ---------- Type: line-height ---------- */
+  --lh-body: 1.6;
+
+  /* ---------- Shape ---------- */
+  --radius-card: 12px;
+  --radius-ctrl: 8px;
+  --radius-pill: 50%;
+
+  /* ---------- Shadow ---------- */
+  /* WHY: kept as non-color CSS value; Tailwind exposes via shadow-token */
+  --shadow: 0 1px 3px rgba(0, 0, 0, 0.04),
+            0 4px 20px rgba(79, 70, 229, 0.06);
+
+  /* ---------- Spacing ---------- */
+  --sp-1:  4px;
+  --sp-2:  6px;
+  --sp-3:  8px;
+  --sp-4:  12px;
+  --sp-5:  16px;
+  --sp-6:  18px;
+  --sp-7:  20px;
+  --sp-8:  24px;
+  --sp-9:  32px;
+  --sp-10: 48px;
+
+  /* ---------- Layout ---------- */
+  --container-max: 480px;
+}
+
+/* ============================================================
+   Section 1 cont.: Kintai DS theme overrides (rgb integers — no hex)
+   ============================================================ */
+
+/* Theme: dusk — warmer, low-lit evening palette
+   WHY: overrides color primitives so all semantic aliases
+   automatically pick up the new values (cascading).
+   RGB values derived from ui/prototype/styles.css .theme-dusk
+   p-* palette mapped to semantic equivalents. */
+[data-theme="dusk"] {
+  /* bg-family: dark purple-brown */
+  /* #2a2540 -> 42 37 64 */
+  --bg:            42 37 64;
+  /* #3d3354 -> 61 51 84 */
+  --surface:       61 51 84;
+  /* #efe7d2 -> 239 231 210 */
+  --tint-slate-100: 239 231 210;
+
+  /* text: warm near-white */
+  /* #f0e9d8 -> 240 233 216 */
+  --text:          240 233 216;
+  /* #c8b9d8 -> 200 185 216 */
+  --text-muted:    200 185 216;
+
+  /* border: dark purple */
+  /* #1a1330 -> 26 19 48 */
+  --border:        26 19 48;
+
+  /* accent: purple (dusk accent) */
+  /* #7c3aed -> 124 58 237 */
+  --primary:       124 58 237;
+  /* #6d28d9 -> 109 40 217 */
+  --primary-hover: 109 40 217;
+
+  /* error / success: same hue, slightly adjusted */
+  /* #dc2626 -> 220 38 38 */
+  --error:         220 38 38;
+  /* #059669 -> 5 150 105 */
+  --success:       5 150 105;
+
+  /* shadow: darker purple tinted */
+  --shadow: 0 1px 3px rgba(15, 10, 30, 0.4),
+            0 4px 20px rgba(124, 58, 237, 0.18);
+}
+
+/* Theme: night — secret base, deep dark palette
+   WHY: overrides color primitives for full dark mode.
+   RGB values derived from ui/prototype/styles.css .theme-night
+   p-* palette mapped to semantic equivalents. */
+[data-theme="night"] {
+  /* bg-family: deep navy */
+  /* #0b0f1d -> 11 15 29 */
+  --bg:            11 15 29;
+  /* #161a26 -> 22 26 38 */
+  --surface:       22 26 38;
+  /* #232838 -> 35 40 56 */
+  --tint-slate-100: 35 40 56;
+
+  /* text: light cool-white */
+  /* #e8ecf3 -> 232 236 243 */
+  --text:          232 236 243;
+  /* #94a3b8 -> 148 163 184 */
+  --text-muted:    148 163 184;
+
+  /* border: very dark navy */
+  /* #050811 -> 5 8 17 */
+  --border:        5 8 17;
+
+  /* accent: indigo-violet (night accent) */
+  /* #818cf8 -> 129 140 248 */
+  --primary:       129 140 248;
+  /* #6366f1 -> 99 102 241 */
+  --primary-hover: 99 102 241;
+
+  /* error / success: night-adjusted warm */
+  /* #f87171 -> 248 113 113 */
+  --error:         248 113 113;
+  /* #34d399 -> 52 211 153 */
+  --success:       52 211 153;
+
+  /* shadow: deep black */
+  --shadow: 0 1px 3px rgba(0, 0, 0, 0.6),
+            0 4px 20px rgba(129, 140, 248, 0.2);
+}
+
+/* ============================================================
+   Section 2: RPG 3 theme palette (--p-* hex variables)
+   WHY: hex values used here because these are consumed directly
+   as CSS color values in Room/Subroom SVG + DOM components,
+   not via Tailwind opacity modifiers.
+   ============================================================ */
+
+/* Default = "cozy noon" — DS-aligned light */
+:root {
+  --p-bg-sky:        #eef0f8;
+  --p-bg-floor:      #d9d4c4;
+  --p-bg-floor-2:    #c8c2af;
+  --p-wall:          #ece6d5;
+  --p-wall-2:        #ddd5bf;
+  --p-wood:          #8a6a46;
+  --p-wood-dark:     #6a4f31;
+  --p-stone:         #a8a39a;
+  --p-rug:           #4f46e5;
+  --p-rug-2:         #6366f1;
+  --p-leaf:          #4c8a4a;
+  --p-leaf-2:        #6aaf63;
+  --p-cat-base:      #f4f0e6;
+  --p-cat-line:      #1f2937;
+  --p-cat-cheek:     #f4a3b3;
+  --p-cat-pad:       #e5e7eb;
+  --p-screen:        #4f46e5;
+  --p-screen-glow:   #c7d2fe;
+  --p-text:          #1f2937;
+  --p-text-muted:    #6b7280;
+  --p-border:        #1f2937;
+  --p-paper:         #ffffff;
+  --p-tint:          #f3f4f6;
+  --p-accent:        #4f46e5;
+  --p-accent-soft:   rgba(79, 70, 229, 0.12);
+  --p-success:       #059669;
+  --p-error:         #dc2626;
+  --p-warn:          #d97706;
+  --p-shadow:        rgba(31, 41, 55, 0.18);
+}
+
+/* dusk — warmer, low-lit */
+.theme-dusk {
+  --p-bg-sky:        #2a2540;
+  --p-bg-floor:      #5b4a3a;
+  --p-bg-floor-2:    #4a3a2c;
+  --p-wall:          #3d3354;
+  --p-wall-2:        #2e2643;
+  --p-wood:          #6a4a30;
+  --p-wood-dark:     #4a321f;
+  --p-stone:         #635b6f;
+  --p-rug:           #c084fc;
+  --p-rug-2:         #a855f7;
+  --p-leaf:          #6a8e4a;
+  --p-leaf-2:        #8aaf63;
+  --p-cat-base:      #f0e9d8;
+  --p-cat-line:      #1a1330;
+  --p-cat-cheek:     #ec8aa0;
+  --p-cat-pad:       #c8b9d8;
+  --p-screen:        #ffd86b;
+  --p-screen-glow:   #fff1b6;
+  --p-text:          #1f2937;
+  --p-text-muted:    #6b7280;
+  --p-border:        #1a1330;
+  --p-paper:         #fff8e7;
+  --p-tint:          #efe7d2;
+  --p-accent:        #7c3aed;
+  --p-accent-soft:   rgba(124, 58, 237, 0.18);
+  --p-shadow:        rgba(15, 10, 30, 0.4);
+}
+
+/* night — secret base */
+.theme-night {
+  --p-bg-sky:        #0b0f1d;
+  --p-bg-floor:      #1c1f2c;
+  --p-bg-floor-2:    #14171f;
+  --p-wall:          #161a26;
+  --p-wall-2:        #0f1320;
+  --p-wood:          #2a2a3a;
+  --p-wood-dark:     #1a1a26;
+  --p-stone:         #3a3f4f;
+  --p-rug:           #6366f1;
+  --p-rug-2:         #818cf8;
+  --p-leaf:          #2d6a4f;
+  --p-leaf-2:        #40916c;
+  --p-cat-base:      #e8e5d8;
+  --p-cat-line:      #050811;
+  --p-cat-cheek:     #ff6b8b;
+  --p-cat-pad:       #6b7280;
+  --p-screen:        #38bdf8;
+  --p-screen-glow:   #67e8f9;
+  --p-text:          #e8ecf3;
+  --p-text-muted:    #94a3b8;
+  --p-border:        #050811;
+  --p-paper:         #1a1f2e;
+  --p-tint:          #232838;
+  --p-accent:        #818cf8;
+  --p-accent-soft:   rgba(129, 140, 248, 0.2);
+  --p-success:       #34d399;
+  --p-error:         #f87171;
+  --p-warn:          #fbbf24;
+  --p-shadow:        rgba(0, 0, 0, 0.6);
+}
+
+/* ============================================================
+   Section 3: Semantic element styles
+   ============================================================ */
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: var(--fs-base);
+  line-height: var(--lh-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1 {
+  font-size: var(--fs-h1);
+  font-weight: var(--fw-bold);
+  letter-spacing: -0.01em;
+  margin: 0 0 4px;
+  color: var(--text);
+}
+
+.lead {
+  color: var(--text-muted);
+  font-size: var(--fs-body);
+  margin: 0 0 28px;
+}
+
+label {
+  display: block;
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semibold);
+  margin-bottom: var(--sp-2);
+  color: var(--text);
+}
+
+.hint {
+  font-size: var(--fs-xs);
+  color: var(--text-muted);
+  margin-top: var(--sp-1);
+}
+
+code, .mono {
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 0.92em;
+  background: var(--tint-slate-100);
+  padding: 0.1em 0.35em;
+  border-radius: 4px;
+}
+
+/* ============================================================
+   Section 4: Pixel base + RPG window chrome
+   ============================================================ */
+
+/* pixel rendering base */
+.pixel * { image-rendering: pixelated; }
+.pixel { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; }
+
+/* RPG window chrome — reusable frame components */
+.rpg-frame {
+  background: var(--p-paper);
+  border: 3px solid var(--p-border);
+  box-shadow: 0 4px 0 0 var(--p-shadow), inset 0 0 0 2px var(--p-paper), inset 0 0 0 4px var(--p-tint);
+  padding: 12px;
+}
+
+.rpg-frame-tight {
+  background: var(--p-paper);
+  border: 2px solid var(--p-border);
+  box-shadow: 0 2px 0 0 var(--p-shadow);
+}
+
+.rpg-title {
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  font-size: 13px;
+  color: var(--p-text);
+  text-transform: none;
+}
+
+.rpg-label {
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  color: var(--p-text-muted);
+  text-transform: uppercase;
+}
+
+/* status dots */
+.dot { width: 8px; height: 8px; display: inline-block; border: 1px solid var(--p-border); }
+.dot.busy   { background: var(--p-success); }
+.dot.idle   { background: var(--p-stone); }
+.dot.review { background: var(--p-accent); }
+.dot.fail   { background: var(--p-error); }
+.dot.tdd    { background: var(--p-warn); }
+
+/* chip — small inline tag */
+.chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 10px; letter-spacing: 0.02em;
+  padding: 3px 6px;
+  background: var(--p-tint);
+  border: 1px solid var(--p-border);
+  color: var(--p-text);
+}
+
+/* exp gauge — experience bar */
+.exp-bar {
+  position: relative;
+  height: 10px;
+  background: var(--p-tint);
+  border: 1px solid var(--p-border);
+  overflow: hidden;
+}
+.exp-bar > i {
+  display: block; height: 100%;
+  background: var(--p-accent);
+  background-image: linear-gradient(90deg, var(--p-accent) 0 50%, transparent 50% 100%);
+  background-size: 4px 100%;
+  image-rendering: pixelated;
+}
+
+/* pixel button */
+.btn-px {
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 11px; font-weight: 700; letter-spacing: 0.02em;
+  padding: 8px 12px;
+  background: var(--p-paper);
+  border: 2px solid var(--p-border);
+  color: var(--p-text);
+  cursor: pointer;
+  box-shadow: 2px 2px 0 0 var(--p-border);
+  user-select: none;
+}
+.btn-px.primary { background: var(--p-accent); color: white; }
+.btn-px.success { background: var(--p-success); color: white; }
+.btn-px.warn    { background: var(--p-warn); color: white; }
+.btn-px.danger  { background: var(--p-error); color: white; }
+.btn-px.ghost   { background: var(--p-tint); }
+
+/* scanline texture overlay (subtle) */
+.scanlines::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background-image: repeating-linear-gradient(0deg, rgba(0,0,0,0.04) 0 1px, transparent 1px 3px);
+  mix-blend-mode: multiply;
+}
+
+/* ============================================================
+   Section 5: Room primitives (BEM hierarchy)
+   .room                       (top-level container)
+   .room__bg                   (svg floor + wall paint)
+   .room-window                (the iconic 田-shaped window)
+   .room-sign                  (small badge variants)
+   .room-poster                (clickable info poster)
+   .room-island                (rug area — pm/dev/review)
+   .room-floor-cushion         (retro-mode bottom strip)
+   .room-mode-toggle           (top-right control)
+   .room-modal                 (overlay dialog)
+   ============================================================ */
+
+.room {
+  position: relative;
+  border: 3px solid var(--p-border);
+  background: var(--p-bg-sky);
+  overflow: hidden;
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+
+.room__bg { position: absolute; inset: 0; image-rendering: pixelated; }
+
+.room-window {
+  position: absolute;
+  background: var(--p-bg-sky);
+  border: 3px solid var(--p-border);
+  box-shadow: inset 0 0 0 2px var(--p-screen-glow);
+}
+.room-window::before,
+.room-window::after {
+  content: ""; position: absolute; background: var(--p-border);
+}
+.room-window::before { left: 50%; top: 0; bottom: 0; width: 3px; margin-left: -1.5px; }
+.room-window::after  { left: 0; right: 0; top: 50%;  height: 3px; margin-top: -1.5px; }
+
+.room-sign {
+  position: absolute;
+  padding: 3px 10px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: white;
+  border: 2px solid var(--p-border);
+  box-shadow: 2px 2px 0 0 var(--p-shadow);
+  z-index: 2;
+}
+.room-sign--branch { background: var(--p-accent); }
+.room-sign--clock  { background: var(--p-success); }
+.room-sign--island--pm     { background: var(--p-accent); }
+.room-sign--island--dev    { background: var(--p-warn); }
+.room-sign--island--review { background: var(--p-success); }
+.room-sign--retro  { background: var(--p-accent); font-size: 10px; padding: 4px 14px; letter-spacing: 0.06em; }
+
+/* room poster — clickable info panels on wall */
+.room-poster {
+  all: unset;
+  cursor: pointer;
+  position: absolute;
+  background: var(--p-paper);
+  border: 3px solid var(--p-border);
+  padding: 6px 8px;
+  box-shadow: 3px 3px 0 0 var(--p-shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  box-sizing: border-box;
+  overflow: hidden;
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  transition: transform 0.08s ease;
+}
+.room-poster:hover { transform: translate(-1px, -1px); box-shadow: 4px 4px 0 0 var(--p-shadow); }
+.room-poster__header {
+  display: flex; justify-content: space-between; align-items: center;
+  border-bottom: 2px solid var(--p-border);
+  padding-bottom: 2px;
+  flex-shrink: 0;
+}
+.room-poster__title {
+  font-size: 9px; font-weight: 700; color: var(--p-accent);
+  letter-spacing: 0.04em;
+}
+.room-poster__hint {
+  font-size: 7px; color: var(--p-text-muted);
+}
+.room-poster__body { display: flex; gap: 6px; flex: 1; min-height: 0; overflow: hidden; }
+.room-poster__col  { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; min-height: 0; overflow: hidden; }
+.room-poster__col + .room-poster__col { border-left: 1px dashed var(--p-border); padding-left: 6px; }
+.room-poster__section-label {
+  font-size: 7px; font-weight: 700; color: var(--p-text-muted);
+  letter-spacing: 0.05em; margin-bottom: 1px;
+  flex-shrink: 0;
+}
+.room-poster__row { display: flex; align-items: center; gap: 4px; font-size: 8px; flex-shrink: 0; }
+.room-poster__row-name { width: 26px; font-weight: 700; flex-shrink: 0; color: var(--p-text); font-size: 8px; }
+.room-poster__row-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.room-poster__row-meta { font-size: 7px; color: var(--p-text-muted); flex-shrink: 0; }
+.room-poster__bar {
+  flex: 1; height: 5px;
+  background: var(--p-tint);
+  border: 1px solid var(--p-border);
+  position: relative;
+  min-width: 0;
+}
+.room-poster__bar-fill {
+  position: absolute; top: 0; bottom: 0;
+  background-image: repeating-linear-gradient(45deg, rgba(255,255,255,0.25) 0 2px, transparent 2px 4px);
+}
+.room-poster__bar-now {
+  position: absolute; top: -1px; bottom: -1px; width: 1px; background: var(--p-error);
+}
+.room-poster__check {
+  width: 8px; height: 8px;
+  border: 1.5px solid var(--p-border);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 6px; color: white; font-weight: 700;
+  flex-shrink: 0; box-sizing: border-box;
+}
+.room-poster__check--pending     { background: var(--p-paper); }
+.room-poster__check--in_progress { background: var(--p-warn); }
+.room-poster__check--completed   { background: var(--p-success); }
+.room-poster__check-text {
+  flex: 1; min-width: 0;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font-size: 8px;
+}
+.room-poster__check-text--completed { text-decoration: line-through; color: var(--p-text-muted); }
+.room-poster__footer {
+  font-size: 7px; color: var(--p-text-muted);
+  text-align: right;
+  border-top: 1px dashed var(--p-border);
+  padding-top: 3px;
+  margin-top: auto;
+}
+
+/* room islands — rug areas on floor */
+.room-island {
+  position: absolute;
+  border: 3px solid var(--p-border);
+  z-index: 0;
+}
+.room-island::before {
+  content: ""; position: absolute; inset: 5px;
+  border: 2px solid var(--p-border);
+}
+.room-island--pm     { background: var(--p-rug); }
+.room-island--pm::before     { border-color: var(--p-rug-2); }
+.room-island--dev    { background: var(--p-rug-2); opacity: 0.75; }
+.room-island--review { background: var(--p-rug); opacity: 0.85; }
+.room-island--review::before { border-color: var(--p-rug-2); }
+
+/* retro mode bottom strip */
+.room-floor-cushion {
+  position: absolute; left: 30px; right: 30px; bottom: 14px; height: 50px;
+  background: var(--p-rug-2);
+  border: 3px solid var(--p-border);
+  border-radius: 6px;
+  z-index: 0;
+  opacity: 0.5;
+}
+
+/* top-right mode toggle button */
+.room-mode-toggle {
+  all: unset;
+  cursor: pointer;
+  position: absolute;
+  z-index: 3;
+  padding: 4px 10px;
+  font-size: 9px;
+  font-weight: 700;
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  background: var(--p-paper);
+  color: var(--p-text);
+  border: 2px solid var(--p-border);
+  box-shadow: 2px 2px 0 0 var(--p-shadow);
+  letter-spacing: 0.04em;
+}
+.room-mode-toggle--active { background: var(--p-accent); color: white; }
+
+/* modal overlay */
+.room-modal {
+  position: absolute; inset: 0; z-index: 20;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px;
+}
+.room-modal__panel { position: relative; }
+.room-modal__close {
+  position: absolute; top: -10px; right: -10px;
+  width: 28px; height: 28px;
+  background: var(--p-paper);
+  border: 2px solid var(--p-border);
+  cursor: pointer;
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-weight: 700; font-size: 14px;
+  z-index: 1;
+  box-shadow: 2px 2px 0 0 var(--p-shadow);
+}
+
+/* ============================================================
+   Section 6: Subroom primitives
+   .subroom-clone                (half-transparent ghost cat — worktree sub-agent)
+   .subroom-portal               (door-like marker behind island)
+   ============================================================ */
+
+.subroom-clone {
+  all: unset;
+  cursor: pointer;
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  opacity: 0.62;
+  filter: saturate(0.6);
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  z-index: 1;
+}
+.subroom-clone:hover { opacity: 0.95; filter: saturate(1); transform: translateY(-2px); }
+.subroom-clone__sprite {
+  position: relative;
+  /* WHY: aura ring provides visual cue that this is a worktree clone, not the primary agent */
+}
+.subroom-clone__sprite::before {
+  content: ""; position: absolute;
+  left: -3px; right: -3px; top: -2px; bottom: -2px;
+  border: 1.5px dashed var(--p-accent);
+  opacity: 0.5;
+  animation: subroom-pulse 2.4s ease-in-out infinite;
+}
+@keyframes subroom-pulse {
+  0%, 100% { opacity: 0.25; }
+  50%      { opacity: 0.7; }
+}
+.subroom-clone__label {
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 7px;
+  font-weight: 700;
+  color: var(--p-text);
+  background: var(--p-paper);
+  border: 1.5px solid var(--p-border);
+  padding: 1px 4px;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  box-shadow: 1px 1px 0 0 var(--p-shadow);
+}
+.subroom-clone__dot {
+  width: 5px; height: 5px;
+  border: 1px solid var(--p-border);
+  flex-shrink: 0;
+}
+.subroom-clone__dot--busy   { background: var(--p-success); animation: subroom-pulse 1.2s ease-in-out infinite; }
+.subroom-clone__dot--review { background: var(--p-accent); }
+.subroom-clone__dot--idle   { background: var(--p-stone); }
+
+.subroom-portal {
+  position: absolute;
+  width: 36px; height: 44px;
+  background: var(--p-tint);
+  border: 2px solid var(--p-border);
+  border-bottom: 4px solid var(--p-border);
+  z-index: 0;
+  opacity: 0.7;
+}
+.subroom-portal::before {
+  content: "▢"; position: absolute; left: 50%; top: 4px; transform: translateX(-50%);
+  font-family: ui-monospace, monospace; font-size: 10px;
+  color: var(--p-accent);
+}
+.subroom-portal__label {
+  position: absolute; left: 50%; bottom: -14px; transform: translateX(-50%);
+  font-family: ui-monospace, monospace; font-size: 6px;
+  color: var(--p-text-muted);
+  white-space: nowrap;
+}

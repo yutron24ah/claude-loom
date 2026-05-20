@@ -18,7 +18,11 @@ export type ToastEvent =
   | 'subagent_failed'
   | 'project_added'
   | 'plan_conflict_detected'
-  | 'spec_change_detected';
+  | 'spec_change_detected'
+  | 'approval_not_found';
+
+/** Action that can be attached to a toast for user interaction. */
+export type ToastAction = 'retry';
 
 export interface Toast {
   /**
@@ -36,6 +40,15 @@ export interface Toast {
   message: string;
   /** null = persistent (requires manual close). number = auto-dismiss after N ms. */
   ttl_ms: number | null;
+  /**
+   * Optional action attached to the toast.
+   * 'retry' — caller provides a retry callback via ToastContainer or
+   * the emitter stores the retry fn separately (decoupled design).
+   * WHY: toastBus is a fire-and-forget channel; the retry mechanism
+   * lives in useApprovalMutations (SRP). action field signals intent only.
+   * REQ-160: approval_not_found toast uses action='retry'.
+   */
+  action?: ToastAction;
 }
 
 type Handler = (toast: Toast) => void;
@@ -172,5 +185,26 @@ export function emitSpecChangeDetected(message = 'SPEC 変更が検知されま�
     event: 'spec_change_detected',
     message,
     ttl_ms: null,
+  });
+}
+
+/**
+ * Emit approval_not_found error toast (persistent — user must retry or close).
+ * REQ-160: approval.decide NOT_FOUND handler calls this with action='retry'.
+ * WHY: occurrence-style per-call id (Date.now()) so multiple back-to-back
+ * NOT_FOUND events each get their own toast entry (countable occurrences).
+ * The retry mechanism lives in useApprovalMutations (SRP); action='retry'
+ * signals to ToastContainer that a retry action button is expected.
+ */
+export function emitApprovalNotFound(
+  message = 'approval event が見つかりません (期限切れ?)',
+): void {
+  toastBus.emit({
+    id: `approval_not_found-${Date.now()}`,
+    kind: 'error',
+    event: 'approval_not_found',
+    message,
+    ttl_ms: null,
+    action: 'retry',
   });
 }

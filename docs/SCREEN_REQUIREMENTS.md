@@ -83,6 +83,12 @@
 - worktree パス、配属プロジェクト、ロール（PM / 通常）
 - 終了済みセッションも参照可能
 
+**M0.18 cross-cutting: SessionList reviewer column rename（SES-LBL-* test prefix）**:
+- `reviewer_agent` column の表示ラベルを `reviewer (skill)` に変更
+- DB 値を skill identifier 形式に変換して表示（例: `loom-reviewer` → `loom-review/single`、`loom-code-reviewer` → `loom-review/trio.code`）
+- mapping 表にない旧 DB 値は raw text + 灰色バッジ（unmapped badge）で表示
+- DB 互換性は projection 関数（`projectReviewerAgent()`）で吸収（`REVIEWER_AGENT_SKILL_MAP` typed object 参照）
+
 ### 3.6 進捗の時間軸表現（ガント系）
 
 Room View（ピクセル RPG）の "感情的な絵" と相補的に、**時間軸 × エージェント** の定量ビューが必要。
@@ -108,24 +114,53 @@ Room View（ピクセル RPG）の "感情的な絵" と相補的に、**時間�
 - TDD ループ内部段階（test→impl→refactor）の細粒度可視化
 - タスク間の依存関係（矢印・線）
 
-### 3.7 Retro session（M0.8 / M0.11）
+### 3.7 Retro session（M0.8 / M0.11 / M0.18）
 
-retro の実行記録と action plan の状況を追跡・参照したい。
+retro の実行記録と KPT ボード・lifecycle 状態を追跡・参照したい。
+
+**M0.18 意味論差し替え（KPT 4 column board + lifecycle pip + admin）**:
 
 - retro session 一覧（時系列、milestone tag / 日付 / finding 件数）
-- 特定 retro の詳細（4 lens findings / counter-arguer verdict / aggregator action plan）
-- action plan status（immediate / milestone / deferred 3 分類ごとの進捗）
+- **KPT 4 column board**（KEEP / PROBLEM / CARRYOVER / TRY の 4 列）:
+  - KEEP: 継続したい良い慣行（Phase 1 プレースホルダー、Phase 2+ intake）
+  - PROBLEM: 今回 retro の新規 finding（severity badge + carryover pip）
+  - CARRYOVER: `pending_summary.json` 由来の持ち越し finding（`carryover_count` >= 1）
+  - TRY: aggregator が確定させた action plan
+- **lifecycle pip 表示**: finding card ごとに `carryover_count pip`（例: ▢▢▣ = 2/3 で次 retro expire）+ `last_seen_in` / `re_evaluated_in` metadata を表示
+- **verdict 4-way badge**: finding に `promoted` / `auto-expire` / `lens-drop` / `null` の 4 状態を色付きバッジで表示
+- **admin section**（header の `admin` トグルで展開）:
+  - `Reconstruct from archive markdown` ボタン → daemon `trpc.retro.reconstructFromArchive(retroId)` invoke
+  - `pending_summary.json 再生成` ボタン
+  - `approval.decide retry`（NOT_FOUND 検知時）ボタン
+- `reconstructed_from_archive: true` marker の finding は小さいマーカーで通常 card と区別
+- `useRetroLifecycle` hook が `pending_summary.json` + `pending.json` から carryover を集約
 - user lens 貢献（user finding と他 lens finding を区別して表示）
 - archive markdown render（`docs/retro/<id>-report.md` の画面内閲覧）
 
-### 3.8 Customization Layer（M0.9）
+### 3.8 Customization Layer（M0.9 / M0.18）
 
-13 体の agent それぞれの model と personality 設定の現状を把握したい。
+agent と skill scope の model・personality 設定の現状を階層 tree で把握したい。
 
-- agent ごとの現在の model（opus / sonnet / haiku、全 13 agent）
-- agent ごとの現在の personality preset（default / friendly-mentor / strict-drill / detective）
+**M0.18 意味論差し替え（agents flat table → agents (3) + skills (2 sub-scope) tree 2-pane）**:
+
+- **左ペイン（260px）— 階層 tree**:
+  ```
+  ▾ Agents (3)
+    • loom-pm / loom-developer / loom-retro-pm
+  ▾ Skills (2)
+    ▾ loom-review
+      ▾ strategies: single / trio.code / trio.security / trio.test
+    ▾ loom-retro
+      ▾ lenses: pj-axis / process-axis / meta-axis / researcher
+      ▾ stages: counter-arguer / aggregator [WRITE]
+  ```
+- **右ペイン（1fr）— leaf editor**:
+  - agent leaf 選択時: model 選択（opus / sonnet / haiku）+ personality preset 選択 + scope 表示（user vs project）
+  - skill scope leaf 選択時: model 選択 UI は非表示（skill scope はモデル設定対象外）
+  - `WRITE` badge: aggregator stage は `writePermission: true` marker — leaf + editor 両方に表示
+  - `PERSISTENT AGENT` / `SKILL SCOPE` leaf 種別 badge で区別
 - scope 表示（user-prefs vs project-prefs の override 状態を可視化）
-- 4 preset の説明 / 性格紹介
+- 4 personality preset の説明 / 性格紹介
 - custom personality 内容（free-form override 設定時の合成 prompt 確認）
 
 ### 3.9 Worktree（M0.10）
@@ -137,16 +172,22 @@ retro の実行記録と action plan の状況を追跡・参照したい。
 - worktree 数 / max_concurrent 上限到達警告
 - worktree 用途表示（parallel dev / 安全実験 / branch 比較 / hotfix / 一時 review の 5 種）
 
-### 3.10 learned_guidance（M0.11）
+### 3.10 learned_guidance（M0.11 / M0.18）
 
-各 agent に注入されている learned_guidance の内容と由来を確認・管理したい。
+各 agent・skill scope に注入されている learned_guidance の内容と由来を確認・管理したい。
 
-- agent ごとの active guidance 一覧
+- agent / skill scope ごとの active guidance 一覧
 - guidance source の audit trail（from_retro / from_finding_id / category / added_at）
 - active vs inactive の切替状態
 - scope 表示（user-prefs vs project-prefs）
 - 重複 / 矛盾検出（同 category / 似た guidance の hint 表示）
 - TTL / use_count の表示
+
+**M0.18 cross-cutting: scope filter（GD-SCOPE-* test prefix）**:
+- scope filter pill 4 値: `all` / `Agents (N)` / `loom-review` / `loom-retro` で guidance を絞り込み
+- `keyKind: "agent" | "skill"` badge を各 guidance card に表示（AGENT = 緑 / SKILL = accent）
+- `keyPath` 表示（例: `agents/loom-pm` / `skills/loom-review/strategies/trio/code`）
+- aggregator stage の guidance には `WRITE` badge を追加表示（`writePermission: true` marker 由来）
 
 ### 3.11 Coexistence Mode（M0.12）
 
@@ -172,6 +213,25 @@ retro の実行記録と action plan の状況を追跡・参照したい。
 - milestone 単位の discipline スコア（5 項目 + TDD 遵守率）
 - violation トレンド（時系列）
 - 個別 violation の drill-down（commit / session / agent ref）
+
+### 3.13 Room View — Spirit Summoning（M0.18）
+
+開発室に常駐する 3 体の persistent agent と、スキル dispatch に応じて召喚される 10 体の ephemeral spirit の状態を視覚的に把握したい。
+
+**M0.18 意味論差し替え（5 desk hardcoded → 3 persistent desk + 10 ephemeral spirit summoning）**:
+
+- **3 persistent desk**: loom-pm / loom-developer / loom-retro-pm が常駐（`kind: 'persistent'`）、常時 Room に表示
+- **10 ephemeral spirit**: skill template dispatch で召喚（`kind: 'spirit'`、`summonedBy: <skill-identifier>`）、完了後は room から退場
+  - 4 review spirit (loom-review/single / trio.code / trio.security / trio.test)
+  - 4 retro-lens spirit (loom-retro/lenses/pj-axis / process-axis / meta-axis / researcher)
+  - 2 retro-stage spirit (loom-retro/stages/counter-arguer / aggregator)
+- **spirit motion 3 flavor**（`.room--rpg` / `.room--office` / `.room--hybrid` class 切替、Tweaks default: hybrid）:
+  - RPG: glow + scale アニメ（0.6→1.1→1.0）+ 魔法陣 footprint での召喚演出
+  - Office: door SVG からスライド入場 + SUMMON GATE 装飾
+  - Hybrid（推奨）: RPG の glow 控えめ + 直近召喚を半透明 echo として残置（32% opacity, grayscale 0.6）
+- **SummonQueue 壁掛け plaque**: 現在の dispatch queue を `active` / `queued` / `leaving` 3 状態で表示（誰が呼ばれていつ消えるかを可視化）
+- **`useDispatchQueue` hook**: daemon の dispatch event を subscribe し、SummonQueue + spirit 表示に供給
+- spirit の `skillId` テキストを plaque および spirit 足元に表示、いつ終わるか（TTL）も表示
 
 ---
 
@@ -276,7 +336,7 @@ degraded mode の承認と violation の retro への昇格を行いたい。
 - エージェントのステータス変化（idle ⇄ busy）
 - TodoWrite 由来の短期計画更新
 - 新規 subagent 起動 / 完了
-- トークン使用量（5 分粒度）
+- トークン使用量（5 分粒度、**M0.18: `session.active` が true の時のみ polling 有効** — `useTokenUsage({ enabled: !!session.active })`）
 - 整合性 finding 新規発生
 - retro Stage 1 並列 lens 完了通知
 - discipline metrics live indicator（parallel rate / Task tool status / TDD 順序 violations / reviewer verdict の 4 種）
@@ -297,6 +357,7 @@ degraded mode の承認と violation の retro への昇格を行いたい。
 | `retro_stage_complete`（Stage 1 並列 lens 完了） | info（5 秒で消える） |
 | `discipline_violation_critical`（parallel rate 急落 / TDD 違反多発） | warning（持続表示、手動 close、Phase 2 で alert threshold 設定可） |
 | `worktree_lock_warning`（lock された worktree への書込試行） | warning（持続表示、手動 close） |
+| `approval_not_found`（M0.18: `approval.decide` の NOT_FOUND throw 検知） | error（持続表示、手動 close、retry action 付き — ERR-NF-* test prefix） |
 
 下記は **トースト不要**（画面更新で十分）：
 - subagent 起動・完了の通常進捗
@@ -480,3 +541,4 @@ frontend-design への hint（決定権は frontend-design に委譲）：
 - 2026-05-13: M0.16 — Playwright e2e baseline が OS-aware 化 (`{arg}-{platform}.png` suffix)、画面要件には影響なし (CI/test infrastructure focus)。
 - 2026-05-14: M0.17 — UI Redesign Port Correction (design review handoff `docs/m0.17-design-review.md` 適用)。M0.15 UI Redesign Port で発覚した SSoT 乖離 (再現度 30〜40%) を修正、proposed file 11 種を全適用：(1) shell.css 832L 復旧 (B1 致命)、(2) ゾーン SVG ラグ化 + ResizeObserver 比率レイアウト (B2+B3 致命)、(3) Outlet sibling routing + LiveRail + room.css G6 トークン化 (S1+S2 + G6)、(4) cat-walker walkTo + RoomModeToggle 撤去 + M2 branch label 責務分離 (S6+M1-M3)、(4.5) AppShell marginRight wrapper 復活 hotfix + stale test selector 修正 + tRPC WS transport 整合。Playwright darwin baseline 16 枚再撮影、19/19 pass。再現度 ≥90% 達成。useScenario shape 12 画面 SSoT 不変 (画面 data dependency は M0.15 と同一)。
 - 2026-05-15: M0.17 Phase 4.8 — production mock= scaffolding を `import.meta.env.DEV` で gate (post-tag-hotfix 第 4 件)。**mock mode 仕様の dev-only clarification**: 「mock mode: `?mock=active` クエリパラメータで `redesign/scenarios.js` fixture を注入」は **Vite dev server (`pnpm dev`) + Vitest test 時のみ active**、production build (daemon-served `ui/dist`) では Vite DCE で fallback path + ScenarioPicker UI が tree-shake、`?mock=active` URL param は無視され real WS data が常用される。SCREEN_REQUIREMENTS の mock mode 記述は dev/QA tool 限定の意図で参照。
+- 2026-05-19: M0.18 Skill Migration UI Rework — 意味論差し替え 3 view を反映。§3.7 を KPT 4 column board + lifecycle pip + admin section に更新。§3.8 を agents (3) + skills (2 sub-scope) tree 2-pane に更新。§3.13 新設（Room Spirit Summoning: 3 persistent desk + 10 ephemeral spirit + 3 motion flavor + SummonQueue plaque）。§3.5 に M0.18 SessionList reviewer column rename 追記（SES-LBL-* / `projectReviewerAgent()`）。§3.10 に scope filter pill 追記（GD-SCOPE-* / keyKind badge / WRITE badge）。§5.1 TokenMeter gate 注記追加（`session.active` gate）。§5.2 toast table に `approval_not_found` (ERR-NF-*) 追加。

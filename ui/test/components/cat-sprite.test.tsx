@@ -251,8 +251,9 @@ describe('ROSTER — data shape', () => {
   });
 
   it('all required fields are present on each entry', () => {
+    // M0.18 Phase 0: added kind + summonedBy fields
     const requiredFields: (keyof RosterEntry)[] = [
-      'id', 'role', 'jp', 'name', 'breed', 'quote', 'hat', 'fur', 'cheek', 'group',
+      'id', 'kind', 'summonedBy', 'role', 'jp', 'name', 'breed', 'quote', 'hat', 'fur', 'cheek', 'group',
     ];
     for (const entry of ROSTER) {
       for (const field of requiredFields) {
@@ -262,15 +263,17 @@ describe('ROSTER — data shape', () => {
   });
 
   it('all group values are valid', () => {
-    const validGroups = new Set(['core', 'review', 'retro']);
+    // M0.18 Phase 0: 'retro' split into 'retro-lens' + 'retro-stage'
+    const validGroups = new Set(['core', 'review', 'retro-lens', 'retro-stage']);
     for (const entry of ROSTER) {
       expect(validGroups.has(entry.group)).toBe(true);
     }
   });
 
-  it('has 2 core agents (pm + dev)', () => {
+  it('has 3 core agents (pm + dev + retro-pm)', () => {
+    // M0.18 Phase 0: retro-pm moved from retro group to core (persistent)
     const coreAgents = ROSTER.filter(e => e.group === 'core');
-    expect(coreAgents).toHaveLength(2);
+    expect(coreAgents).toHaveLength(3);
   });
 
   it('has 4 review agents', () => {
@@ -278,9 +281,14 @@ describe('ROSTER — data shape', () => {
     expect(reviewAgents).toHaveLength(4);
   });
 
-  it('has 7 retro agents', () => {
-    const retroAgents = ROSTER.filter(e => e.group === 'retro');
-    expect(retroAgents).toHaveLength(7);
+  it('has 4 retro-lens agents and 2 retro-stage agents', () => {
+    // M0.18 Phase 0: 'retro' group split into 'retro-lens' (4) + 'retro-stage' (2)
+    // Previous: 7 retro agents (retro-pm + 4 lenses + 2 stages)
+    // Now: retro-pm is 'core', lenses are 'retro-lens', stages are 'retro-stage'
+    const lensAgents = ROSTER.filter(e => e.group === 'retro-lens');
+    const stageAgents = ROSTER.filter(e => e.group === 'retro-stage');
+    expect(lensAgents).toHaveLength(4);
+    expect(stageAgents).toHaveLength(2);
   });
 
   it('pm entry has leader hat', () => {
