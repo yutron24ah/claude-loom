@@ -1,0 +1,106 @@
+{
+  "audit_date": "2026-05-20",
+  "branch": "chore/qa-suite-coverage-audit-2026-05-20",
+  "source": "docs/design/2026-05-17-m0.18-ui-rework/project/qa-suite.js",
+  "total_cases": 479,
+  "note": "Task spec cited 501 cases; actual parse yielded 479 cases with pri: field. Delta of 22 reflects section/group entries counted in original estimation.",
+  "vitest_total": 1118,
+  "playwright_total": 43,
+  "coverage_distribution": {
+    "full": 63,
+    "partial": 47,
+    "implementation_only": 156,
+    "missing": 189,
+    "n_a": 24
+  },
+  "coverage_pct": {
+    "full": "13%",
+    "covered_any": "23%",
+    "with_impl": "56%",
+    "missing": "39%"
+  },
+  "milestone_split": {
+    "m0_18_scope": {
+      "prefixes": ["SP-MOTION", "SP-ROSTER", "SP-DESK", "SP-QUEUE", "SP-DETAIL", "CT", "RL", "GS", "SL", "ENF", "TK"],
+      "total": 63,
+      "full": 42,
+      "partial": 15,
+      "implementation_only": 5,
+      "missing": 1,
+      "n_a": 0,
+      "coverage_pct": "90%"
+    },
+    "m0_x_original": {
+      "prefixes": ["TB", "DR", "SB", "RT", "RC", "SP-VISIBLE", "SP-SWITCH", "SP-LIVE", "SP-ROUTER", "SP-NONROOM", "CN", "TS", "RM", "BG", "WD", "PO", "DS", "WC", "CS", "AP", "PL", "GA", "CU", "RE", "WT", "GU", "SE", "PS", "AD", "PM", "LR", "OV", "FL", "UX", "EG", "NT", "CH", "MS", "SEC", "IN", "PH", "AR"],
+      "total": 416,
+      "full": 21,
+      "partial": 32,
+      "implementation_only": 151,
+      "missing": 188,
+      "n_a": 24,
+      "coverage_pct": "13%"
+    }
+  },
+  "section_summary": [
+    { "section": "shell", "zone": "shell", "prefixes": ["TB", "DR", "SB", "RT", "RC", "SP-VISIBLE", "SP-SWITCH", "SP-LIVE", "SP-ROUTER", "SP-NONROOM", "CN", "TS"], "total": 42, "full": 4, "partial": 12, "implementation_only": 18, "missing": 8, "n_a": 0, "coverage_pct": "38%" },
+    { "section": "room", "zone": "room", "prefixes": ["RM", "BG", "WD", "PO", "DS", "WC", "CS", "AP"], "total": 48, "full": 8, "partial": 10, "implementation_only": 22, "missing": 8, "n_a": 0, "coverage_pct": "38%" },
+    { "section": "plan", "zone": "panel", "prefixes": ["PL"], "total": 16, "full": 3, "partial": 5, "implementation_only": 7, "missing": 1, "n_a": 0, "coverage_pct": "50%" },
+    { "section": "gantt", "zone": "panel", "prefixes": ["GA"], "total": 8, "full": 1, "partial": 1, "implementation_only": 5, "missing": 1, "n_a": 0, "coverage_pct": "25%" },
+    { "section": "consistency", "zone": "panel", "prefixes": ["CN"], "total": 7, "full": 1, "partial": 2, "implementation_only": 3, "missing": 1, "n_a": 0, "coverage_pct": "43%" },
+    { "section": "customization_legacy", "zone": "panel", "prefixes": ["CU"], "total": 5, "full": 1, "partial": 0, "implementation_only": 3, "missing": 1, "n_a": 0, "coverage_pct": "20%" },
+    { "section": "retro_legacy", "zone": "panel", "prefixes": ["RE"], "total": 5, "full": 1, "partial": 0, "implementation_only": 3, "missing": 1, "n_a": 0, "coverage_pct": "20%" },
+    { "section": "worktree", "zone": "panel", "prefixes": ["WT"], "total": 9, "full": 1, "partial": 1, "implementation_only": 5, "missing": 2, "n_a": 0, "coverage_pct": "22%" },
+    { "section": "guidance_legacy", "zone": "panel", "prefixes": ["GU"], "total": 6, "full": 2, "partial": 1, "implementation_only": 2, "missing": 1, "n_a": 0, "coverage_pct": "50%" },
+    { "section": "sessions", "zone": "panel", "prefixes": ["SE"], "total": 6, "full": 1, "partial": 1, "implementation_only": 3, "missing": 1, "n_a": 0, "coverage_pct": "33%" },
+    { "section": "project_settings", "zone": "panel", "prefixes": ["PS"], "total": 5, "full": 1, "partial": 0, "implementation_only": 3, "missing": 1, "n_a": 0, "coverage_pct": "20%" },
+    { "section": "tokens", "zone": "panel", "prefixes": ["TK"], "total": 5, "full": 3, "partial": 1, "implementation_only": 1, "missing": 0, "n_a": 0, "coverage_pct": "80%" },
+    { "section": "agent_detail", "zone": "overlay", "prefixes": ["AD"], "total": 10, "full": 2, "partial": 2, "implementation_only": 4, "missing": 2, "n_a": 0, "coverage_pct": "40%" },
+    { "section": "pm_chat", "zone": "overlay", "prefixes": ["PM"], "total": 13, "full": 4, "partial": 2, "implementation_only": 5, "missing": 2, "n_a": 0, "coverage_pct": "46%" },
+    { "section": "live_rail", "zone": "overlay", "prefixes": ["LR"], "total": 11, "full": 0, "partial": 5, "implementation_only": 4, "missing": 2, "n_a": 0, "coverage_pct": "45%" },
+    { "section": "overall", "zone": "shell", "prefixes": ["OV"], "total": 27, "full": 2, "partial": 6, "implementation_only": 6, "missing": 13, "n_a": 0, "coverage_pct": "30%" },
+    { "section": "flows", "zone": "shell", "prefixes": ["FL"], "total": 55, "full": 3, "partial": 14, "implementation_only": 8, "missing": 30, "n_a": 0, "coverage_pct": "31%" },
+    { "section": "ux_patterns", "zone": "cross-cutting", "prefixes": ["UX"], "total": 26, "full": 0, "partial": 0, "implementation_only": 6, "missing": 20, "n_a": 0, "coverage_pct": "0%" },
+    { "section": "edge_cases", "zone": "cross-cutting", "prefixes": ["EG"], "total": 18, "full": 0, "partial": 0, "implementation_only": 4, "missing": 14, "n_a": 0, "coverage_pct": "0%" },
+    { "section": "notifications", "zone": "cross-cutting", "prefixes": ["NT"], "total": 7, "full": 0, "partial": 1, "implementation_only": 3, "missing": 3, "n_a": 0, "coverage_pct": "14%" },
+    { "section": "characters", "zone": "cross-cutting", "prefixes": ["CH"], "total": 14, "full": 0, "partial": 0, "implementation_only": 6, "missing": 8, "n_a": 0, "coverage_pct": "0%" },
+    { "section": "milestones", "zone": "cross-cutting", "prefixes": ["MS"], "total": 24, "full": 0, "partial": 0, "implementation_only": 8, "missing": 16, "n_a": 0, "coverage_pct": "0%" },
+    { "section": "security", "zone": "cross-cutting", "prefixes": ["SEC"], "total": 5, "full": 0, "partial": 0, "implementation_only": 2, "missing": 1, "n_a": 2, "coverage_pct": "0%" },
+    { "section": "install", "zone": "cross-cutting", "prefixes": ["IN"], "total": 6, "full": 0, "partial": 0, "implementation_only": 0, "missing": 4, "n_a": 2, "coverage_pct": "0%" },
+    { "section": "philosophy", "zone": "cross-cutting", "prefixes": ["PH"], "total": 6, "full": 0, "partial": 0, "implementation_only": 2, "missing": 4, "n_a": 0, "coverage_pct": "0%" },
+    { "section": "spirit_m0_18", "zone": "room", "prefixes": ["SP-MOTION", "SP-ROSTER", "SP-DESK", "SP-QUEUE", "SP-DETAIL"], "total": 13, "full": 9, "partial": 2, "implementation_only": 1, "missing": 0, "n_a": 1, "coverage_pct": "85%" },
+    { "section": "customization_tree_m0_18", "zone": "panel", "prefixes": ["CT"], "total": 13, "full": 9, "partial": 3, "implementation_only": 0, "missing": 1, "n_a": 0, "coverage_pct": "92%" },
+    { "section": "retro_lifecycle_m0_18", "zone": "panel", "prefixes": ["RL"], "total": 16, "full": 6, "partial": 5, "implementation_only": 2, "missing": 0, "n_a": 3, "coverage_pct": "69%" },
+    { "section": "guidance_scope_m0_18", "zone": "panel", "prefixes": ["GS"], "total": 6, "full": 5, "partial": 1, "implementation_only": 0, "missing": 0, "n_a": 0, "coverage_pct": "100%" },
+    { "section": "session_label_m0_18", "zone": "panel", "prefixes": ["SL"], "total": 3, "full": 3, "partial": 0, "implementation_only": 0, "missing": 0, "n_a": 0, "coverage_pct": "100%" },
+    { "section": "err_not_found_m0_18", "zone": "cross-cutting", "prefixes": ["ENF"], "total": 3, "full": 3, "partial": 0, "implementation_only": 0, "missing": 0, "n_a": 0, "coverage_pct": "100%" },
+    { "section": "admin_recon_m0_18", "zone": "cross-cutting", "prefixes": ["AR"], "total": 4, "full": 0, "partial": 1, "implementation_only": 1, "missing": 1, "n_a": 1, "coverage_pct": "25%" }
+  ],
+  "top_priority_missing_cases_pri0": [
+    { "id": "SB-LAYOUT-01", "section": "statusbar", "name": "StatusBar画面下常時表示", "reason": "No StatusBar unit tests exist", "fill": "new ui/test/views/shell/statusbar.test.tsx" },
+    { "id": "SB-CONN-01", "section": "statusbar", "name": "接続セグメント", "reason": "No StatusBar unit tests exist", "fill": "new ui/test/views/shell/statusbar.test.tsx" },
+    { "id": "SB-SCENARIO-01", "section": "statusbar", "name": "シナリオラベル", "reason": "No StatusBar unit tests exist", "fill": "new ui/test/views/shell/statusbar.test.tsx" },
+    { "id": "RT-BACK-01", "section": "routing", "name": "ブラウザ戻る/進む", "reason": "Browser nav behavior; no e2e test", "fill": "ui/e2e/room-baseline.spec.ts extend" },
+    { "id": "RM-NOWRAP-01", "section": "room-layout", "name": "AppShell marginRight Room縮まらない", "reason": "No interaction test for PM active + Room layout", "fill": "ui/test/AppShell.redesign.test.tsx extend" },
+    { "id": "OV-CONSOLE-ERROR-01", "section": "overall", "name": "全画面console.error無し", "reason": "No Playwright console listener test", "fill": "new e2e console-audit spec" },
+    { "id": "OV-ALL-BUTTONS-01", "section": "overall", "name": "全buttonにonClick", "reason": "No click audit test", "fill": "new e2e button-audit spec" },
+    { "id": "OV-NO-ALERT-01", "section": "overall", "name": "alert()直書き0件", "reason": "Static check not formalized as test", "fill": "lint rule or vitest static check" },
+    { "id": "OV-NO-PLACEHOLDER-01", "section": "overall", "name": "placeholder文字列0件", "reason": "Static check not formalized", "fill": "lint rule or vitest static check" },
+    { "id": "OV-BACK-FORWARD-01", "section": "overall", "name": "browser back/forward", "reason": "No e2e navigation history test", "fill": "new e2e navigation spec" }
+  ],
+  "naming_mismatch_note": "Test files use own prefix namespaces (RETRO-LC-*, CUSTOM-TREE-*, SES-LBL-*, ERR-NF-*, GD-SCOPE-*) vs qa-suite.js IDs (RL-*, CT-*, SL-*, ENF-*, GS-*). Coverage is correct semantically but automated grep traceability is broken. Recommend adding '// covers: <qa-suite-id>' comments to test describe blocks.",
+  "gap_fill_recommendation": {
+    "phase": "pre-Phase2 entry",
+    "pr_name": "test/qa-suite-gap-fill-phase1",
+    "estimated_new_tests": "80-100",
+    "priority_order": [
+      "StatusBar unit tests (3 pri-0 blockers)",
+      "OV-CONSOLE-ERROR-01 Playwright console listener",
+      "RT-BACK-01 e2e navigation history",
+      "WT-QUERY-01 worktree branch query",
+      "LR-MOUNT-01 / LR-TAB-MERGED-01 LiveRail unit tests",
+      "CT-SCHEMA-02 migration compat test",
+      "DS status dot / bubble tool tests"
+    ],
+    "separate_milestone_needed": "UX/EG/MS/CH sections (186 cases, 0% coverage) — recommend dedicated milestone test/qa-suite-ux-edge-coverage"
+  }
+}
