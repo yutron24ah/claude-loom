@@ -331,3 +331,59 @@ describe('AppShell × redesign: nav-link routing', () => {
     expect(screen.getByText('Plan Content')).toBeInTheDocument();
   });
 });
+
+// ---------------------------------------------------------------------------
+// 8. RM-NOWRAP-01 — AppShell marginRight preserves Room layout when PM active
+// ---------------------------------------------------------------------------
+// covers: RM-NOWRAP-01
+describe('AppShell × redesign: Room marginRight when PM active (RM-NOWRAP-01)', () => {
+  it('Room wrapper has marginRight equal to PM_PANEL_W (340) when pm.running is true', () => {
+    // WHY: RM-NOWRAP-01 — "AppShell の marginRight で Room が狭まらない".
+    // When pm.running=true, PMChatPanel occupies the right column (340px wide).
+    // The Room content wrapper must apply marginRight=340 so the Room canvas
+    // does not extend behind the PMChat panel and PM desk stays visible at W*0.78.
+    // The fixture above has pm.running=true (pm: { running: true, ... }).
+    renderShell('/');
+
+    // Room canvas wrapper is the div with position:absolute inset:0 marginRight
+    // AppShell renders: <div style={{ position: 'absolute', inset: 0, marginRight: rightColumnWidth }}>
+    // We locate it as the direct parent of room-canvas (data-testid="room-canvas").
+    const roomCanvas = screen.getByTestId('room-canvas');
+    const roomWrapper = roomCanvas.parentElement;
+
+    // The wrapper must have a marginRight style that reserves space for PM panel
+    expect(roomWrapper).not.toBeNull();
+    // PM_PANEL_W = 340; rightColumnWidth = 340 when showPmPanel=true
+    expect(roomWrapper!.style.marginRight).toBe('340px');
+  });
+
+  it('pm-chat-right-column is rendered alongside Room when pm.running is true', () => {
+    // WHY: RM-NOWRAP-01 pre-condition verification — PMChat right column must be
+    // rendered simultaneously with Room to trigger the marginRight interaction.
+    renderShell('/');
+
+    // Both elements must coexist in the DOM
+    expect(screen.getByTestId('pm-chat-right-column')).toBeInTheDocument();
+    expect(screen.getByTestId('room-canvas')).toBeInTheDocument();
+  });
+
+  it('Room wrapper marginRight matches right-column width (layout non-overlap assertion)', () => {
+    // WHY: structural assertion that Room wrapper width + right-column width = total content width.
+    // marginRight on the Room wrapper must exactly equal the right-column offsetWidth to
+    // prevent PM desk (positioned at W*0.78 of Room canvas) from being covered by PMChat.
+    renderShell('/');
+
+    const roomCanvas = screen.getByTestId('room-canvas');
+    const roomWrapper = roomCanvas.parentElement;
+    const rightColumn = screen.getByTestId('pm-chat-right-column');
+
+    expect(roomWrapper).not.toBeNull();
+    // In jsdom, style.width may not propagate to offsetWidth; check the declared style
+    // Both should express the same 340px PM_PANEL_W constant
+    const marginRight = roomWrapper!.style.marginRight;
+    const columnWidth = rightColumn.style.width;
+
+    expect(marginRight).toBe('340px');
+    expect(columnWidth).toBe('340px');
+  });
+});
