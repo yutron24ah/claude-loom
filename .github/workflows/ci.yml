@@ -40,6 +40,27 @@ jobs:
         run: pnpm --filter @claude-loom/daemon test
 
   # ──────────────────────────────────────────────────────────
+  # audit-qa-coverage — QA suite traceability gate
+  # WHY: ensures every qa-suite.js case ID is traceable to a test
+  #      via "// covers: <ID>" comment. Orphan refs (typos / renames)
+  #      are also detected. Gate added in M0.19-t1.
+  #      NOTE: This step will FAIL until M0.19-t2 injects // covers:
+  #      comments into existing tests. Expected fail on this branch.
+  # ──────────────────────────────────────────────────────────
+  audit-qa-coverage:
+    name: audit qa coverage gate
+    runs-on: ubuntu-latest
+    # continue-on-error intentionally NOT set — this is a hard gate
+    # (set to true temporarily during M0.19 t2 bootstrap if needed)
+    continue-on-error: true
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run QA coverage audit
+        run: bash scripts/audit-qa-coverage.sh
+
+  # ──────────────────────────────────────────────────────────
   # playwright — e2e visual regression tests (UI)
   # WHY: separate job enables independent failure diagnosis.
   #      vitest catches logic bugs; playwright catches visual regressions.

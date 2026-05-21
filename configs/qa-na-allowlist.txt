@@ -1,0 +1,4 @@
+# QA Suite N/A allowlist
+# Format: <CASE-ID>  # <justification>
+# Maintained by: PM + user review (PR review 必須)
+# Audited by: scripts/audit-qa-coverage.sh
