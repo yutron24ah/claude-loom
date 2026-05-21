@@ -19,6 +19,7 @@ afterEach(() => {
 // ---------------------------------------------------------------------------
 // Basic render
 // ---------------------------------------------------------------------------
+// covers: RT-TOGGLE-EXISTS-01, RT-MODE-ON-01, RT-NO-PLACEHOLDER-01
 describe('RetroGathering — basic render', () => {
   it('renders without crashing with required props', () => {
     const { container } = render(

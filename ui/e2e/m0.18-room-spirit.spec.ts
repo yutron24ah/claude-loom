@@ -72,6 +72,7 @@ async function gotoRoom(page: Parameters<typeof test>[1] extends infer T
 // ① room-spirit-hybrid — default flavor (no spiritMode override)
 // ---------------------------------------------------------------------------
 
+// covers: SP-MOTION-HYB-01
 test.describe('m0.18 Room Spirit — ① hybrid (default) visual baseline', () => {
   test('room-canvas has room--hybrid class by default (?mock=idle)', async ({ page }) => {
     await gotoRoom(page, 'idle');
@@ -105,6 +106,7 @@ test.describe('m0.18 Room Spirit — ① hybrid (default) visual baseline', () =
 // ② 3 persistent desks only — DeskStation monitor-screen count = 3
 // ---------------------------------------------------------------------------
 
+// covers: SP-DESK-01, DS-COUNT-01
 test.describe('m0.18 Room Spirit — ② 3 persistent desks (no spirit desks)', () => {
   test('exactly 3 monitor-screen elements present (persistent desks only)', async ({ page }) => {
     await gotoRoom(page, 'idle');
@@ -121,6 +123,7 @@ test.describe('m0.18 Room Spirit — ② 3 persistent desks (no spirit desks)', 
 // ③ SummonQueue presence — wall plaque rendered
 // ---------------------------------------------------------------------------
 
+// covers: SP-QUEUE-01
 test.describe('m0.18 Room Spirit — ③ SummonQueue wall plaque present', () => {
   test('summon-queue element is in the DOM', async ({ page }) => {
     await gotoRoom(page, 'idle');
@@ -137,6 +140,7 @@ test.describe('m0.18 Room Spirit — ③ SummonQueue wall plaque present', () =>
 // ④ Desk click → AgentDetailPanel interaction
 // ---------------------------------------------------------------------------
 
+// covers: AP-OPEN-01, DS-CLICK-SELECT-01
 test.describe('m0.18 Room Spirit — ④ desk click opens AgentDetailPanel', () => {
   test('clicking first desk-top renders agent-detail-panel', async ({ page }) => {
     // WHY: use ?mock=idle — active scenario has pm.running=true → PMChatPanel overlays
@@ -161,6 +165,7 @@ test.describe('m0.18 Room Spirit — ④ desk click opens AgentDetailPanel', () 
 // ⑤ Spirit echo class — hybrid echo element
 // ---------------------------------------------------------------------------
 
+// covers: SP-MOTION-HYB-01
 test.describe('m0.18 Room Spirit — ⑤ spirit-echo element in hybrid mode', () => {
   test('.spirit-echo is rendered in hybrid (default) mode', async ({ page }) => {
     await gotoRoom(page, 'idle');
@@ -179,6 +184,7 @@ test.describe('m0.18 Room Spirit — ⑤ spirit-echo element in hybrid mode', ()
 // ⑥ Room idle state — cold-start card visible
 // ---------------------------------------------------------------------------
 
+// covers: CS-VIS-01
 test.describe('m0.18 Room Spirit — ⑥ coldstart card visible when all idle', () => {
   test('coldstart card is shown when all agents idle and pm not running (?mock=idle)', async ({ page }) => {
     await gotoRoom(page, 'idle');

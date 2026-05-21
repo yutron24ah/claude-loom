@@ -61,6 +61,7 @@ const pmCat = ROSTER.find((r) => r.id === 'pm')!;
 // ---------------------------------------------------------------------------
 describe('SubroomView — basic render', () => {
   it('renders without throwing given required props', () => {
+    // covers: WT-SUB-RENDER-01
     expect(() =>
       render(<SubroomView branch="feat/oauth" parentCat={devCat} />)
     ).not.toThrow();

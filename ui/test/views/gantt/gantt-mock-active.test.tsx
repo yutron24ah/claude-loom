@@ -82,6 +82,7 @@ import { GanttView } from '../../../src/views/gantt/GanttView';
 
 describe('GanttView × scenario.active', () => {
   it('renders all 6 row labels', () => {
+    // covers: GA-EMPTY-01
     render(<GanttView />);
     // All 6 row label texts must appear in the DOM
     expect(screen.getByText('PM session')).toBeInTheDocument();

@@ -44,6 +44,7 @@ afterEach(() => {
 
 describe('ProjectSettingsView × scenario.active', () => {
   it('renders daemonPort field with value 5757', () => {
+    // covers: PS-MOUNT-01
     render(<ProjectSettingsView />);
     // The daemon port input should display the value 5757 from scenario.settings
     const portInput = screen.getByTestId('setting-daemonPort');

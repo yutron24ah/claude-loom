@@ -77,6 +77,7 @@ beforeEach(() => {
 
 describe('TokenMeterView — basic render', () => {
   it('renders token-meter-view container', () => {
+    // covers: TK-MOUNT-01
     render(<TokenMeterView />);
     expect(screen.getByTestId('token-meter-view')).toBeInTheDocument();
   });
@@ -170,6 +171,7 @@ describe('TokenMeterView — error state', () => {
 
 describe('TokenMeterView — sparkline', () => {
   it('renders sparkline container regardless of data', () => {
+    // covers: TK-METER-01
     render(<TokenMeterView />);
     const sparkline = screen.getByTestId('token-meter-sparkline');
     expect(sparkline).toBeInTheDocument();

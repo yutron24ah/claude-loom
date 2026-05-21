@@ -104,6 +104,7 @@ import { WorktreeView } from '../../../src/views/worktree/WorktreeView';
 
 describe('WorktreeView × scenario.active', () => {
   it('renders all 5 worktrees with branch names', () => {
+    // covers: WT-LIST-01
     render(<WorktreeView />);
     // All 5 branch names should appear in the DOM
     // WHY: getAllByText used because branch names appear twice (branch graph + table row)

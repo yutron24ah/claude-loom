@@ -106,6 +106,7 @@ afterEach(() => {
 
 describe('GuidanceView × scenario.active', () => {
   it('renders all 5 guidance entries when active-only filter is off', () => {
+    // covers: GU-LIST-01
     const { container } = render(<GuidanceView />);
     // Default is activeOnly=true, so uncheck to see all 5
     const checkbox = container.querySelector('[data-testid="filter-active-only"]') as HTMLInputElement;

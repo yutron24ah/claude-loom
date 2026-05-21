@@ -66,6 +66,7 @@ afterEach(() => {
 
 describe('GuidanceView × write API', () => {
   it('clicking retire button calls retireGuidance with item id', () => {
+    // covers: GU-DELETE-01, GU-EDIT-01, GU-ADD-01
     render(<GuidanceView />);
     // The "active only" filter is on by default, so only active item (g-001) is shown
     const retireBtn = screen.getByTestId('guidance-toggle');

@@ -82,6 +82,7 @@ function setupDefaultMock() {
 
 describe('PlanView — basic render', () => {
   it('renders without crashing', () => {
+    // covers: PL-MOUNT-01
     setupDefaultMock();
     const { container } = render(<PlanView />);
     expect(container.firstChild).toBeInTheDocument();
@@ -135,6 +136,7 @@ describe('PlanView — RPG design structure (M0.11.4 t13)', () => {
   });
 
   it('renders "+ milestone" button with btn-px class', () => {
+    // covers: PL-NEW-01
     setupDefaultMock();
     const { container } = render(<PlanView />);
     const btn = container.querySelector('button.btn-px');
@@ -184,6 +186,7 @@ describe('PlanView — short-term todos (via useScenario mock)', () => {
 
 describe('PlanView — long-term milestones (via useScenario mock)', () => {
   it('renders at least 1 milestone when data provided', () => {
+    // covers: PL-CARD-01
     setupDefaultMock();
     const { container } = render(<PlanView />);
     const milestones = container.querySelectorAll('[data-testid="plan-milestone"]');
@@ -191,6 +194,7 @@ describe('PlanView — long-term milestones (via useScenario mock)', () => {
   });
 
   it('renders milestone children when children present', () => {
+    // covers: PL-CHILD-01
     setupDefaultMock();
     const { container } = render(<PlanView />);
     const children = container.querySelectorAll('[data-testid="milestone-child"]');
@@ -199,6 +203,7 @@ describe('PlanView — long-term milestones (via useScenario mock)', () => {
   });
 
   it('renders the expected number of milestones from scenario data', () => {
+    // covers: PL-PROGRESS-01
     setupDefaultMock();
     const { container } = render(<PlanView />);
     const allMilestones = container.querySelectorAll('[data-testid="plan-milestone"]');

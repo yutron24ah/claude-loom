@@ -70,6 +70,7 @@ afterEach(() => {
 
 describe('WorktreeView × write API', () => {
   it('lock button on unlocked worktree calls lockWorktree', () => {
+    // covers: WT-CREATE-01
     render(<WorktreeView />);
     // "main" branch row is unlocked → lock button shown
     // Find button with title="lock" in the main row
@@ -90,6 +91,7 @@ describe('WorktreeView × write API', () => {
   });
 
   it('destroy button calls destroyWorktree with branch path', () => {
+    // covers: WT-DELETE-01
     render(<WorktreeView />);
     const destroyBtns = screen.getAllByTitle('destroy');
     // Destroy first worktree (main)

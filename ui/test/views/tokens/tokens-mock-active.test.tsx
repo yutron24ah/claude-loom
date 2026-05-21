@@ -57,6 +57,7 @@ afterEach(() => {
 
 describe('TokensView × scenario.active', () => {
   it('renders 7-day daily cost bar chart', () => {
+    // covers: TK-COST-01
     render(<TokensView />);
     // Each day label appears in the chart
     expect(screen.getByTestId('daily-bar-Wed')).toBeDefined();

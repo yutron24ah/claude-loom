@@ -90,6 +90,7 @@ describe('GanttView redesign — row labels', () => {
 // ---------------------------------------------------------------------------
 describe('GanttView redesign — bar segments', () => {
   it('renders one bar segment per GanttBar', () => {
+    // covers: GA-BARS-01
     const { container } = render(<GanttView />);
     // fixture: 1+2+1+1 = 5 bars
     const bars = container.querySelectorAll('[data-kind]');
@@ -97,6 +98,7 @@ describe('GanttView redesign — bar segments', () => {
   });
 
   it('bar segments carry correct data-kind values', () => {
+    // covers: GA-COLOR-01
     const { container } = render(<GanttView />);
     const kinds = Array.from(container.querySelectorAll('[data-kind]')).map(
       (b) => b.getAttribute('data-kind'),

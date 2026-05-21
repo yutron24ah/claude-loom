@@ -68,6 +68,7 @@ afterEach(() => {
 
 describe('PlanView × scenario.active', () => {
   it('renders all 4 todos with status icons', () => {
+    // covers: PL-ACTIVE-01
     render(<PlanView />);
     const items = screen.getAllByTestId('todo-item');
     expect(items).toHaveLength(4);

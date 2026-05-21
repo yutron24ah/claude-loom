@@ -93,6 +93,7 @@ import { WorktreeView } from '../../src/views/worktree/WorktreeView';
 
 describe('WorktreeView — basic render', () => {
   it('renders the worktree section heading', () => {
+    // covers: WT-MOUNT-01
     render(<WorktreeView />);
     expect(screen.getByTestId('worktree-view')).toBeInTheDocument();
   });

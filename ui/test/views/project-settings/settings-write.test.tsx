@@ -47,6 +47,7 @@ afterEach(() => {
 
 describe('ProjectSettingsView × write API', () => {
   it('clicking 保存 button calls useProjectSettingsMutation.mutate with draft state', () => {
+    // covers: PS-EDIT-01
     render(<ProjectSettingsView />);
     const saveBtn = screen.getByRole('button', { name: '保存' });
     fireEvent.click(saveBtn);

@@ -113,6 +113,7 @@ afterEach(() => {
 
 describe('ConsistencyView — basic render', () => {
   it('renders the consistency view container', () => {
+    // covers: CN-MOUNT-01
     render(<ConsistencyView />);
     expect(screen.getByTestId('consistency-view')).toBeInTheDocument();
   });
@@ -125,6 +126,7 @@ describe('ConsistencyView — basic render', () => {
 
 describe('ConsistencyView — finding count', () => {
   it('renders 5-8 finding cards (data-testid=finding-card)', () => {
+    // covers: CN-LIST-01
     render(<ConsistencyView />);
     const cards = screen.getAllByTestId('finding-card');
     expect(cards.length).toBeGreaterThanOrEqual(5);
@@ -140,6 +142,7 @@ describe('ConsistencyView — finding count', () => {
 
 describe('ConsistencyView — severity display', () => {
   it('renders at least one high severity finding', () => {
+    // covers: CN-SEVERITY-01
     render(<ConsistencyView />);
     const highBadges = screen.getAllByTestId('severity-high');
     expect(highBadges.length).toBeGreaterThanOrEqual(1);

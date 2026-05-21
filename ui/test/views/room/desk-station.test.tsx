@@ -35,6 +35,7 @@ const testCat: RosterEntry = {
 // ---------------------------------------------------------------------------
 // Basic render
 // ---------------------------------------------------------------------------
+// covers: DS-SPRITE-01, DS-POS-PM-01, DS-POS-DEV-01, DS-POS-REVIEW-ROW-01
 describe('DeskStation — basic render', () => {
   it('renders without crashing with required props', () => {
     const { container } = render(<DeskStation x={10} y={20} cat={testCat} />);
@@ -61,6 +62,7 @@ describe('DeskStation — basic render', () => {
 // ---------------------------------------------------------------------------
 // Speech bubble visibility
 // ---------------------------------------------------------------------------
+// covers: DS-BUBBLE-TOOL-01, DS-BUBBLE-REASON-01, DS-BUBBLE-NONE-01
 describe('DeskStation — speech bubble', () => {
   it('does not render speech bubble when task prop is omitted', () => {
     const { container } = render(<DeskStation x={0} y={0} cat={testCat} />);
@@ -85,6 +87,7 @@ describe('DeskStation — speech bubble', () => {
 // ---------------------------------------------------------------------------
 // Status dot — statusColor mapping (5 variants)
 // ---------------------------------------------------------------------------
+// covers: DS-STATUS-DOT-01
 describe('DeskStation — status dot', () => {
   it('renders status dot element', () => {
     const { container } = render(<DeskStation x={0} y={0} cat={testCat} status="busy" />);
@@ -127,6 +130,7 @@ describe('DeskStation — status dot', () => {
 // ---------------------------------------------------------------------------
 // Monitor screen — fail vs normal
 // ---------------------------------------------------------------------------
+// covers: DS-MONITOR-BUSY-01, DS-MONITOR-IDLE-01, DS-MONITOR-FAIL-01
 describe('DeskStation — monitor screen', () => {
   it('monitor screen has .desk-station__monitor class (screen bg via CSS)', () => {
     // WHY: M0.17 t9 class-based port — background color from CSS class, not inline style.
@@ -165,6 +169,7 @@ describe('DeskStation — selected prop', () => {
 // ---------------------------------------------------------------------------
 // onClick
 // ---------------------------------------------------------------------------
+// covers: DS-CLICK-SELECT-01, DS-CLICK-DESELECT-01
 describe('DeskStation — onClick', () => {
   it('calls onClick when button is clicked', () => {
     const onClick = vi.fn();
@@ -184,6 +189,7 @@ describe('DeskStation — onClick', () => {
 // ---------------------------------------------------------------------------
 // TDD phase tag
 // ---------------------------------------------------------------------------
+// covers: DS-TDD-TAG-01
 describe('DeskStation — TDD tag', () => {
   it('does not render TDD tag when tdd prop is omitted', () => {
     const { container } = render(<DeskStation x={0} y={0} cat={testCat} />);
@@ -213,6 +219,7 @@ describe('DeskStation — TDD tag', () => {
 // ---------------------------------------------------------------------------
 // Nameplate — cat.name + label/role
 // ---------------------------------------------------------------------------
+// covers: DS-NAMEPLATE-01
 describe('DeskStation — nameplate', () => {
   it('nameplate shows cat.name', () => {
     render(<DeskStation x={0} y={0} cat={testCat} />);
@@ -273,6 +280,7 @@ describe('DeskStation — CatSprite integration', () => {
 
 // ---------------------------------------------------------------------------
 // walkTo prop — cat-walker animation wiring [REQ-091]
+// covers: DS-WALK-01
 // WHY: M0.17 t12 — DeskStation must accept walkTo prop and inject .cat-walker
 // class + --walk-dx / --walk-dy CSS vars on the root element so shell.css
 // @keyframes cat-walk-trip can drive the animation. Design source:

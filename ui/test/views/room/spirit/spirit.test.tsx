@@ -102,6 +102,7 @@ afterEach(() => cleanup());
 // ============================================================
 // SP-ROSTER-01 — REQ-133
 // ============================================================
+// covers: SP-ROSTER-01
 describe('SP-ROSTER-01 (REQ-133): persistent は 3 体のみ', () => {
   it('ROSTER から kind="persistent" を filter すると 3 体、id が pm / dev / retro-pm', () => {
     const persistents = ROSTER.filter((r) => r.kind === 'persistent');
@@ -116,6 +117,7 @@ describe('SP-ROSTER-01 (REQ-133): persistent は 3 体のみ', () => {
 // ============================================================
 // SP-ROSTER-02 — REQ-134
 // ============================================================
+// covers: SP-ROSTER-02
 describe('SP-ROSTER-02 (REQ-134): spirit 10 体全員に summonedBy がある', () => {
   it('ROSTER から kind="spirit" を filter すると 10 体、全エントリに summonedBy 文字列', () => {
     const spirits = ROSTER.filter((r) => r.kind === 'spirit');
@@ -130,6 +132,7 @@ describe('SP-ROSTER-02 (REQ-134): spirit 10 体全員に summonedBy がある', 
 // ============================================================
 // SP-ROSTER-03 — REQ-135
 // ============================================================
+// covers: SP-ROSTER-03
 describe('SP-ROSTER-03 (REQ-135): aggregator のみ writePermission:true', () => {
   it('SKILLS の loom-retro.stages.aggregator だけ writePermission=true', () => {
     const retro = SKILLS.find((s) => s.id === 'loom-retro');
@@ -156,6 +159,7 @@ describe('SP-ROSTER-03 (REQ-135): aggregator のみ writePermission:true', () =>
 // ============================================================
 // SP-MOTION-RPG-01 — REQ-136
 // ============================================================
+// covers: SP-MOTION-RPG-01
 describe('SP-MOTION-RPG-01 (REQ-136): spiritMode="rpg" で .room--rpg クラス付与', () => {
   it('RoomView に spiritMode="rpg" を渡すと container に room--rpg クラスが付く', () => {
     const { container } = render(<RoomView spiritMode="rpg" />);
@@ -168,6 +172,7 @@ describe('SP-MOTION-RPG-01 (REQ-136): spiritMode="rpg" で .room--rpg クラス�
 // ============================================================
 // SP-MOTION-OFF-01 — REQ-137
 // ============================================================
+// covers: SP-MOTION-OFF-01
 describe('SP-MOTION-OFF-01 (REQ-137): spiritMode="office" で .room--office + RoomDoor', () => {
   it('RoomView に spiritMode="office" を渡すと room--office クラスと .room-door が存在', () => {
     const { container } = render(<RoomView spiritMode="office" />);
@@ -180,6 +185,7 @@ describe('SP-MOTION-OFF-01 (REQ-137): spiritMode="office" で .room--office + Ro
 // ============================================================
 // SP-MOTION-HYB-01 — REQ-138
 // ============================================================
+// covers: SP-MOTION-HYB-01
 describe('SP-MOTION-HYB-01 (REQ-138): spiritMode="hybrid" (default) で .spirit-echo 描画', () => {
   it('RoomView prop なし (default=hybrid) で room--hybrid クラスが付く', () => {
     const { container } = render(<RoomView />);
@@ -191,6 +197,7 @@ describe('SP-MOTION-HYB-01 (REQ-138): spiritMode="hybrid" (default) で .spirit-
 // ============================================================
 // SP-DESK-01 — REQ-139
 // ============================================================
+// covers: SP-DESK-01
 describe('SP-DESK-01 (REQ-139): review / retro spirit の DeskStation は描画されない', () => {
   it('RoomView に rev-code / rev-sec / rev-test / retro-pj の desk が存在しない', () => {
     const { container } = render(<RoomView />);
@@ -205,6 +212,7 @@ describe('SP-DESK-01 (REQ-139): review / retro spirit の DeskStation は描画�
 // ============================================================
 // Spirit component unit tests — REQ-140
 // ============================================================
+// covers: SP-MOTION-EXIT-01
 describe('Spirit component (REQ-140): renders spirit sprite with correct classes', () => {
   const spiritEntry = ROSTER.find((r) => r.id === 'rev')!;
 
@@ -270,6 +278,7 @@ describe('RoomDoor component (REQ-142): renders door SVG with correct classes', 
 // ============================================================
 // SummonQueue component unit tests — REQ-143
 // ============================================================
+// covers: SP-QUEUE-01
 describe('SummonQueue component (REQ-143): renders active / queued / leaving states', () => {
   it('renders .summon-queue element', () => {
     const { container } = render(

@@ -13,6 +13,7 @@ afterEach(() => {
 
 describe('LearnedGuidanceView — basic render', () => {
   it('renders the guidance view container', () => {
+    // covers: GU-MOUNT-01
     render(<LearnedGuidanceView />);
     expect(screen.getByTestId('guidance-view')).toBeInTheDocument();
   });
@@ -25,6 +26,7 @@ describe('LearnedGuidanceView — basic render', () => {
 
 describe('LearnedGuidanceView — guidance count', () => {
   it('renders at least 5 guidance items (data-testid=guidance-item)', () => {
+    // covers: GU-LIST-01
     render(<LearnedGuidanceView />);
     const items = screen.getAllByTestId('guidance-item');
     expect(items.length).toBeGreaterThanOrEqual(5);

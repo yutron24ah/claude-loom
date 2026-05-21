@@ -84,6 +84,7 @@ afterEach(() => {
   mockStart.mockReset();
 });
 
+// covers: CS-VIS-01, CS-HIDE-01, CS-START-BTN-01
 describe('B4: ColdStart "▶ PM を起動" button → usePMSession().start()', () => {
   it('[REQ-104] clicking "▶ PM を起動" calls pm.start(), not alert()', () => {
     // Spy on alert to confirm it is NOT called

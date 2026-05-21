@@ -83,6 +83,7 @@ afterEach(() => {
 // GanttPoster
 // ---------------------------------------------------------------------------
 
+// covers: PO-GANTT-VIS-01, PO-NAV-GANTT-01
 describe('GanttPoster — render', () => {
   const defaultProps = { x: 130, y: 28, width: 360, height: 125, onClick: vi.fn() };
 
@@ -166,6 +167,7 @@ describe('GanttPoster — render', () => {
 // PlanPoster
 // ---------------------------------------------------------------------------
 
+// covers: PO-PLAN-VIS-01, PO-NAV-PLAN-01
 describe('PlanPoster — render', () => {
   const defaultProps = { x: 510, y: 28, width: 350, height: 125, onClick: vi.fn() };
 
@@ -255,6 +257,7 @@ describe('PlanPoster — render', () => {
 // ConsistencyPoster
 // ---------------------------------------------------------------------------
 
+// covers: PO-CONS-VIS-01, PO-NAV-CONS-01, PO-NO-MODAL-01
 describe('ConsistencyPoster — render', () => {
   const defaultProps = { x: 880, y: 28, width: 170, height: 125, onClick: vi.fn() };
 

@@ -81,6 +81,7 @@ afterEach(() => {
 
 describe('GanttView — basic render', () => {
   it('renders without crashing', () => {
+    // covers: GA-MOUNT-01
     const { container } = render(<GanttView />);
     expect(container.firstChild).toBeInTheDocument();
   });

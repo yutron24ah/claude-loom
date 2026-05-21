@@ -19,6 +19,7 @@ const devCat = ROSTER.find((r) => r.id === 'dev')!;
 // ---------------------------------------------------------------------------
 // Basic render
 // ---------------------------------------------------------------------------
+// covers: WC-POS-01
 describe('SubroomClone — basic render', () => {
   it('renders a button with className subroom-clone', () => {
     const { container } = render(
@@ -100,6 +101,7 @@ describe('SubroomClone — status dot', () => {
 // ---------------------------------------------------------------------------
 // onClick
 // ---------------------------------------------------------------------------
+// covers: WC-CLICK-01
 describe('SubroomClone — onClick', () => {
   it('fires onClick when button is clicked', () => {
     const handleClick = vi.fn();
