@@ -4,9 +4,34 @@
 > **Audit date**: 2026-05-20
 > **Branch**: chore/qa-suite-coverage-audit-2026-05-20
 
+## ⚠️ ERRATA (2026-05-21)
+
+本 audit の初版 (2026-05-20) は **5-6 segment ID を計上漏れ**。実 case 総数は **515 件** (479 ではない)。
+
+漏れた 36 件の section 別 prefix 分布:
+- AD (agent-detail overlay): +1
+- DS (room): +1
+- EG (edge_cases cross-cutting): +1
+- FL (flows shell): +13
+- MS (milestones cross-cutting): +12
+- NT (notifications cross-cutting): +1
+- RC (shell reactioncenter): +1
+- UX (ux_patterns cross-cutting): +6
+
+検出は M0.19 t1 で `scripts/audit-qa-coverage.sh` を実装して全 ID grep した時に判明 (script は `[A-Z][A-Z0-9]*(-[A-Z0-9]+)+` pattern で 5-6 segment も拾う)。
+
+**M0.19 / M0.20 scope への影響**:
+- M0.19 (shell + room + overlay): +16 件 (FL 13 + RC 1 + DS 1 + AD 1)
+- M0.20 (cross-cutting): +20 件 (UX 6 + EG 1 + NT 1 + MS 12)
+- 全体 target: 479 → **515 case 100% pass**
+
+本 audit md / json の以下 case count 数字 (Total / coverage_distribution / section_summary) は **初版の参考値**、actual values は M0.19 closure 時に `scripts/audit-qa-coverage.sh --snapshot` で re-derive される。
+
 ## Notes on Case Count
 
-The task spec cited 501 cases. Actual parse: **479 unique cases** (193 three-segment IDs + 286 four-segment IDs, all validated with `, pri:` field). The ~22 delta likely reflects section/group entries counted separately in the original estimation. This audit covers all 479 real cases.
+The task spec cited 501 cases. Actual parse (initial audit, 2026-05-20): **479 unique cases** (193 three-segment IDs + 286 four-segment IDs, all validated with `, pri:` field). The ~22 delta likely reflects section/group entries counted separately in the original estimation.
+
+**Corrected count (2026-05-21 errata): 515 cases** — the initial parse missed 34 five-segment + 2 six-segment IDs (36 cases total).
 
 ## Executive Summary
 

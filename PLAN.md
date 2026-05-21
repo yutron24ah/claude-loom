@@ -1672,10 +1672,10 @@ retro candidate (本 milestone 観察用、closure 後 retro でまとめて評�
 design spec: `docs/design/2026-05-21-qa-suite-100pct/design.md`
 audit baseline: `docs/audit/2026-05-20-qa-suite-coverage.{md,json}`
 
-M0.18 closure 後の Phase 2 entry に向けた QA Suite Gap Fill Phase 1。`qa-suite.js` (479 case) の priority-0 missing 14 件 + naming mismatch 解消 + impl_only 156 件 fill を D1 厳密 (`// covers: <case-id>` grep traceability) で実施。`audit:qa-coverage` script + CI gate を新規導入し regression keeper を確立。
+M0.18 closure 後の Phase 2 entry に向けた QA Suite Gap Fill Phase 1。`qa-suite.js` (515 case) の priority-0 missing 14 件 + naming mismatch 解消 + impl_only 156 件 fill を D1 厳密 (`// covers: <case-id>` grep traceability) で実施。`audit:qa-coverage` script + CI gate を新規導入し regression keeper を確立。
 
 設計合意 (2026-05-21 brainstorm session、design.md §7 Brainstorming decision log SSoT):
-- scope: S1 (479 全部 100%、N/A 24 も再判定)
+- scope: S1 (515 全部 100%、N/A 24 も再判定)
 - done criterion: D1 (full + `// covers:` 厳密、Vitest test に case ID 明記 + impl 存在)
 - milestone 分割: T1 (M0.19 gap-fill + M0.20 ux-edge の 2 milestone)
 - regression: R3 (CI 自動化 + Phase boundary walkthrough hybrid)
@@ -1723,7 +1723,7 @@ M0.18 closure 後の Phase 2 entry に向けた QA Suite Gap Fill Phase 1。`qa-
 design spec: `docs/design/2026-05-21-qa-suite-100pct/design.md`
 prerequisite: M0.19 `m0.19-complete` tag 設置済
 
-cross-cutting 110 件 (UX 26 / EG 18 / CH 14 / MS 24 / NT 7 / SEC 5 / IN 6 / PH 6 / AR 4) + 残 missing 75 件を D1 厳密で full 化、QA Test Matrix.html browser walkthrough で全 479 case marked pass、**Phase 2 entry gate 通過** + `phase-2-entry-ready` tag 設置。
+cross-cutting 110 件 (UX 26 / EG 18 / CH 14 / MS 24 / NT 7 / SEC 5 / IN 6 / PH 6 / AR 4) + 残 missing 75 件を D1 厳密で full 化、QA Test Matrix.html browser walkthrough で全 515 case marked pass、**Phase 2 entry gate 通過** + `phase-2-entry-ready` tag 設置。
 
 ### Phase 1: UX/EG/CH/MS cross-cutting (parallel batches、worktree isolation)
 

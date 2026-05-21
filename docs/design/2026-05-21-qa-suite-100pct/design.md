@@ -1,8 +1,8 @@
 # QA Suite 100% Pass Design (2026-05-21)
 
-> **目的**: `docs/design/2026-05-17-m0.18-ui-rework/project/qa-suite.js` (479 case) を D1 厳密で 100% pass 化し、Phase 2 entry の構造的 gate にする。
+> **目的**: `docs/design/2026-05-17-m0.18-ui-rework/project/qa-suite.js` (515 case) を D1 厳密で 100% pass 化し、Phase 2 entry の構造的 gate にする。
 > **対象 milestone**: M0.19 `test/qa-suite-gap-fill-phase1` + M0.20 `test/qa-suite-ux-edge-coverage`
-> **背景**: 2026-05-20 audit (`docs/audit/2026-05-20-qa-suite-coverage.{md,json}`) で全 479 case 中 full 13% / missing 39%、cross-cutting 7 section が 0% coverage と判明。M0.18 で M0.18 scope は 90% 達成。残 416 case (M0.X-original) の Pre-Phase 2 entry gap 解消を本 design でカバー。
+> **背景**: 2026-05-20 audit (`docs/audit/2026-05-20-qa-suite-coverage.{md,json}`) で全 515 case 中 full 13% / missing 39%、cross-cutting 7 section が 0% coverage と判明。M0.18 で M0.18 scope は 90% 達成。残 416 case (M0.X-original) の Pre-Phase 2 entry gap 解消を本 design でカバー。
 
 ---
 
@@ -11,7 +11,7 @@
 ### 全体構造
 
 ```
-┌──────────── qa-suite.js (479 case) [SSoT] ─────────────────┐
+┌──────────── qa-suite.js (515 case) [SSoT] ─────────────────┐
 │  pri:0/1/2 ✕ scenario:any ✕ layers:[ui|wire|backend]      │
 └────────────────────────┬───────────────────────────────────┘
                          │ // covers: <case-id> で grep 紐付け
@@ -23,13 +23,13 @@
                          │
                          ▼ CI green = D1 full coverage 維持
    ┌──────── audit script (新規) ──────────────────────────────┐
-   │ qa-suite.js → // covers: grep → 479 case 全 ID マッチ確認 │
+   │ qa-suite.js → // covers: grep → 515 case 全 ID マッチ確認 │
    │ unmatched ID 1 個でも → CI fail                            │
    └────────────────────────────────────────────────────────────┘
                          │
                          ▼ Phase boundary
    ┌──────── QA Test Matrix.html browser walkthrough ──────────┐
-   │ 全 479 case 手動 pass marking → human visual verification │
+   │ 全 515 case 手動 pass marking → human visual verification │
    └────────────────────────────────────────────────────────────┘
 ```
 
@@ -40,7 +40,7 @@
 | **M0.19** | `test/qa-suite-gap-fill-phase1` | priority 0 missing 14 件 + `// covers:` 注入 (既存 covered ~110 件に) + impl_only 156 件 test 追加 + naming mismatch 解消 | ~100 新規 test + ~110 既存 test に covers 注入 (新規 test は記述時に同時) | 3-4 日 |
 | **M0.20** | `test/qa-suite-ux-edge-coverage` | UX 26 / EG 18 / CH 14 / MS 24 / NT 7 / SEC 5 / IN 6 / PH 6 / AR 4 = **110 cross-cutting case** + missing 残 75 (panel/overlay/shell の機能 missing 分) | ~200 新規 test + 一部 impl 追加 | 5-7 日 |
 
-両 milestone 通過で **全 479 case D1 full + walkthrough 全 pass = Phase 2 entry gate 通過**。
+両 milestone 通過で **全 515 case D1 full + walkthrough 全 pass = Phase 2 entry gate 通過**。
 
 ### Closure protocol (両 milestone 共通、SPEC §10.4 拡張)
 
@@ -48,13 +48,13 @@
 - Layer 1: 全 vitest + Playwright pass
 - Layer 2.5 PM dogfood smoke
 - Layer 8 act CI sim
-- **Phase boundary 限定** (M0.20 closure): QA Test Matrix.html 全 479 case walkthrough pass + export JSON commit
+- **Phase boundary 限定** (M0.20 closure): QA Test Matrix.html 全 515 case walkthrough pass + export JSON commit
 
 ### 完成基準 (Phase 2 entry gate)
 
-- 全 479 case が `// covers:` で test と紐付け済 (audit script green)
+- 全 515 case が `// covers:` で test と紐付け済 (audit script green)
 - 全 vitest + Playwright PASS
-- QA Test Matrix.html で全 479 case が `pass` marking
+- QA Test Matrix.html で全 515 case が `pass` marking
 - N/A 24 件すべて「再判定 → pass or 明示 N/A justification」のいずれかに分類
 
 ---
@@ -75,7 +75,7 @@
 | **t8** | N/A 24 case 再判定 → 「pass 化可能」「真に N/A (justification 付き)」に分類、N/A allowlist 確定 | 0.3d | seq (review) |
 | **t9** | closure: audit script 100% pass + Layer 1-8 + PLAN.md 更新 + tag `m0.19-complete` | 0.2d | seq |
 
-**M0.19 完成基準**: priority 0 missing 14 件 ALL full、impl_only 156 件 ALL full、naming mismatch ALL 解消、N/A 24 件 ALL 分類済 → 全体で 479 - missing_phase2 = ~290 case full coverage 達成
+**M0.19 完成基準**: priority 0 missing 14 件 ALL full、impl_only 156 件 ALL full、naming mismatch ALL 解消、N/A 24 件 ALL 分類済 → 全体で 515 - missing_phase2 = ~290 case full coverage 達成
 
 ### M0.20 `test/qa-suite-ux-edge-coverage`
 
@@ -87,9 +87,9 @@
 | **t4** | MS milestone feature audit 24 件 (milestone 別 feature 動作 verify) | 1.5d | parallel × 3 |
 | **t5** | NT notifications 7 + SEC 5 + IN 6 + PH 6 + AR 4 = 28 件 (cross-cutting small batch) | 1d | parallel × 2 |
 | **t6** | 残 missing 75 件 (section 内 機能 missing 部分。**impl 追加 + test の両方** が必要、section 単位 subagent dispatch) | 3d | parallel × 4 |
-| **t7** | closure + **Phase 2 entry gate verification**: 全 479 case audit script pass + QA Test Matrix.html walkthrough (browser で 479 件 marking) + Layer 1-8 全 pass | 0.5d | seq |
+| **t7** | closure + **Phase 2 entry gate verification**: 全 515 case audit script pass + QA Test Matrix.html walkthrough (browser で 515 件 marking) + Layer 1-8 全 pass | 0.5d | seq |
 
-**M0.20 完成基準**: 全 479 case が D1 full、QA Test Matrix.html 全 pass walkthrough 済、Phase 2 entry gate 通過
+**M0.20 完成基準**: 全 515 case が D1 full、QA Test Matrix.html 全 pass walkthrough 済、Phase 2 entry gate 通過
 
 ### Tooling 新規
 
@@ -155,7 +155,7 @@ PM milestone closure protocol §10.4 拡張 (M0.20 closure 時に強制):
   ├─ Layer 8 act CI sim
   └─ Layer X (新規): QA Test Matrix walkthrough  ← M0.20 closure + 以降 Phase boundary 時必須
        ├─ 1. PM が browser で QA Test Matrix.html 開く
-       ├─ 2. 全 479 case を手動 walkthrough (~1-2h)
+       ├─ 2. 全 515 case を手動 walkthrough (~1-2h)
        ├─ 3. fail 検出 → 該当 task を 別 PR で fix → 再 walkthrough
        ├─ 4. 全 pass 達成 → export ボタンで JSON download
        ├─ 5. JSON を docs/qa-walkthrough/<date>-<milestone>.json として commit
@@ -185,7 +185,7 @@ AR-MARKDOWN-99    # archive markdown を fixture 化できない (rate limit)
 ### Data flow 図
 
 ```
-qa-suite.js (479 case definitions)
+qa-suite.js (515 case definitions)
    │
    ├──────► HTML viewer (QA Test Matrix.html)
    │           │
@@ -350,9 +350,9 @@ N/A 例外: `qa-na-allowlist.txt` に登録された case のみ C1 除外 OK、
 1. M0.19 closure 条件 ALL 引き継ぎ + 維持
 2. cross-cutting 110 件 (UX/EG/CH/MS/NT/SEC/IN/PH/AR) ALL → full
 3. 残 missing 75 件 ALL → impl 追加 + test 追加で full
-4. **QA Test Matrix.html walkthrough**: 全 479 case marked pass (export JSON で証跡)
+4. **QA Test Matrix.html walkthrough**: 全 515 case marked pass (export JSON で証跡)
 5. JSON を `docs/qa-walkthrough/2026-XX-XX-m0.20.json` として commit
-6. `project-prefs.json` の `last_walkthrough.{milestone: "m0.20", date, total_pass: 479}` 更新
+6. `project-prefs.json` の `last_walkthrough.{milestone: "m0.20", date, total_pass: 515}` 更新
 7. **Phase 2 entry gate**: SPEC §10.4 全 Layer + Layer X walkthrough pass
 8. tag `m0.20-complete` + `phase-2-entry-ready`
 9. retro 起動提案
@@ -374,7 +374,7 @@ M0.20 以降のすべての milestone:
 {
   "snapshot_date": "2026-XX-XX",
   "milestone": "m0.19-complete",
-  "total_cases": 479,
+  "total_cases": 515,
   "full": 290,
   "n_a_allowlist": 24,
   "pending_next_milestone": 165,
@@ -398,7 +398,7 @@ memory `project_qa_suite_basis` の延長記録として残し、retro で refer
 
 ## 6. References
 
-- **SSoT**: `docs/design/2026-05-17-m0.18-ui-rework/project/qa-suite.js` (479 case)
+- **SSoT**: `docs/design/2026-05-17-m0.18-ui-rework/project/qa-suite.js` (515 case)
 - **Viewer**: `docs/design/2026-05-17-m0.18-ui-rework/project/QA Test Matrix.html`
 - **Current audit**: `docs/audit/2026-05-20-qa-suite-coverage.{md,json}`
 - **PM workflow**: SPEC §3.6.8 (Implementation phase) + §10.4 (closure protocol)
@@ -412,7 +412,7 @@ memory `project_qa_suite_basis` の延長記録として残し、retro で refer
 | Q | 決定 | rationale |
 |---|---|---|
 | Q1 scope lens | A + B 両方 (UI 実装 + 自動 test 両輪) | user 確認: 両 lens で「散々」 |
-| Q2 scope size | S1 (479 全部 100%、N/A も再判定込) | memory `feedback_100_percent_expectation` と整合 |
+| Q2 scope size | S1 (515 全部 100%、N/A も再判定込) | memory `feedback_100_percent_expectation` と整合 |
 | Q3 done def | D1 (full + `// covers: <case-id>` 厳密) | audit doc 推奨と一致、grep traceability 完全 |
 | Q4 milestone | T1 (2 milestone: `gap-fill-phase1` + `ux-edge-coverage`) | audit doc gap_fill_recommendation 直系、scope manageable |
 | Q5 regression | R3 (CI 自動化主軸 + Phase boundary walkthrough hybrid) | CI gate + dogfood 規律の二重 safety、memory `feedback_mock_only_dogfood_gap` 構造的解決 |
