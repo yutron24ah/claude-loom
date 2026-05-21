@@ -49,6 +49,7 @@ afterEach(() => {
 const mockMutate = vi.fn();
 const mockDeleteMutate = vi.fn();
 
+// covers: AD-NOTES-01
 describe('AgentDetailNotes — basic render', () => {
   beforeEach(() => {
     mockUseQuery.mockReturnValue({ data: [], isLoading: false });

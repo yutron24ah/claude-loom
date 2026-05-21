@@ -73,6 +73,7 @@ afterEach(() => {
   cleanup();
 });
 
+// covers: LR-MOUNT-01
 describe('App smoke test', () => {
   it('renders AppShell with room-canvas into DOM', () => {
     // Render AppShell directly (App wraps it in BrowserRouter which is not available in jsdom)

@@ -41,6 +41,7 @@ const mockAgent = {
   group: 'core' as const,
 };
 
+// covers: AD-PROFILE-01, AD-OPEN-DEEPLINK-01
 describe('AgentDetailPanel — basic render', () => {
   it('renders agent name', () => {
     render(<AgentDetailPanel agent={mockAgent} />);
@@ -61,6 +62,7 @@ describe('AgentDetailPanel — basic render', () => {
   });
 });
 
+// covers: AD-CLOSE-X-01
 describe('AgentDetailPanel — onClose', () => {
   it('calls onClose when close button is clicked', () => {
     const handleClose = vi.fn();
