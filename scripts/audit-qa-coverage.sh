@@ -11,7 +11,7 @@
 #
 # Environment overrides (for testing / CI isolation):
 #   QA_SUITE_PATH      — path to qa-suite.js   (default: auto-detect from repo root)
-#   TEST_SEARCH_DIRS   — space-separated dirs to grep for // covers: (default: ui/test ui/e2e daemon/test)
+#   TEST_SEARCH_DIRS   — space-separated dirs to grep for // covers: (default: ui/test ui/e2e ui/scripts daemon/test)
 #   NA_ALLOWLIST_PATH  — path to qa-na-allowlist.txt (default: configs/qa-na-allowlist.txt)
 #
 # Snapshot mode:
@@ -27,8 +27,11 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 QA_SUITE_PATH="${QA_SUITE_PATH:-${REPO_ROOT}/docs/design/2026-05-17-m0.18-ui-rework/project/qa-suite.js}"
 
 # Test search dirs (space-separated; used as glob roots for // covers: grep)
+# WHY: ui/scripts is included because lint scripts (lint-no-alert.mjs, lint-no-placeholder.mjs)
+# contain "// covers: OV-NO-ALERT-01" and "// covers: OV-NO-PLACEHOLDER-01" respectively —
+# these static analysis tools are the verification mechanism for those cases (M0.19-t4).
 if [ -z "${TEST_SEARCH_DIRS}" ]; then
-  TEST_SEARCH_DIRS="${REPO_ROOT}/ui/test ${REPO_ROOT}/ui/e2e ${REPO_ROOT}/daemon/test"
+  TEST_SEARCH_DIRS="${REPO_ROOT}/ui/test ${REPO_ROOT}/ui/e2e ${REPO_ROOT}/ui/scripts ${REPO_ROOT}/daemon/test"
 fi
 
 # N/A allowlist

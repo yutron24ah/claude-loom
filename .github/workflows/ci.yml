@@ -40,6 +40,37 @@ jobs:
         run: pnpm --filter @claude-loom/daemon test
 
   # ──────────────────────────────────────────────────────────
+  # lint-static — static source quality gates (M0.19-t4)
+  # WHY: Catches alert() and placeholder strings in ui/src/ that would
+  #      indicate unfinished/debug code reaching production.
+  #      These are pure Node.js scripts — no browser, no build needed.
+  # ──────────────────────────────────────────────────────────
+  lint-static:
+    name: lint static (no-alert + no-placeholder)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v3
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Lint — no alert() in ui/src
+        run: pnpm --filter @claude-loom/ui lint:no-alert
+
+      - name: Lint — no placeholder strings in ui/src
+        run: pnpm --filter @claude-loom/ui lint:no-placeholder
+
+  # ──────────────────────────────────────────────────────────
   # audit-qa-coverage — QA suite traceability gate
   # WHY: ensures every qa-suite.js case ID is traceable to a test
   #      via "// covers: <ID>" comment. Orphan refs (typos / renames)
