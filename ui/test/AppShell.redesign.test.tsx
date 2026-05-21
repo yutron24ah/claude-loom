@@ -141,6 +141,7 @@ function renderShell(initialRoute = '/') {
 // ---------------------------------------------------------------------------
 // 1. TopBar — brand + project + 4 metrics + conn
 // ---------------------------------------------------------------------------
+// covers: TB-LAYOUT-01, TB-CONN-01, TB-CONN-02, TB-PROJECT-01, TB-METRIC-PARALLEL-01, TB-METRIC-TASKTOOL-01, TB-METRIC-TDD-01, TB-METRIC-VERDICT-01
 describe('AppShell × redesign: TopBar', () => {
   it('renders TopBar with brand name', () => {
     renderShell('/');
@@ -171,6 +172,7 @@ describe('AppShell × redesign: TopBar', () => {
 // ---------------------------------------------------------------------------
 // 2. Drawer — 11 nav links across 3 groups
 // ---------------------------------------------------------------------------
+// covers: DR-LAYOUT-01, DR-NAV-ROOM-01, DR-NAV-PLAN-01, DR-NAV-GANTT-01, DR-NAV-RETRO-01, DR-NAV-WORKTREE-01, DR-NAV-CONSISTENCY-01, DR-NAV-CUSTOMIZATION-01, DR-NAV-GUIDANCE-01, DR-NAV-SESSIONS-01, DR-NAV-SETTINGS-01, DR-NAV-TOKENS-01, DR-GROUP-01
 describe('AppShell × redesign: Drawer', () => {
   it('renders all 3 nav groups (OPERATE / MANAGE / SETTINGS)', () => {
     renderShell('/');
@@ -234,6 +236,7 @@ describe('AppShell × redesign: StatusBar', () => {
 // ---------------------------------------------------------------------------
 // 4. Drawer collapse — toggles 40px icon-only mode
 // ---------------------------------------------------------------------------
+// covers: DR-ACTIVE-01, TB-DRAWER-TOGGLE-01
 describe('AppShell × redesign: Drawer collapse', () => {
   it('drawer starts expanded (no collapsed attribute)', () => {
     renderShell('/');
@@ -275,6 +278,7 @@ describe('AppShell × redesign: Drawer collapse', () => {
 // ---------------------------------------------------------------------------
 // 5. Right column slot — PMChatPanel mount when pm.running === true
 // ---------------------------------------------------------------------------
+// covers: RC-PMCHAT-MOUNT-01, RC-PM-PRIORITY-01, PM-MOUNT-01, LR-HIDE-PM-01
 describe('AppShell × redesign: PMChat right column', () => {
   it('mounts PMChatPanel right column when pm.running is true', () => {
     renderShell('/');
@@ -287,6 +291,7 @@ describe('AppShell × redesign: PMChat right column', () => {
 // ---------------------------------------------------------------------------
 // 6. ScenarioPicker — present in the content area
 // ---------------------------------------------------------------------------
+// covers: SP-VISIBLE-01
 describe('AppShell × redesign: ScenarioPicker', () => {
   it('renders ScenarioPicker in content area', () => {
     renderShell('/');
@@ -297,6 +302,7 @@ describe('AppShell × redesign: ScenarioPicker', () => {
 // ---------------------------------------------------------------------------
 // 7. Nav-link click navigates to corresponding route (M0.17 t8: sibling routing)
 // ---------------------------------------------------------------------------
+// covers: RT-INDEX-01, RT-DEEPLINK-01
 describe('AppShell × redesign: nav-link routing', () => {
   it('clicking nav-link-plan shows plan content directly (no view-panel wrapper)', async () => {
     // WHY: M0.17 t8 — sibling routing. <Outlet> renders content directly, no view-panel.

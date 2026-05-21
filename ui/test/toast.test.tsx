@@ -17,6 +17,7 @@ import {
   emitProjectAdded,
 } from '@/notifications/toastBus';
 
+// covers: TS-TOAST-STACK-01
 describe('ToastContainer — basic display', () => {
   beforeEach(() => {
     vi.useFakeTimers();

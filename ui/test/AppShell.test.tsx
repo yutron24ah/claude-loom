@@ -140,6 +140,7 @@ function renderAppShell(initialRoute = '/') {
   );
 }
 
+// covers: RT-INDEX-01, RT-SIBLING-01, LR-MOUNT-01, LR-HIDE-NONROOM-01
 describe('AppShell — sibling routing (M0.17 t8)', () => {
   it('renders room-canvas at root route', () => {
     renderAppShell('/');
@@ -171,6 +172,7 @@ describe('AppShell — sibling routing (M0.17 t8)', () => {
   });
 });
 
+// covers: RT-OVERLAY-OFF-01
 describe('AppShell — no view-panel overlay (M0.17 t8 §S2 fix)', () => {
   it('does not render view-panel at root route', () => {
     // WHY: M0.17 t8 — overlay removed entirely, no view-panel testid anywhere.
@@ -215,6 +217,7 @@ describe('AppShell — Escape key behavior (M0.17 t8 handler removed)', () => {
   });
 });
 
+// covers: TB-LAYOUT-01, TB-DRAWER-TOGGLE-01
 describe('AppShell — TopBar (replaces DisciplineHeader)', () => {
   it('renders topbar at root route', () => {
     renderAppShell('/');
@@ -233,6 +236,7 @@ describe('AppShell — TopBar (replaces DisciplineHeader)', () => {
  * Drawer (data-testid="drawer"). Nav links use nav-link-{id} testids
  * instead of sidebar-link-{id}.
  */
+// covers: DR-LAYOUT-01, DR-NAV-ROOM-01, DR-NAV-PLAN-01, DR-NAV-RETRO-01, DR-NAV-SESSIONS-01, DR-NAV-TOKENS-01, DR-NAV-SETTINGS-01, DR-ACTIVE-01
 describe('AppShell — Drawer navigation (redesign)', () => {
   it('renders drawer at root route', () => {
     renderAppShell('/');

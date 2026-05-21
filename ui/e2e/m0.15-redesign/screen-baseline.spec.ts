@@ -82,6 +82,7 @@ const SCREENS = [
 // Tests — one screenshot per screen
 // ---------------------------------------------------------------------------
 
+// covers: TB-LAYOUT-01, DR-LAYOUT-01, RT-INDEX-01, DR-NAV-PLAN-01, DR-NAV-GANTT-01, DR-NAV-RETRO-01, DR-NAV-WORKTREE-01, DR-NAV-CONSISTENCY-01, DR-NAV-CUSTOMIZATION-01, DR-NAV-GUIDANCE-01, DR-NAV-SESSIONS-01, DR-NAV-SETTINGS-01, DR-NAV-TOKENS-01
 test.describe('M0.15 — 12-screen visual regression baselines (?mock=active)', () => {
   for (const screen of SCREENS) {
     test(`screenshot baseline: ${screen.id}`, async ({ page }) => {
@@ -157,6 +158,7 @@ test.describe('M0.15 — ⑨ AgentDetail overlay baseline', () => {
 // ⑬ PMChat overlay — Room route with pm.running=true (mock=active)
 // ---------------------------------------------------------------------------
 
+// covers: RC-PMCHAT-MOUNT-01
 test.describe('M0.15 — PMChat overlay baseline (?mock=active)', () => {
   test('screenshot baseline: pm-chat-overlay', async ({ page }) => {
     // WHY: ?mock=active sets pm.running = true, making PMChatPanel visible

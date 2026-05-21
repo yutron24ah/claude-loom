@@ -19,6 +19,7 @@ const THEMES = [
   { id: 'night', label: 'night' },
 ] as const;
 
+// covers: RT-INDEX-01, TB-LAYOUT-01
 test.describe('Room View — 3 theme screenshot baselines', () => {
   for (const theme of THEMES) {
     test(`matches ${theme.label} theme baseline`, async ({ page }) => {

@@ -10,6 +10,7 @@ import { render, screen } from '@testing-library/react';
 import { ConnectionBanner } from '@/notifications/ConnectionBanner';
 import { useConnectionStore } from '@/store/connection';
 
+// covers: CN-BANNER-01, TB-CONN-01
 describe('ConnectionBanner — connected state', () => {
   beforeEach(() => {
     useConnectionStore.setState({ status: 'connected', attempts: 0 });
@@ -37,6 +38,7 @@ describe('ConnectionBanner — disconnected state', () => {
   });
 });
 
+// covers: TB-CONN-02, CN-BANNER-01
 describe('ConnectionBanner — reconnecting state', () => {
   beforeEach(() => {
     useConnectionStore.setState({ status: 'reconnecting', attempts: 2 });
