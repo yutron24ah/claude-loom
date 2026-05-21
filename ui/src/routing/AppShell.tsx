@@ -31,6 +31,7 @@ import { useScenario } from '@claude-loom/redesign/api/websocket';
 import type { DisciplineMetrics, ConnectionStatus } from '@claude-loom/redesign/api/types';
 import { usePMSession } from '../live/usePMSession';
 import { NAV_GROUPS, SCENARIO_KEYS, APP_COPY } from './constants';
+import { StatusBar } from '../views/shell/StatusBar';
 
 /** Right column width — matches redesign/screens/room.jsx CHAT_W constant. */
 const PM_PANEL_W = 340;
@@ -175,33 +176,6 @@ function Drawer({ collapsed, pathname }: DrawerProps): JSX.Element {
       ))}
       <div className="drawer__spacer" />
       {!collapsed && <div className="drawer__group drawer__version">{APP_COPY.versionLine}</div>}
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// StatusBar
-// ---------------------------------------------------------------------------
-interface StatusBarProps {
-  label: string;
-  project: string;
-  conn: ConnectionStatus;
-}
-
-function StatusBar({ label, project, conn }: StatusBarProps): JSX.Element {
-  return (
-    <div data-testid="statusbar" className="statusbar">
-      <span className="seg">
-        <span className={`dot ${conn === 'connected' ? 'busy' : 'fail'}`} />
-        {conn === 'connected' ? APP_COPY.wsConnected : APP_COPY.wsReconnecting}
-      </span>
-      <span className="seg">
-        scenario: <strong className="statusbar__scenario">{label}</strong>
-      </span>
-      <span className="seg">events seen</span>
-      <span className="right">
-        {APP_COPY.brand} @ <code>~/work/{project}</code>
-      </span>
     </div>
   );
 }
