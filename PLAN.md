@@ -1665,3 +1665,93 @@ retro candidate (本 milestone 観察用、closure 後 retro でまとめて評�
 - F-proc-NEW (仮): handoff bundle (claude.ai/design export) の binary fetch 経路を本 milestone で確立 (gzip tarball、`/tmp/loom-design-fetched/` 展開 → `docs/design/<date>-<milestone>/` 永続)、Phase 2 で再利用 pattern としての codify 候補
 
 **M0.18-skill-migration-ui-rework 完成基準**: `spec/ui-arch.md §8.5` が SSoT。Phase 0 → 1 → 2 → 3 → 4 順実施、Phase 1 worktree isolation parallel batch、Phase 2 parallel batch、Phase 3-4 sequential、reviewer single default 全 task、Strategy a commit handoff、tag `m0.18-complete` + retro hook trigger、main 取込 PR open、`m0`〜`m0.17-complete` 全 tag 保持。
+
+## マイルストーン M0.19-qa-suite-gap-fill-phase1 (`test/qa-suite-gap-fill-phase1` branch、2026-05-21 から)
+
+詳細 plan: `docs/plans/2026-05-21-m0.19-qa-suite-gap-fill-phase1.md` が SSoT
+design spec: `docs/design/2026-05-21-qa-suite-100pct/design.md`
+audit baseline: `docs/audit/2026-05-20-qa-suite-coverage.{md,json}`
+
+M0.18 closure 後の Phase 2 entry に向けた QA Suite Gap Fill Phase 1。`qa-suite.js` (479 case) の priority-0 missing 14 件 + naming mismatch 解消 + impl_only 156 件 fill を D1 厳密 (`// covers: <case-id>` grep traceability) で実施。`audit:qa-coverage` script + CI gate を新規導入し regression keeper を確立。
+
+設計合意 (2026-05-21 brainstorm session、design.md §7 Brainstorming decision log SSoT):
+- scope: S1 (479 全部 100%、N/A 24 も再判定)
+- done criterion: D1 (full + `// covers:` 厳密、Vitest test に case ID 明記 + impl 存在)
+- milestone 分割: T1 (M0.19 gap-fill + M0.20 ux-edge の 2 milestone)
+- regression: R3 (CI 自動化 + Phase boundary walkthrough hybrid)
+- walkthrough state: b1 (`docs/qa-walkthrough/<date>-m0.20.json` commit)
+- commit handoff: Strategy a (default)、t2/t6/t7 parallel batch は worktree isolation 必須
+- reviewer mode: single default
+
+### Phase 1: audit script + CI gate (sequential prereq)
+
+- [ ] `scripts/audit-qa-coverage.sh` 新規作成 + CI workflow 組込 + `configs/qa-na-allowlist.txt` bootstrap (D1 grep traceability の基盤、本 milestone 全 task の前提) <!-- id: m0.19-t1 status: todo planned_files: scripts/audit-qa-coverage.sh, configs/qa-na-allowlist.txt, .github/workflows/ci.yml, package.json, ui/test/scripts/audit-qa-coverage.test.ts -->
+
+### Phase 2: // covers: injection (5 parallel + worktree isolation)
+
+- [ ] `// covers:` comment injection (section A: shell) + naming mismatch 解消 <!-- id: m0.19-t2a status: todo planned_files: ui/test/views/AppShell*.test.tsx, ui/test/views/shell/**/*.test.{ts,tsx}, ui/e2e/m0.15-*.spec.ts, ui/e2e/m0.16-*.spec.ts, ui/e2e/m0.17-*.spec.ts -->
+- [ ] `// covers:` comment injection (section B: room) + naming mismatch 解消 <!-- id: m0.19-t2b status: todo planned_files: ui/test/views/room/**/*.test.tsx, ui/e2e/m0.18-room-spirit.spec.ts -->
+- [ ] `// covers:` comment injection (section C: panel-customization+retro) + naming mismatch 解消 <!-- id: m0.19-t2c status: todo planned_files: ui/test/views/customization/**/*.test.tsx, ui/test/views/retro/**/*.test.tsx, ui/e2e/m0.18-customization-tree.spec.ts, ui/e2e/m0.18-retro-kpt.spec.ts -->
+- [ ] `// covers:` comment injection (section D: panel-other) + naming mismatch 解消 <!-- id: m0.19-t2d status: todo planned_files: ui/test/views/{worktree,sessions,plan,gantt,consistency,project-settings,guidance,tokens}/**/*.test.tsx -->
+- [ ] `// covers:` comment injection (section E: overlay + m0.18-misc) + naming mismatch 解消 <!-- id: m0.19-t2e status: todo planned_files: ui/test/views/{agent-detail,pm-chat,live-rail,session-list}/**/*.test.tsx, ui/test/views/guidance/guidance-scope.test.tsx -->
+
+### Phase 3: priority-0 missing fills (parallel)
+
+- [ ] StatusBar unit tests (SB-LAYOUT-01 + SB-CONN-01 + SB-SCENARIO-01) <!-- id: m0.19-t3 status: todo planned_files: ui/test/views/shell/statusbar.test.tsx -->
+- [ ] Overall audit (OV-* 5 priority-0: CONSOLE-ERROR / ALL-BUTTONS / NO-ALERT / NO-PLACEHOLDER / BACK-FORWARD) <!-- id: m0.19-t4 status: todo planned_files: ui/e2e/overall-audit.spec.ts, ui/scripts/lint-no-alert.mjs, ui/scripts/lint-no-placeholder.mjs, ui/eslint.config.js, package.json, .github/workflows/ci.yml -->
+- [ ] Browser nav + AppShell layout (RT-BACK-01 + RM-NOWRAP-01) <!-- id: m0.19-t5 status: todo planned_files: ui/e2e/browser-nav.spec.ts, ui/test/AppShell.redesign.test.tsx -->
+- [ ] Misc priority-0+1 missing (WT-QUERY-01 + LR-MOUNT-01 + LR-TAB-MERGED-01 + CT-SCHEMA-02 + DS status) <!-- id: m0.19-t6 status: todo planned_files: ui/test/views/worktree/worktree-query.test.tsx, ui/test/views/live-rail/live-rail-mount.test.tsx, ui/test/views/customization/customization-schema-migration.test.tsx, ui/test/views/room/desk-station-status.test.tsx -->
+
+### Phase 4: impl_only 156 fill (5 parallel + worktree isolation)
+
+- [ ] impl_only 156 fill (section A: shell-non-statusbar) <!-- id: m0.19-t7a status: todo planned_files: ui/test/views/{toolbar,drawer,routing,reactioncenter,switch,live-router,nonroom,session-tabs,connection,scenario-toggle}/**/*.test.tsx -->
+- [ ] impl_only 156 fill (section B: room non-spirit + bg/wd/po) <!-- id: m0.19-t7b status: todo planned_files: ui/test/views/room/{background,wallpaper,polish,desk-stations,coffee,workshop,approval}/**/*.test.tsx -->
+- [ ] impl_only 156 fill (section C: panel-all) <!-- id: m0.19-t7c status: todo planned_files: ui/test/views/{plan,gantt,consistency,customization,retro,worktree,guidance,sessions,project-settings,tokens}/**/*.test.tsx -->
+- [ ] impl_only 156 fill (section D: overlay-all) <!-- id: m0.19-t7d status: todo planned_files: ui/test/views/{agent-detail,pm-chat,live-rail}/**/*.test.tsx -->
+- [ ] impl_only 156 fill (section E: admin-recon backend) <!-- id: m0.19-t7e status: todo planned_files: daemon/test/routes/retro-reconstruct.test.ts -->
+
+### Phase 5: N/A reclassification + closure (sequential)
+
+- [ ] N/A 24 case reclassification + allowlist finalization (justification 付与、PR review user 承認) <!-- id: m0.19-t8 status: todo planned_files: configs/qa-na-allowlist.txt, docs/audit/2026-05-21-na-reclassification.md -->
+- [ ] M0.19 closure (Layer 0-8 verification + coverage progress snapshot + tag m0.19-complete + retro 提案) <!-- id: m0.19-t9 status: todo planned_files: PLAN.md, docs/audit/2026-05-21-qa-coverage-progress.json, docs/SCREEN_REQUIREMENTS.md, docs/DOC_CONSISTENCY_CHECKLIST.md, git tag m0.19-complete -->
+
+**M0.19 完成基準**: `docs/plans/2026-05-21-m0.19-qa-suite-gap-fill-phase1.md` "Task t9: M0.19 closure" Integrity check 12 項目 ALL pass、tag `m0.19-complete` 設置、main 取込 PR open (branch hygiene 遵守)、retro 起動提案 user yes → loom-retro-pm dispatch。
+
+## マイルストーン M0.20-qa-suite-ux-edge-coverage (`test/qa-suite-ux-edge-coverage` branch、M0.19 closure 後)
+
+詳細 plan: `docs/plans/2026-05-21-m0.20-qa-suite-ux-edge-coverage.md` が SSoT
+design spec: `docs/design/2026-05-21-qa-suite-100pct/design.md`
+prerequisite: M0.19 `m0.19-complete` tag 設置済
+
+cross-cutting 110 件 (UX 26 / EG 18 / CH 14 / MS 24 / NT 7 / SEC 5 / IN 6 / PH 6 / AR 4) + 残 missing 75 件を D1 厳密で full 化、QA Test Matrix.html browser walkthrough で全 479 case marked pass、**Phase 2 entry gate 通過** + `phase-2-entry-ready` tag 設置。
+
+### Phase 1: UX/EG/CH/MS cross-cutting (parallel batches、worktree isolation)
+
+- [ ] UX patterns 26 cases (section A: load/empty/error states) <!-- id: m0.20-t1a status: todo planned_files: ui/test/cross-cutting/ux-states.test.tsx, ui/e2e/ux-load-empty-error.spec.ts -->
+- [ ] UX patterns 26 cases (section B: focus / keyboard / a11y) <!-- id: m0.20-t1b status: todo planned_files: ui/test/cross-cutting/ux-focus-a11y.test.tsx, ui/e2e/ux-keyboard-nav.spec.ts -->
+- [ ] UX patterns 26 cases (section C: motion / animation / responsive) <!-- id: m0.20-t1c status: todo planned_files: ui/test/cross-cutting/ux-motion.test.tsx, ui/e2e/ux-responsive.spec.ts -->
+- [ ] EG edge cases 18 (section A: boundary states) <!-- id: m0.20-t2a status: todo planned_files: ui/test/cross-cutting/eg-boundary.test.tsx, ui/e2e/eg-no-project-no-session.spec.ts -->
+- [ ] EG edge cases 18 (section B: connectivity / migration) <!-- id: m0.20-t2b status: todo planned_files: ui/test/cross-cutting/eg-connectivity.test.tsx, ui/e2e/eg-disconnected-migration.spec.ts -->
+- [ ] CH character visual 14 (section A: reviewer 4 char + customizer 3 char) <!-- id: m0.20-t3a status: todo planned_files: ui/test/cross-cutting/ch-character-layout.test.tsx, ui/e2e/ch-character-visual.spec.ts -->
+- [ ] CH character visual 14 (section B: cross-character interaction + scenario) <!-- id: m0.20-t3b status: todo planned_files: ui/test/cross-cutting/ch-scenario.test.tsx -->
+- [ ] MS milestone feature audit (section A: M0.5-M0.13 audit) <!-- id: m0.20-t4a status: todo planned_files: ui/test/cross-cutting/ms-early-milestones.test.tsx -->
+- [ ] MS milestone feature audit (section B: M0.14-M0.18 audit) <!-- id: m0.20-t4b status: todo planned_files: ui/test/cross-cutting/ms-late-milestones.test.tsx -->
+- [ ] MS milestone feature audit (section C: Phase boundary / cross-milestone integration) <!-- id: m0.20-t4c status: todo planned_files: ui/test/cross-cutting/ms-phase-boundary.test.tsx, ui/e2e/ms-cross-milestone-flow.spec.ts -->
+
+### Phase 2: small cross-cutting batch (NT/SEC/IN/PH/AR、parallel)
+
+- [ ] NT/SEC small cross-cutting (section A: notifications + security) <!-- id: m0.20-t5a status: todo planned_files: ui/test/cross-cutting/nt-notifications.test.tsx, ui/test/cross-cutting/sec-security.test.tsx, ui/e2e/sec-token-leak.spec.ts -->
+- [ ] IN/PH/AR small cross-cutting (section B: install + philosophy + admin-recon) <!-- id: m0.20-t5b status: todo planned_files: ui/test/cross-cutting/in-install.test.tsx, ui/test/cross-cutting/ph-philosophy.test.tsx, daemon/test/routes/retro-reconstruct-admin.test.ts -->
+
+### Phase 3: residual missing impl + test (4 parallel + worktree isolation)
+
+- [ ] Residual missing impl + test (section A: shell + flows) <!-- id: m0.20-t6a status: todo planned_files: ui/src/views/shell/*.tsx, ui/test/views/shell/**/*.test.tsx, ui/e2e/flows-*.spec.ts -->
+- [ ] Residual missing impl + test (section B: room) <!-- id: m0.20-t6b status: todo planned_files: ui/src/views/room/*.tsx, ui/test/views/room/**/*.test.tsx -->
+- [ ] Residual missing impl + test (section C: panel) <!-- id: m0.20-t6c status: todo planned_files: ui/src/views/{plan,gantt,consistency,customization,retro,worktree,guidance,sessions,project-settings,tokens}/*.tsx -->
+- [ ] Residual missing impl + test (section D: overlay) <!-- id: m0.20-t6d status: todo planned_files: ui/src/views/{agent-detail,pm-chat,live-rail}/*.tsx -->
+
+### Phase 4: closure + Phase 2 entry gate (PM walkthrough、sequential)
+
+- [ ] M0.20 closure + QA Test Matrix.html walkthrough + Phase 2 entry gate verification + phase-2-entry-ready tag <!-- id: m0.20-t7 status: todo planned_files: PLAN.md, docs/audit/2026-05-XX-qa-coverage-progress.json, docs/qa-walkthrough/2026-05-XX-m0.20.json, .claude-loom/project-prefs.json, docs/SCREEN_REQUIREMENTS.md, docs/DOC_CONSISTENCY_CHECKLIST.md, git tag m0.20-complete, git tag phase-2-entry-ready -->
+
+**M0.20 完成基準**: `docs/plans/2026-05-21-m0.20-qa-suite-ux-edge-coverage.md` "Task t7" Integrity check 17 項目 ALL pass、tag `m0.20-complete` + `phase-2-entry-ready` 設置、QA Test Matrix walkthrough JSON commit、main 取込 PR open、retro 起動提案 + Phase 2 (M1.0+) brainstorm 開始 user 確認。
