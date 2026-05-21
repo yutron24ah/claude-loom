@@ -1685,7 +1685,7 @@ M0.18 closure 後の Phase 2 entry に向けた QA Suite Gap Fill Phase 1。`qa-
 
 ### Phase 1: audit script + CI gate (sequential prereq)
 
-- [ ] `scripts/audit-qa-coverage.sh` 新規作成 + CI workflow 組込 + `configs/qa-na-allowlist.txt` bootstrap (D1 grep traceability の基盤、本 milestone 全 task の前提) <!-- id: m0.19-t1 status: todo planned_files: scripts/audit-qa-coverage.sh, configs/qa-na-allowlist.txt, .github/workflows/ci.yml, package.json, ui/test/scripts/audit-qa-coverage.test.ts -->
+- [x] `scripts/audit-qa-coverage.sh` 新規作成 + CI workflow 組込 + `configs/qa-na-allowlist.txt` bootstrap (D1 grep traceability の基盤、本 milestone 全 task の前提) <!-- id: m0.19-t1 status: done committed_sha: 35bda30 + bf2cb89 (errata 1.5) path: C (loom-developer self-review、Task tool deferred、4 観点 self-checklist 全 PASS、TDD red→green tdd_red_confirmed: true、12/12 test PASS、bash audit script POSIX 互換 dash/zsh/bash、orphan covers detection 実装、N/A allowlist bootstrap、CI gate continue-on-error true で t2 完了まで fail-OK、t1.5 errata: 初版 audit が 5-6 segment ID 36 件計上漏れ → script grep で qa-suite.js 実数 515 case 検出 → audit doc + design + plan + PLAN + memory 一括 update + Errata note 追加、M0.19 +16 件 / M0.20 +20 件 scope 拡張、formal reviewer follow-up は milestone closure でまとめ) planned_files: scripts/audit-qa-coverage.sh, configs/qa-na-allowlist.txt, .github/workflows/ci.yml, package.json, ui/test/scripts/audit-qa-coverage.test.ts, docs/audit/2026-05-20-qa-suite-coverage.{md,json} (errata), docs/audit/2026-05-21-qa-coverage-progress.json (snapshot), docs/design/2026-05-21-qa-suite-100pct/design.md (479→515), docs/plans/2026-05-21-m0.{19,20}-*.md (479→515) -->
 
 ### Phase 2: // covers: injection (5 parallel + worktree isolation)
 
