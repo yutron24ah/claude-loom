@@ -307,6 +307,26 @@ export function RoomView({ spiritMode = 'hybrid' }: RoomViewProps = {}): JSX.Ele
         items={queueItems}
       />
 
+      {/* === Summon Zone signage — right-bottom corner (SP-DESK-02) === */}
+      {/* WHY: qa-suite SP-DESK-02 expects "⟡ 召喚エリア" sign at right-bottom.
+          Spirits orbit the floor area; this sign marks the summon zone. */}
+      <div
+        className="summon-zone-sign"
+        style={{
+          position: 'absolute',
+          right: 14,
+          bottom: 14,
+          fontSize: 9,
+          color: 'var(--p-text-muted)',
+          letterSpacing: 2,
+          opacity: 0.55,
+          pointerEvents: 'none',
+          fontFamily: 'ui-monospace, "SF Mono", Menlo, monospace',
+        }}
+      >
+        ⟡ 召喚エリア
+      </div>
+
       {/* === Worktree clones — sit *above* the dev desk === */}
       {scenario.worktrees
         .filter((w) => w.parentAgent === 'dev')
