@@ -4,9 +4,11 @@
  * (Agents (3) + Skills (2 with sub-scopes)). Old flat-table tests are
  * replaced with tree-focused tests.
  *
+ * covers: CU-MOUNT-01, CT-TREE-01, CT-TREE-02, CT-EDIT-AGENT-01
+ *
  * SCREEN_REQUIREMENTS §3.8 / §4.7
- * REQ-115 through REQ-121 (CUSTOM-TREE-001 through CUSTOM-TREE-007)
- * covered in ui/test/views/customization/customization-tree.test.tsx
+ * REQ-115 through REQ-121 (CT-TREE-01 through CT-TREE-05, CT-EDIT-AGENT-01, CT-EDIT-SKILL-01)
+ * detail tests in ui/test/views/customization/customization-tree.test.tsx
  *
  * This file covers basic render + header + save/cancel buttons (regression guard).
  */
@@ -29,6 +31,7 @@ afterEach(() => {
   cleanup();
 });
 
+// covers: CU-MOUNT-01
 describe('CustomizationView — basic render', () => {
   it('renders the customization view container', () => {
     render(<CustomizationView />);
@@ -52,6 +55,7 @@ describe('CustomizationView — basic render', () => {
   });
 });
 
+// covers: CT-TREE-01, CT-TREE-02
 describe('CustomizationView — tree structure (M0.18)', () => {
   it('shows Agents root with count (3)', () => {
     render(<CustomizationView />);
@@ -85,6 +89,7 @@ describe('CustomizationView — tree structure (M0.18)', () => {
   });
 });
 
+// covers: CT-EDIT-AGENT-01
 describe('CustomizationView — leaf editor default state', () => {
   it('shows model selector for default selection (loom-developer = agent)', () => {
     render(<CustomizationView />);

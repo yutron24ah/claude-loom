@@ -3,8 +3,10 @@
  *
  * WHY: M0.18 t2 replaces the existing 2-column LensCard+FindingRow layout
  * with a KPT 4-column board + lifecycle pip + admin section.
- * This test suite covers RETRO-LC-001..005 (lifecycle) and
- * RETRO-ADM-001..004 (admin panel) per REQ-115..REQ-122.
+ *
+ * covers: RL-KPT-01, RL-PIP-01, RL-PIP-02, RL-VERDICT-PROM-01, RL-VERDICT-EXP-01,
+ *         RL-META-01, RL-META-02, RL-ADM-TOGGLE-01, RL-ADM-RECON-01, RL-ADM-RECON-02,
+ *         RL-PSUM-01, ENF-RETRY-01
  *
  * All previous REQ-072 tests for the old 2-column layout are superseded by
  * this suite. The old test file (retro-mock-active.test.tsx) stays as-is
@@ -119,9 +121,9 @@ afterEach(() => {
 });
 
 // ===========================================================================
-// RETRO-LC-001: KPT 4 columns render (REQ-115)
+// covers: RL-KPT-01, RE-MOUNT-01
 // ===========================================================================
-describe('RETRO-LC-001: KPT 4 columns render', () => {
+describe('KPT 4 columns render', () => {
   it('renders retro-view root element', () => {
     const { container } = render(<RetroView retroId="retro-2026-05-16" />);
     expect(container.firstChild).toBeInTheDocument();
@@ -163,9 +165,9 @@ describe('RETRO-LC-001: KPT 4 columns render', () => {
 });
 
 // ===========================================================================
-// RETRO-LC-002: carryover_count pip display (REQ-116)
+// covers: RL-PIP-01, RL-PIP-02
 // ===========================================================================
-describe('RETRO-LC-002: carryover_count pip ▢▢▢ → ▢▢▣ → ▢▣▣ → ▣▣▣', () => {
+describe('carryover_count pip ▢▢▢ → ▢▢▣ → ▢▣▣ → ▣▣▣', () => {
   it('count=1 pip shows 1 filled (▢▢▣)', () => {
     render(<RetroView retroId="retro-2026-05-16" />);
     // proc-007 has carryover_count=1
@@ -193,9 +195,9 @@ describe('RETRO-LC-002: carryover_count pip ▢▢▢ → ▢▢▣ → ▢▣�
 });
 
 // ===========================================================================
-// RETRO-LC-003: verdict 4-way badge (REQ-117)
+// covers: RL-VERDICT-PROM-01, RL-VERDICT-EXP-01
 // ===========================================================================
-describe('RETRO-LC-003: verdict 4-way badge', () => {
+describe('verdict badge (promoted / auto-expire)', () => {
   it('expired finding shows auto-expire badge', () => {
     render(<RetroView retroId="retro-2026-05-16" />);
     const card = screen.getByTestId('carryover-card-meta-002');
@@ -223,9 +225,9 @@ describe('RETRO-LC-003: verdict 4-way badge', () => {
 });
 
 // ===========================================================================
-// RETRO-LC-004: last_seen_in / re_evaluated_in metadata (REQ-118)
+// covers: RL-META-01, RL-META-02
 // ===========================================================================
-describe('RETRO-LC-004: last_seen_in / re_evaluated_in metadata', () => {
+describe('last_seen_in / re_evaluated_in metadata', () => {
   it('shows last_seen_in retro id', () => {
     render(<RetroView retroId="retro-2026-05-16" />);
     const card = screen.getByTestId('carryover-card-pj-003');
@@ -244,9 +246,9 @@ describe('RETRO-LC-004: last_seen_in / re_evaluated_in metadata', () => {
 });
 
 // ===========================================================================
-// RETRO-LC-005: reconstructed_from_archive marker (REQ-119)
+// covers: RL-ADM-RECON-02
 // ===========================================================================
-describe('RETRO-LC-005: reconstructed_from_archive marker', () => {
+describe('reconstructed_from_archive marker', () => {
   it('shows archive marker when reconstructed', () => {
     // Re-mock lifecycle with a reconstructed item
     const mockReconstructedData = {
@@ -282,9 +284,9 @@ describe('RETRO-LC-005: reconstructed_from_archive marker', () => {
 });
 
 // ===========================================================================
-// RETRO-ADM-001: admin section toggle (REQ-120)
+// covers: RL-ADM-TOGGLE-01
 // ===========================================================================
-describe('RETRO-ADM-001: admin section toggle', () => {
+describe('admin section toggle', () => {
   it('admin panel is collapsed by default', () => {
     render(<RetroView retroId="retro-2026-05-16" />);
     const panel = screen.queryByTestId('admin-panel');
@@ -312,9 +314,9 @@ describe('RETRO-ADM-001: admin section toggle', () => {
 });
 
 // ===========================================================================
-// RETRO-ADM-002: reconstruct button invokes tRPC refetch (REQ-121)
+// covers: RL-ADM-RECON-01
 // ===========================================================================
-describe('RETRO-ADM-002: reconstruct button invokes tRPC', () => {
+describe('reconstruct button invokes tRPC', () => {
   it('shows reconstruct button when admin panel expanded', () => {
     render(<RetroView retroId="retro-2026-05-16" />);
     fireEvent.click(screen.getByTestId('admin-toggle'));
@@ -330,9 +332,9 @@ describe('RETRO-ADM-002: reconstruct button invokes tRPC', () => {
 });
 
 // ===========================================================================
-// RETRO-ADM-003: pending_summary rebuild button (REQ-121)
+// covers: RL-PSUM-01
 // ===========================================================================
-describe('RETRO-ADM-003: pending_summary rebuild button', () => {
+describe('pending_summary rebuild button', () => {
   it('shows pending summary rebuild button when admin expanded', () => {
     render(<RetroView retroId="retro-2026-05-16" />);
     fireEvent.click(screen.getByTestId('admin-toggle'));
@@ -341,9 +343,9 @@ describe('RETRO-ADM-003: pending_summary rebuild button', () => {
 });
 
 // ===========================================================================
-// RETRO-ADM-004: NOT_FOUND retry placeholder (REQ-122)
+// covers: ENF-RETRY-01
 // ===========================================================================
-describe('RETRO-ADM-004: NOT_FOUND retry placeholder', () => {
+describe('NOT_FOUND retry placeholder', () => {
   it('shows approval retry placeholder button when admin expanded', () => {
     render(<RetroView retroId="retro-2026-05-16" />);
     fireEvent.click(screen.getByTestId('admin-toggle'));

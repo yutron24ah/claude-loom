@@ -1,16 +1,19 @@
 /**
- * CUSTOM-TREE-* TDD tests — CustomizationView 2-pane tree rewrite
+ * CustomizationView 2-pane tree rewrite TDD tests
  * WHY: M0.18 Phase 1 t1 — flat AgentRow + ChainDetailPanel replaced by
  * 2-pane tree (left 260px hierarchical tree + right 1fr leaf editor).
  * Tree shape: Agents(3) + Skills(2) with sub-scopes, WRITE badge for aggregator.
  *
- * REQ-117: CUSTOM-TREE-001 — tree Agents(3) + Skills(2) 2 root nodes
- * REQ-118: CUSTOM-TREE-002 — Agents expand shows 3 persistent
- * REQ-119: CUSTOM-TREE-003 — loom-review expand shows 4 strategies
- * REQ-120: CUSTOM-TREE-004 — loom-retro expand shows lenses(4) + stages(2)
- * REQ-121: CUSTOM-TREE-005 — aggregator leaf has WRITE badge
- * REQ-122: CUSTOM-TREE-006 — agent leaf shows model selector, skill leaf hides it
- * REQ-123: CUSTOM-TREE-007 — count display Agents(3) / Skills(2)
+ * covers: CT-TREE-01, CT-TREE-02, CT-TREE-03, CT-TREE-04, CT-TREE-05,
+ *         CT-EDIT-AGENT-01, CT-EDIT-SKILL-01, CT-EDIT-WRITE-01
+ *
+ * REQ-117: CT-TREE-01 — Agents root node expand
+ * REQ-118: CT-TREE-02 — Skills root node expand
+ * REQ-119: CT-TREE-03 — loom-review expand shows 4 strategies
+ * REQ-120: CT-TREE-04 — loom-retro expand shows lenses(4) + stages(2)
+ * REQ-121: CT-TREE-05 — aggregator leaf has WRITE badge
+ * REQ-122: CT-EDIT-AGENT-01 / CT-EDIT-SKILL-01 — agent leaf shows model selector, skill leaf hides it
+ * REQ-123: CT-TREE-01, CT-TREE-02 — count display Agents(3) / Skills(2)
  */
 import { describe, it, expect, afterEach, vi } from 'vitest';
 import { render, screen, cleanup, fireEvent, within } from '@testing-library/react';
@@ -34,10 +37,10 @@ afterEach(() => {
 });
 
 // ---------------------------------------------------------------------------
-// CUSTOM-TREE-001 — tree renders Agents + Skills as 2 root nodes
+// covers: CT-TREE-01, CT-TREE-02
 // REQ-115
 // ---------------------------------------------------------------------------
-describe('CUSTOM-TREE-001: tree renders Agents + Skills root nodes', () => {
+describe('tree renders Agents + Skills root nodes', () => {
   it('renders a tree root node labeled Agents', () => {
     render(<CustomizationView />);
     expect(screen.getByTestId('tree-root-agents')).toBeInTheDocument();
@@ -56,10 +59,10 @@ describe('CUSTOM-TREE-001: tree renders Agents + Skills root nodes', () => {
 });
 
 // ---------------------------------------------------------------------------
-// CUSTOM-TREE-002 — Agents section expands to show 3 persistent agents
+// covers: CT-TREE-01
 // REQ-116
 // ---------------------------------------------------------------------------
-describe('CUSTOM-TREE-002: Agents expand shows 3 persistent agents', () => {
+describe('Agents expand shows 3 persistent agents', () => {
   it('renders loom-pm leaf when agents are expanded', () => {
     render(<CustomizationView />);
     // agents root should be expanded by default
@@ -85,10 +88,10 @@ describe('CUSTOM-TREE-002: Agents expand shows 3 persistent agents', () => {
 });
 
 // ---------------------------------------------------------------------------
-// CUSTOM-TREE-003 — loom-review expand shows 4 strategies
+// covers: CT-TREE-03
 // REQ-117
 // ---------------------------------------------------------------------------
-describe('CUSTOM-TREE-003: loom-review expand shows 4 strategies', () => {
+describe('loom-review expand shows 4 strategies', () => {
   it('renders single strategy leaf', () => {
     render(<CustomizationView />);
     expect(screen.getByTestId('tree-leaf-skills/loom-review/strategies/single')).toBeInTheDocument();
@@ -111,10 +114,10 @@ describe('CUSTOM-TREE-003: loom-review expand shows 4 strategies', () => {
 });
 
 // ---------------------------------------------------------------------------
-// CUSTOM-TREE-004 — loom-retro expand shows lenses(4) + stages(2)
+// covers: CT-TREE-04
 // REQ-118
 // ---------------------------------------------------------------------------
-describe('CUSTOM-TREE-004: loom-retro expand shows lenses(4) + stages(2)', () => {
+describe('loom-retro expand shows lenses(4) + stages(2)', () => {
   it('renders pj-axis lens leaf', () => {
     render(<CustomizationView />);
     expect(screen.getByTestId('tree-leaf-skills/loom-retro/lenses/pj-axis')).toBeInTheDocument();
@@ -147,10 +150,10 @@ describe('CUSTOM-TREE-004: loom-retro expand shows lenses(4) + stages(2)', () =>
 });
 
 // ---------------------------------------------------------------------------
-// CUSTOM-TREE-005 — aggregator leaf has WRITE badge
+// covers: CT-TREE-05, CT-EDIT-WRITE-01
 // REQ-119
 // ---------------------------------------------------------------------------
-describe('CUSTOM-TREE-005: aggregator leaf has WRITE badge', () => {
+describe('aggregator leaf has WRITE badge', () => {
   it('renders WRITE badge in the tree leaf row for aggregator', () => {
     render(<CustomizationView />);
     const aggregatorLeaf = screen.getByTestId('tree-leaf-skills/loom-retro/stages/aggregator');
@@ -165,10 +168,10 @@ describe('CUSTOM-TREE-005: aggregator leaf has WRITE badge', () => {
 });
 
 // ---------------------------------------------------------------------------
-// CUSTOM-TREE-006 — agent leaf selection shows model selector; skill leaf hides it
+// covers: CT-EDIT-AGENT-01, CT-EDIT-SKILL-01
 // REQ-120
 // ---------------------------------------------------------------------------
-describe('CUSTOM-TREE-006: agent vs skill leaf editor model selector visibility', () => {
+describe('agent vs skill leaf editor model selector visibility', () => {
   it('clicking an agent leaf shows model selector in editor', () => {
     render(<CustomizationView />);
     // Click the loom-developer agent leaf
@@ -195,10 +198,10 @@ describe('CUSTOM-TREE-006: agent vs skill leaf editor model selector visibility'
 });
 
 // ---------------------------------------------------------------------------
-// CUSTOM-TREE-007 — count display Agents(3) / Skills(2)
+// covers: CT-TREE-01, CT-TREE-02
 // REQ-121
 // ---------------------------------------------------------------------------
-describe('CUSTOM-TREE-007: count display on root nodes', () => {
+describe('count display on root nodes', () => {
   it('Agents root shows count of 3', () => {
     render(<CustomizationView />);
     const agentsRoot = screen.getByTestId('tree-root-agents');
