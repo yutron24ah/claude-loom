@@ -13,6 +13,7 @@
  */
 import { describe, it, expect, afterEach, vi } from 'vitest';
 import { render, screen, cleanup } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import type { Scenario } from '@claude-loom/redesign/api/types';
 
 afterEach(() => {
@@ -91,29 +92,38 @@ vi.mock('@claude-loom/redesign/api/websocket', () => ({
 
 import { WorktreeView } from '../../src/views/worktree/WorktreeView';
 
+// WHY: WorktreeView uses useSearchParams (WT-QUERY-01) which requires a Router context.
+function renderWithRouter() {
+  return render(
+    <MemoryRouter initialEntries={['/worktree']}>
+      <WorktreeView />
+    </MemoryRouter>,
+  );
+}
+
 describe('WorktreeView — basic render', () => {
   it('renders the worktree section heading', () => {
     // covers: WT-MOUNT-01
-    render(<WorktreeView />);
+    renderWithRouter();
     expect(screen.getByTestId('worktree-view')).toBeInTheDocument();
   });
 
   it('renders the section title mentioning Worktree', () => {
-    render(<WorktreeView />);
+    renderWithRouter();
     expect(screen.getByTestId('worktree-title')).toBeInTheDocument();
   });
 });
 
 describe('WorktreeView — mock data worktree count', () => {
   it('renders 3-5 worktree items (data-testid=worktree-item)', () => {
-    render(<WorktreeView />);
+    renderWithRouter();
     const items = screen.getAllByTestId('worktree-item');
     expect(items.length).toBeGreaterThanOrEqual(3);
     expect(items.length).toBeLessThanOrEqual(5);
   });
 
   it('renders branch names for each worktree', () => {
-    render(<WorktreeView />);
+    renderWithRouter();
     const branches = screen.getAllByTestId('worktree-branch');
     expect(branches.length).toBeGreaterThanOrEqual(3);
   });
@@ -121,13 +131,13 @@ describe('WorktreeView — mock data worktree count', () => {
 
 describe('WorktreeView — status display', () => {
   it('renders at least one active worktree status badge', () => {
-    render(<WorktreeView />);
+    renderWithRouter();
     const activeBadges = screen.getAllByTestId('worktree-status-active');
     expect(activeBadges.length).toBeGreaterThanOrEqual(1);
   });
 
   it('renders at least one locked worktree status badge', () => {
-    render(<WorktreeView />);
+    renderWithRouter();
     const lockedBadges = screen.getAllByTestId('worktree-status-locked');
     expect(lockedBadges.length).toBeGreaterThanOrEqual(1);
   });
@@ -137,19 +147,19 @@ describe('WorktreeView — status display', () => {
 // per redesign/screens/worktree.jsx which uses position:absolute/inset:0 full-bleed screen pattern.
 describe('WorktreeView — RPG design tokens (M0.11.4 t15)', () => {
   it('wraps outer container in wt-screen class (redesign port: replaces rpg-frame)', () => {
-    render(<WorktreeView />);
+    renderWithRouter();
     const frame = document.querySelector('.wt-screen');
     expect(frame).toBeTruthy();
   });
 
   it('renders worktree title with wt-header__title class (redesign port: replaces rpg-title)', () => {
-    render(<WorktreeView />);
+    renderWithRouter();
     const title = document.querySelector('.wt-header__title');
     expect(title).toBeTruthy();
   });
 
   it('renders chip elements for agent/status display', () => {
-    render(<WorktreeView />);
+    renderWithRouter();
     const chips = document.querySelectorAll('.chip');
     expect(chips.length).toBeGreaterThanOrEqual(1);
   });
