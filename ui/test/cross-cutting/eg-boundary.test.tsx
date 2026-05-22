@@ -654,29 +654,32 @@ describe('EG-LS-FULL-01: localStorage quota exceeded does not crash', () => {
   it('WorktreeView renders when localStorage.setItem throws QuotaExceededError', () => {
     // WHY: If localStorage is full, any setItem call throws DOMException.
     // Views must catch / tolerate this and continue rendering.
-    const origSetItem = window.localStorage.setItem.bind(localStorage);
-    window.localStorage.setItem = () => {
+    // vi.spyOn is the jsdom-compatible pattern — direct property assignment via
+    // setItem.bind() fails because jsdom's Storage stub lacks `.bind` on the
+    // method ref (resolves to undefined.bind). PM hot-fix per t2b dev's
+    // GREEN-confirmed pattern.
+    const spy = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
       throw new DOMException('QuotaExceededError', 'QuotaExceededError');
-    };
+    });
 
     try {
       expect(() => render(<WorktreeView />)).not.toThrow();
     } finally {
-      window.localStorage.setItem = origSetItem;
+      spy.mockRestore();
     }
   });
 
   it('SessionListView renders when localStorage.setItem throws QuotaExceededError', () => {
     // WHY: SessionListView may persist filter preferences. localStorage full must not crash.
-    const origSetItem = window.localStorage.setItem.bind(localStorage);
-    window.localStorage.setItem = () => {
+    // See sibling test for jsdom .bind() incompatibility note.
+    const spy = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
       throw new DOMException('QuotaExceededError', 'QuotaExceededError');
-    };
+    });
 
     try {
       expect(() => render(<SessionListView />)).not.toThrow();
     } finally {
-      window.localStorage.setItem = origSetItem;
+      spy.mockRestore();
     }
   });
 });
