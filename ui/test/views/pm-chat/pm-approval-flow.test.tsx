@@ -53,6 +53,7 @@ const noop = () => {};
 // PMApprovalModal (high risk)
 // ---------------------------------------------------------------------------
 
+// covers: PM-APPROVAL-MODAL-01, PM-APPROVAL-ALLOW-01, PM-APPROVAL-DENY-01
 describe('PMApprovalModal — high risk (REQ-074)', () => {
   it('renders modal with pm-approval-modal testid', () => {
     render(<PMApprovalModal request={HIGH_RISK} onPermission={noop} />);

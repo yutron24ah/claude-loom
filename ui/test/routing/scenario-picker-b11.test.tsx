@@ -111,6 +111,7 @@ function renderShellWithRoute(initialRoute = '/') {
   );
 }
 
+// covers: SP-ROUTER-01, SP-SWITCH-01, SP-VISIBLE-01, SP-LIVE-01
 describe('B11: ScenarioPicker activate() uses React Router setSearchParams', () => {
   it('[REQ-105] clicking a scenario button updates the active button state via React Router URL', async () => {
     renderShellWithRoute('/');

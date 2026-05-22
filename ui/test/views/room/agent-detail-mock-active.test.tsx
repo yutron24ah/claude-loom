@@ -111,6 +111,7 @@ vi.mock('@claude-loom/redesign/api/websocket', () => ({
 
 const devCat = ROSTER.find((r) => r.id === 'dev')!;
 
+// covers: AP-OPEN-01, AP-CLOSE-01, AP-Z-INDEX-01, AD-OPEN-FROM-ROOM-01, AD-CLOSE-X-01, AD-PROFILE-01
 describe('AgentDetailPanel × scenario.active', () => {
   it('renders agent name + role + breed + quote', () => {
     render(<AgentDetailPanel agent={devCat} onClose={() => {}} />);

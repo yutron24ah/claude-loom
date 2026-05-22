@@ -13,12 +13,14 @@
  * REQ-154: absent reviewer_agent field → no reviewer row rendered
  * REQ-155: all 4 mapping values project correctly
  *
- * SES-LBL-01 → REQ-150 (detail panel label)
- * SES-LBL-02 → REQ-151 (loom-reviewer → loom-review/single)
- * SES-LBL-03 → REQ-152 (loom-code-reviewer → loom-review/trio.code)
- * SES-LBL-04 → REQ-153 (unmapped → raw + (unmapped) badge)
- * SES-LBL-05 → REQ-154 (absent → no row)
- * SES-LBL-06 → REQ-155 (full mapping table)
+ * SL-COL-01 → REQ-150 (detail panel label)
+ * SL-VAL-01 → REQ-151 (loom-reviewer → loom-review/single)
+ * SL-VAL-01 → REQ-152 (loom-code-reviewer → loom-review/trio.code)
+ * SL-VAL-02 → REQ-153 (unmapped → raw + (unmapped) badge)
+ * SL-COL-01 edge → REQ-154 (absent → no row)
+ * SL-VAL-01, SL-VAL-02 → REQ-155 (full mapping table)
+ *
+ * Note: naming mismatch resolved (SES-LBL-* → SL-*) per m0.19-t2e
  */
 import { describe, it, expect, afterEach, vi } from 'vitest';
 import { render, screen, cleanup, fireEvent } from '@testing-library/react';
@@ -60,10 +62,11 @@ afterEach(() => {
 });
 
 // ---------------------------------------------------------------------------
-// SES-LBL-01 — REQ-150: label text "reviewer (skill)"
+// SL-COL-01 — REQ-150: label text "reviewer (skill)"
 // ---------------------------------------------------------------------------
 
-describe('SES-LBL-01 (REQ-150) — reviewer (skill) label in detail panel', () => {
+// covers: SL-COL-01
+describe('column rename — reviewer (skill) label in detail panel (REQ-150)', () => {
   it('shows "reviewer (skill)" label when reviewer_agent is present', () => {
     _mockReviewerAgent = 'loom-reviewer';
     render(<SessionListView />);
@@ -76,10 +79,11 @@ describe('SES-LBL-01 (REQ-150) — reviewer (skill) label in detail panel', () =
 });
 
 // ---------------------------------------------------------------------------
-// SES-LBL-02 — REQ-151: loom-reviewer → loom-review/single
+// SL-VAL-01 — REQ-151: loom-reviewer → loom-review/single
 // ---------------------------------------------------------------------------
 
-describe('SES-LBL-02 (REQ-151) — loom-reviewer maps to loom-review/single', () => {
+// covers: SL-VAL-01
+describe('skill identifier format — loom-reviewer maps to loom-review/single (REQ-151)', () => {
   it('displays "loom-review/single" for DB value "loom-reviewer"', () => {
     _mockReviewerAgent = 'loom-reviewer';
     render(<SessionListView />);
@@ -94,10 +98,11 @@ describe('SES-LBL-02 (REQ-151) — loom-reviewer maps to loom-review/single', ()
 });
 
 // ---------------------------------------------------------------------------
-// SES-LBL-03 — REQ-152: loom-code-reviewer → loom-review/trio.code
+// SL-VAL-01 — REQ-152: loom-code-reviewer → loom-review/trio.code
 // ---------------------------------------------------------------------------
 
-describe('SES-LBL-03 (REQ-152) — loom-code-reviewer maps to loom-review/trio.code', () => {
+// covers: SL-VAL-01
+describe('skill identifier format — loom-code-reviewer maps to loom-review/trio.code (REQ-152)', () => {
   it('displays "loom-review/trio.code" for DB value "loom-code-reviewer"', () => {
     _mockReviewerAgent = 'loom-code-reviewer';
     render(<SessionListView />);
@@ -110,10 +115,11 @@ describe('SES-LBL-03 (REQ-152) — loom-code-reviewer maps to loom-review/trio.c
 });
 
 // ---------------------------------------------------------------------------
-// SES-LBL-04 — REQ-153: unmapped value → raw + (unmapped) badge
+// SL-VAL-02 — REQ-153: unmapped value → raw + (unmapped) badge
 // ---------------------------------------------------------------------------
 
-describe('SES-LBL-04 (REQ-153) — unmapped DB value shows raw + (unmapped) badge', () => {
+// covers: SL-VAL-02
+describe('unknown raw display — unmapped DB value shows raw + (unmapped) badge (REQ-153)', () => {
   it('displays raw value + (unmapped) badge for unknown DB value', () => {
     _mockReviewerAgent = 'some-unknown-old-agent';
     render(<SessionListView />);
@@ -128,10 +134,10 @@ describe('SES-LBL-04 (REQ-153) — unmapped DB value shows raw + (unmapped) badg
 });
 
 // ---------------------------------------------------------------------------
-// SES-LBL-05 — REQ-154: absent reviewer_agent → no reviewer row
+// REQ-154: absent reviewer_agent → no reviewer row (SL-COL-01 edge)
 // ---------------------------------------------------------------------------
 
-describe('SES-LBL-05 (REQ-154) — absent reviewer_agent shows no reviewer row', () => {
+describe('absent reviewer_agent shows no reviewer row (REQ-154)', () => {
   it('does not render reviewer row when reviewer_agent is undefined', () => {
     _mockReviewerAgent = undefined;
     render(<SessionListView />);
@@ -145,10 +151,11 @@ describe('SES-LBL-05 (REQ-154) — absent reviewer_agent shows no reviewer row',
 });
 
 // ---------------------------------------------------------------------------
-// SES-LBL-06 — REQ-155: full mapping table verification
+// SL-VAL-01, SL-VAL-02 — REQ-155: full mapping table verification
 // ---------------------------------------------------------------------------
 
-describe('SES-LBL-06 (REQ-155) — full mapping table correctness', () => {
+// covers: SL-VAL-01, SL-VAL-02
+describe('full mapping table correctness (REQ-155)', () => {
   const MAPPING: Array<[string, string]> = [
     ['loom-reviewer', 'loom-review/single'],
     ['loom-code-reviewer', 'loom-review/trio.code'],

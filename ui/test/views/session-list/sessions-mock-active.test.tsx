@@ -119,12 +119,14 @@ afterEach(() => {
 
 describe('SessionListView × scenario.active', () => {
   it('renders all 7 session entries', () => {
+    // covers: SE-MOUNT-01
     render(<SessionListView />);
     const entries = screen.getAllByTestId('session-entry');
     expect(entries).toHaveLength(7);
   });
 
   it('renders verdict badge (PASS/FAIL) per entry', () => {
+    // covers: SE-LIST-01
     render(<SessionListView />);
     const badges = screen.getAllByTestId('session-verdict-badge');
     expect(badges).toHaveLength(7);

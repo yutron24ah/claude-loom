@@ -60,6 +60,7 @@ afterEach(() => {
 
 describe('ConsistencyView × write API', () => {
   it('clicking ack action calls acknowledgeFinding with finding id', () => {
+    // covers: CN-RESOLVE-01
     render(<ConsistencyView />);
     // WHY: use getByTestId to avoid ambiguity with "ACK" summary filter button
     // (M0.17 R3 Phase E added clickable summary cards that also contain "ACK" text)
@@ -79,6 +80,7 @@ describe('ConsistencyView × write API', () => {
   });
 
   it('clicking dismiss action calls dismissFinding with finding id', () => {
+    // covers: CN-DISMISS-01
     render(<ConsistencyView />);
     // WHY: use getByTestId to avoid ambiguity with "DISMISSED" summary filter button
     const dismissBtn = screen.getByTestId('action-dismiss');

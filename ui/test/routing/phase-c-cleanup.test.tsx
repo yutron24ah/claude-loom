@@ -107,6 +107,7 @@ function renderAppShell(initialRoute = '/') {
 // ---------------------------------------------------------------------------
 // S8: TopBar branch chip
 // ---------------------------------------------------------------------------
+// covers: TB-LAYOUT-01
 describe('AppShell — S8 TopBar branch chip (M0.17 Phase C)', () => {
   it('[REQ-106] renders topbar-branch chip with scenario.branch value', () => {
     // WHY: Round 2 review S8 — TopBar should show current branch for context.
@@ -129,6 +130,7 @@ describe('AppShell — S8 TopBar branch chip (M0.17 Phase C)', () => {
 // ---------------------------------------------------------------------------
 // M5: SCENARIO_KEYS includes 'live', unified loop render
 // ---------------------------------------------------------------------------
+// covers: SP-SWITCH-01, SP-ROUTER-01
 describe('constants — M5 SCENARIO_KEYS unified (M0.17 Phase C)', () => {
   it('[REQ-106] SCENARIO_KEYS includes live', () => {
     // WHY: 'live' was a hardcoded button outside the loop. Unifying into SCENARIO_KEYS

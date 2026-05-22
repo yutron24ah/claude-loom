@@ -8,7 +8,9 @@
  *   - verify KPT board renders with problem items, carryover items, try items
  *   - verify admin panel toggle works
  *
- * The full RETRO-LC-* and RETRO-ADM-* test suite is in test/views/retro.test.tsx.
+ * covers: RL-KPT-01, RL-ADM-TOGGLE-01, RL-ADM-RECON-01
+ *
+ * The full RL-* (retro-lifecycle) and RL-ADM-* test suite is in test/views/retro.test.tsx.
  * This file is a smoke test to verify the import/render path from the
  * retro/ subdirectory.
  *
@@ -65,6 +67,7 @@ afterEach(() => {
   cleanup();
 });
 
+// covers: RL-KPT-01, RE-AGENTS-01, RL-ADM-TOGGLE-01, RL-ADM-RECON-01
 describe('RetroView × scenario.active (M0.18 KPT smoke)', () => {
   it('renders KPT board 4 columns', () => {
     render(<RetroView retroId="retro-2026-05-16" />);

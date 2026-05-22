@@ -5,6 +5,8 @@
  * useCustomizationMutation.mutate() with the current state.
  * The 2-pane tree rewrite maintains backward-compat write pathway.
  *
+ * covers: CU-EDIT-01, CT-EDIT-AGENT-01
+ *
  * M0.18: tree selection state drives what agentId is passed to mutate().
  * Model selection now happens in LeafEditor (not per-row inline buttons).
  */
@@ -33,6 +35,7 @@ afterEach(() => {
   mutateFn.mockClear();
 });
 
+// covers: CU-EDIT-01, CT-SCHEMA-01
 describe('CustomizationView × write API', () => {
   it('clicking 保存 button calls useCustomizationMutation.mutate', () => {
     render(<CustomizationView />);

@@ -57,6 +57,7 @@ afterEach(() => {
 
 describe('PlanView × write API', () => {
   it('clicking + milestone button calls upsertItem', () => {
+    // covers: PL-NEW-01
     render(<PlanView />);
     const addBtn = screen.getByRole('button', { name: /\+ milestone/i });
     fireEvent.click(addBtn);

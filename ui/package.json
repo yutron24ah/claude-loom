@@ -10,6 +10,8 @@
     "test": "vitest run",
     "e2e": "playwright test --config e2e/playwright.config.ts",
     "e2e:install": "playwright install chromium",
+    "lint:no-alert": "node scripts/lint-no-alert.mjs",
+    "lint:no-placeholder": "node scripts/lint-no-placeholder.mjs",
     "prototype": "serve prototype -p 8080 -L",
     "prototype:open": "serve prototype -p 8080"
   },

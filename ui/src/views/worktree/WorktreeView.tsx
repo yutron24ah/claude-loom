@@ -13,6 +13,7 @@
  * REQ-077
  */
 import { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useScenario } from '@claude-loom/redesign/api/websocket';
 import type { WorktreeUse, WorktreeStatus } from '@claude-loom/redesign/api/types';
 import { CatSprite } from '../../components/CatSprite';
@@ -50,6 +51,10 @@ export function WorktreeView(): JSX.Element {
   const { lockWorktree, unlockWorktree, destroyWorktree } = useWorktreeMutations();
   // WHY: showCreate controls the create dialog (matches redesign/screens/worktree.jsx showCreate)
   const [showCreate, setShowCreate] = useState(false);
+  // WHY: WT-QUERY-01 — ?branch= param allows deep-linking to a specific worktree row
+  // (e.g., from /worktree?branch=feature/x to focus that branch for inspection)
+  const [searchParams] = useSearchParams();
+  const focusedBranch = searchParams.get('branch') ?? null;
 
   return (
     <div
@@ -126,11 +131,12 @@ export function WorktreeView(): JSX.Element {
         {/* Table rows */}
         {worktrees.map((w) => {
           const agent = rosterById[w.parentAgent];
+          const isFocused = focusedBranch !== null && w.branch === focusedBranch;
           return (
             <div
               key={w.branch}
-              data-testid="worktree-item"
-              className="wt-table__row"
+              data-testid={isFocused ? 'worktree-focused' : 'worktree-item'}
+              className={`wt-table__row${isFocused ? ' wt-table__row--focused' : ''}`}
             >
               {/* BRANCH / PATH column */}
               <div className="wt-table__branch-cell">

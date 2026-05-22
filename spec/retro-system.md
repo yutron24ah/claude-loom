@@ -190,6 +190,19 @@ degraded mode が 3 retro 連続持続して escalation rule が trigger され�
 
 **rationale**: 2026-05-05-001 (1-strike) → 2026-05-06-001 (2-strike) → 2026-05-06-002 (3-strike-trigger-1st) → 2026-05-06-003 (4-strike-continuation) の累積で escalation rule の運用が始まった。trigger 後の transparency が無いと「1 度発動したらそれっきり」になり、Phase 2 entry や Task tool 復旧 timing の判断材料が失われる。本 codify で N-strike continuation を継続可視化、6+ で blocker promotion 議論を可能化する。
 
+#### 1.13.3 Production default re-framing（retro 2026-05-22-001 meta-002 由来、5-strike-continuation 達成時）
+
+2026-05-22-001 retro 時点で **5-strike-continuation** (M0.15-complete → M0.16+M0.17+M0.18-complete (batched) → M0.19-complete) に到達。retro session 16 連続で全 lens dispatch が degraded-mode-synthesis、reviewer dispatch も全 milestone path C (self_review + task_tool_deferred) で進行している。
+
+**Re-framing (truth-up、feature change ではない)**:
+
+- **「degraded-mode-synthesis」呼称は内部 detection 用語に縮退**、user 向け呼称は **production default in current Claude Code platform** へ正規化
+- **4-lens parallel + trio reviewer は aspirational mode**、Anthropic SDK で **subagent nested Task dispatch が unblocking** されるまで未起動と扱う
+- N-strike continuation tracking は維持 (transparency 価値)、ただし「3-strike trigger 必須 action」は本 §1.13.1 codified 内容のまま運用 (path C 正規 default 反転 + subordinate research 起票)
+- M1.0 brainstorm 時 (retro 2026-05-22-001 res-002 carryover) に Anthropic SDK changelog probe して subagent nested dispatch 復活有無を確認、復活時は本 §1.13 全体を「過去 5-strike continuation 期の運用 spec」として historical scope 化
+
+**rationale**: 5-strike を「異常運転の継続」と framing し続けるのは misleading。current Claude Agent SDK 環境下の structural constraint に対する正規運用 mode と認め、SPEC を実態に合わせる (truth-up)。本 framing 変更は SDK 復活時に再変更前提、暫定 codify。
+
 **guidance lifecycle 統合**:
 `learned_guidance` の auto-prune rule（`spec/daemon-and-data.md` §4.9.4 末尾拡張参照）: `ttl_sessions` main（`null` = infinite default、`> 0` = N retro 後 auto-deactivate） + `last_used_in` audit（retro 参照時 aggregator update、N session 連続未使用 → meta lens stale guidance finding）。責務分離: auto-deactivate = 決定論的（ttl）、user 承認 prune = dynamic（last_used_in 経由 meta lens proposal）。
 

@@ -5,6 +5,9 @@
  * chain-detail-panel, chain-expand-btn). M0.18 rewrites the view to 2-pane tree.
  * Tests updated to verify tree-based rendering with mock-active scenario data.
  *
+ * covers: CT-TREE-01, CT-TREE-02, CT-TREE-03, CT-TREE-04, CT-TREE-05,
+ *         CT-EDIT-AGENT-01, CT-EDIT-SKILL-01
+ *
  * REQ-065 acceptance criteria (updated for tree structure).
  */
 import { describe, it, expect, afterEach, vi } from 'vitest';
@@ -35,6 +38,7 @@ afterEach(() => {
   cleanup();
 });
 
+// covers: CT-TREE-01, CT-TREE-02, CT-TREE-03, CT-TREE-04, CT-TREE-05, CT-EDIT-AGENT-01, CT-EDIT-SKILL-01
 describe('CustomizationView × scenario.active (M0.18 tree)', () => {
   it('renders the tree root nodes (Agents + Skills)', () => {
     render(<CustomizationView />);

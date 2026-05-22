@@ -1,0 +1,9 @@
+{
+  "snapshot_date": "2026-05-21",
+  "total_cases": 515,
+  "covered": 191,
+  "n_a_allowlist": 0,
+  "missing": 324,
+  "orphan_covers": 0,
+  "audit_script_ci_status": "red"
+}

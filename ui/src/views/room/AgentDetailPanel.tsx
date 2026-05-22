@@ -135,6 +135,8 @@ export function AgentDetailPanel({
     <div
       data-testid="agent-detail-panel"
       className="rpg-frame pixel ad-overlay"
+      tabIndex={-1}
+      onKeyDown={(e) => { if (e.key === 'Escape') onClose?.(); }}
     >
       {/* Backdrop — click to close */}
       <div onClick={onClose} className="ad-backdrop" />

@@ -23,6 +23,7 @@ afterEach(() => {
 // ---------------------------------------------------------------------------
 // Basic render + SVG attributes
 // ---------------------------------------------------------------------------
+// covers: BG-NO-BOX-01
 describe('RoomBackground — basic render', () => {
   it('renders an SVG element', () => {
     const { container } = render(<RoomBackground width={800} height={600} />);
@@ -53,6 +54,7 @@ describe('RoomBackground — basic render', () => {
 // ---------------------------------------------------------------------------
 // Layer existence — each structural rect by fill / data-testid
 // ---------------------------------------------------------------------------
+// covers: BG-WALL-01
 describe('RoomBackground — layer rects', () => {
   it('renders upper wall rect with --p-wall fill', () => {
     const { container } = render(<RoomBackground width={800} height={600} />);
@@ -91,6 +93,7 @@ describe('RoomBackground — layer rects', () => {
 // WHY: M0.17 t5 replaced --p-bg-floor-2 grid lines + wallpaper dot rects with
 // wood-plank seams (horizontal opacity=0.18, vertical opacity=0.1, both --p-wood-dark).
 // ---------------------------------------------------------------------------
+// covers: BG-FLOOR-TEXTURE-01
 describe('RoomBackground — wood-plank texture', () => {
   it('renders horizontal plank seam rects (fill=var(--p-wood-dark) opacity=0.18)', () => {
     const { container } = render(<RoomBackground width={800} height={600} />);
@@ -121,6 +124,7 @@ describe('RoomBackground — wood-plank texture', () => {
 // Zone rugs (v2 — replaces Islands.tsx DOM divs)
 // WHY: M0.17 t5 zones are now SVG <rect opacity="0.3"> + <text opacity="0.16"> pairs.
 // ---------------------------------------------------------------------------
+// covers: BG-ZONE-RUG-01, BG-ZONE-LABEL-01
 describe('RoomBackground — zone rugs', () => {
   it('renders 3 zone rug rects (DEV / PM / REVIEW) at opacity=0.3', () => {
     const { container } = render(<RoomBackground width={800} height={600} />);

@@ -11,7 +11,8 @@
     "test:harness": "bash tests/run_tests.sh",
     "test:daemon": "pnpm --filter @claude-loom/daemon test",
     "dev": "concurrently --names 'daemon,ui' --prefix-colors 'cyan,magenta' 'pnpm --filter @claude-loom/daemon dev' 'pnpm --filter @claude-loom/ui dev'",
-    "build": "pnpm -r build"
+    "build": "pnpm -r build",
+    "audit:qa-coverage": "bash scripts/audit-qa-coverage.sh"
   },
   "devDependencies": {
     "concurrently": "^9.0.0"

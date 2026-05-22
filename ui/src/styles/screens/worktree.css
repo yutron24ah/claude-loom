@@ -166,6 +166,13 @@
   gap: 6px;
 }
 
+/* WHY: WT-QUERY-01 — focused row from ?branch= URL param gets a visual highlight */
+.wt-table__row--focused {
+  background: color-mix(in srgb, var(--p-accent) 8%, transparent);
+  outline: 1px solid var(--p-accent);
+  outline-offset: -1px;
+}
+
 /* BRANCH/PATH column */
 .wt-table__branch-cell {
   min-width: 0;

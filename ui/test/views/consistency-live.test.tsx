@@ -112,6 +112,7 @@ function makeConsistencyFinding(overrides: Partial<ConsistencyFinding> = {}): Co
 
 describe('ConsistencyViewLive — loading state', () => {
   it('shows loading indicator when isLoading is true', () => {
+    // covers: CN-LIVE-FORK-01
     mockUseConsistencyFindings.mockReturnValue({ data: undefined, isLoading: true, error: null });
     render(<ConsistencyViewLive />);
     expect(screen.getByTestId('consistency-loading')).toBeInTheDocument();

@@ -10,7 +10,13 @@
  * REQ-148: AGENT (green) / SKILL (accent) kind badge per card
  * REQ-149: aggregator scope (skills/loom-retro/stages/aggregator) shows WRITE badge
  *
- * Test prefix: GD-SCOPE-* (per SPEC §8.4, Frontend改修方針 §7 SSoT)
+ * Test prefix: GS-* (was GD-SCOPE-*, renamed per m0.19-t2e naming mismatch resolution)
+ * GS-FILTER-01 = pill 4種 + active toggle
+ * GS-FILTER-02 = Agents pill filter
+ * GS-FILTER-03 = loom-review / loom-retro pill filter
+ * GS-BADGE-01  = AGENT/SKILL badge per card
+ * GS-BADGE-02  = aggregator WRITE badge
+ * GS-KEYPATH-01 = key path display
  */
 import { describe, it, expect, afterEach } from 'vitest';
 import { render, screen, cleanup, fireEvent } from '@testing-library/react';
@@ -21,10 +27,11 @@ afterEach(() => {
 });
 
 // ---------------------------------------------------------------------------
-// GD-SCOPE-01: pill row renders 4 pills (REQ-144)
+// GS-FILTER-01: pill row renders 4 pills (REQ-144)
 // ---------------------------------------------------------------------------
 
-describe('GD-SCOPE-01: filter pill row — 4 pills render', () => {
+// covers: GS-FILTER-01
+describe('filter pill row — 4 pills render (REQ-144)', () => {
   it('renders exactly 4 scope filter pills', () => {
     render(<LearnedGuidanceView />);
     const pills = screen.getAllByTestId('scope-filter-pill');
@@ -52,10 +59,11 @@ describe('GD-SCOPE-01: filter pill row — 4 pills render', () => {
 });
 
 // ---------------------------------------------------------------------------
-// GD-SCOPE-02: active toggle — clicking pill flips active state (REQ-144)
+// GS-FILTER-01: active toggle — clicking pill flips active state (REQ-144)
 // ---------------------------------------------------------------------------
 
-describe('GD-SCOPE-02: pill active toggle', () => {
+// covers: GS-FILTER-01
+describe('pill active toggle (REQ-144)', () => {
   it('"all" pill is active by default', () => {
     render(<LearnedGuidanceView />);
     const pills = screen.getAllByTestId('scope-filter-pill');
@@ -83,10 +91,11 @@ describe('GD-SCOPE-02: pill active toggle', () => {
 });
 
 // ---------------------------------------------------------------------------
-// GD-SCOPE-03: Agents pill — filters to keyKind === "agent" only (REQ-145)
+// GS-FILTER-02: Agents pill — filters to keyKind === "agent" only (REQ-145)
 // ---------------------------------------------------------------------------
 
-describe('GD-SCOPE-03: Agents pill — shows only agent-keyed entries', () => {
+// covers: GS-FILTER-02
+describe('Agents pill — shows only agent-keyed entries (REQ-145)', () => {
   it('Agents pill shows only items with data-keykind="agent"', () => {
     render(<LearnedGuidanceView />);
     const pills = screen.getAllByTestId('scope-filter-pill');
@@ -112,10 +121,11 @@ describe('GD-SCOPE-03: Agents pill — shows only agent-keyed entries', () => {
 });
 
 // ---------------------------------------------------------------------------
-// GD-SCOPE-04: loom-review pill — filters by keyPath prefix (REQ-146)
+// GS-FILTER-03: loom-review pill — filters by keyPath prefix (REQ-146)
 // ---------------------------------------------------------------------------
 
-describe('GD-SCOPE-04: loom-review pill — filters by keyPath prefix', () => {
+// covers: GS-FILTER-03
+describe('loom-review pill — filters by keyPath prefix (REQ-146)', () => {
   it('loom-review pill shows only items with keyPath starting with skills/loom-review/', () => {
     render(<LearnedGuidanceView />);
     const pills = screen.getAllByTestId('scope-filter-pill');
@@ -131,10 +141,11 @@ describe('GD-SCOPE-04: loom-review pill — filters by keyPath prefix', () => {
 });
 
 // ---------------------------------------------------------------------------
-// GD-SCOPE-05: loom-retro pill — filters by keyPath prefix (REQ-147)
+// GS-FILTER-03: loom-retro pill — filters by keyPath prefix (REQ-147)
 // ---------------------------------------------------------------------------
 
-describe('GD-SCOPE-05: loom-retro pill — filters by keyPath prefix', () => {
+// covers: GS-FILTER-03
+describe('loom-retro pill — filters by keyPath prefix (REQ-147)', () => {
   it('loom-retro pill shows only items with keyPath starting with skills/loom-retro/', () => {
     render(<LearnedGuidanceView />);
     const pills = screen.getAllByTestId('scope-filter-pill');
@@ -150,10 +161,11 @@ describe('GD-SCOPE-05: loom-retro pill — filters by keyPath prefix', () => {
 });
 
 // ---------------------------------------------------------------------------
-// GD-SCOPE-06: AGENT / SKILL badge per card (REQ-148)
+// GS-BADGE-01: AGENT / SKILL badge per card (REQ-148)
 // ---------------------------------------------------------------------------
 
-describe('GD-SCOPE-06: keyKind badge per card', () => {
+// covers: GS-BADGE-01
+describe('keyKind badge per card (REQ-148)', () => {
   it('each card shows a keyKind badge (data-testid="keykind-badge")', () => {
     render(<LearnedGuidanceView />);
     const items = screen.getAllByTestId('guidance-item');
@@ -178,10 +190,11 @@ describe('GD-SCOPE-06: keyKind badge per card', () => {
 });
 
 // ---------------------------------------------------------------------------
-// GD-SCOPE-07: keyPath string display per card
+// GS-KEYPATH-01: keyPath string display per card
 // ---------------------------------------------------------------------------
 
-describe('GD-SCOPE-07: keyPath display per card', () => {
+// covers: GS-KEYPATH-01
+describe('keyPath display per card (GS-KEYPATH-01)', () => {
   it('each card shows a keyPath element (data-testid="guidance-keypath")', () => {
     render(<LearnedGuidanceView />);
     const keypaths = screen.getAllByTestId('guidance-keypath');
@@ -209,10 +222,11 @@ describe('GD-SCOPE-07: keyPath display per card', () => {
 });
 
 // ---------------------------------------------------------------------------
-// GD-SCOPE-08: WRITE badge on aggregator scope entry (REQ-149)
+// GS-BADGE-02: WRITE badge on aggregator scope entry (REQ-149)
 // ---------------------------------------------------------------------------
 
-describe('GD-SCOPE-08: WRITE badge on aggregator scope', () => {
+// covers: GS-BADGE-02
+describe('WRITE badge on aggregator scope (REQ-149)', () => {
   it('at least one card has data-testid="write-badge"', () => {
     render(<LearnedGuidanceView />);
     const writeBadges = screen.getAllByTestId('write-badge');

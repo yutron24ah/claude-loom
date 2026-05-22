@@ -73,6 +73,7 @@ async function dismissToasts(page: Parameters<typeof test>[1] extends infer T
 // ⑦ Customization — 「保存」button interaction
 // ---------------------------------------------------------------------------
 
+// covers: DR-NAV-CUSTOMIZATION-01, RT-DEEPLINK-01
 test.describe('M0.15 — ⑦ Customization 保存 click flow', () => {
   test('「保存」button is present and clickable (?mock=active)', async ({ page }) => {
     // WHY: ?mock=active provides full customization data without daemon
@@ -126,6 +127,7 @@ test.describe('M0.15 — ⑦ Customization 保存 click flow', () => {
 // ⑬ PMChat — textarea input + 「送信」button interaction
 // ---------------------------------------------------------------------------
 
+// covers: RC-PMCHAT-MOUNT-01, SP-VISIBLE-01
 test.describe('M0.15 — ⑬ PMChat 送信 click flow', () => {
   test('「送信」button sends message on textarea input (?mock=active)', async ({ page }) => {
     // WHY: ?mock=active sets pm.running=true → PMChatPanel visible on Room route
@@ -184,6 +186,7 @@ test.describe('M0.15 — ⑬ PMChat 送信 click flow', () => {
 // ⑫ Project Settings — field change + 「保存」button interaction
 // ---------------------------------------------------------------------------
 
+// covers: DR-NAV-SETTINGS-01, RT-DEEPLINK-01
 test.describe('M0.15 — ⑫ Project Settings 保存 click flow', () => {
   test('「保存」button is present and clickable after field change (?mock=active)', async ({ page }) => {
     // WHY: ?mock=active provides project settings data without daemon

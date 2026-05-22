@@ -5,7 +5,7 @@
  * NOT_FOUND (event expired / pruned server-side), the UI must catch it,
  * emit an error toast with retry action, and allow retrying the same payload.
  *
- * prefix: ERR-NF-*
+ * prefix: ENF-* (was ERR-NF-*, renamed per m0.19-t2e naming mismatch resolution)
  * SSoT: spec/ui-arch.md §8.2.4, qa-suite.js lines 4187-4225
  *
  * Hard constraints:
@@ -79,10 +79,11 @@ vi.mock('@/trpc/client', () => ({
 import { useApprovalMutations, TRPC_CODES } from '@/live/useApprovalMutations';
 
 // ---------------------------------------------------------------------------
-// ERR-NF-01 (REQ-159): TRPC_CODES.NOT_FOUND is typed constant 'NOT_FOUND'
+// ENF-CATCH-01 (REQ-159): TRPC_CODES.NOT_FOUND is typed constant 'NOT_FOUND'
 // ---------------------------------------------------------------------------
 
-describe('ERR-NF-01 (REQ-159) — TRPC_CODES typed constant', () => {
+// covers: ENF-CATCH-01
+describe('NOT_FOUND try/catch — TRPC_CODES typed constant (REQ-159)', () => {
   it('TRPC_CODES.NOT_FOUND equals "NOT_FOUND" (typed constant, not raw string in call-sites)', () => {
     // WHY: Hard constraint — no raw string comparison for TRPC error codes.
     // Exporting TRPC_CODES lets callers use it for comparison and tests to verify
@@ -92,10 +93,11 @@ describe('ERR-NF-01 (REQ-159) — TRPC_CODES typed constant', () => {
 });
 
 // ---------------------------------------------------------------------------
-// ERR-NF-02 (REQ-160): NOT_FOUND onError → error toast with retry action
+// ENF-TOAST-01 (REQ-160): NOT_FOUND onError → error toast with retry action
 // ---------------------------------------------------------------------------
 
-describe('ERR-NF-02 (REQ-160) — NOT_FOUND onError emits error toast with retry action', () => {
+// covers: ENF-CATCH-01, ENF-TOAST-01
+describe('NOT_FOUND error toast — onError emits error toast with retry action (REQ-160)', () => {
   beforeEach(() => {
     decideMutate.mockClear();
   });
@@ -164,10 +166,11 @@ describe('ERR-NF-02 (REQ-160) — NOT_FOUND onError emits error toast with retry
 });
 
 // ---------------------------------------------------------------------------
-// ERR-NF-03 (REQ-161): retry action re-invokes decide with same payload
+// ENF-RETRY-01 (REQ-161): retry action re-invokes decide with same payload
 // ---------------------------------------------------------------------------
 
-describe('ERR-NF-03 (REQ-161) — retry action re-invokes approval.decide with same payload', () => {
+// covers: ENF-RETRY-01
+describe('retry action — re-invokes approval.decide with same payload (REQ-161)', () => {
   beforeEach(() => {
     decideMutate.mockClear();
   });

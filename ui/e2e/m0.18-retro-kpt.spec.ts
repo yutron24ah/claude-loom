@@ -1,11 +1,13 @@
 /**
- * m0.18-retro-kpt.spec.ts — RETRO-LC-* + RETRO-ADM-* visual + interaction baselines.
+ * m0.18-retro-kpt.spec.ts — RL-* + RL-ADM-* visual + interaction baselines.
  *
  * WHY: m0.18-t2 replaced the previous 2-column LensCard+FindingRow layout with
  * a 4-column KPT board (KEEP / PROBLEM / CARRYOVER / TRY) + carryover pip lifecycle
  * + admin section. These baselines capture the new retro screen so that column
  * layout drift, pip/verdict rendering regressions, or admin panel breakage are
  * caught at the visual level — jsdom/vitest cannot capture full-page layout.
+ *
+ * covers: RL-KPT-01, RL-ADM-TOGGLE-01, RL-ADM-RECON-01
  *
  * Coverage (4 screenshots + 5 interaction checks):
  *   ① retro-kpt-initial   — 4 columns present, loading state resolved
@@ -17,8 +19,8 @@
  *   ⑥ admin-toggle click again closes panel
  *   ⑦ admin-btn-reconstruct present and clickable
  *
- * RETRO-LC-* REQ coverage: REQ-115..REQ-119 (lifecycle pip + KPT columns).
- * RETRO-ADM-* REQ coverage: REQ-120..REQ-122 (admin panel actions).
+ * RL-* REQ coverage: REQ-115..REQ-119 (lifecycle pip + KPT columns).
+ * RL-ADM-* REQ coverage: REQ-120..REQ-122 (admin panel actions).
  * Vitest unit tests own assertion logic; these e2e specs own browser rendering
  * + actual click interaction verification.
  *
@@ -64,6 +66,7 @@ async function gotoRetro(page: Parameters<typeof test>[1] extends infer T
 // ① retro-kpt-initial — 4-column board present
 // ---------------------------------------------------------------------------
 
+// covers: RL-KPT-01
 test.describe('m0.18 Retro KPT — ① 4-column board visual baseline', () => {
   test('retro-view is mounted with 4 KPT columns', async ({ page }) => {
     await gotoRetro(page);
@@ -90,6 +93,7 @@ test.describe('m0.18 Retro KPT — ① 4-column board visual baseline', () => {
 // ② admin-panel-toggle — collapsed by default, expands on click
 // ---------------------------------------------------------------------------
 
+// covers: RL-ADM-TOGGLE-01
 test.describe('m0.18 Retro KPT — ② admin panel expand/collapse', () => {
   test('admin-panel-content is NOT visible by default (collapsed)', async ({ page }) => {
     await gotoRetro(page);
@@ -135,6 +139,7 @@ test.describe('m0.18 Retro KPT — ② admin panel expand/collapse', () => {
 // ③ admin action buttons — 3 buttons present in expanded panel
 // ---------------------------------------------------------------------------
 
+// covers: RL-ADM-RECON-01
 test.describe('m0.18 Retro KPT — ③ admin action buttons', () => {
   test('3 admin action buttons are visible in expanded panel', async ({ page }) => {
     await gotoRetro(page);
@@ -143,7 +148,7 @@ test.describe('m0.18 Retro KPT — ③ admin action buttons', () => {
     await toggle.click();
     await page.waitForTimeout(200);
 
-    // WHY: 3 action buttons per AdminPanel spec (RETRO-ADM-001/002/003):
+    // WHY: 3 action buttons per AdminPanel spec (RL-ADM-RECON-01, RL-PSUM-01, ENF-RETRY-01):
     //   - admin-btn-reconstruct
     //   - admin-btn-pending-summary
     //   - admin-btn-approval-retry
@@ -184,6 +189,7 @@ test.describe('m0.18 Retro KPT — ③ admin action buttons', () => {
 // ④ KPT column structure — count badges render
 // ---------------------------------------------------------------------------
 
+// covers: RL-KPT-01
 test.describe('m0.18 Retro KPT — ④ column count badges', () => {
   test('each KPT column renders kpt-col-count badge', async ({ page }) => {
     await gotoRetro(page);

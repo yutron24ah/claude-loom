@@ -109,6 +109,7 @@ afterEach(() => {
 // ---------------------------------------------------------------------------
 // Basic render
 // ---------------------------------------------------------------------------
+// covers: RM-FILL-01, RM-RESIZE-01
 describe('RoomView — basic render', () => {
   it('renders room-canvas data-testid (required by AppShell tests)', () => {
     render(<RoomView />);
@@ -124,6 +125,7 @@ describe('RoomView — basic render', () => {
 // ---------------------------------------------------------------------------
 // Phase B components rendered in normal mode
 // ---------------------------------------------------------------------------
+// covers: WD-BRANCH-01, WD-CLOCK-01, PO-GANTT-VIS-01, PO-PLAN-VIS-01, PO-CONS-VIS-01, BG-NO-BOX-01, BG-DOM-PLANT-01
 describe('RoomView — Phase B components (normal mode)', () => {
   it('renders RoomBackground SVG', () => {
     const { container } = render(<RoomView />);
@@ -183,6 +185,7 @@ describe('RoomView — Phase B components (normal mode)', () => {
 // ---------------------------------------------------------------------------
 // Poster clicks → navigate() (no modal overlay — M0.17 t6 change)
 // ---------------------------------------------------------------------------
+// covers: PO-NAV-GANTT-01, PO-NAV-PLAN-01, PO-NAV-CONS-01, PO-NO-MODAL-01
 describe('RoomView — wall poster click → useNavigate (not modal)', () => {
   it('clicking GanttPoster calls navigate("/gantt")', () => {
     render(<RoomView />);
@@ -214,6 +217,7 @@ describe('RoomView — wall poster click → useNavigate (not modal)', () => {
 // ---------------------------------------------------------------------------
 // Agent click → AgentDetailPanel overlay
 // ---------------------------------------------------------------------------
+// covers: AP-OPEN-01, AP-CLOSE-01, DS-COUNT-01, DS-CLICK-SELECT-01, DS-CLICK-DESELECT-01
 describe('RoomView — agent click → AgentDetailPanel overlay', () => {
   it('does not render AgentDetailPanel by default', () => {
     render(<RoomView />);

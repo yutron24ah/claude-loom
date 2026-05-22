@@ -105,6 +105,7 @@ parallel batch claim は **同 message 内に複数 Agent invocation** が必須
 1. 各 task の `planned_files` (PLAN.md task entry の comment block) を比較
 2. file overlap 検出 → parallel claim 撤回 (sequential / unified annotation / task 分離 / **isolation worktree** のいずれか選択)
 3. **2+ Agent invocation parallel batch では Agent tool の `isolation: "worktree"` parameter を必須採用** — shared working tree race condition の構造解消
+4. **Post-dispatch verification** (retro 2026-05-22-001 proc-001、SPEC §12.1 architectural blocker recurrence_count:3、3-strike continuation 必須): 全 subagent 完了通知を受領した時点で `git log <base_sha>..HEAD --oneline` を Bash で probe、parallel claim 数と landed commit unique SHA 数を比較。**差分 > 0 → CRITICAL warning** を user に escalate、再 dispatch or 修正 commit を確認するまで tag を設置しない。worktree isolation 採用済でも Agent tool 内部 race が残るため、構造的 post-condition check が必須
 
 ### Handoff path 受領 (SPEC §3.6.8.7 SSoT)
 

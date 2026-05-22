@@ -80,6 +80,7 @@ const MIXED_MILESTONES = {
 // ---------------------------------------------------------------------------
 describe('PlanView (tab) — active tab (default)', () => {
   it('shows active milestones by default (progress < 1)', () => {
+    // covers: PL-TAB-ACTIVE-01
     mockUseScenario.mockReturnValue(MIXED_MILESTONES);
     const { container } = render(<PlanView />);
     // Default tab = active: only M0.13 (progress 0.62) is visible
@@ -100,6 +101,7 @@ describe('PlanView (tab) — active tab (default)', () => {
 // ---------------------------------------------------------------------------
 describe('PlanView (tab) — done archive tab', () => {
   it('shows done milestones when done tab clicked', () => {
+    // covers: PL-TAB-DONE-01
     mockUseScenario.mockReturnValue(MIXED_MILESTONES);
     const { container } = render(<PlanView />);
     fireEvent.click(screen.getByText('完了 archive'));
@@ -131,6 +133,7 @@ describe('PlanView (tab) — done archive tab', () => {
 // ---------------------------------------------------------------------------
 describe('PlanView (tab) — edit tab', () => {
   it('shows edit buttons per milestone on edit tab', () => {
+    // covers: PL-TAB-EDIT-01, PL-EDIT-BTN-01
     mockUseScenario.mockReturnValue(MIXED_MILESTONES);
     const { container } = render(<PlanView />);
     // Edit tab shows active milestones with edit buttons

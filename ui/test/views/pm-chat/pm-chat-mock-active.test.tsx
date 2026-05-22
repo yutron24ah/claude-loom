@@ -45,6 +45,7 @@ const noop = () => {};
 // Render smoke tests
 // ---------------------------------------------------------------------------
 
+// covers: PM-MOUNT-01, PM-MESSAGES-01
 describe('PMChatPanel — render smoke tests (REQ-074)', () => {
   it('renders pm-chat-panel container', () => {
     render(
@@ -136,6 +137,7 @@ describe('PMChatPanel — render smoke tests (REQ-074)', () => {
 // Start button (PM not running)
 // ---------------------------------------------------------------------------
 
+// covers: PM-START-BTN-01
 describe('PMChatPanel — start button when PM is not running (REQ-074)', () => {
   it('shows start-pm button when pm.running is false', () => {
     render(

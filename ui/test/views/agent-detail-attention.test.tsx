@@ -53,6 +53,7 @@ const mockDispatchHistory = [
 // data-testid tests
 // ---------------------------------------------------------------------------
 
+// covers: AD-DISPATCH-HIST-01
 describe('AgentDetailPanel — data-testid attributes', () => {
   it('renders agent-detail-panel wrapper with data-testid', () => {
     render(<AgentDetailPanel agent={mockAgent} />);

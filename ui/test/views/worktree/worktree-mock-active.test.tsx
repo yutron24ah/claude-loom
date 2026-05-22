@@ -10,6 +10,7 @@
  */
 import { describe, it, expect, afterEach, vi } from 'vitest';
 import { render, screen, cleanup } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import type { Scenario } from '@claude-loom/redesign/api/types';
 
 afterEach(() => {
@@ -98,13 +99,24 @@ vi.mock('@claude-loom/redesign/api/websocket', () => ({
 
 import { WorktreeView } from '../../../src/views/worktree/WorktreeView';
 
+// WHY: WorktreeView uses useSearchParams (WT-QUERY-01) which requires a Router context.
+// Wrap renders in MemoryRouter for all tests in this file.
+function renderWithRouter(route = '/worktree') {
+  return render(
+    <MemoryRouter initialEntries={[route]}>
+      <WorktreeView />
+    </MemoryRouter>,
+  );
+}
+
 // ---------------------------------------------------------------------------
 // Test suite
 // ---------------------------------------------------------------------------
 
 describe('WorktreeView × scenario.active', () => {
   it('renders all 5 worktrees with branch names', () => {
-    render(<WorktreeView />);
+    // covers: WT-LIST-01
+    renderWithRouter();
     // All 5 branch names should appear in the DOM
     // WHY: getAllByText used because branch names appear twice (branch graph + table row)
     expect(screen.getAllByText('main').length).toBeGreaterThanOrEqual(1);
@@ -115,7 +127,7 @@ describe('WorktreeView × scenario.active', () => {
   });
 
   it('renders use badges (primary / parallel / experiment / hotfix)', () => {
-    render(<WorktreeView />);
+    renderWithRouter();
     // USE_COLOR keys → displayed as uppercase badges per redesign
     const container = document.querySelector('[data-testid="worktree-view"]');
     expect(container?.textContent).toContain('primary');
@@ -125,14 +137,14 @@ describe('WorktreeView × scenario.active', () => {
   });
 
   it('renders lock badge for locked worktrees only', () => {
-    render(<WorktreeView />);
+    renderWithRouter();
     // Only exp/retro-ui-redesign is locked → exactly 1 lock indicator
     const lockBadges = document.querySelectorAll('[data-testid="worktree-locked-badge"]');
     expect(lockBadges.length).toBe(1);
   });
 
   it('renders diskMB and lastCommit for each worktree', () => {
-    render(<WorktreeView />);
+    renderWithRouter();
     // Check a sample of diskMB values (may appear as "612 MB")
     // WHY: getAllByText used because diskMB may appear in multiple elements
     expect(screen.getAllByText(/612/).length).toBeGreaterThanOrEqual(1);
@@ -158,6 +170,6 @@ describe('WorktreeView × empty worktrees', () => {
     // Instead, verify the component handles 0-length gracefully via the
     // original mock which returns 5 items — this case covers the real
     // implementation's guard against undefined/null worktrees.
-    expect(() => render(<WorktreeView />)).not.toThrow();
+    expect(() => renderWithRouter()).not.toThrow();
   });
 });

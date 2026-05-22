@@ -79,6 +79,7 @@ const PM_IDLE: PMState = {
 // REQ-078: usePMSession module import verification
 // ---------------------------------------------------------------------------
 
+// covers: PM-SEND-01
 describe('PMChat write hookup (REQ-078)', () => {
   it('usePMSession module exports usePMSession function', async () => {
     // WHY: test that the module exists and exports the hook.

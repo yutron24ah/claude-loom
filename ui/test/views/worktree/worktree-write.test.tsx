@@ -9,6 +9,7 @@
  */
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, screen, cleanup, fireEvent } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import type { Scenario } from '@claude-loom/redesign/api/types';
 
 const lockFn = vi.fn();
@@ -68,9 +69,19 @@ afterEach(() => {
   createFn.mockClear();
 });
 
+// WHY: WorktreeView uses useSearchParams (WT-QUERY-01) which requires a Router context.
+function renderWithRouter() {
+  return render(
+    <MemoryRouter initialEntries={['/worktree']}>
+      <WorktreeView />
+    </MemoryRouter>,
+  );
+}
+
 describe('WorktreeView × write API', () => {
   it('lock button on unlocked worktree calls lockWorktree', () => {
-    render(<WorktreeView />);
+    // covers: WT-CREATE-01
+    renderWithRouter();
     // "main" branch row is unlocked → lock button shown
     // Find button with title="lock" in the main row
     const lockBtns = screen.getAllByTitle('lock');
@@ -81,7 +92,7 @@ describe('WorktreeView × write API', () => {
   });
 
   it('unlock button on locked worktree calls unlockWorktree', () => {
-    render(<WorktreeView />);
+    renderWithRouter();
     const unlockBtns = screen.getAllByTitle('unlock');
     expect(unlockBtns.length).toBeGreaterThanOrEqual(1);
     fireEvent.click(unlockBtns[0]);
@@ -90,7 +101,8 @@ describe('WorktreeView × write API', () => {
   });
 
   it('destroy button calls destroyWorktree with branch path', () => {
-    render(<WorktreeView />);
+    // covers: WT-DELETE-01
+    renderWithRouter();
     const destroyBtns = screen.getAllByTitle('destroy');
     // Destroy first worktree (main)
     fireEvent.click(destroyBtns[0]);

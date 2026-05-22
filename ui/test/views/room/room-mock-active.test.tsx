@@ -106,6 +106,7 @@ vi.mock('@claude-loom/redesign/api/websocket', () => ({
   SCENARIO_KEYS: ['idle', 'active', 'failed'] as const,
 }));
 
+// covers: DS-MONITOR-BUSY-01, DS-BUBBLE-TOOL-01, DS-COUNT-01
 describe('RoomView × scenario.active', () => {
   it('renders dev cat with currentTool bubble = "Edit"', () => {
     render(<RoomView />);

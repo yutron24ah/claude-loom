@@ -2,8 +2,21 @@
   "audit_date": "2026-05-20",
   "branch": "chore/qa-suite-coverage-audit-2026-05-20",
   "source": "docs/design/2026-05-17-m0.18-ui-rework/project/qa-suite.js",
-  "total_cases": 479,
-  "note": "Task spec cited 501 cases; actual parse yielded 479 cases with pri: field. Delta of 22 reflects section/group entries counted in original estimation.",
+  "total_cases": 515,
+  "total_cases_initial_audit": 479,
+  "errata": {
+    "date": "2026-05-21",
+    "summary": "Initial audit (2026-05-20) missed 36 cases with 5-6 segment IDs. Corrected total: 515 cases.",
+    "missed_breakdown_by_prefix": {
+      "AD": 1, "DS": 1, "EG": 1, "FL": 13, "MS": 12, "NT": 1, "RC": 1, "UX": 6
+    },
+    "milestone_scope_shift": {
+      "m0_19_added": "FL +13 + RC +1 (shell) + DS +1 (room) + AD +1 (overlay) = +16",
+      "m0_20_added": "UX +6 + EG +1 + NT +1 + MS +12 (cross-cutting) = +20"
+    },
+    "detected_by": "scripts/audit-qa-coverage.sh (M0.19 t1) — grep pattern [A-Z][A-Z0-9]*(-[A-Z0-9]+)+ catches all uppercase case IDs regardless of segment count"
+  },
+  "note": "Task spec cited 501 cases; initial audit (2026-05-20) parsed 479 cases (3-4 segment IDs only). Corrected (2026-05-21): 515 cases. The original section_summary[] and coverage_distribution numbers below are initial-audit values; actual numbers at M0.19 closure will be re-derived via scripts/audit-qa-coverage.sh --snapshot.",
   "vitest_total": 1118,
   "playwright_total": 43,
   "coverage_distribution": {

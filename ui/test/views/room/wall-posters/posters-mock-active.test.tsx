@@ -91,6 +91,7 @@ const defaultConsProps   = { x: 880, y: 28, width: 170, height: 125, onClick: vi
 // GanttPoster × scenario
 // ---------------------------------------------------------------------------
 
+// covers: PO-GANTT-VIS-01
 describe('GanttPoster × scenario.active', () => {
   it('renders 5 rows for ROOM_AGENTS (pm/dev/rev-code/rev-test/rev-sec)', () => {
     const { container } = render(<GanttPoster {...defaultGanttProps} />);
@@ -125,6 +126,7 @@ describe('GanttPoster × scenario.active', () => {
 // PlanPoster × scenario
 // ---------------------------------------------------------------------------
 
+// covers: PO-PLAN-VIS-01
 describe('PlanPoster × scenario.active', () => {
   it('renders 4 todo items from scenario.todos', () => {
     const { container } = render(<PlanPoster {...defaultPlanProps} />);
@@ -157,6 +159,7 @@ describe('PlanPoster × scenario.active', () => {
 // ConsistencyPoster × scenario
 // ---------------------------------------------------------------------------
 
+// covers: PO-CONS-VIS-01
 describe('ConsistencyPoster × scenario.active', () => {
   it('renders top 4 findings from scenario.findings', () => {
     const { container } = render(<ConsistencyPoster {...defaultConsProps} />);

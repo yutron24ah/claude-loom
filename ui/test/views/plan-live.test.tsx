@@ -182,6 +182,7 @@ describe('PlanView (scenario) — short-term pane via useScenario', () => {
   });
 
   it('renders todo items from scenario.todos', () => {
+    // covers: PL-TODOS-MIRROR-01
     mockUseScenario.mockReturnValue({
       todos: [
         { status: 'in_progress', text: 'Task A' },

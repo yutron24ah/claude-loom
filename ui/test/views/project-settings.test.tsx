@@ -51,6 +51,7 @@ afterEach(() => {
 
 describe('ProjectSettingsView — basic render', () => {
   it('renders project-settings-view container', () => {
+    // covers: PS-MOUNT-01
     render(<ProjectSettingsView />);
     expect(screen.getByTestId('project-settings-view')).toBeInTheDocument();
   });
@@ -174,6 +175,7 @@ describe('ProjectSettingsView — editable fields', () => {
   });
 
   it('clears 未保存 indicator when cancel is clicked', () => {
+    // covers: PS-CANCEL-01
     render(<ProjectSettingsView />);
     const input = screen.getByTestId('setting-daemonPort') as HTMLInputElement;
     fireEvent.change(input, { target: { value: '9999' } });

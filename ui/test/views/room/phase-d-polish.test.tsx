@@ -43,6 +43,7 @@ const testCat: RosterEntry = {
   group: 'core',
 };
 
+// covers: DS-MONITOR-BUSY-01
 describe('DeskStation — monitor lines 3 (redesign R-2) [REQ-108]', () => {
   it('renders exactly 3 monitor lines (not 4) when active', () => {
     // WHY: redesign source room.jsx L65-68 shows 3 lines (70%/50%/85%).
@@ -69,6 +70,7 @@ describe('DeskStation — monitor lines 3 (redesign R-2) [REQ-108]', () => {
 // ---------------------------------------------------------------------------
 // R-3: DeskStation — bubble kind prop [REQ-109]
 // ---------------------------------------------------------------------------
+// covers: DS-BUBBLE-TOOL-01, DS-BUBBLE-REASON-01
 describe('DeskStation — bubble kind prop (redesign R-3) [REQ-109]', () => {
   it('renders speech bubble when bubble prop with kind=tool is provided', () => {
     const { container } = render(
