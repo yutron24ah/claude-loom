@@ -489,6 +489,14 @@ CREATE TABLE consistency_findings (
 | プロジェクト判定 | git root + `.claude-loom/project.json` marker | 自動 + 明示の hybrid |
 | **Events rolling delete（M1 から）** | 30 日 OR 200MB 上限到達で oldest から削除、daily 実行 | event log の無限肥大防止 |
 
+### 12.1 Architectural blockers (Phase 2 mandate)
+
+retro で再再再発した structural issue、Phase 2 entry までに以下のいずれかで構造解消必須。symptomatic discipline (prompt 注入 / 注意喚起) は最終手段。
+
+| blocker | recurrence_count | retro chain | description | Phase 2 action options |
+|---|---|---|---|---|
+| **Agent tool worktree parallel race** | **3** | 2026-05-06-002 F-proc-NEW2 (origin) → 2026-05-20-001 proc-002 → 2026-05-22-001 pj-002 | `Agent` tool の `isolation: "worktree"` parameter が 3+ parallel batch で非決定的に commit landing しない (3 missing commits in M0.19、`b4da8ee` t2b+t2d / `b5fde54` t7a+t7c part1 / `27d68e7` t7d+t7e で SHA collision)。worktree mandate 自体は codified 済だが race の現象自体は変わらず | (a) test harness で `Agent isolation:worktree` の commit landing 挙動を verify する fixture を追加 / (b) Agent tool 内部 worktree path を信用せず PM が事前に `git worktree add` + `--worktree-base` 明示 + post-dispatch branch verify / (c) parallel batch を一時的に serialize (Phase 2 結論次第) |
+
 ---
 
 ## 13. 既知の TBD / 未決事項

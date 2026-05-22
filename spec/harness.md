@@ -97,6 +97,8 @@ PM が「parallel batch」と plan で宣言した task を dispatch する場�
 
 session 開始時に Task tool 利用可否を check、利用不能なら user に「**degraded mode で sequential self-review に switch**」と明示宣言。silent fallback 禁止。
 
+**Re-framing 2026-05-22** (retro 2026-05-22-001 meta-002 由来、5-strike-continuation 達成): 本 §4.2 で記述する degraded mode は、current Claude Agent SDK 環境下では **production default** と扱う (内部呼称は "degraded" 維持、user 向け呼称は first-class operating mode)。trio reviewer parallel + 4-lens retro parallel は **aspirational mode**、Anthropic SDK で subagent nested Task dispatch が復活した時点で activate。詳細: `spec/retro-system.md §1.13.3`。
+
 ### 4.3 Inline spec edit
 
 PM の spec phase で brainstorm Q&A 中に design spec を inline 編集、Q&A の答えがそのまま section 内容に反映される運用。formal「spec 書き出し」step を圧縮、brainstorm → spec → plan の中間段階を 1 step 削減。
