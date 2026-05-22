@@ -2,3 +2,12 @@
 # Format: <CASE-ID>  # <justification>
 # Maintained by: PM + user review (PR review 必須)
 # Audited by: scripts/audit-qa-coverage.sh
+#
+# DRAFT: m0.19-t8 reclassification (2026-05-21) — PM + user 承認待ち
+# Reclassification doc: docs/audit/2026-05-21-na-reclassification.md
+# true_na count: 4 (threshold: ≤ 24; ideal: ≤ 10)
+
+SEC-BIND-01  # CI 環境では OS-level network inspection (ss/netstat) + 外部 host からの curl 試行が物理的不能。daemon の 127.0.0.1 bind は static code review で確認、runtime verify は N/A。
+IN-FRESH-01  # pre: clean home dir が必須。標準 CI (GitHub Actions) では ~/.claude/ に既存設定が存在し fresh state 保証不能。dedicated sandbox CI job として M0.20 t6 で対応予定。pending_milestone: m0.20
+PH-WATCHABLE-01  # steps: 動作を5分間眺める / expected: 視線が固定されない (適度な動き), flicker しない — 定量化不能な subjective UX experience。human judge のみが評価可能。
+PH-CHARACTER-LOVE-01  # steps: 1日使った感想 / expected: 自分のagentへの愛着が芽生える — 継続使用後の emotional attachment は CI automated test で代替不能な human affective response。
