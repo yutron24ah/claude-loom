@@ -143,10 +143,11 @@ interface DrawerProps {
 
 function Drawer({ collapsed, pathname }: DrawerProps): JSX.Element {
   return (
-    <div
+    <nav
       data-testid="drawer"
       data-collapsed={collapsed ? 'true' : undefined}
       className={`drawer${collapsed ? ' collapsed' : ''}`}
+      aria-label="Site navigation"
     >
       {NAV_GROUPS.map((group) => (
         <div key={group.id}>
@@ -176,7 +177,7 @@ function Drawer({ collapsed, pathname }: DrawerProps): JSX.Element {
       ))}
       <div className="drawer__spacer" />
       {!collapsed && <div className="drawer__group drawer__version">{APP_COPY.versionLine}</div>}
-    </div>
+    </nav>
   );
 }
 
@@ -263,7 +264,9 @@ export function AppShell(): JSX.Element {
       />
       <div className="main">
         <Drawer collapsed={drawerCollapsed} pathname={location.pathname} />
-        <div className="content">
+        {/* WHY <main>: WCAG 2.1 landmark requirement (UX-A11Y-ARIA-LANDMARK-01).
+            Screen readers use <main> to skip navigation and jump to primary content. */}
+        <main className="content">
           {/* Route-driven content — Room or any other screen, *never* both */}
           {/* WHY wrapper: RoomView ResizeObserver observes the wrapper's contentRect;
               marginRight reserves space for the right column (PMChat / LiveRail)
@@ -308,7 +311,7 @@ export function AppShell(): JSX.Element {
 
           {isRoom && import.meta.env.DEV && <ScenarioPicker rightOffset={rightColumnWidth + 8} />}
           <ToastContainer />
-        </div>
+        </main>
       </div>
       <StatusBar label={scenario.label} project={scenario.project} conn={scenario.conn} />
     </div>
