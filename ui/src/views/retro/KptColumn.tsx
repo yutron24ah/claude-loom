@@ -59,6 +59,15 @@ export function KptColumn({ kind, title, count, children }: KptColumnProps): JSX
       {/* Scrollable body */}
       <div className="retro-kpt__col-body">
         {children}
+        {/* 3-strike rule annotation — CARRYOVER column only (RL-PIP-03) */}
+        {kind === 'carryover' && (
+          <div
+            data-testid="kpt-col-3strike-note"
+            className="retro-kpt__col-note"
+          >
+            ※ 3-strike rule: carryover_count ≥ 3 で auto-expire flip
+          </div>
+        )}
       </div>
     </div>
   );

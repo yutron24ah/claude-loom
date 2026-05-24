@@ -171,7 +171,7 @@ export function LeafEditor({ selectedKey, onModelChange, onPresetChange }: LeafE
       )}
 
       {/* ---- Personality preset ---- */}
-      <div className="cust-editor__section">
+      <div className="cust-editor__section" data-testid="leaf-editor-preset-selector">
         <div className="cust-editor__label">PERSONALITY PRESET</div>
         <div className="cust-editor__preset-grid">
           {PRESETS.map((p) => (
@@ -195,7 +195,10 @@ export function LeafEditor({ selectedKey, onModelChange, onPresetChange }: LeafE
       {/* ---- Custom override ---- */}
       <div className="cust-editor__section">
         <div className="cust-editor__label">CUSTOM OVERRIDE — free-form prompt addendum</div>
-        <div className="cust-editor__custom-text">
+        <div
+          data-testid="leaf-editor-custom-text"
+          className="cust-editor__custom-text"
+        >
           {leaf.custom || '(空 — preset がそのまま使われます)'}
         </div>
       </div>
