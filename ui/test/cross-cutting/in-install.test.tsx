@@ -178,9 +178,13 @@ describe('IN-UN-PRESERVE-01: state preserved across uninstall/re-install cycle',
     expect(src).toMatch(/再インストール後も設定を引き継げます/);
   });
 
-  it('.claude-loom/project-prefs.json source artifact exists in repo (user state template)', () => {
-    // The project-prefs.json in repo is the template/reference for persistence
-    expect(existsSync(repoPath('.claude-loom/project-prefs.json'))).toBe(true);
+  it('project-prefs.json template source artifact exists in repo (user state template)', () => {
+    // WHY templates/ not .claude-loom/: the runtime .claude-loom/project-prefs.json
+    // is gitignored user-local state (absent in fresh CI checkout). The committed
+    // repo artifact is the template that install.sh copies to .claude-loom/ at init.
+    // (Original assertion checked .claude-loom/project-prefs.json which only passed
+    // locally due to working-tree state — Local-PASS / CI-FAIL masking.)
+    expect(existsSync(repoPath('templates/project-prefs.json.template'))).toBe(true);
   });
 
   it('install.sh creates LOOM_HOME directory for user state', () => {
