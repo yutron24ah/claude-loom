@@ -60,10 +60,38 @@ function buildPip(count: number): string {
 }
 
 /**
+ * Extended props type that allows optional re_evaluation_verdict field.
+ * WHY: RL-VERDICT-DROP-01 requires lens_drop verdict display. This field
+ * is set by the aggregator when a lens explicitly drops a carryover finding
+ * (spec/retro-system.md §1.16 — 4-way verdict: promoted/auto_expire/lens_drop/null).
+ */
+type CarryoverFindingInput = PendingSummaryFinding & {
+  /** Optional: aggregator-set verdict. 'lens_drop' = lens explicitly dropped. */
+  re_evaluation_verdict?: 'promoted' | 'auto_expire' | 'lens_drop' | null;
+};
+
+/**
  * Derive the verdict display from the finding's lifecycle state.
  * Returns null if no special verdict applies.
+ *
+ * Priority (per spec/retro-system.md §1.16):
+ *   1. re_evaluation_verdict field (explicit aggregator verdict)
+ *   2. status === 'expired' → auto_expire
+ *   3. re_evaluated_in !== null → promoted
+ *   4. null → no badge
  */
-function deriveVerdict(finding: PendingSummaryFinding): string | null {
+function deriveVerdict(finding: CarryoverFindingInput): string | null {
+  // Explicit aggregator verdict takes priority (RL-VERDICT-DROP-01)
+  if (finding.re_evaluation_verdict === 'lens_drop') {
+    return VERDICT_LABEL.lens_drop;
+  }
+  if (finding.re_evaluation_verdict === 'promoted') {
+    return VERDICT_LABEL.promoted;
+  }
+  if (finding.re_evaluation_verdict === 'auto_expire') {
+    return VERDICT_LABEL.auto_expire;
+  }
+  // Fallback: derive from status/re_evaluated_in fields
   if (finding.status === 'expired') {
     return VERDICT_LABEL.auto_expire;
   }
@@ -78,7 +106,7 @@ function deriveVerdict(finding: PendingSummaryFinding): string | null {
 // ---------------------------------------------------------------------------
 
 interface CarryoverCardProps {
-  finding: PendingSummaryFinding & { reconstructed_from_archive?: boolean };
+  finding: CarryoverFindingInput & { reconstructed_from_archive?: boolean };
 }
 
 export function CarryoverCard({ finding }: CarryoverCardProps): JSX.Element {

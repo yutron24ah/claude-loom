@@ -19,7 +19,10 @@ export type ToastEvent =
   | 'project_added'
   | 'plan_conflict_detected'
   | 'spec_change_detected'
-  | 'approval_not_found';
+  | 'approval_not_found'
+  | 'discipline_violation_critical'
+  | 'worktree_lock_warning'
+  | 'retro_stage_complete';
 
 /** Action that can be attached to a toast for user interaction. */
 export type ToastAction = 'retry';
@@ -206,5 +209,59 @@ export function emitApprovalNotFound(
     message,
     ttl_ms: null,
     action: 'retry',
+  });
+}
+
+/**
+ * Emit discipline_violation_critical error toast (persistent).
+ * WHY: TDD rule violation or SPEC-bypass detected. Persistent because
+ * the user must explicitly acknowledge the violation before continuing.
+ * MS-TOAST-DISC-01: U-layer helper for discipline violation toast.
+ */
+export function emitDisciplineViolation(
+  message = 'TDD 規律違反が検出されました',
+): void {
+  toastBus.emit({
+    id: `discipline_violation_critical-${Date.now()}`,
+    kind: 'error',
+    event: 'discipline_violation_critical',
+    message,
+    ttl_ms: null,
+  });
+}
+
+/**
+ * Emit worktree_lock_warning warning toast (persistent — user must acknowledge).
+ * WHY: A write was attempted on a locked worktree. The user must resolve the
+ * lock before proceeding. Persistent to ensure the warning is seen.
+ * MS-TOAST-WT-LOCK-01: U-layer helper for worktree lock toast.
+ */
+export function emitWorktreeLockWarning(
+  message = 'Worktree はロック中です。書き込みをブロックしました。',
+): void {
+  toastBus.emit({
+    id: `worktree_lock_warning-${Date.now()}`,
+    kind: 'warning',
+    event: 'worktree_lock_warning',
+    message,
+    ttl_ms: null,
+  });
+}
+
+/**
+ * Emit retro_stage_complete info toast (auto-dismiss 5 s).
+ * WHY: Retro Stage 1/2/3 completion is a background event that the user
+ * should be aware of. Auto-dismiss keeps it non-blocking.
+ * MS-TOAST-RETRO-STAGE-01: U-layer helper for retro stage completion.
+ */
+export function emitRetroStageComplete(
+  message = 'Retro stage が完了しました',
+): void {
+  toastBus.emit({
+    id: `retro_stage_complete-${Date.now()}`,
+    kind: 'info',
+    event: 'retro_stage_complete',
+    message,
+    ttl_ms: 5000,
   });
 }
